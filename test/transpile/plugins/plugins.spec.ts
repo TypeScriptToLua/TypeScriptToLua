@@ -35,6 +35,7 @@ test("statement comments", () => {
     util.testFunction`
         let foo = "bar";
         foo = "baz";
+        while (true) {}
     `
         .setOptions({ luaPlugins: [{ name: path.join(__dirname, "add-comments.ts") }] })
         .expectLuaToMatchSnapshot();

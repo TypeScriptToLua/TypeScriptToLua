@@ -229,8 +229,8 @@ export function createBlock(statements: Statement[], tsOriginal?: ts.Node): Bloc
 
 export interface Statement extends Node {
     _statementBrand: any;
-    leadingComments?: string[];
-    trailingComments?: string[];
+    leadingComments?: Array<string | string[]>;
+    trailingComments?: Array<string | string[]>;
 }
 
 export interface DoStatement extends Statement {

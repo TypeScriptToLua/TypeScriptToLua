@@ -34,6 +34,27 @@ const plugin: tstl.Plugin = {
 
             return result;
         },
+        [ts.SyntaxKind.WhileStatement](node, context) {
+            const result = context.superTransformStatements(node);
+
+            const firstLuaStatement = result[0];
+            const lastLuaStatement = result[result.length - 1];
+
+            firstLuaStatement.leadingComments = [
+                ["Multiline comments are supported as arrays", "This is the second line!"],
+            ];
+
+            lastLuaStatement.trailingComments = [
+                "Single line comments and multiline comments can also be mixed",
+                ["Like this", "Pretty cool!"],
+                "Empty multiline comment below:",
+                [],
+                "Single line multiline comment:",
+                ["Single line"],
+            ];
+
+            return result;
+        },
     },
 };
 

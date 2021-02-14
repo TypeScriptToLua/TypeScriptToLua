@@ -299,20 +299,30 @@ export class LuaPrinter {
     public printStatement(statement: lua.Statement): SourceNode {
         let resultNode = this.printStatementExcludingComments(statement);
 
+        const formatComment = (comment: string | string[]): SourceChunk => {
+            if (Array.isArray(comment)) {
+                if (comment.length === 0) {
+                    return this.indent("--[[]]");
+                } else {
+                    const [firstLine, ...restLines] = comment;
+                    this.pushIndent();
+                    const commentLines = this.concatNodes(
+                        ...restLines.map(c => this.concatNodes("\n", this.indent(c)))
+                    );
+                    this.popIndent();
+                    return this.concatNodes(this.indent("--[["), firstLine, commentLines, "]]");
+                }
+            } else {
+                return this.indent(`--${comment}`);
+            }
+        };
+
         if (statement.leadingComments) {
-            resultNode = this.concatNodes(
-                statement.leadingComments.map(c => this.indent(`--${c}`)).join("\n"),
-                "\n",
-                resultNode
-            );
+            resultNode = this.concatNodes(statement.leadingComments.map(formatComment).join("\n"), "\n", resultNode);
         }
 
         if (statement.trailingComments) {
-            resultNode = this.concatNodes(
-                resultNode,
-                "\n",
-                statement.trailingComments.map(c => this.indent(`--${c}`)).join("\n")
-            );
+            resultNode = this.concatNodes(resultNode, "\n", statement.trailingComments.map(formatComment).join("\n"));
         }
 
         return resultNode;

@@ -1,0 +1,29 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`statement comments 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    --This comment on variable declaration was added by a plugin!
+    --- This one too!
+    local foo = \\"bar\\"
+    -- This trailing comment was also added by a plugin!
+    --- Example luadoc comment
+    ---@param paramName ParamClass
+    foo = \\"baz\\"
+    --[[ This plugin can also (kinda) create multiline comments.
+    -- Line 2
+    --]]
+    --[[Multiline comments are supported as arrays
+    This is the second line!]]
+    while true do
+    end
+    --Single line comments and multiline comments can also be mixed
+    --[[Like this
+    Pretty cool!]]
+    --Empty multiline comment below:
+    --[[]]
+    --Single line multiline comment:
+    --[[Single line]]
+end
+return ____exports"
+`;

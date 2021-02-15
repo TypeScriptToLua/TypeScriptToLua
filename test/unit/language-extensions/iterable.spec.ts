@@ -1,231 +1,342 @@
 import * as path from "path";
 import * as util from "../../util";
 import * as tstl from "../../../src";
-import {
-    invalidIterableUse,
-    invalidMultiIterableWithoutDestructuring,
-} from "../../../src/transformation/utils/diagnostics";
+import { invalidMultiIterableWithoutDestructuring } from "../../../src/transformation/utils/diagnostics";
 
 const iterableProjectOptions: tstl.CompilerOptions = {
     types: [path.resolve(__dirname, "../../../language-extensions")],
 };
 
-const testIterable = `
-function testIterable(): LuaIterable<string> {
+describe("basic LuaIterable", () => {
+    const testIterable = `
+    function testIterator(this: void, strs: string[], lastStr: string) {
+        return strs[strs.indexOf(lastStr) + 1];
+    }
+
     const strs = ["a", "b", "c"];
-    let i = 0;
-    function iterator() {
-        return strs[i++];
-    }
-    return iterator as any;
-}
-`;
+    const testIterable = (() => $multi(testIterator, strs, "")) as (() => LuaIterable<string, string[]>);
+    `;
+    const testResults = ["a", "b", "c"];
 
-const testArrayIterable = `
-function testArrayIterable(): LuaIterable<string[]> {
-    const strs = [["a1", "a2"], ["b1", "b2"], ["c1", "c2"]];
-    let i = 0;
-    function iterator() {
-        return strs[i++];
-    }
-    return iterator as any;
-}
-`;
-
-const testMultiIterable = `
-function testMultiIterable(): LuaIterable<LuaMultiReturn<[string, string]>> {
-    const strs = [["a1", "a2"], ["b1", "b2"], ["c1", "c2"]];
-    let i = 0;
-    function iterator() {
-        const j = i++;
-        if (strs[j]) {
-            return $multi(...strs[j]);
-        }
-    }
-    return iterator as any;
-}
-`;
-
-const testIterableProperty = `
-class IterablePropertyTest {
-    public get testIterable(): LuaIterable<string> {
-        const strs = ["a", "b", "c"];
-        let i = 0;
-        function iterator() {
-            return strs[i++];
-        }
-        return iterator as any;
-    }
-}
-const tester = new IterablePropertyTest();
-`;
-
-test.each(["const s", "let s"])("LuaIterable basic use", initializer => {
-    util.testFunction`
-        ${testIterable}
-        const results: string[] = [];
-        for (${initializer} of testIterable()) {
-            results.push(s);
-        }
-        return results;
-    `
-        .setOptions(iterableProjectOptions)
-        .expectToEqual(["a", "b", "c"]);
-});
-
-test("LuaIterable with external control variable", () => {
-    util.testFunction`
-        ${testIterable}
-        const results: string[] = [];
-        let s: string;
-        for (s of testIterable()) {
-            results.push(s);
-        }
-        return results;
-    `
-        .setOptions(iterableProjectOptions)
-        .expectToEqual(["a", "b", "c"]);
-});
-
-test.each(["const [x, y]", "let [x, y]"])("LuaIterable array destructuring", initializer => {
-    util.testFunction`
-        ${testArrayIterable}
-        const results: string[] = [];
-        for (${initializer} of testArrayIterable()) {
-            results.push(x);
-            results.push(y);
-        }
-        return results;
-    `
-        .setOptions(iterableProjectOptions)
-        .expectToEqual(["a1", "a2", "b1", "b2", "c1", "c2"]);
-});
-
-test("LuaIterable array destructuring with external control variable", () => {
-    util.testFunction`
-        ${testArrayIterable}
-        const results: string[] = [];
-        let x: string, y: string;
-        for ([x, y] of testArrayIterable()) {
-            results.push(x);
-            results.push(y);
-        }
-        return results;
-    `
-        .setOptions(iterableProjectOptions)
-        .expectToEqual(["a1", "a2", "b1", "b2", "c1", "c2"]);
-});
-
-test.each(["const [x, y]", "let [x, y]"])("LuaIterable<LuaMultiReturn> basic use", initializer => {
-    util.testFunction`
-        ${testMultiIterable}
-        const results: string[] = [];
-        for (${initializer} of testMultiIterable()) {
-            results.push(x);
-            results.push(y);
-        }
-        return results;
-    `
-        .setOptions(iterableProjectOptions)
-        .expectToEqual(["a1", "a2", "b1", "b2", "c1", "c2"]);
-});
-
-test("LuaIterable<LuaMultiReturn> with external control variables", () => {
-    util.testFunction`
-        ${testMultiIterable}
-        const results: string[] = [];
-        let x: string, y: string;
-        for ([x, y] of testMultiIterable()) {
-            results.push(x);
-            results.push(y);
-        }
-        return results;
-    `
-        .setOptions(iterableProjectOptions)
-        .expectToEqual(["a1", "a2", "b1", "b2", "c1", "c2"]);
-});
-
-test.each([".testIterable", '["testIterable"]'])("LuaIterable property", access => {
-    util.testFunction`
-        ${testIterableProperty}
-        const results: string[] = [];
-        for (const s of tester${access}) {
-            results.push(s);
-        }
-        return results;
-    `
-        .setOptions(iterableProjectOptions)
-        .expectToEqual(["a", "b", "c"]);
-});
-
-function makeForwardTests(call: string, code: string) {
-    return [`${code} function forward() { return ${call}; }`, `${code} const forward = () => ${call};`];
-}
-
-test.each(
-    [
-        ["testIterable()", testIterable],
-        ["tester.testIterable", testIterableProperty],
-    ].map(([call, code]) => makeForwardTests(call, code))
-)("LuaIterable return forward", forwardFunction => {
-    util.testFunction`
-        ${forwardFunction}
-        const results: string[] = [];
-        for (const s of forward()) {
-            results.push(s);
-        }
-        return results;
-    `
-        .setOptions(iterableProjectOptions)
-        .expectToEqual(["a", "b", "c"]);
-});
-
-test.each(makeForwardTests("testMultiIterable()", testMultiIterable))(
-    "LuaIterable<LuaMultiReturn> return forward",
-    forwardFunction => {
+    test("const control variable", () => {
         util.testFunction`
-        ${forwardFunction}
-        const results: string[] = [];
-        for (const [x, y] of forward()) {
-            results.push(x);
-            results.push(y);
-        }
-        return results;
-    `
+            ${testIterable}
+            const results: string[] = [];
+            for (const s of testIterable()) {
+                results.push(s);
+            }
+            return results;
+        `
             .setOptions(iterableProjectOptions)
-            .expectToEqual(["a1", "a2", "b1", "b2", "c1", "c2"]);
-    }
-);
+            .expectToEqual(testResults);
+    });
 
-test.each(
-    [
-        ["testIterable()", testIterable],
-        ["testMultiIterable()", testMultiIterable],
-        ["tester.testIterable", testIterableProperty],
-    ].flatMap(
-        ([call, code]): Array<[string, string]> => [
-            [`for (const s in ${call}) {}`, code],
-            [`const i = ${call};`, code],
-            [`function foo(i: any) {} foo(${call});`, code],
-        ]
-    )
-)("invalid use of LuaIterable (%p)", (statement, code) => {
-    util.testFunction`
-        ${code}
-        ${statement}
-    `
-        .setOptions(iterableProjectOptions)
-        .expectDiagnosticsToMatchSnapshot([invalidIterableUse.code]);
+    test("let control variable", () => {
+        util.testFunction`
+            ${testIterable}
+            const results: string[] = [];
+            for (let s of testIterable()) {
+                results.push(s);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("external control variable", () => {
+        util.testFunction`
+            ${testIterable}
+            const results: string[] = [];
+            let s: string;
+            for (s of testIterable()) {
+                results.push(s);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("function forward", () => {
+        util.testFunction`
+            ${testIterable}
+            function forward() { return testIterable(); }
+            const results: string[] = [];
+            for (const s of forward()) {
+                results.push(s);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("function indirect forward", () => {
+        util.testFunction`
+            ${testIterable}
+            function forward() { const iter = testIterable(); return iter; }
+            const results: string[] = [];
+            for (const s of forward()) {
+                results.push(s);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("arrow function forward", () => {
+        util.testFunction`
+            ${testIterable}
+            const forward = () => testIterable();
+            const results: string[] = [];
+            for (const s of forward()) {
+                results.push(s);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("manual use", () => {
+        util.testFunction`
+            ${testIterable}
+            const results: string[] = [];
+            let [iter, state, val] = testIterable();
+            while (true) {
+                val = iter(state, val);
+                if (!val) {
+                    break;
+                }
+                results.push(val);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
 });
 
-test.each(["for (const s of testMultiIterable()) {}", "let s; for (s of testMultiIterable()) {}"])(
-    "invalid LuaIterable<LuaMultiReturn> without destructuring (%p)",
-    statement => {
-        util.testFunction`
-        ${testMultiIterable}
-        ${statement}
-    `
-            .setOptions(iterableProjectOptions)
-            .expectDiagnosticsToMatchSnapshot([invalidMultiIterableWithoutDestructuring.code]);
+describe("LuaIterable with array value type", () => {
+    const testIterable = `
+    function testIterator(this: void, strsArray: Array<string[]>, lastStrs: string[]) {
+        return strsArray[strsArray.indexOf(lastStrs) + 1];
     }
-);
+
+    const strsArray = [["a1", "a2"], ["b1", "b2"], ["c1", "c2"]];
+    const testIterable = (() => $multi(testIterator, strsArray, [""])) as (() => LuaIterable<string[], Array<string[]>>);
+    `;
+    const testResults = [
+        ["a1", "a2"],
+        ["b1", "b2"],
+        ["c1", "c2"],
+    ];
+
+    test("basic destructuring", () => {
+        util.testFunction`
+            ${testIterable}
+            const results: Array<string[]> = [];
+            for (const [x, y] of testIterable()) {
+                results.push([x, y]);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("destructure with external control variable", () => {
+        util.testFunction`
+            ${testIterable}
+            const results: Array<string[]> = [];
+            let x: string, y: string;
+            for ([x, y] of testIterable()) {
+                results.push([x, y]);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("destructure with function forward", () => {
+        util.testFunction`
+            ${testIterable}
+            function forward() { return testIterable(); }
+            const results: Array<string[]> = [];
+            for (const [x, y] of forward()) {
+                results.push([x, y]);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("destructure with function indirect forward", () => {
+        util.testFunction`
+            ${testIterable}
+            function forward() { const iter = testIterable(); return iter; }
+            const results: Array<string[]> = [];
+            for (const [x, y] of forward()) {
+                results.push([x, y]);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("destructure arrow function forward", () => {
+        util.testFunction`
+            ${testIterable}
+            const forward = () => testIterable();
+            const results: Array<string[]> = [];
+            for (const [x, y] of forward()) {
+                results.push([x, y]);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("manual use", () => {
+        util.testFunction`
+            ${testIterable}
+            const results: Array<string[]> = [];
+            let [iter, state, val] = testIterable();
+            while (true) {
+                val = iter(state, val);
+                if (!val) {
+                    break;
+                }
+                results.push(val);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+});
+
+describe("LuaIterable with LuaMultiReturn value type", () => {
+    const testIterable = `
+    function testIterator(this: void, strsArray: Array<string[]>, lastStr: string) {
+        const str = strsArray[strsArray.findIndex(strs => strs[0] === lastStr) + 1];
+        if (str) {
+            return $multi(...str);
+        }
+    }
+
+    const strsArray = [["a1", "a2"], ["b1", "b2"], ["c1", "c2"]];
+    const testIterable = (() => $multi(testIterator, strsArray, "")) as (() => LuaIterable<LuaMultiReturn<string[]>, Array<string[]>>);
+    `;
+    const testResults = [
+        ["a1", "a2"],
+        ["b1", "b2"],
+        ["c1", "c2"],
+    ];
+
+    test("basic destructuring", () => {
+        util.testFunction`
+            ${testIterable}
+            const results: Array<string[]> = [];
+            for (const [x, y] of testIterable()) {
+                results.push([x, y]);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("destructure with external control variable", () => {
+        util.testFunction`
+            ${testIterable}
+            const results: Array<string[]> = [];
+            let x: string, y: string;
+            for ([x, y] of testIterable()) {
+                results.push([x, y]);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("destructure with function forward", () => {
+        util.testFunction`
+            ${testIterable}
+            function forward() { return testIterable(); }
+            const results: Array<string[]> = [];
+            for (const [x, y] of forward()) {
+                results.push([x, y]);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("destructure with function indirect forward", () => {
+        util.testFunction`
+            ${testIterable}
+            function forward() { const iter = testIterable(); return iter; }
+            const results: Array<string[]> = [];
+            for (const [x, y] of forward()) {
+                results.push([x, y]);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("destructure arrow function forward", () => {
+        util.testFunction`
+            ${testIterable}
+            const forward = () => testIterable();
+            const results: Array<string[]> = [];
+            for (const [x, y] of forward()) {
+                results.push([x, y]);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("destructure manual use", () => {
+        util.testFunction`
+            ${testIterable}
+            const results: Array<string[]> = [];
+            let [iter, state, x] = testIterable();
+            let y: string;
+            while (true) {
+                [x, y] = iter(state, x);
+                if (!x) {
+                    break;
+                }
+                results.push([x, y]);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test.each(["for (const s of testIterable()) {}", "let s; for (s of testIterable()) {}"])(
+        "invalid LuaIterable<LuaMultiReturn> without destructuring (%p)",
+        statement => {
+            util.testFunction`
+            ${testIterable}
+            ${statement}
+        `
+                .setOptions(iterableProjectOptions)
+                .expectDiagnosticsToMatchSnapshot([invalidMultiIterableWithoutDestructuring.code]);
+        }
+    );
+});

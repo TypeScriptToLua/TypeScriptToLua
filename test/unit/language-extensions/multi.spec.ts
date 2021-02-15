@@ -130,6 +130,28 @@ test("allow $multi call in ArrowFunction body", () => {
         .expectToEqual(1);
 });
 
+test("forward $multi call", () => {
+    util.testFunction`
+        function foo() { return $multi(1); }
+        function call() { return foo(); }
+        const [result] = call();
+        return result;
+    `
+        .setOptions(multiProjectOptions)
+        .expectToEqual(1);
+});
+
+test("forward $multi call indirect", () => {
+    util.testFunction`
+        function foo() { return $multi(1); }
+        function call() { const m = foo(); return m; }
+        const [result] = call();
+        return result;
+    `
+        .setOptions(multiProjectOptions)
+        .expectToEqual(1);
+});
+
 test("forward $multi call in ArrowFunction body", () => {
     util.testFunction`
         const foo = () => $multi(1);

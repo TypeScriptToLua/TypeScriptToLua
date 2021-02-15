@@ -1,319 +1,52 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`invalid LuaIterable<LuaMultiReturn> without destructuring ("for (const s of testMultiIterable()) {}"): code 1`] = `
-"local ____exports = {}
+exports[`LuaIterable with LuaMultiReturn value type invalid LuaIterable<LuaMultiReturn> without destructuring ("for (const s of testIterable()) {}"): code 1`] = `
+"require(\\"lualib_bundle\\");
+local ____exports = {}
 function ____exports.__main(self)
-    local function testMultiIterable(self)
-        local strs = {{\\"a1\\", \\"a2\\"}, {\\"b1\\", \\"b2\\"}, {\\"c1\\", \\"c2\\"}}
-        local i = 0
-        local function iterator(self)
-            local j = (function()
-                local ____tmp = i
-                i = ____tmp + 1
-                return ____tmp
-            end)()
-            if strs[j + 1] then
-                return table.unpack(strs[j + 1])
-            end
+    local function testIterator(strsArray, lastStr)
+        local str = strsArray[(__TS__ArrayFindIndex(
+            strsArray,
+            function(____, strs) return strs[1] == lastStr end
+        ) + 1) + 1]
+        if str then
+            return table.unpack(str)
         end
-        return iterator
     end
-    for ____ in testMultiIterable(nil) do
+    local strsArray = {{\\"a1\\", \\"a2\\"}, {\\"b1\\", \\"b2\\"}, {\\"c1\\", \\"c2\\"}}
+    local function testIterable()
+        return testIterator, strsArray, \\"\\"
+    end
+    for ____ in testIterable(nil) do
     end
 end
 return ____exports"
 `;
 
-exports[`invalid LuaIterable<LuaMultiReturn> without destructuring ("for (const s of testMultiIterable()) {}"): diagnostics 1`] = `"main.ts(15,20): error TSTL: LuaIterable with a LuaMultiReturn return value type must be destructured."`;
+exports[`LuaIterable with LuaMultiReturn value type invalid LuaIterable<LuaMultiReturn> without destructuring ("for (const s of testIterable()) {}"): diagnostics 1`] = `"main.ts(13,24): error TSTL: LuaIterable with a LuaMultiReturn return value type must be destructured."`;
 
-exports[`invalid LuaIterable<LuaMultiReturn> without destructuring ("let s; for (s of testMultiIterable()) {}"): code 1`] = `
-"local ____exports = {}
+exports[`LuaIterable with LuaMultiReturn value type invalid LuaIterable<LuaMultiReturn> without destructuring ("let s; for (s of testIterable()) {}"): code 1`] = `
+"require(\\"lualib_bundle\\");
+local ____exports = {}
 function ____exports.__main(self)
-    local function testMultiIterable(self)
-        local strs = {{\\"a1\\", \\"a2\\"}, {\\"b1\\", \\"b2\\"}, {\\"c1\\", \\"c2\\"}}
-        local i = 0
-        local function iterator(self)
-            local j = (function()
-                local ____tmp = i
-                i = ____tmp + 1
-                return ____tmp
-            end)()
-            if strs[j + 1] then
-                return table.unpack(strs[j + 1])
-            end
+    local function testIterator(strsArray, lastStr)
+        local str = strsArray[(__TS__ArrayFindIndex(
+            strsArray,
+            function(____, strs) return strs[1] == lastStr end
+        ) + 1) + 1]
+        if str then
+            return table.unpack(str)
         end
-        return iterator
+    end
+    local strsArray = {{\\"a1\\", \\"a2\\"}, {\\"b1\\", \\"b2\\"}, {\\"c1\\", \\"c2\\"}}
+    local function testIterable()
+        return testIterator, strsArray, \\"\\"
     end
     local s
-    for ____ in testMultiIterable(nil) do
+    for ____ in testIterable(nil) do
     end
 end
 return ____exports"
 `;
 
-exports[`invalid LuaIterable<LuaMultiReturn> without destructuring ("let s; for (s of testMultiIterable()) {}"): diagnostics 1`] = `"main.ts(15,21): error TSTL: LuaIterable with a LuaMultiReturn return value type must be destructured."`;
-
-exports[`invalid use of LuaIterable ("const i = testIterable();"): code 1`] = `
-"local ____exports = {}
-function ____exports.__main(self)
-    local function testIterable(self)
-        local strs = {\\"a\\", \\"b\\", \\"c\\"}
-        local i = 0
-        local function iterator(self)
-            return strs[(function()
-                local ____tmp = i
-                i = ____tmp + 1
-                return ____tmp
-            end)() + 1]
-        end
-        return iterator
-    end
-    local i = testIterable(nil)
-end
-return ____exports"
-`;
-
-exports[`invalid use of LuaIterable ("const i = testIterable();"): diagnostics 1`] = `"main.ts(12,19): error TSTL: LuaIterable type can only be used in for...of loops or return statements."`;
-
-exports[`invalid use of LuaIterable ("const i = testMultiIterable();"): code 1`] = `
-"local ____exports = {}
-function ____exports.__main(self)
-    local function testMultiIterable(self)
-        local strs = {{\\"a1\\", \\"a2\\"}, {\\"b1\\", \\"b2\\"}, {\\"c1\\", \\"c2\\"}}
-        local i = 0
-        local function iterator(self)
-            local j = (function()
-                local ____tmp = i
-                i = ____tmp + 1
-                return ____tmp
-            end)()
-            if strs[j + 1] then
-                return table.unpack(strs[j + 1])
-            end
-        end
-        return iterator
-    end
-    local i = testMultiIterable(nil)
-end
-return ____exports"
-`;
-
-exports[`invalid use of LuaIterable ("const i = testMultiIterable();"): diagnostics 1`] = `"main.ts(15,19): error TSTL: LuaIterable type can only be used in for...of loops or return statements."`;
-
-exports[`invalid use of LuaIterable ("const i = tester.testIterable;"): code 1`] = `
-"require(\\"lualib_bundle\\");
-local ____exports = {}
-function ____exports.__main(self)
-    local IterablePropertyTest = __TS__Class()
-    IterablePropertyTest.name = \\"IterablePropertyTest\\"
-    function IterablePropertyTest.prototype.____constructor(self)
-    end
-    __TS__SetDescriptor(
-        IterablePropertyTest.prototype,
-        \\"testIterable\\",
-        {
-            get = function(self)
-                local strs = {\\"a\\", \\"b\\", \\"c\\"}
-                local i = 0
-                local function iterator(self)
-                    return strs[(function()
-                        local ____tmp = i
-                        i = ____tmp + 1
-                        return ____tmp
-                    end)() + 1]
-                end
-                return iterator
-            end
-        },
-        true
-    )
-    local tester = __TS__New(IterablePropertyTest)
-    local i = tester.testIterable
-end
-return ____exports"
-`;
-
-exports[`invalid use of LuaIterable ("const i = tester.testIterable;"): diagnostics 1`] = `"main.ts(15,19): error TSTL: LuaIterable type can only be used in for...of loops or return statements."`;
-
-exports[`invalid use of LuaIterable ("for (const s in testIterable()) {}"): code 1`] = `
-"local ____exports = {}
-function ____exports.__main(self)
-    local function testIterable(self)
-        local strs = {\\"a\\", \\"b\\", \\"c\\"}
-        local i = 0
-        local function iterator(self)
-            return strs[(function()
-                local ____tmp = i
-                i = ____tmp + 1
-                return ____tmp
-            end)() + 1]
-        end
-        return iterator
-    end
-    for s in pairs(
-        testIterable(nil)
-    ) do
-    end
-end
-return ____exports"
-`;
-
-exports[`invalid use of LuaIterable ("for (const s in testIterable()) {}"): diagnostics 1`] = `"main.ts(12,25): error TSTL: LuaIterable type can only be used in for...of loops or return statements."`;
-
-exports[`invalid use of LuaIterable ("for (const s in testMultiIterable()) {}"): code 1`] = `
-"local ____exports = {}
-function ____exports.__main(self)
-    local function testMultiIterable(self)
-        local strs = {{\\"a1\\", \\"a2\\"}, {\\"b1\\", \\"b2\\"}, {\\"c1\\", \\"c2\\"}}
-        local i = 0
-        local function iterator(self)
-            local j = (function()
-                local ____tmp = i
-                i = ____tmp + 1
-                return ____tmp
-            end)()
-            if strs[j + 1] then
-                return table.unpack(strs[j + 1])
-            end
-        end
-        return iterator
-    end
-    for s in pairs(
-        testMultiIterable(nil)
-    ) do
-    end
-end
-return ____exports"
-`;
-
-exports[`invalid use of LuaIterable ("for (const s in testMultiIterable()) {}"): diagnostics 1`] = `"main.ts(15,25): error TSTL: LuaIterable type can only be used in for...of loops or return statements."`;
-
-exports[`invalid use of LuaIterable ("for (const s in tester.testIterable) {}"): code 1`] = `
-"require(\\"lualib_bundle\\");
-local ____exports = {}
-function ____exports.__main(self)
-    local IterablePropertyTest = __TS__Class()
-    IterablePropertyTest.name = \\"IterablePropertyTest\\"
-    function IterablePropertyTest.prototype.____constructor(self)
-    end
-    __TS__SetDescriptor(
-        IterablePropertyTest.prototype,
-        \\"testIterable\\",
-        {
-            get = function(self)
-                local strs = {\\"a\\", \\"b\\", \\"c\\"}
-                local i = 0
-                local function iterator(self)
-                    return strs[(function()
-                        local ____tmp = i
-                        i = ____tmp + 1
-                        return ____tmp
-                    end)() + 1]
-                end
-                return iterator
-            end
-        },
-        true
-    )
-    local tester = __TS__New(IterablePropertyTest)
-    for s in pairs(tester.testIterable) do
-    end
-end
-return ____exports"
-`;
-
-exports[`invalid use of LuaIterable ("for (const s in tester.testIterable) {}"): diagnostics 1`] = `"main.ts(15,25): error TSTL: LuaIterable type can only be used in for...of loops or return statements."`;
-
-exports[`invalid use of LuaIterable ("function foo(i: any) {} foo(testIterable());"): code 1`] = `
-"local ____exports = {}
-function ____exports.__main(self)
-    local function testIterable(self)
-        local strs = {\\"a\\", \\"b\\", \\"c\\"}
-        local i = 0
-        local function iterator(self)
-            return strs[(function()
-                local ____tmp = i
-                i = ____tmp + 1
-                return ____tmp
-            end)() + 1]
-        end
-        return iterator
-    end
-    local function foo(self, i)
-    end
-    foo(
-        nil,
-        testIterable(nil)
-    )
-end
-return ____exports"
-`;
-
-exports[`invalid use of LuaIterable ("function foo(i: any) {} foo(testIterable());"): diagnostics 1`] = `"main.ts(12,37): error TSTL: LuaIterable type can only be used in for...of loops or return statements."`;
-
-exports[`invalid use of LuaIterable ("function foo(i: any) {} foo(testMultiIterable());"): code 1`] = `
-"local ____exports = {}
-function ____exports.__main(self)
-    local function testMultiIterable(self)
-        local strs = {{\\"a1\\", \\"a2\\"}, {\\"b1\\", \\"b2\\"}, {\\"c1\\", \\"c2\\"}}
-        local i = 0
-        local function iterator(self)
-            local j = (function()
-                local ____tmp = i
-                i = ____tmp + 1
-                return ____tmp
-            end)()
-            if strs[j + 1] then
-                return table.unpack(strs[j + 1])
-            end
-        end
-        return iterator
-    end
-    local function foo(self, i)
-    end
-    foo(
-        nil,
-        testMultiIterable(nil)
-    )
-end
-return ____exports"
-`;
-
-exports[`invalid use of LuaIterable ("function foo(i: any) {} foo(testMultiIterable());"): diagnostics 1`] = `"main.ts(15,37): error TSTL: LuaIterable type can only be used in for...of loops or return statements."`;
-
-exports[`invalid use of LuaIterable ("function foo(i: any) {} foo(tester.testIterable);"): code 1`] = `
-"require(\\"lualib_bundle\\");
-local ____exports = {}
-function ____exports.__main(self)
-    local IterablePropertyTest = __TS__Class()
-    IterablePropertyTest.name = \\"IterablePropertyTest\\"
-    function IterablePropertyTest.prototype.____constructor(self)
-    end
-    __TS__SetDescriptor(
-        IterablePropertyTest.prototype,
-        \\"testIterable\\",
-        {
-            get = function(self)
-                local strs = {\\"a\\", \\"b\\", \\"c\\"}
-                local i = 0
-                local function iterator(self)
-                    return strs[(function()
-                        local ____tmp = i
-                        i = ____tmp + 1
-                        return ____tmp
-                    end)() + 1]
-                end
-                return iterator
-            end
-        },
-        true
-    )
-    local tester = __TS__New(IterablePropertyTest)
-    local function foo(self, i)
-    end
-    foo(nil, tester.testIterable)
-end
-return ____exports"
-`;
-
-exports[`invalid use of LuaIterable ("function foo(i: any) {} foo(tester.testIterable);"): diagnostics 1`] = `"main.ts(15,37): error TSTL: LuaIterable type can only be used in for...of loops or return statements."`;
+exports[`LuaIterable with LuaMultiReturn value type invalid LuaIterable<LuaMultiReturn> without destructuring ("let s; for (s of testIterable()) {}"): diagnostics 1`] = `"main.ts(13,25): error TSTL: LuaIterable with a LuaMultiReturn return value type must be destructured."`;

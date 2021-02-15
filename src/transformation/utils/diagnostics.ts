@@ -118,10 +118,6 @@ export const luaIteratorForbiddenUsage = createErrorDiagnosticFactory(
         "the '@tupleReturn' annotation."
 );
 
-export const invalidIterableUse = createErrorDiagnosticFactory(
-    "LuaIterable type can only be used in for...of loops or return statements."
-);
-
 export const invalidMultiIterableWithoutDestructuring = createErrorDiagnosticFactory(
     "LuaIterable with a LuaMultiReturn return value type must be destructured."
 );

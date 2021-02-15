@@ -4,16 +4,23 @@ import * as extensions from "../../utils/language-extensions";
 import { TransformationContext } from "../../context";
 import { getVariableDeclarationBinding, transformForInitializer } from "../loops/utils";
 import { transformArrayBindingElement } from "../variable-declaration";
-import { invalidIterableUse, invalidMultiIterableWithoutDestructuring } from "../../utils/diagnostics";
+import { invalidMultiIterableWithoutDestructuring } from "../../utils/diagnostics";
 import { cast } from "../../../utils";
 import { isMultiReturnType } from "./multi";
 
-const isIterableTypeDeclaration = (declaration: ts.Declaration): boolean =>
-    extensions.getExtensionKind(declaration) === extensions.ExtensionKind.IterableType;
+export function isIterableType(type: ts.Type): boolean {
+    return extensions.isExtensionType(type, extensions.ExtensionKind.IterableType);
+}
+
+export function returnsIterableType(context: TransformationContext, node: ts.CallExpression): boolean {
+    const signature = context.checker.getResolvedSignature(node);
+    const type = signature?.getReturnType();
+    return type ? isIterableType(type) : false;
+}
 
 export function isIterableExpression(context: TransformationContext, expression: ts.Expression): boolean {
     const type = context.checker.getTypeAtLocation(expression);
-    return type.aliasSymbol?.declarations?.some(isIterableTypeDeclaration) ?? false;
+    return isIterableType(type);
 }
 
 function transformForOfMultiIterableStatement(
@@ -65,24 +72,11 @@ export function transformForOfIterableStatement(
     block: lua.Block
 ): lua.Statement {
     const type = context.checker.getTypeAtLocation(statement.expression);
-    if (type.aliasTypeArguments?.length === 1 && isMultiReturnType(type.aliasTypeArguments[0])) {
+    if (type.aliasTypeArguments?.length === 2 && isMultiReturnType(type.aliasTypeArguments[0])) {
         return transformForOfMultiIterableStatement(context, statement, block);
     }
 
     const luaIterator = context.transformExpression(statement.expression);
     const identifier = transformForInitializer(context, statement.initializer, block);
     return lua.createForInStatement(block, [identifier], [luaIterator], statement);
-}
-
-export function validateIterableTypeUse(context: TransformationContext, node: ts.Expression) {
-    if (!isIterableExpression(context, node)) {
-        return;
-    }
-    if (ts.isForOfStatement(node.parent)) {
-        return;
-    }
-    if (ts.isReturnStatement(node.parent) || ts.isArrowFunction(node.parent)) {
-        return;
-    }
-    context.diagnostics.push(invalidIterableUse(node));
 }

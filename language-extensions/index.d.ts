@@ -5,7 +5,9 @@
  * @param T A tuple type with each element type representing a return value's type.
  * @param values Return values.
  */
-declare function $multi<T extends any[]>(...values: T): LuaMultiReturn<T>;
+declare const $multi: (<T extends any[]>(...values: T) => LuaMultiReturn<T>) & {
+    readonly __luaMultiFunctionBrand: unique symbol;
+};
 
 /**
  * Represents multiple return values as a tuple.
@@ -23,16 +25,36 @@ declare type LuaMultiReturn<T extends any[]> = T & { readonly __luaMultiReturnBr
  * @param limit The last number in the sequence to iterate over.
  * @param step The amount to increment each iteration.
  */
-declare function $range(start: number, limit: number, step?: number): Iterable<number>;
+declare const $range: ((start: number, limit: number, step?: number) => Iterable<number>) & {
+    readonly __luaRangeFunctionBrand: unique symbol;
+};
+
+/**
+ * Represents a Lua-style iterator function which is returned from a LuaIterable.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param state The state object returned from the LuaIterable.
+ * @param lastValue The last value returned from this function. If iterating LuaMultiReturn values, this is the first value of the tuple.
+ */
+declare type LuaIterator<TValue, TState> = TState extends undefined
+    ? (this: void) => TValue
+    : (
+          this: void,
+          state: TState,
+          lastValue: TValue extends LuaMultiReturn<infer TTuple> ? TTuple[0] : TValue
+      ) => TValue;
 
 /**
  * Represents a Lua-style iteratable which iterates single values in a `for...in` loop (ex. `for x in iter() do`).
- * This type can only be used in a `for...of` loop or a return statement.
  * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
  *
- * @param T The type of value returned each iteration. If this is LuaMultiReturn, multiple values will be returned each iteration.
+ * @param TValue The type of value returned each iteration. If this is LuaMultiReturn, multiple values will be returned each iteration.
+ * @param TState The type of the state value passed back to the iterator function each iteration.
  */
-declare type LuaIterable<T> = Iterable<T> & { readonly __luaIterableBrand: unique symbol };
+declare type LuaIterable<TValue, TState = undefined> = Iterable<TValue> &
+    LuaMultiReturn<
+        [LuaIterator<TValue, TState>, TState, TValue extends LuaMultiReturn<infer TTuple> ? TTuple[0] : TValue]
+    > & { readonly __luaIterableBrand: unique symbol };
 
 /**
  * Calls to functions with this type are translated to `left + right`.

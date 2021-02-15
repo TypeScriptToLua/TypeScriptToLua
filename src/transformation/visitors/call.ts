@@ -13,7 +13,6 @@ import { transformElementAccessArgument } from "./access";
 import { transformLuaTableCallExpression } from "./lua-table";
 import { shouldMultiReturnCallBeWrapped, returnsMultiType } from "./language-extensions/multi";
 import { isOperatorMapping, transformOperatorMappingExpression } from "./language-extensions/operators";
-import { validateIterableTypeUse } from "./language-extensions/iterable";
 
 export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
 
@@ -214,8 +213,6 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     if (isOperatorMapping(context, node)) {
         return transformOperatorMappingExpression(context, node);
     }
-
-    validateIterableTypeUse(context, node);
 
     if (ts.isPropertyAccessExpression(node.expression)) {
         const result = transformPropertyCall(context, node as PropertyCallExpression);

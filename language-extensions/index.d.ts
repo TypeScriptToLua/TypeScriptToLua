@@ -30,7 +30,9 @@ declare const $range: ((start: number, limit: number, step?: number) => Iterable
 };
 
 /**
- * Represents a Lua-style iterator function which is returned from a LuaIterable.
+ * Represents a Lua-style iterator which is returned from a LuaIterable.
+ * For simple iterators (with no state), this is just a function.
+ * For complex iterators that use a state, this is a LuaMultiReturn tuple containing a function, the state, and the initial value to pass to the function.
  * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
  *
  * @param state The state object returned from the LuaIterable.
@@ -38,11 +40,17 @@ declare const $range: ((start: number, limit: number, step?: number) => Iterable
  */
 declare type LuaIterator<TValue, TState> = TState extends undefined
     ? (this: void) => TValue
-    : (
-          this: void,
-          state: TState,
-          lastValue: TValue extends LuaMultiReturn<infer TTuple> ? TTuple[0] : TValue
-      ) => TValue;
+    : LuaMultiReturn<
+          [
+              (
+                  this: void,
+                  state: TState,
+                  lastValue: TValue extends LuaMultiReturn<infer TTuple> ? TTuple[0] : TValue
+              ) => TValue,
+              TState,
+              TValue extends LuaMultiReturn<infer TTuple> ? TTuple[0] : TValue
+          ]
+      >;
 
 /**
  * Represents a Lua-style iteratable which iterates single values in a `for...in` loop (ex. `for x in iter() do`).
@@ -52,9 +60,7 @@ declare type LuaIterator<TValue, TState> = TState extends undefined
  * @param TState The type of the state value passed back to the iterator function each iteration.
  */
 declare type LuaIterable<TValue, TState = undefined> = Iterable<TValue> &
-    LuaMultiReturn<
-        [LuaIterator<TValue, TState>, TState, TValue extends LuaMultiReturn<infer TTuple> ? TTuple[0] : TValue]
-    > & { readonly __luaIterableBrand: unique symbol };
+    LuaIterator<TValue, TState> & { readonly __luaIterableBrand: unique symbol };
 
 /**
  * Calls to functions with this type are translated to `left + right`.

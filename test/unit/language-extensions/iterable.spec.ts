@@ -7,14 +7,123 @@ const iterableProjectOptions: tstl.CompilerOptions = {
     types: [path.resolve(__dirname, "../../../language-extensions")],
 };
 
-describe("basic LuaIterable", () => {
+describe("simple LuaIterable", () => {
     const testIterable = `
-    function testIterator(this: void, strs: string[], lastStr: string) {
+    function testIterable(this: void): LuaIterable<string> {
+        const strs = ["a", "b", "c"];
+        let i = 0;
+        return (() => strs[i++]) as any;
+    }
+    `;
+    const testResults = ["a", "b", "c"];
+
+    test("const control variable", () => {
+        util.testFunction`
+            ${testIterable}
+            const results: string[] = [];
+            for (const s of testIterable()) {
+                results.push(s);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("let control variable", () => {
+        util.testFunction`
+            ${testIterable}
+            const results: string[] = [];
+            for (let s of testIterable()) {
+                results.push(s);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("external control variable", () => {
+        util.testFunction`
+            ${testIterable}
+            const results: string[] = [];
+            let s: string;
+            for (s of testIterable()) {
+                results.push(s);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("function forward", () => {
+        util.testFunction`
+            ${testIterable}
+            function forward() { return testIterable(); }
+            const results: string[] = [];
+            for (const s of forward()) {
+                results.push(s);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("function indirect forward", () => {
+        util.testFunction`
+            ${testIterable}
+            function forward() { const iter = testIterable(); return iter; }
+            const results: string[] = [];
+            for (const s of forward()) {
+                results.push(s);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("arrow function forward", () => {
+        util.testFunction`
+            ${testIterable}
+            const forward = () => testIterable();
+            const results: string[] = [];
+            for (const s of forward()) {
+                results.push(s);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("manual use", () => {
+        util.testFunction`
+            ${testIterable}
+            const results: string[] = [];
+            const iter = testIterable();
+            while (true) {
+                const val = iter();
+                if (!val) {
+                    break;
+                }
+                results.push(val);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+});
+
+describe("LuaIterable using state", () => {
+    const testIterable = `
+    function iterator(this: void, strs: string[], lastStr: string) {
         return strs[strs.indexOf(lastStr) + 1];
     }
-
-    const strs = ["a", "b", "c"];
-    const testIterable = (() => $multi(testIterator, strs, "")) as (() => LuaIterable<string, string[]>);
+    const testIterable = (() => $multi(iterator, ["a", "b", "c"], "")) as (() => LuaIterable<string, string[]>);
     `;
     const testResults = ["a", "b", "c"];
 
@@ -121,12 +230,11 @@ describe("basic LuaIterable", () => {
 
 describe("LuaIterable with array value type", () => {
     const testIterable = `
-    function testIterator(this: void, strsArray: Array<string[]>, lastStrs: string[]) {
-        return strsArray[strsArray.indexOf(lastStrs) + 1];
+    function testIterable(this: void): LuaIterable<string[]> {
+        const strsArray = [["a1", "a2"], ["b1", "b2"], ["c1", "c2"]];
+        let i = 0;
+        return (() => strsArray[i++]) as any;
     }
-
-    const strsArray = [["a1", "a2"], ["b1", "b2"], ["c1", "c2"]];
-    const testIterable = (() => $multi(testIterator, strsArray, [""])) as (() => LuaIterable<string[], Array<string[]>>);
     `;
     const testResults = [
         ["a1", "a2"],
@@ -207,9 +315,9 @@ describe("LuaIterable with array value type", () => {
         util.testFunction`
             ${testIterable}
             const results: Array<string[]> = [];
-            let [iter, state, val] = testIterable();
+            const iter = testIterable();
             while (true) {
-                val = iter(state, val);
+                const val = iter();
                 if (!val) {
                     break;
                 }
@@ -224,15 +332,16 @@ describe("LuaIterable with array value type", () => {
 
 describe("LuaIterable with LuaMultiReturn value type", () => {
     const testIterable = `
-    function testIterator(this: void, strsArray: Array<string[]>, lastStr: string) {
-        const str = strsArray[strsArray.findIndex(strs => strs[0] === lastStr) + 1];
-        if (str) {
-            return $multi(...str);
-        }
+    function testIterable(this: void): LuaIterable<LuaMultiReturn<string[]>> {
+        const strsArray = [["a1", "a2"], ["b1", "b2"], ["c1", "c2"]];
+        let i = 0;
+        return (() => {
+            const strs = strsArray[i++];
+            if (strs) {
+                return $multi(...strs);
+            }
+        }) as any;
     }
-
-    const strsArray = [["a1", "a2"], ["b1", "b2"], ["c1", "c2"]];
-    const testIterable = (() => $multi(testIterator, strsArray, "")) as (() => LuaIterable<LuaMultiReturn<string[]>, Array<string[]>>);
     `;
     const testResults = [
         ["a1", "a2"],
@@ -313,10 +422,9 @@ describe("LuaIterable with LuaMultiReturn value type", () => {
         util.testFunction`
             ${testIterable}
             const results: Array<string[]> = [];
-            let [iter, state, x] = testIterable();
-            let y: string;
+            const iter = testIterable();
             while (true) {
-                [x, y] = iter(state, x);
+                const [x, y] = iter();
                 if (!x) {
                     break;
                 }
@@ -339,4 +447,106 @@ describe("LuaIterable with LuaMultiReturn value type", () => {
                 .expectDiagnosticsToMatchSnapshot([invalidMultiIterableWithoutDestructuring.code]);
         }
     );
+});
+
+describe("LuaIterable property", () => {
+    const testIterable = `
+    class IterableTester {
+        public strs = ["a", "b", "c"];
+
+        public get values(): LuaIterable<string> {
+            let i = 0;
+            return (() => this.strs[i++]) as any;
+        }
+    }
+    const tester = new IterableTester();
+    `;
+    const testResults = ["a", "b", "c"];
+
+    test("basic usage", () => {
+        util.testFunction`
+            ${testIterable}
+            const results: string[] = [];
+            for (const s of tester.values) {
+                results.push(s);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("external control variable", () => {
+        util.testFunction`
+            ${testIterable}
+            const results: string[] = [];
+            let s: string;
+            for (s of tester.values) {
+                results.push(s);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("function forward", () => {
+        util.testFunction`
+            ${testIterable}
+            function forward() { return tester.values; }
+            const results: string[] = [];
+            for (const s of forward()) {
+                results.push(s);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("function indirect forward", () => {
+        util.testFunction`
+            ${testIterable}
+            function forward() { const iter = tester.values; return iter; }
+            const results: string[] = [];
+            for (const s of forward()) {
+                results.push(s);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("arrow function forward", () => {
+        util.testFunction`
+            ${testIterable}
+            const forward = () => tester.values;
+            const results: string[] = [];
+            for (const s of forward()) {
+                results.push(s);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
+
+    test("manual use", () => {
+        util.testFunction`
+            ${testIterable}
+            const results: string[] = [];
+            const iter = tester.values;
+            while (true) {
+                const val = iter();
+                if (!val) {
+                    break;
+                }
+                results.push(val);
+            }
+            return results;
+        `
+            .setOptions(iterableProjectOptions)
+            .expectToEqual(testResults);
+    });
 });

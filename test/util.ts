@@ -10,8 +10,32 @@ import * as vm from "vm";
 import * as tstl from "../src";
 import { createEmitOutputCollector } from "../src/transpilation/output-collector";
 
-const minimalTestLib = fs.readFileSync(path.join(__dirname, "json.lua"), "utf8");
-const lualibContent = fs.readFileSync(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"), "utf8");
+export function toByteCode(luaCode: string) {
+    const L = lauxlib.luaL_newstate();
+
+    if (lauxlib.luaL_loadstring(L, to_luastring(luaCode)) !== lua.LUA_OK) throw Error(lua.lua_tojsstring(L, -1));
+
+    const writer = (_: any, newBytes: Uint8Array, size: number, data: number[]) => {
+        data.push(...newBytes.slice(0, size));
+        return 0;
+    };
+
+    const data: number[] = [];
+
+    const dumpExitCode = lua.lua_dump(L, writer, data, false);
+
+    if (dumpExitCode !== 0) {
+        throw Error("Unable to dump byte code");
+    }
+
+    return Uint8Array.from(data);
+}
+
+const jsonLib = fs.readFileSync(path.join(__dirname, "json.lua"), "utf8");
+const jsonLibByteCode = toByteCode(jsonLib);
+
+const luaLib = fs.readFileSync(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"), "utf8");
+const luaLibByteCode = toByteCode(luaLib);
 
 // Using `test` directly makes eslint-plugin-jest consider this file as a test
 const defineTest = test;
@@ -345,7 +369,7 @@ export abstract class TestBuilder {
         // Json
         lua.lua_getglobal(L, "package");
         lua.lua_getfield(L, -1, "preload");
-        lauxlib.luaL_loadstring(L, to_luastring(minimalTestLib));
+        lauxlib.luaL_loadstring(L, jsonLibByteCode);
         lua.lua_setfield(L, -2, "json");
         // Lua lib
         if (
@@ -354,7 +378,7 @@ export abstract class TestBuilder {
         ) {
             lua.lua_getglobal(L, "package");
             lua.lua_getfield(L, -1, "preload");
-            lauxlib.luaL_loadstring(L, to_luastring(lualibContent));
+            lauxlib.luaL_loadstring(L, luaLibByteCode);
             lua.lua_setfield(L, -2, "lualib_bundle");
         }
 

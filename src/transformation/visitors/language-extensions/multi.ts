@@ -6,7 +6,7 @@ import { isIterableExpression } from "./iterable";
 import { invalidMultiFunctionUse } from "../../utils/diagnostics";
 
 export function isMultiReturnType(type: ts.Type): boolean {
-    return extensions.isExtensionType(type, extensions.ExtensionKind.MultiType);
+    return extensions.getExtensionKinds(type).includes(extensions.ExtensionKind.MultiType);
 }
 
 export function isMultiFunctionCall(context: TransformationContext, expression: ts.CallExpression): boolean {
@@ -24,8 +24,7 @@ export function isMultiReturnCall(context: TransformationContext, expression: ts
 }
 
 export function isMultiFunctionNode(context: TransformationContext, node: ts.Node): boolean {
-    const symbol = context.checker.getSymbolAtLocation(node);
-    return symbol ? extensions.isExtensionFunction(context, symbol, extensions.ExtensionKind.MultiFunction) : false;
+    return extensions.isExtensionFunction(context, node, extensions.ExtensionKind.MultiFunction);
 }
 
 export function isInMultiReturnFunction(context: TransformationContext, node: ts.Node) {
@@ -97,8 +96,9 @@ export function findMultiAssignmentViolations(
     for (const element of node.properties) {
         if (!ts.isShorthandPropertyAssignment(element)) continue;
         const valueSymbol = context.checker.getShorthandAssignmentValueSymbol(element);
-        if (valueSymbol) {
-            if (extensions.isExtensionFunction(context, valueSymbol, extensions.ExtensionKind.MultiFunction)) {
+        if (valueSymbol?.valueDeclaration) {
+            const type = context.checker.getTypeAtLocation(valueSymbol.valueDeclaration);
+            if (extensions.getExtensionKinds(type).includes(extensions.ExtensionKind.MultiFunction)) {
                 context.diagnostics.push(invalidMultiFunctionUse(element));
                 result.push(element);
             }

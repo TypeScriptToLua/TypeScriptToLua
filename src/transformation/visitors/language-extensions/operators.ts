@@ -49,7 +49,7 @@ const unaryOperatorMappings = new Map<extensions.ExtensionKind, lua.UnaryOperato
     [extensions.ExtensionKind.LengthOperatorMethodType, lua.SyntaxKind.LengthOperator],
 ]);
 
-const operatorMapExtensions = [...binaryOperatorMappings.keys(), ...unaryOperatorMappings.keys()];
+const operatorMapExtensions = new Set([...binaryOperatorMappings.keys(), ...unaryOperatorMappings.keys()]);
 
 const bitwiseOperatorMapExtensions = new Set<extensions.ExtensionKind>([
     extensions.ExtensionKind.BitwiseAndOperatorType,
@@ -82,27 +82,15 @@ function getOperatorMapExtensionKindForCall(context: TransformationContext, node
         return;
     }
     const type = context.checker.getTypeFromTypeNode(typeDeclaration.type);
-    return operatorMapExtensions.find(extensionKind => extensions.isExtensionType(type, extensionKind));
-}
-
-function isOperatorMapType(context: TransformationContext, type: ts.Type): boolean {
-    if (type.isUnionOrIntersection()) {
-        return type.types.some(t => isOperatorMapType(context, t));
-    } else {
-        return operatorMapExtensions.some(extensionKind => extensions.isExtensionType(type, extensionKind));
-    }
-}
-
-function isOperatorMapIdentifier(context: TransformationContext, node: ts.Identifier) {
-    const type = context.checker.getTypeAtLocation(node);
-    return isOperatorMapType(context, type);
+    return extensions.getExtensionKinds(type).find(extensionKind => operatorMapExtensions.has(extensionKind));
 }
 
 export function isOperatorMapping(context: TransformationContext, node: ts.CallExpression | ts.Identifier) {
     if (ts.isCallExpression(node)) {
         return getOperatorMapExtensionKindForCall(context, node) !== undefined;
     } else {
-        return isOperatorMapIdentifier(context, node);
+        const type = context.checker.getTypeAtLocation(node);
+        return extensions.getExtensionKinds(type).some(extensionKind => operatorMapExtensions.has(extensionKind));
     }
 }
 

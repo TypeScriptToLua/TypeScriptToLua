@@ -12,6 +12,7 @@ import {
     shouldMultiReturnCallBeWrapped,
     isMultiFunctionCall,
     isMultiReturnType,
+    isInMultiReturnFunction,
 } from "./language-extensions/multi";
 import { invalidMultiFunctionReturnType } from "../utils/diagnostics";
 
@@ -20,6 +21,8 @@ function transformExpressionsInReturn(
     node: ts.Expression,
     insideTryCatch: boolean
 ): lua.Expression[] {
+    const expressionType = context.checker.getTypeAtLocation(node);
+
     if (ts.isCallExpression(node)) {
         // $multi(...)
         if (isMultiFunctionCall(context, node)) {
@@ -40,6 +43,9 @@ function transformExpressionsInReturn(
         if (insideTryCatch && returnsMultiType(context, node) && !shouldMultiReturnCallBeWrapped(context, node)) {
             return [wrapInTable(context.transformExpression(node))];
         }
+    } else if (isInMultiReturnFunction(context, node) && isMultiReturnType(expressionType)) {
+        // Unpack objects typed as LuaMultiReturn
+        return [createUnpackCall(context, context.transformExpression(node), node)];
     }
 
     if (!isInTupleReturnFunction(context, node)) {
@@ -47,7 +53,6 @@ function transformExpressionsInReturn(
     }
 
     let results: lua.Expression[];
-    const expressionType = context.checker.getTypeAtLocation(node);
 
     // Parent function is a TupleReturn function
     if (ts.isArrayLiteralExpression(node)) {

@@ -1,22 +1,16 @@
 import * as ts from "typescript";
 import * as extensions from "../../utils/language-extensions";
 import { TransformationContext } from "../../context";
-import { invalidMultiFunctionUse } from "../../utils/diagnostics";
 import { findFirstNodeAbove } from "../../utils/typescript";
-
-const isMultiFunctionDeclaration = (declaration: ts.Declaration): boolean =>
-    extensions.getExtensionKind(declaration) === extensions.ExtensionKind.MultiFunction;
-
-const isMultiTypeDeclaration = (declaration: ts.Declaration): boolean =>
-    extensions.getExtensionKind(declaration) === extensions.ExtensionKind.MultiType;
+import { isIterableExpression } from "./iterable";
+import { invalidMultiFunctionUse } from "../../utils/diagnostics";
 
 export function isMultiReturnType(type: ts.Type): boolean {
-    return type.aliasSymbol?.declarations?.some(isMultiTypeDeclaration) ?? false;
+    return extensions.isExtensionType(type, extensions.ExtensionKind.MultiType);
 }
 
 export function isMultiFunctionCall(context: TransformationContext, expression: ts.CallExpression): boolean {
-    const type = context.checker.getTypeAtLocation(expression.expression);
-    return type.symbol?.declarations?.some(isMultiFunctionDeclaration) ?? false;
+    return isMultiFunctionNode(context, expression.expression);
 }
 
 export function returnsMultiType(context: TransformationContext, node: ts.CallExpression): boolean {
@@ -30,8 +24,8 @@ export function isMultiReturnCall(context: TransformationContext, expression: ts
 }
 
 export function isMultiFunctionNode(context: TransformationContext, node: ts.Node): boolean {
-    const type = context.checker.getTypeAtLocation(node);
-    return type.symbol?.declarations?.some(isMultiFunctionDeclaration) ?? false;
+    const symbol = context.checker.getSymbolAtLocation(node);
+    return symbol ? extensions.isExtensionFunction(context, symbol, extensions.ExtensionKind.MultiFunction) : false;
 }
 
 export function isInMultiReturnFunction(context: TransformationContext, node: ts.Node) {
@@ -86,6 +80,11 @@ export function shouldMultiReturnCallBeWrapped(context: TransformationContext, n
         return false;
     }
 
+    // LuaIterable in for...of
+    if (ts.isForOfStatement(node.parent) && isIterableExpression(context, node)) {
+        return false;
+    }
+
     return true;
 }
 
@@ -99,8 +98,7 @@ export function findMultiAssignmentViolations(
         if (!ts.isShorthandPropertyAssignment(element)) continue;
         const valueSymbol = context.checker.getShorthandAssignmentValueSymbol(element);
         if (valueSymbol) {
-            const declaration = valueSymbol.valueDeclaration;
-            if (declaration && isMultiFunctionDeclaration(declaration)) {
+            if (extensions.isExtensionFunction(context, valueSymbol, extensions.ExtensionKind.MultiFunction)) {
                 context.diagnostics.push(invalidMultiFunctionUse(element));
                 result.push(element);
             }

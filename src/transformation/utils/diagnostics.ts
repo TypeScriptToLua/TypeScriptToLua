@@ -118,6 +118,10 @@ export const luaIteratorForbiddenUsage = createErrorDiagnosticFactory(
         "the '@tupleReturn' annotation."
 );
 
+export const invalidMultiIterableWithoutDestructuring = createErrorDiagnosticFactory(
+    "LuaIterable with a LuaMultiReturn return value type must be destructured."
+);
+
 export const unsupportedAccessorInObjectLiteral = createErrorDiagnosticFactory(
     "Accessors in object literal are not supported."
 );

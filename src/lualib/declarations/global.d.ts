@@ -25,10 +25,4 @@ declare function unpack<T>(list: T[], i?: number, j?: number): T[];
 declare function select<T>(index: number, ...args: T[]): T;
 declare function select<T>(index: "#", ...args: T[]): number;
 
-/**
- * @luaIterator
- * @tupleReturn
- */
-type LuaTupleIterator<T extends any[]> = Iterable<T> & { " LuaTupleIterator": never };
-
-declare function ipairs<T>(t: Record<number, T>): LuaTupleIterator<[number, T]>;
+declare function ipairs<T>(t: Record<number, T>): LuaIterable<LuaMultiReturn<[number, T]>, Record<number, T>>;

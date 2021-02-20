@@ -8,17 +8,13 @@ import { transformArguments } from "../call";
 import { assert } from "../../../utils";
 import { invalidRangeControlVariable } from "../../utils/diagnostics";
 
-const isRangeFunctionDeclaration = (declaration: ts.Declaration): boolean =>
-    extensions.getExtensionKind(declaration) === extensions.ExtensionKind.RangeFunction;
-
 export function isRangeFunction(context: TransformationContext, expression: ts.CallExpression): boolean {
-    const type = context.checker.getTypeAtLocation(expression.expression);
-    return type.symbol?.declarations?.some(isRangeFunctionDeclaration) ?? false;
+    return isRangeFunctionNode(context, expression.expression);
 }
 
 export function isRangeFunctionNode(context: TransformationContext, node: ts.Node): boolean {
     const symbol = context.checker.getSymbolAtLocation(node);
-    return symbol?.declarations?.some(isRangeFunctionDeclaration) ?? false;
+    return symbol ? extensions.isExtensionFunction(context, symbol, extensions.ExtensionKind.RangeFunction) : false;
 }
 
 function getControlVariable(context: TransformationContext, statement: ts.ForOfStatement) {

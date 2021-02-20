@@ -130,15 +130,37 @@ test("allow $multi call in ArrowFunction body", () => {
         .expectToEqual(1);
 });
 
-test("forward $multi call in ArrowFunction body", () => {
+test("forward $multi call", () => {
     util.testFunction`
-        const foo = () => $multi(1);
-        const call = () => foo();
-        const [result] = call();
-        return result;
+        function foo() { return $multi(1, 2); }
+        function call() { return foo(); }
+        const [resultA, resultB] = call();
+        return [resultA, resultB];
     `
         .setOptions(multiProjectOptions)
-        .expectToEqual(1);
+        .expectToEqual([1, 2]);
+});
+
+test("forward $multi call indirect", () => {
+    util.testFunction`
+        function foo() { return $multi(1, 2); }
+        function call() { const m = foo(); return m; }
+        const [resultA, resultB] = call();
+        return [resultA, resultB];
+    `
+        .setOptions(multiProjectOptions)
+        .expectToEqual([1, 2]);
+});
+
+test("forward $multi call in ArrowFunction body", () => {
+    util.testFunction`
+        const foo = () => $multi(1, 2);
+        const call = () => foo();
+        const [resultA, resultB] = call();
+        return [resultA, resultB];
+    `
+        .setOptions(multiProjectOptions)
+        .expectToEqual([1, 2]);
 });
 
 test.each(["0", "i"])("allow LuaMultiReturn numeric access (%s)", expression => {

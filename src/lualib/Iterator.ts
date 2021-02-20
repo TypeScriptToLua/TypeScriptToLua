@@ -27,7 +27,7 @@ function __TS__IteratorStringStep(this: string, index: number): [number, string]
 function __TS__Iterator<T>(
     this: void,
     iterable: string | GeneratorIterator | Iterable<T> | readonly T[]
-): [(...args: any[]) => [any, any] | [], ...any[]] {
+): [(...args: any[]) => [any, any] | [], ...any[]] | LuaIterable<LuaMultiReturn<[number, T]>> {
     if (typeof iterable === "string") {
         return [__TS__IteratorStringStep, iterable, 0];
     } else if ("____coroutine" in iterable) {
@@ -36,6 +36,6 @@ function __TS__Iterator<T>(
         const iterator = iterable[Symbol.iterator]();
         return [__TS__IteratorIteratorStep, iterator];
     } else {
-        return ipairs(iterable as readonly T[]) as any;
+        return ipairs(iterable as readonly T[]);
     }
 }

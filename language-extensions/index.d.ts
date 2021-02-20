@@ -1,22 +1,13 @@
 /**
- * Indicates a type is a language extension provided by TypescriptToLua.
- * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
- */
-interface LuaExtension {
-    readonly __luaExtensionBrand: unique symbol;
-}
-
-/**
  * Returns multiple values from a function, by wrapping them in a LuaMultiReturn tuple.
  * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
  *
  * @param T A tuple type with each element type representing a return value's type.
  * @param values Return values.
  */
-declare const $multi: (<T extends any[]>(...values: T) => LuaMultiReturn<T>) &
-    LuaExtension & {
-        readonly __luaMultiFunctionBrand: unique symbol;
-    };
+declare const $multi: (<T extends any[]>(...values: T) => LuaMultiReturn<T>) & {
+    readonly __luaMultiFunctionBrand: unique symbol;
+};
 
 /**
  * Represents multiple return values as a tuple.
@@ -24,7 +15,7 @@ declare const $multi: (<T extends any[]>(...values: T) => LuaMultiReturn<T>) &
  *
  * @param T A tuple type with each element type representing a return value's type.
  */
-declare type LuaMultiReturn<T extends any[]> = T & LuaExtension & { readonly __luaMultiReturnBrand: unique symbol };
+declare type LuaMultiReturn<T extends any[]> = T & { readonly __luaMultiReturnBrand: unique symbol };
 
 /**
  * Creates a Lua-style numeric for loop (for i=start,limit,step) when used in for...of. Not valid in any other context.
@@ -34,10 +25,9 @@ declare type LuaMultiReturn<T extends any[]> = T & LuaExtension & { readonly __l
  * @param limit The last number in the sequence to iterate over.
  * @param step The amount to increment each iteration.
  */
-declare const $range: ((start: number, limit: number, step?: number) => Iterable<number>) &
-    LuaExtension & {
-        readonly __luaRangeFunctionBrand: unique symbol;
-    };
+declare const $range: ((start: number, limit: number, step?: number) => Iterable<number>) & {
+    readonly __luaRangeFunctionBrand: unique symbol;
+};
 
 /**
  * Represents a Lua-style iterator which is returned from a LuaIterable.
@@ -70,8 +60,7 @@ declare type LuaIterator<TValue, TState> = TState extends undefined
  * @param TState The type of the state value passed back to the iterator function each iteration.
  */
 declare type LuaIterable<TValue, TState = undefined> = Iterable<TValue> &
-    LuaIterator<TValue, TState> &
-    LuaExtension & { readonly __luaIterableBrand: unique symbol };
+    LuaIterator<TValue, TState> & { readonly __luaIterableBrand: unique symbol };
 
 /**
  * Calls to functions with this type are translated to `left + right`.
@@ -81,10 +70,9 @@ declare type LuaIterable<TValue, TState = undefined> = Iterable<TValue> &
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaAddition<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaAdditionBrand: unique symbol;
-    };
+declare type LuaAddition<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaAdditionBrand: unique symbol;
+};
 
 /**
  * Calls to methods with this type are translated to `left + right`, where `left` is the object with the method.
@@ -93,10 +81,9 @@ declare type LuaAddition<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight)
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaAdditionMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaAdditionMethodBrand: unique symbol;
-    };
+declare type LuaAdditionMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaAdditionMethodBrand: unique symbol;
+};
 
 /**
  * Calls to functions with this type are translated to `left - right`.
@@ -106,10 +93,9 @@ declare type LuaAdditionMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaSubtraction<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaSubtractionBrand: unique symbol;
-    };
+declare type LuaSubtraction<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaSubtractionBrand: unique symbol;
+};
 
 /**
  * Calls to methods with this type are translated to `left - right`, where `left` is the object with the method.
@@ -118,10 +104,9 @@ declare type LuaSubtraction<TLeft, TRight, TReturn> = ((left: TLeft, right: TRig
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaSubtractionMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaSubtractionMethodBrand: unique symbol;
-    };
+declare type LuaSubtractionMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaSubtractionMethodBrand: unique symbol;
+};
 
 /**
  * Calls to functions with this type are translated to `left * right`.
@@ -131,10 +116,9 @@ declare type LuaSubtractionMethod<TRight, TReturn> = ((right: TRight) => TReturn
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaMultiplication<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaMultiplicationBrand: unique symbol;
-    };
+declare type LuaMultiplication<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaMultiplicationBrand: unique symbol;
+};
 
 /**
  * Calls to methods with this type are translated to `left * right`, where `left` is the object with the method.
@@ -143,10 +127,9 @@ declare type LuaMultiplication<TLeft, TRight, TReturn> = ((left: TLeft, right: T
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaMultiplicationMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaMultiplicationMethodBrand: unique symbol;
-    };
+declare type LuaMultiplicationMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaMultiplicationMethodBrand: unique symbol;
+};
 
 /**
  * Calls to functions with this type are translated to `left / right`.
@@ -156,10 +139,9 @@ declare type LuaMultiplicationMethod<TRight, TReturn> = ((right: TRight) => TRet
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaDivision<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaDivisionBrand: unique symbol;
-    };
+declare type LuaDivision<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaDivisionBrand: unique symbol;
+};
 
 /**
  * Calls to methods with this type are translated to `left / right`, where `left` is the object with the method.
@@ -168,10 +150,9 @@ declare type LuaDivision<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight)
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaDivisionMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaDivisionMethodBrand: unique symbol;
-    };
+declare type LuaDivisionMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaDivisionMethodBrand: unique symbol;
+};
 
 /**
  * Calls to functions with this type are translated to `left % right`.
@@ -181,10 +162,9 @@ declare type LuaDivisionMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaModulo<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaModuloBrand: unique symbol;
-    };
+declare type LuaModulo<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaModuloBrand: unique symbol;
+};
 
 /**
  * Calls to methods with this type are translated to `left % right`, where `left` is the object with the method.
@@ -193,10 +173,9 @@ declare type LuaModulo<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) =
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaModuloMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaModuloMethodBrand: unique symbol;
-    };
+declare type LuaModuloMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaModuloMethodBrand: unique symbol;
+};
 
 /**
  * Calls to functions with this type are translated to `left ^ right`.
@@ -206,10 +185,9 @@ declare type LuaModuloMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaPower<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaPowerBrand: unique symbol;
-    };
+declare type LuaPower<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaPowerBrand: unique symbol;
+};
 
 /**
  * Calls to methods with this type are translated to `left ^ right`, where `left` is the object with the method.
@@ -218,10 +196,9 @@ declare type LuaPower<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) =>
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaPowerMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaPowerMethodBrand: unique symbol;
-    };
+declare type LuaPowerMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaPowerMethodBrand: unique symbol;
+};
 
 /**
  * Calls to functions with this type are translated to `left // right`.
@@ -231,10 +208,9 @@ declare type LuaPowerMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaFloorDivision<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaFloorDivisionBrand: unique symbol;
-    };
+declare type LuaFloorDivision<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaFloorDivisionBrand: unique symbol;
+};
 
 /**
  * Calls to methods with this type are translated to `left // right`, where `left` is the object with the method.
@@ -243,10 +219,9 @@ declare type LuaFloorDivision<TLeft, TRight, TReturn> = ((left: TLeft, right: TR
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaFloorDivisionMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaFloorDivisionMethodBrand: unique symbol;
-    };
+declare type LuaFloorDivisionMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaFloorDivisionMethodBrand: unique symbol;
+};
 
 /**
  * Calls to functions with this type are translated to `left & right`.
@@ -256,10 +231,9 @@ declare type LuaFloorDivisionMethod<TRight, TReturn> = ((right: TRight) => TRetu
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaBitwiseAnd<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaBitwiseAndBrand: unique symbol;
-    };
+declare type LuaBitwiseAnd<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaBitwiseAndBrand: unique symbol;
+};
 
 /**
  * Calls to methods with this type are translated to `left & right`, where `left` is the object with the method.
@@ -268,10 +242,9 @@ declare type LuaBitwiseAnd<TLeft, TRight, TReturn> = ((left: TLeft, right: TRigh
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaBitwiseAndMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaBitwiseAndMethodBrand: unique symbol;
-    };
+declare type LuaBitwiseAndMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaBitwiseAndMethodBrand: unique symbol;
+};
 
 /**
  * Calls to functions with this type are translated to `left | right`.
@@ -281,10 +254,9 @@ declare type LuaBitwiseAndMethod<TRight, TReturn> = ((right: TRight) => TReturn)
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaBitwiseOr<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaBitwiseOrBrand: unique symbol;
-    };
+declare type LuaBitwiseOr<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaBitwiseOrBrand: unique symbol;
+};
 
 /**
  * Calls to methods with this type are translated to `left | right`, where `left` is the object with the method.
@@ -293,10 +265,9 @@ declare type LuaBitwiseOr<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaBitwiseOrMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaBitwiseOrMethodBrand: unique symbol;
-    };
+declare type LuaBitwiseOrMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaBitwiseOrMethodBrand: unique symbol;
+};
 
 /**
  * Calls to functions with this type are translated to `left ~ right`.
@@ -306,10 +277,9 @@ declare type LuaBitwiseOrMethod<TRight, TReturn> = ((right: TRight) => TReturn) 
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaBitwiseExclusiveOr<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaBitwiseExclusiveOrBrand: unique symbol;
-    };
+declare type LuaBitwiseExclusiveOr<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaBitwiseExclusiveOrBrand: unique symbol;
+};
 
 /**
  * Calls to methods with this type are translated to `left ~ right`, where `left` is the object with the method.
@@ -318,10 +288,9 @@ declare type LuaBitwiseExclusiveOr<TLeft, TRight, TReturn> = ((left: TLeft, righ
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaBitwiseExclusiveOrMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaBitwiseExclusiveOrMethodBrand: unique symbol;
-    };
+declare type LuaBitwiseExclusiveOrMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaBitwiseExclusiveOrMethodBrand: unique symbol;
+};
 
 /**
  * Calls to functions with this type are translated to `left << right`.
@@ -331,10 +300,9 @@ declare type LuaBitwiseExclusiveOrMethod<TRight, TReturn> = ((right: TRight) => 
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaBitwiseLeftShift<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaBitwiseLeftShiftBrand: unique symbol;
-    };
+declare type LuaBitwiseLeftShift<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaBitwiseLeftShiftBrand: unique symbol;
+};
 
 /**
  * Calls to methods with this type are translated to `left << right`, where `left` is the object with the method.
@@ -343,10 +311,9 @@ declare type LuaBitwiseLeftShift<TLeft, TRight, TReturn> = ((left: TLeft, right:
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaBitwiseLeftShiftMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaBitwiseLeftShiftMethodBrand: unique symbol;
-    };
+declare type LuaBitwiseLeftShiftMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaBitwiseLeftShiftMethodBrand: unique symbol;
+};
 
 /**
  * Calls to functions with this type are translated to `left >> right`.
@@ -356,10 +323,9 @@ declare type LuaBitwiseLeftShiftMethod<TRight, TReturn> = ((right: TRight) => TR
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaBitwiseRightShift<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaBitwiseRightShiftBrand: unique symbol;
-    };
+declare type LuaBitwiseRightShift<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaBitwiseRightShiftBrand: unique symbol;
+};
 
 /**
  * Calls to methods with this type are translated to `left >> right`, where `left` is the object with the method.
@@ -368,10 +334,9 @@ declare type LuaBitwiseRightShift<TLeft, TRight, TReturn> = ((left: TLeft, right
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaBitwiseRightShiftMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaBitwiseRightShiftMethodBrand: unique symbol;
-    };
+declare type LuaBitwiseRightShiftMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaBitwiseRightShiftMethodBrand: unique symbol;
+};
 
 /**
  * Calls to functions with this type are translated to `left .. right`.
@@ -381,10 +346,9 @@ declare type LuaBitwiseRightShiftMethod<TRight, TReturn> = ((right: TRight) => T
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaConcat<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaConcatBrand: unique symbol;
-    };
+declare type LuaConcat<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaConcatBrand: unique symbol;
+};
 
 /**
  * Calls to methods with this type are translated to `left .. right`, where `left` is the object with the method.
@@ -393,10 +357,9 @@ declare type LuaConcat<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) =
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaConcatMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaConcatMethodBrand: unique symbol;
-    };
+declare type LuaConcatMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaConcatMethodBrand: unique symbol;
+};
 
 /**
  * Calls to functions with this type are translated to `left < right`.
@@ -406,10 +369,9 @@ declare type LuaConcatMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaLessThan<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaLessThanBrand: unique symbol;
-    };
+declare type LuaLessThan<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaLessThanBrand: unique symbol;
+};
 
 /**
  * Calls to methods with this type are translated to `left < right`, where `left` is the object with the method.
@@ -418,10 +380,9 @@ declare type LuaLessThan<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight)
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaLessThanMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaLessThanMethodBrand: unique symbol;
-    };
+declare type LuaLessThanMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaLessThanMethodBrand: unique symbol;
+};
 
 /**
  * Calls to functions with this type are translated to `left > right`.
@@ -431,10 +392,9 @@ declare type LuaLessThanMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaGreaterThan<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaGreaterThanBrand: unique symbol;
-    };
+declare type LuaGreaterThan<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaGreaterThanBrand: unique symbol;
+};
 
 /**
  * Calls to methods with this type are translated to `left > right`, where `left` is the object with the method.
@@ -443,10 +403,9 @@ declare type LuaGreaterThan<TLeft, TRight, TReturn> = ((left: TLeft, right: TRig
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaGreaterThanMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension & {
-        readonly __luaGreaterThanMethodBrand: unique symbol;
-    };
+declare type LuaGreaterThanMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaGreaterThanMethodBrand: unique symbol;
+};
 
 /**
  * Calls to functions with this type are translated to `-operand`.
@@ -455,10 +414,9 @@ declare type LuaGreaterThanMethod<TRight, TReturn> = ((right: TRight) => TReturn
  * @param TOperand The type of the value in the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaNegation<TOperand, TReturn> = ((operand: TOperand) => TReturn) &
-    LuaExtension & {
-        readonly __luaNegationBrand: unique symbol;
-    };
+declare type LuaNegation<TOperand, TReturn> = ((operand: TOperand) => TReturn) & {
+    readonly __luaNegationBrand: unique symbol;
+};
 
 /**
  * Calls to method with this type are translated to `-operand`, where `operand` is the object with the method.
@@ -466,10 +424,7 @@ declare type LuaNegation<TOperand, TReturn> = ((operand: TOperand) => TReturn) &
  *
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaNegationMethod<TReturn> = (() => TReturn) &
-    LuaExtension & {
-        readonly __luaNegationMethodBrand: unique symbol;
-    };
+declare type LuaNegationMethod<TReturn> = (() => TReturn) & { readonly __luaNegationMethodBrand: unique symbol };
 
 /**
  * Calls to functions with this type are translated to `~operand`.
@@ -478,10 +433,9 @@ declare type LuaNegationMethod<TReturn> = (() => TReturn) &
  * @param TOperand The type of the value in the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaBitwiseNot<TOperand, TReturn> = ((operand: TOperand) => TReturn) &
-    LuaExtension & {
-        readonly __luaBitwiseNotBrand: unique symbol;
-    };
+declare type LuaBitwiseNot<TOperand, TReturn> = ((operand: TOperand) => TReturn) & {
+    readonly __luaBitwiseNotBrand: unique symbol;
+};
 
 /**
  * Calls to method with this type are translated to `~operand`, where `operand` is the object with the method.
@@ -489,10 +443,7 @@ declare type LuaBitwiseNot<TOperand, TReturn> = ((operand: TOperand) => TReturn)
  *
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaBitwiseNotMethod<TReturn> = (() => TReturn) &
-    LuaExtension & {
-        readonly __luaBitwiseNotMethodBrand: unique symbol;
-    };
+declare type LuaBitwiseNotMethod<TReturn> = (() => TReturn) & { readonly __luaBitwiseNotMethodBrand: unique symbol };
 
 /**
  * Calls to functions with this type are translated to `#operand`.
@@ -501,10 +452,9 @@ declare type LuaBitwiseNotMethod<TReturn> = (() => TReturn) &
  * @param TOperand The type of the value in the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaLength<TOperand, TReturn> = ((operand: TOperand) => TReturn) &
-    LuaExtension & {
-        readonly __luaLengthBrand: unique symbol;
-    };
+declare type LuaLength<TOperand, TReturn> = ((operand: TOperand) => TReturn) & {
+    readonly __luaLengthBrand: unique symbol;
+};
 
 /**
  * Calls to method with this type are translated to `#operand`, where `operand` is the object with the method.
@@ -512,7 +462,4 @@ declare type LuaLength<TOperand, TReturn> = ((operand: TOperand) => TReturn) &
  *
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaLengthMethod<TReturn> = (() => TReturn) &
-    LuaExtension & {
-        readonly __luaLengthMethodBrand: unique symbol;
-    };
+declare type LuaLengthMethod<TReturn> = (() => TReturn) & { readonly __luaLengthMethodBrand: unique symbol };

@@ -9,7 +9,7 @@ import { cast } from "../../../utils";
 import { isMultiReturnType } from "./multi";
 
 export function isIterableType(type: ts.Type): boolean {
-    return extensions.getExtensionKinds(type).includes(extensions.ExtensionKind.IterableType);
+    return extensions.isExtensionType(type, extensions.ExtensionKind.IterableType);
 }
 
 export function returnsIterableType(context: TransformationContext, node: ts.CallExpression): boolean {

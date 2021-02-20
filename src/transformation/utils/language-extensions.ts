@@ -49,69 +49,61 @@ const extensionKindToFunctionName: { [T in ExtensionKind]?: string } = {
     [ExtensionKind.RangeFunction]: "$range",
 };
 
-const typeBrandToExtensionKind: { [brand: string]: ExtensionKind } = {
-    __luaMultiFunctionBrand: ExtensionKind.MultiFunction,
-    __luaMultiReturnBrand: ExtensionKind.MultiType,
-    __luaRangeFunctionBrand: ExtensionKind.RangeFunction,
-    __luaIterableBrand: ExtensionKind.IterableType,
-    __luaAdditionBrand: ExtensionKind.AdditionOperatorType,
-    __luaAdditionMethodBrand: ExtensionKind.AdditionOperatorMethodType,
-    __luaSubtractionBrand: ExtensionKind.SubtractionOperatorType,
-    __luaSubtractionMethodBrand: ExtensionKind.SubtractionOperatorMethodType,
-    __luaMultiplicationBrand: ExtensionKind.MultiplicationOperatorType,
-    __luaMultiplicationMethodBrand: ExtensionKind.MultiplicationOperatorMethodType,
-    __luaDivisionBrand: ExtensionKind.DivisionOperatorType,
-    __luaDivisionMethodBrand: ExtensionKind.DivisionOperatorMethodType,
-    __luaModuloBrand: ExtensionKind.ModuloOperatorType,
-    __luaModuloMethodBrand: ExtensionKind.ModuloOperatorMethodType,
-    __luaPowerBrand: ExtensionKind.PowerOperatorType,
-    __luaPowerMethodBrand: ExtensionKind.PowerOperatorMethodType,
-    __luaFloorDivisionBrand: ExtensionKind.FloorDivisionOperatorType,
-    __luaFloorDivisionMethodBrand: ExtensionKind.FloorDivisionOperatorMethodType,
-    __luaBitwiseAndBrand: ExtensionKind.BitwiseAndOperatorType,
-    __luaBitwiseAndMethodBrand: ExtensionKind.BitwiseAndOperatorMethodType,
-    __luaBitwiseOrBrand: ExtensionKind.BitwiseOrOperatorType,
-    __luaBitwiseOrMethodBrand: ExtensionKind.BitwiseOrOperatorMethodType,
-    __luaBitwiseExclusiveOrBrand: ExtensionKind.BitwiseExclusiveOrOperatorType,
-    __luaBitwiseExclusiveOrMethodBrand: ExtensionKind.BitwiseExclusiveOrOperatorMethodType,
-    __luaBitwiseLeftShiftBrand: ExtensionKind.BitwiseLeftShiftOperatorType,
-    __luaBitwiseLeftShiftMethodBrand: ExtensionKind.BitwiseLeftShiftOperatorMethodType,
-    __luaBitwiseRightShiftBrand: ExtensionKind.BitwiseRightShiftOperatorType,
-    __luaBitwiseRightShiftMethodBrand: ExtensionKind.BitwiseRightShiftOperatorMethodType,
-    __luaConcatBrand: ExtensionKind.ConcatOperatorType,
-    __luaConcatMethodBrand: ExtensionKind.ConcatOperatorMethodType,
-    __luaLessThanBrand: ExtensionKind.LessThanOperatorType,
-    __luaLessThanMethodBrand: ExtensionKind.LessThanOperatorMethodType,
-    __luaGreaterThanBrand: ExtensionKind.GreaterThanOperatorType,
-    __luaGreaterThanMethodBrand: ExtensionKind.GreaterThanOperatorMethodType,
-    __luaNegationBrand: ExtensionKind.NegationOperatorType,
-    __luaNegationMethodBrand: ExtensionKind.NegationOperatorMethodType,
-    __luaBitwiseNotBrand: ExtensionKind.BitwiseNotOperatorType,
-    __luaBitwiseNotMethodBrand: ExtensionKind.BitwiseNotOperatorMethodType,
-    __luaLengthBrand: ExtensionKind.LengthOperatorType,
-    __luaLengthMethodBrand: ExtensionKind.LengthOperatorMethodType,
+const extensionKindToTypeBrand: { [T in ExtensionKind]: string } = {
+    [ExtensionKind.MultiFunction]: "__luaMultiFunctionBrand",
+    [ExtensionKind.MultiType]: "__luaMultiReturnBrand",
+    [ExtensionKind.RangeFunction]: "__luaRangeFunctionBrand",
+    [ExtensionKind.IterableType]: "__luaIterableBrand",
+    [ExtensionKind.AdditionOperatorType]: "__luaAdditionBrand",
+    [ExtensionKind.AdditionOperatorMethodType]: "__luaAdditionMethodBrand",
+    [ExtensionKind.SubtractionOperatorType]: "__luaSubtractionBrand",
+    [ExtensionKind.SubtractionOperatorMethodType]: "__luaSubtractionMethodBrand",
+    [ExtensionKind.MultiplicationOperatorType]: "__luaMultiplicationBrand",
+    [ExtensionKind.MultiplicationOperatorMethodType]: "__luaMultiplicationMethodBrand",
+    [ExtensionKind.DivisionOperatorType]: "__luaDivisionBrand",
+    [ExtensionKind.DivisionOperatorMethodType]: "__luaDivisionMethodBrand",
+    [ExtensionKind.ModuloOperatorType]: "__luaModuloBrand",
+    [ExtensionKind.ModuloOperatorMethodType]: "__luaModuloMethodBrand",
+    [ExtensionKind.PowerOperatorType]: "__luaPowerBrand",
+    [ExtensionKind.PowerOperatorMethodType]: "__luaPowerMethodBrand",
+    [ExtensionKind.FloorDivisionOperatorType]: "__luaFloorDivisionBrand",
+    [ExtensionKind.FloorDivisionOperatorMethodType]: "__luaFloorDivisionMethodBrand",
+    [ExtensionKind.BitwiseAndOperatorType]: "__luaBitwiseAndBrand",
+    [ExtensionKind.BitwiseAndOperatorMethodType]: "__luaBitwiseAndMethodBrand",
+    [ExtensionKind.BitwiseOrOperatorType]: "__luaBitwiseOrBrand",
+    [ExtensionKind.BitwiseOrOperatorMethodType]: "__luaBitwiseOrMethodBrand",
+    [ExtensionKind.BitwiseExclusiveOrOperatorType]: "__luaBitwiseExclusiveOrBrand",
+    [ExtensionKind.BitwiseExclusiveOrOperatorMethodType]: "__luaBitwiseExclusiveOrMethodBrand",
+    [ExtensionKind.BitwiseLeftShiftOperatorType]: "__luaBitwiseLeftShiftBrand",
+    [ExtensionKind.BitwiseLeftShiftOperatorMethodType]: "__luaBitwiseLeftShiftMethodBrand",
+    [ExtensionKind.BitwiseRightShiftOperatorType]: "__luaBitwiseRightShiftBrand",
+    [ExtensionKind.BitwiseRightShiftOperatorMethodType]: "__luaBitwiseRightShiftMethodBrand",
+    [ExtensionKind.ConcatOperatorType]: "__luaConcatBrand",
+    [ExtensionKind.ConcatOperatorMethodType]: "__luaConcatMethodBrand",
+    [ExtensionKind.LessThanOperatorType]: "__luaLessThanBrand",
+    [ExtensionKind.LessThanOperatorMethodType]: "__luaLessThanMethodBrand",
+    [ExtensionKind.GreaterThanOperatorType]: "__luaGreaterThanBrand",
+    [ExtensionKind.GreaterThanOperatorMethodType]: "__luaGreaterThanMethodBrand",
+    [ExtensionKind.NegationOperatorType]: "__luaNegationBrand",
+    [ExtensionKind.NegationOperatorMethodType]: "__luaNegationMethodBrand",
+    [ExtensionKind.BitwiseNotOperatorType]: "__luaBitwiseNotBrand",
+    [ExtensionKind.BitwiseNotOperatorMethodType]: "__luaBitwiseNotMethodBrand",
+    [ExtensionKind.LengthOperatorType]: "__luaLengthBrand",
+    [ExtensionKind.LengthOperatorMethodType]: "__luaLengthMethodBrand",
 };
 
-export function getExtensionKinds(type: ts.Type): ExtensionKind[] {
-    if (type.getProperty("__luaExtensionBrand")) {
-        return type
-            .getProperties()
-            .map(property => typeBrandToExtensionKind[property.name])
-            .filter(kind => kind !== undefined);
-    } else {
-        return [];
-    }
+export function isExtensionType(type: ts.Type, extensionKind: ExtensionKind): boolean {
+    const typeBrand = extensionKindToTypeBrand[extensionKind];
+    return typeBrand !== undefined && type.getProperty(typeBrand) !== undefined;
 }
 
 export function isExtensionFunction(
     context: TransformationContext,
-    node: ts.Node,
+    symbol: ts.Symbol,
     extensionKind: ExtensionKind
 ): boolean {
-    const symbol = context.checker.getSymbolAtLocation(node);
     return (
-        symbol !== undefined &&
         symbol.getName() === extensionKindToFunctionName[extensionKind] &&
-        getExtensionKinds(context.checker.getTypeAtLocation(node)).includes(extensionKind)
+        symbol.declarations.some(d => isExtensionType(context.checker.getTypeAtLocation(d), extensionKind))
     );
 }

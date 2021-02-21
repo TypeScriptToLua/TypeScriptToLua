@@ -8,6 +8,7 @@ import {
     invalidMultiFunctionUse,
     invalidOperatorMappingUse,
     invalidRangeUse,
+    invalidTableExtensionUse,
 } from "../utils/diagnostics";
 import { createExportedIdentifier, getSymbolExportScope } from "../utils/export";
 import { createSafeName, hasUnsafeIdentifierName } from "../utils/safe-names";
@@ -16,6 +17,7 @@ import { findFirstNodeAbove } from "../utils/typescript";
 import { isMultiFunctionNode } from "./language-extensions/multi";
 import { isOperatorMapping } from "./language-extensions/operators";
 import { isRangeFunctionNode } from "./language-extensions/range";
+import { isTableExtensionIdentifier } from "./language-extensions/table";
 
 export function transformIdentifier(context: TransformationContext, identifier: ts.Identifier): lua.Identifier {
     if (isMultiFunctionNode(context, identifier)) {
@@ -25,6 +27,10 @@ export function transformIdentifier(context: TransformationContext, identifier: 
 
     if (isOperatorMapping(context, identifier)) {
         context.diagnostics.push(invalidOperatorMappingUse(identifier));
+    }
+
+    if (isTableExtensionIdentifier(context, identifier)) {
+        context.diagnostics.push(invalidTableExtensionUse(identifier));
     }
 
     if (isRangeFunctionNode(context, identifier)) {

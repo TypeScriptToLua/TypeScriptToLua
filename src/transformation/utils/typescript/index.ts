@@ -79,3 +79,15 @@ export function getAllCallSignatures(type: ts.Type): readonly ts.Signature[] {
 export function isExpressionWithEvaluationEffect(node: ts.Expression): boolean {
     return !(ts.isLiteralExpression(node) || ts.isIdentifier(node) || node.kind === ts.SyntaxKind.ThisKeyword);
 }
+
+export function getFunctionTypeForCall(context: TransformationContext, node: ts.CallExpression) {
+    const signature = context.checker.getResolvedSignature(node);
+    if (!signature || !signature.declaration) {
+        return;
+    }
+    const typeDeclaration = findFirstNodeAbove(signature.declaration, ts.isTypeAliasDeclaration);
+    if (!typeDeclaration) {
+        return;
+    }
+    return context.checker.getTypeFromTypeNode(typeDeclaration.type);
+}

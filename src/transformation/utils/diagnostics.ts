@@ -174,6 +174,14 @@ export const invalidOperatorMappingUse = createErrorDiagnosticFactory(
     "This function must always be directly called and cannot be referred to."
 );
 
+export const invalidTableExtensionUse = createErrorDiagnosticFactory(
+    "This function must always be directly called and cannot be referred to."
+);
+
+export const invalidTableSetExpression = createErrorDiagnosticFactory(
+    "Table set extension can only be called as a stand-alone statement. It cannot be used as an expression in another statement."
+);
+
 export const annotationDeprecated = createWarningDiagnosticFactory(
     (kind: AnnotationKind) =>
         `'@${kind}' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile. ` +

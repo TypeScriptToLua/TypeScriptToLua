@@ -175,7 +175,7 @@ export const invalidOperatorMappingUse = createErrorDiagnosticFactory(
 );
 
 export const invalidTableExtensionUse = createErrorDiagnosticFactory(
-    "This function must always be directly called and cannot be referred to."
+    "This function must be called directly and cannot be referred to."
 );
 
 export const invalidTableSetExpression = createErrorDiagnosticFactory(

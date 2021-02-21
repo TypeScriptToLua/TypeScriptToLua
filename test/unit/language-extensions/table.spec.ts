@@ -127,4 +127,11 @@ describe("LuaTable extension interface", () => {
             .setOptions(tableProjectOptions)
             .expectToEqual(1);
     });
+
+    test.each(['new LuaTable().get("foo");', 'new LuaTable().set("foo", "bar");'])(
+        "table immediate access (%p)",
+        statement => {
+            util.testFunction(statement).setOptions(tableProjectOptions).expectToHaveNoDiagnostics();
+        }
+    );
 });

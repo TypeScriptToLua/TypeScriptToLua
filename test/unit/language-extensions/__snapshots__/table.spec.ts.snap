@@ -45,20 +45,20 @@ exports[`LuaTableGet & LuaTableSet extensions LuaTableSet invalid use as express
 
 exports[`LuaTableGet & LuaTableSet extensions invalid use ("const foo = (getTable as any)(1, 2);"): code 1`] = `"foo = getTable(_G, 1, 2)"`;
 
-exports[`LuaTableGet & LuaTableSet extensions invalid use ("const foo = (getTable as any)(1, 2);"): diagnostics 1`] = `"main.ts(3,26): error TSTL: This function must always be directly called and cannot be referred to."`;
+exports[`LuaTableGet & LuaTableSet extensions invalid use ("const foo = (getTable as any)(1, 2);"): diagnostics 1`] = `"main.ts(3,26): error TSTL: This function must be called directly and cannot be referred to."`;
 
 exports[`LuaTableGet & LuaTableSet extensions invalid use ("const foo = [getTable];"): code 1`] = `"foo = {getTable}"`;
 
-exports[`LuaTableGet & LuaTableSet extensions invalid use ("const foo = [getTable];"): diagnostics 1`] = `"main.ts(3,26): error TSTL: This function must always be directly called and cannot be referred to."`;
+exports[`LuaTableGet & LuaTableSet extensions invalid use ("const foo = [getTable];"): diagnostics 1`] = `"main.ts(3,26): error TSTL: This function must be called directly and cannot be referred to."`;
 
 exports[`LuaTableGet & LuaTableSet extensions invalid use ("const foo = \`\${getTable}\`;"): code 1`] = `"foo = tostring(getTable)"`;
 
-exports[`LuaTableGet & LuaTableSet extensions invalid use ("const foo = \`\${getTable}\`;"): diagnostics 1`] = `"main.ts(3,28): error TSTL: This function must always be directly called and cannot be referred to."`;
+exports[`LuaTableGet & LuaTableSet extensions invalid use ("const foo = \`\${getTable}\`;"): diagnostics 1`] = `"main.ts(3,28): error TSTL: This function must be called directly and cannot be referred to."`;
 
 exports[`LuaTableGet & LuaTableSet extensions invalid use ("const foo: unknown = getTable;"): code 1`] = `"foo = getTable"`;
 
-exports[`LuaTableGet & LuaTableSet extensions invalid use ("const foo: unknown = getTable;"): diagnostics 1`] = `"main.ts(3,34): error TSTL: This function must always be directly called and cannot be referred to."`;
+exports[`LuaTableGet & LuaTableSet extensions invalid use ("const foo: unknown = getTable;"): diagnostics 1`] = `"main.ts(3,34): error TSTL: This function must be called directly and cannot be referred to."`;
 
 exports[`LuaTableGet & LuaTableSet extensions invalid use ("declare function foo(getTable: LuaTableGet<{}, string, number>): void; foo(getTable);"): code 1`] = `"foo(_G, getTable)"`;
 
-exports[`LuaTableGet & LuaTableSet extensions invalid use ("declare function foo(getTable: LuaTableGet<{}, string, number>): void; foo(getTable);"): diagnostics 1`] = `"main.ts(3,88): error TSTL: This function must always be directly called and cannot be referred to."`;
+exports[`LuaTableGet & LuaTableSet extensions invalid use ("declare function foo(getTable: LuaTableGet<{}, string, number>): void; foo(getTable);"): diagnostics 1`] = `"main.ts(3,88): error TSTL: This function must be called directly and cannot be referred to."`;

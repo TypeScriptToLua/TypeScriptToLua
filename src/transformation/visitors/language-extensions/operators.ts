@@ -3,7 +3,7 @@ import * as lua from "../../../LuaAST";
 import { TransformationContext } from "../../context";
 import * as extensions from "../../utils/language-extensions";
 import { assert } from "../../../utils";
-import { findFirstNodeAbove } from "../../utils/typescript";
+import { getFunctionTypeForCall } from "../../utils/typescript";
 import { LuaTarget } from "../../../CompilerOptions";
 import { unsupportedForTarget } from "../../utils/diagnostics";
 
@@ -66,43 +66,17 @@ const bitwiseOperatorMapExtensions = new Set<extensions.ExtensionKind>([
     extensions.ExtensionKind.BitwiseNotOperatorMethodType,
 ]);
 
-function getTypeDeclaration(declaration: ts.Declaration) {
-    return ts.isTypeAliasDeclaration(declaration)
-        ? declaration
-        : findFirstNodeAbove(declaration, ts.isTypeAliasDeclaration);
-}
-
 function getOperatorMapExtensionKindForCall(context: TransformationContext, node: ts.CallExpression) {
-    const signature = context.checker.getResolvedSignature(node);
-    if (!signature || !signature.declaration) {
-        return;
-    }
-    const typeDeclaration = getTypeDeclaration(signature.declaration);
-    if (!typeDeclaration) {
-        return;
-    }
-    const type = context.checker.getTypeFromTypeNode(typeDeclaration.type);
-    return operatorMapExtensions.find(extensionKind => extensions.isExtensionType(type, extensionKind));
-}
-
-function isOperatorMapType(context: TransformationContext, type: ts.Type): boolean {
-    if (type.isUnionOrIntersection()) {
-        return type.types.some(t => isOperatorMapType(context, t));
-    } else {
-        return operatorMapExtensions.some(extensionKind => extensions.isExtensionType(type, extensionKind));
-    }
-}
-
-function isOperatorMapIdentifier(context: TransformationContext, node: ts.Identifier) {
-    const type = context.checker.getTypeAtLocation(node);
-    return isOperatorMapType(context, type);
+    const type = getFunctionTypeForCall(context, node);
+    return type && operatorMapExtensions.find(extensionKind => extensions.isExtensionType(type, extensionKind));
 }
 
 export function isOperatorMapping(context: TransformationContext, node: ts.CallExpression | ts.Identifier) {
     if (ts.isCallExpression(node)) {
         return getOperatorMapExtensionKindForCall(context, node) !== undefined;
     } else {
-        return isOperatorMapIdentifier(context, node);
+        const type = context.checker.getTypeAtLocation(node);
+        return operatorMapExtensions.some(extensionKind => extensions.isExtensionType(type, extensionKind));
     }
 }
 

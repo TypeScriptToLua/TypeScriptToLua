@@ -5,6 +5,7 @@ import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
 import { annotationInvalidArgumentCount, extensionCannotConstruct } from "../../utils/diagnostics";
 import { importLuaLibFeature, LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { transformArguments } from "../call";
+import { isTableNewCall } from "../language-extensions/table";
 import { transformLuaTableNewExpression } from "../lua-table";
 
 const builtinErrorTypeNames = new Set([
@@ -51,6 +52,10 @@ export const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, 
     const luaTableResult = transformLuaTableNewExpression(context, node);
     if (luaTableResult) {
         return luaTableResult;
+    }
+
+    if (isTableNewCall(context, node)) {
+        return lua.createTableExpression(undefined, node);
     }
 
     const name = context.transformExpression(node.expression);

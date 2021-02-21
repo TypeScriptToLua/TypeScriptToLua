@@ -430,3 +430,81 @@ declare type LuaLength<TOperand, TReturn> = ((operand: TOperand) => TReturn) & L
  * @param TReturn The resulting (return) type of the operation.
  */
 declare type LuaLengthMethod<TReturn> = (() => TReturn) & LuaExtension<"__luaLengthMethodBrand">;
+
+/**
+ * Calls to functions with this type are translated to `table[key]`.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TTable The type to access as a Lua table.
+ * @param TKey The type of the key to use to access the table.
+ * @param TValue The type of the value stored in the table.
+ */
+declare type LuaTableGet<TTable extends object, TKey extends {}, TValue> = ((table: TTable, key: TKey) => TValue) &
+    LuaExtension<"__luaTableGetBrand">;
+
+/**
+ * Calls to methods with this type are translated to `table[key]`, where `table` is the object with the method.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TKey The type of the key to use to access the table.
+ * @param TValue The type of the value stored in the table.
+ */
+declare type LuaTableGetMethod<TKey extends {}, TValue> = ((key: TKey) => TValue) &
+    LuaExtension<"__luaTableGetMethodBrand">;
+
+/**
+ * Calls to functions with this type are translated to `table[key] = value`.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TTable The type to access as a Lua table.
+ * @param TKey The type of the key to use to access the table.
+ * @param TValue The type of the value to assign to the table.
+ */
+declare type LuaTableSet<TTable extends object, TKey extends {}, TValue> = ((
+    table: TTable,
+    key: TKey,
+    value: TValue
+) => void) &
+    LuaExtension<"__luaTableSetBrand">;
+
+/**
+ * Calls to methods with this type are translated to `table[key] = value`, where `table` is the object with the method.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TKey The type of the key to use to access the table.
+ * @param TValue The type of the value to assign to the table.
+ */
+declare type LuaTableSetMethod<TKey extends {}, TValue> = ((key: TKey, value: TValue) => void) &
+    LuaExtension<"__luaTableSetMethodBrand">;
+
+/**
+ * A convenience type for working directly with a Lua table.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TKey The type of the keys used to access the table.
+ * @param TValue The type of the values stored in the table.
+ */
+declare interface LuaTable<TKey extends {} = {}, TValue = any> {
+    length: LuaLengthMethod<number>;
+    get: LuaTableGetMethod<TKey, TValue>;
+    set: LuaTableSetMethod<TKey, TValue>;
+}
+
+/**
+ * A convenience type for working directly with a Lua table.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TKey The type of the keys used to access the table.
+ * @param TValue The type of the values stored in the table.
+ */
+declare type LuaTableConstructor = (new <TKey extends {} = {}, TValue = any>() => LuaTable<TKey, TValue>) &
+    LuaExtension<"__luaTableNewBrand">;
+
+/**
+ * A convenience type for working directly with a Lua table.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TKey The type of the keys used to access the table.
+ * @param TValue The type of the values stored in the table.
+ */
+declare const LuaTable: LuaTableConstructor;

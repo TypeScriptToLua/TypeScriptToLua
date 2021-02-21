@@ -13,6 +13,13 @@ import { transformElementAccessArgument } from "./access";
 import { transformLuaTableCallExpression } from "./lua-table";
 import { shouldMultiReturnCallBeWrapped, returnsMultiType } from "./language-extensions/multi";
 import { isOperatorMapping, transformOperatorMappingExpression } from "./language-extensions/operators";
+import {
+    isTableGetCall,
+    isTableSetCall,
+    transformTableGetExpression,
+    transformTableSetExpression,
+} from "./language-extensions/table";
+import { invalidTableSetExpression } from "../utils/diagnostics";
 
 export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
 
@@ -212,6 +219,18 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
 
     if (isOperatorMapping(context, node)) {
         return transformOperatorMappingExpression(context, node);
+    }
+
+    if (isTableGetCall(context, node)) {
+        return transformTableGetExpression(context, node);
+    }
+
+    if (isTableSetCall(context, node)) {
+        context.diagnostics.push(invalidTableSetExpression(node));
+        return createImmediatelyInvokedFunctionExpression(
+            [transformTableSetExpression(context, node)],
+            lua.createNilLiteral()
+        );
     }
 
     if (ts.isPropertyAccessExpression(node.expression)) {

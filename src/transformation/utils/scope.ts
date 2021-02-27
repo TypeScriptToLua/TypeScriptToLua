@@ -24,6 +24,7 @@ interface FunctionDefinitionInfo {
 export interface Scope {
     type: ScopeType;
     id: number;
+    node?: ts.Node;
     referencedSymbols?: Map<lua.SymbolId, ts.Node[]>;
     variableDeclarations?: lua.VariableDeclarationStatement[];
     functionDefinitions?: Map<lua.SymbolId, FunctionDefinitionInfo>;
@@ -89,6 +90,33 @@ export function popScope(context: TransformationContext): Scope {
     assert(scope);
 
     return scope;
+}
+
+// Checks for calls to functions which haven't been defined and thus will be hoisted later
+export function hasCalledAnyFunctionBeforeDefinition(scope: Scope) {
+    if (scope.referencedSymbols === undefined) {
+        return false;
+    }
+    for (const [symbolId, nodes] of scope.referencedSymbols) {
+        for (const node of nodes) {
+            if (ts.isCallExpression(node.parent) && !scope.functionDefinitions?.has(symbolId)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+export function hasReferencedSymbol(context: TransformationContext, scope: Scope, symbol: ts.Symbol) {
+    if (!scope.referencedSymbols) {
+        return;
+    }
+    for (const nodes of scope.referencedSymbols.values()) {
+        if (nodes.some(node => context.checker.getSymbolAtLocation(node) === symbol)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 export function performHoisting(context: TransformationContext, statements: lua.Statement[]): lua.Statement[] {

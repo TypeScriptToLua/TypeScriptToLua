@@ -20,12 +20,11 @@ import {
     isSymbolExported,
 } from "../../utils/export";
 import {
-    createImmediatelyInvokedFunctionExpression,
     createSelfIdentifier,
+    transformToImmediatelyInvokedFunctionExpression,
     unwrapVisitorResult,
 } from "../../utils/lua-ast";
 import { createSafeName, isUnsafeName } from "../../utils/safe-names";
-import { popScope, pushScope, ScopeType } from "../../utils/scope";
 import { isAmbientNode } from "../../utils/typescript";
 import { transformIdentifier } from "../identifier";
 import { transformPropertyName } from "../literal";
@@ -60,11 +59,14 @@ export function transformClassAsExpression(
     expression: ts.ClassLikeDeclaration,
     context: TransformationContext
 ): lua.Expression {
-    pushScope(context, ScopeType.Function);
-    const { statements, name } = transformClassLikeDeclaration(expression, context);
-    popScope(context);
-
-    return createImmediatelyInvokedFunctionExpression(unwrapVisitorResult(statements), name, expression);
+    return transformToImmediatelyInvokedFunctionExpression(
+        context,
+        () => {
+            const { statements, name } = transformClassLikeDeclaration(expression, context);
+            return { statements: unwrapVisitorResult(statements), result: name };
+        },
+        expression
+    );
 }
 
 const classSuperInfos = new WeakMap<TransformationContext, ClassSuperInfo[]>();

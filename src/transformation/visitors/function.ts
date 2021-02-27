@@ -2,7 +2,6 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { assert } from "../../utils";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { isVarargType } from "../utils/annotations";
 import { createDefaultExportStringLiteral, hasDefaultExportModifier } from "../utils/export";
 import { ContextType, getFunctionContextType } from "../utils/function-context";
 import {
@@ -38,7 +37,7 @@ function transformParameterDefaultValueDeclaration(
     return lua.createIfStatement(nilCondition, ifBlock, undefined, tsOriginal);
 }
 
-function isRestParameterReferenced(context: TransformationContext, identifier: lua.Identifier, scope: Scope): boolean {
+function isRestParameterReferenced(identifier: lua.Identifier, scope: Scope): boolean {
     if (!identifier.symbolId) {
         return true;
     }
@@ -46,11 +45,7 @@ function isRestParameterReferenced(context: TransformationContext, identifier: l
         return false;
     }
     const references = scope.referencedSymbols.get(identifier.symbolId);
-    if (!references) {
-        return false;
-    }
-    // Ignore references to @vararg types in spread elements
-    return references.some(r => !r.parent || !ts.isSpreadElement(r.parent) || !isVarargType(context, r));
+    return references !== undefined && references.length > 0;
 }
 
 export function transformFunctionBodyContent(context: TransformationContext, body: ts.ConciseBody): lua.Statement[] {
@@ -99,7 +94,7 @@ export function transformFunctionBodyHeader(
     }
 
     // Push spread operator here
-    if (spreadIdentifier && isRestParameterReferenced(context, spreadIdentifier, bodyScope)) {
+    if (spreadIdentifier && isRestParameterReferenced(spreadIdentifier, bodyScope)) {
         const spreadTable = wrapInTable(lua.createDotsLiteral());
         headerStatements.push(lua.createVariableDeclarationStatement(spreadIdentifier, spreadTable));
     }
@@ -114,9 +109,11 @@ export function transformFunctionBody(
     context: TransformationContext,
     parameters: ts.NodeArray<ts.ParameterDeclaration>,
     body: ts.ConciseBody,
-    spreadIdentifier?: lua.Identifier
+    spreadIdentifier?: lua.Identifier,
+    node?: ts.FunctionLikeDeclaration
 ): [lua.Statement[], Scope] {
     const scope = pushScope(context, ScopeType.Function);
+    scope.node = node;
     const bodyStatements = transformFunctionBodyContent(context, body);
     const headerStatements = transformFunctionBodyHeader(context, scope, parameters, spreadIdentifier);
     popScope(context);
@@ -195,7 +192,8 @@ export function transformFunctionToExpression(
         context,
         node.parameters,
         node.body,
-        spreadIdentifier
+        spreadIdentifier,
+        node
     );
     const functionExpression = lua.createFunctionExpression(
         lua.createBlock(transformedBody),
@@ -236,6 +234,10 @@ export function transformFunctionLikeDeclaration(
             // Only wrap if the name is actually referenced inside the function
             if (isReferenced) {
                 const nameIdentifier = transformIdentifier(context, node.name);
+                // We cannot use transformToImmediatelyInvokedFunctionExpression() here because we need to transpile
+                // the function first to determine if it's self-referencing. Fortunately, this does not cause issues
+                // with var-arg referencing because the IIFE is just wrapping another function which will already push
+                // another scope.
                 return createImmediatelyInvokedFunctionExpression(
                     [lua.createVariableDeclarationStatement(nameIdentifier, functionExpression)],
                     lua.cloneIdentifier(nameIdentifier)

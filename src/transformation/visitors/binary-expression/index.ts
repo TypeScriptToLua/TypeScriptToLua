@@ -3,7 +3,7 @@ import * as lua from "../../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
 import { extensionInvalidInstanceOf, luaTableInvalidInstanceOf } from "../../utils/diagnostics";
-import { createImmediatelyInvokedFunctionExpression, wrapInToStringForConcat } from "../../utils/lua-ast";
+import { transformToImmediatelyInvokedFunctionExpression, wrapInToStringForConcat } from "../../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isStandardLibraryType, isStringType, typeCanSatisfy } from "../../utils/typescript";
 import { transformTypeOfBinaryExpression } from "../typeof";
@@ -125,9 +125,12 @@ export const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (
         }
 
         case ts.SyntaxKind.CommaToken: {
-            return createImmediatelyInvokedFunctionExpression(
-                context.transformStatements(ts.createExpressionStatement(node.left)),
-                context.transformExpression(node.right),
+            return transformToImmediatelyInvokedFunctionExpression(
+                context,
+                () => ({
+                    statements: context.transformStatements(ts.createExpressionStatement(node.left)),
+                    result: context.transformExpression(node.right),
+                }),
                 node
             );
         }

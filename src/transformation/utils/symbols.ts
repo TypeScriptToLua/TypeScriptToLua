@@ -2,6 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { getOrUpdate } from "../../utils";
 import { TransformationContext } from "../context";
+import { isSpreadSymbolInLocalScope } from "../visitors/call";
 import { markSymbolAsReferencedInCurrentScopes } from "./scope";
 
 const symbolIdCounters = new WeakMap<TransformationContext, number>();
@@ -44,7 +45,9 @@ export function trackSymbolReference(
         symbolInfo.set(symbolId, { symbol, firstSeenAtPos: identifier.pos });
     }
 
-    markSymbolAsReferencedInCurrentScopes(context, symbolId, identifier);
+    if (!isSpreadSymbolInLocalScope(context, symbol, identifier)) {
+        markSymbolAsReferencedInCurrentScopes(context, symbolId, identifier);
+    }
 
     return symbolId;
 }

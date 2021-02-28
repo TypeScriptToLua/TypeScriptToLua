@@ -31,3 +31,13 @@ end"
 `;
 
 exports[`pureAbstract deprecation: diagnostics 1`] = `"main.ts(4,22): warning TSTL: '@pureAbstract' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile. See https://typescripttolua.github.io/docs/advanced/compiler-annotations#pureabstract for more information."`;
+
+exports[`vararg deprecation: code 1`] = `
+"function foo(self, ...)
+end
+function vararg(self, ...)
+    foo(_G, ...)
+end"
+`;
+
+exports[`vararg deprecation: diagnostics 1`] = `"main.ts(6,17): warning TSTL: '@vararg' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile. See https://typescripttolua.github.io/docs/advanced/compiler-annotations#vararg for more information."`;

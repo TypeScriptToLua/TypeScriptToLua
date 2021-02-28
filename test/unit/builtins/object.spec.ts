@@ -211,3 +211,27 @@ describe("Object.getOwnPropertyDescriptors", () => {
         `.expectToMatchJsResult();
     });
 });
+
+describe("delete from object", () => {
+    test("delete from object", () => {
+        util.testFunction`
+            const obj = { foo: "bar", bar: "baz" };
+            delete obj["foo"];
+            return obj;
+        `
+            .setTsHeader("declare function setmetatable<T extends object>(this: void, table: T, metatable: any): T;")
+            .expectToEqual({ bar: "baz" });
+    });
+
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/993
+    test("delete from object with metatable", () => {
+        util.testFunction`
+        const obj = { foo: "bar", bar: "baz" };
+        setmetatable(obj, {});
+        delete obj["foo"];
+        return obj;
+    `
+            .setTsHeader("declare function setmetatable<T extends object>(this: void, table: T, metatable: any): T;")
+            .expectToEqual({ bar: "baz" });
+    });
+});

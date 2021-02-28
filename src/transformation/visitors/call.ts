@@ -13,10 +13,10 @@ import {
 } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isValidLuaIdentifier } from "../utils/safe-names";
-import { isArrayType, isExpressionWithEvaluationEffect, isInDestructingAssignment } from "../utils/typescript";
+import { isExpressionWithEvaluationEffect, isInDestructingAssignment } from "../utils/typescript";
 import { transformElementAccessArgument } from "./access";
 import { transformLuaTableCallExpression } from "./lua-table";
-import { shouldMultiReturnCallBeWrapped, returnsMultiType } from "./language-extensions/multi";
+import { shouldMultiReturnCallBeWrapped } from "./language-extensions/multi";
 import { isOperatorMapping, transformOperatorMappingExpression } from "./language-extensions/operators";
 import {
     isTableGetCall,
@@ -25,7 +25,6 @@ import {
     transformTableSetExpression,
 } from "./language-extensions/table";
 import { invalidTableSetExpression } from "../utils/diagnostics";
-import { findScope, ScopeType, hasReferencedSymbol, hasCalledAnyFunctionBeforeDefinition } from "../utils/scope";
 
 export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
 
@@ -293,49 +292,4 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
 
     const callExpression = lua.createCallExpression(callPath, parameters, node);
     return wrapResult ? wrapInTable(callExpression) : callExpression;
-};
-
-export function isSpreadSymbolInLocalScope(
-    context: TransformationContext,
-    symbol: ts.Symbol,
-    identifier: ts.Identifier
-) {
-    if (!ts.isSpreadElement(identifier.parent)) {
-        return false;
-    }
-    const scope = findScope(context, ScopeType.Function | ScopeType.Try | ScopeType.Catch);
-    if (!scope?.node || !ts.isFunctionLike(scope.node)) {
-        return false;
-    }
-    function isSpreadParameter(p: ts.ParameterDeclaration) {
-        return p.dotDotDotToken && ts.isIdentifier(p.name) && context.checker.getSymbolAtLocation(p.name) === symbol;
-    }
-    if (!scope.node.parameters.some(isSpreadParameter)) {
-        return false;
-    }
-    if (hasCalledAnyFunctionBeforeDefinition(scope) || hasReferencedSymbol(context, scope, symbol)) {
-        return false;
-    }
-    return true;
-}
-
-// TODO: Currently it's also used as an array member
-export const transformSpreadElement: FunctionVisitor<ts.SpreadElement> = (node, context) => {
-    const innerExpression = context.transformExpression(node.expression);
-    if (isTupleReturnCall(context, node.expression)) return innerExpression;
-    if (ts.isCallExpression(node.expression) && returnsMultiType(context, node.expression)) return innerExpression;
-
-    if (ts.isIdentifier(node.expression)) {
-        const symbol = context.checker.getSymbolAtLocation(node.expression);
-        if (symbol && isSpreadSymbolInLocalScope(context, symbol, node.expression)) {
-            return lua.createDotsLiteral(node);
-        }
-    }
-
-    const type = context.checker.getTypeAtLocation(node.expression);
-    if (isArrayType(context, type)) {
-        return createUnpackCall(context, innerExpression, node);
-    }
-
-    return transformLuaLibFunction(context, LuaLibFeature.Spread, node, innerExpression);
 };

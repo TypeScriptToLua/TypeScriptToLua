@@ -3,7 +3,7 @@ import * as lua from "../../LuaAST";
 import { assert, getOrUpdate, isNonNull } from "../../utils";
 import { TransformationContext } from "../context";
 import { getSymbolInfo } from "./symbols";
-import { getFirstDeclarationInFile } from "./typescript";
+import { findFirstNodeAbove, getFirstDeclarationInFile } from "./typescript";
 
 export enum ScopeType {
     File = 1 << 0,
@@ -92,16 +92,24 @@ export function popScope(context: TransformationContext): Scope {
     return scope;
 }
 
-// Checks for calls to functions which haven't been defined and thus will be hoisted later
-export function hasCalledAnyFunctionBeforeDefinition(scope: Scope) {
-    if (scope.referencedSymbols === undefined) {
+function isDeclaredInScope(symbol: ts.Symbol, scopeNode: ts.Node) {
+    return symbol?.declarations.some(d => findFirstNodeAbove(d, (n): n is ts.Node => n === scopeNode));
+}
+
+// Checks for references to local functions which haven't been defined yet,
+// and thus will be hoisted above the current position.
+export function hasUndefinedLocalFunction(context: TransformationContext, scope: Scope) {
+    if (!scope.referencedSymbols || !scope.node) {
         return false;
     }
     for (const [symbolId, nodes] of scope.referencedSymbols) {
-        for (const node of nodes) {
-            if (ts.isCallExpression(node.parent) && !scope.functionDefinitions?.has(symbolId)) {
-                return true;
-            }
+        const type = context.checker.getTypeAtLocation(nodes[0]);
+        if (
+            !scope.functionDefinitions?.has(symbolId) &&
+            type.getCallSignatures().length > 0 &&
+            isDeclaredInScope(type.symbol, scope.node)
+        ) {
+            return true;
         }
     }
     return false;

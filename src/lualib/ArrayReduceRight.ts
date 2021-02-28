@@ -3,7 +3,7 @@ function __TS__ArrayReduceRight<T>(
     this: void,
     arr: T[],
     callbackFn: (accumulator: T, currentValue: T, index: number, array: T[]) => T,
-    ...initial: Vararg<T[]>
+    ...initial: T[]
 ): T {
     const len = arr.length;
 

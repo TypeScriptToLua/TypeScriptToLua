@@ -1,8 +1,5 @@
 /** @noSelfInFile */
 
-/** @vararg */
-type Vararg<T extends unknown[]> = T & { __luaVararg?: never };
-
 interface Metatable {
     _descriptors?: Record<string, PropertyDescriptor>;
     __index?: any;

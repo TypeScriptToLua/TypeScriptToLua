@@ -14,7 +14,7 @@ export function isRangeFunction(context: TransformationContext, expression: ts.C
 
 export function isRangeFunctionNode(context: TransformationContext, node: ts.Node): boolean {
     const symbol = context.checker.getSymbolAtLocation(node);
-    return symbol ? extensions.isExtensionFunction(context, symbol, extensions.ExtensionKind.RangeFunction) : false;
+    return symbol ? extensions.isExtensionValue(context, symbol, extensions.ExtensionKind.RangeFunction) : false;
 }
 
 function getControlVariable(context: TransformationContext, statement: ts.ForOfStatement) {

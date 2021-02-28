@@ -236,7 +236,7 @@ export function transformFunctionLikeDeclaration(
                 const nameIdentifier = transformIdentifier(context, node.name);
                 // We cannot use transformToImmediatelyInvokedFunctionExpression() here because we need to transpile
                 // the function first to determine if it's self-referencing. Fortunately, this does not cause issues
-                // with var-arg referencing because the IIFE is just wrapping another function which will already push
+                // with var-arg optimization because the IIFE is just wrapping another function which will already push
                 // another scope.
                 return createImmediatelyInvokedFunctionExpression(
                     [lua.createVariableDeclarationStatement(nameIdentifier, functionExpression)],

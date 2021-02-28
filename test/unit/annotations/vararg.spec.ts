@@ -1,3 +1,4 @@
+import { annotationDeprecated } from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
 const varargDeclaration = `
@@ -19,6 +20,7 @@ test("@vararg", () => {
     `
         .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toMatch("b = "))
         .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toMatch("unpack"))
+        .ignoreDiagnostics([annotationDeprecated.code])
         .expectToMatchJsResult();
 });
 
@@ -30,7 +32,9 @@ test("@vararg array access", () => {
             return c.join("") + b[0];
         }
         return foo("A", "B", "C", "D");
-    `.expectToMatchJsResult();
+    `
+        .ignoreDiagnostics([annotationDeprecated.code])
+        .expectToMatchJsResult();
 });
 
 test("@vararg global", () => {
@@ -41,5 +45,6 @@ test("@vararg global", () => {
     `
         .setLuaFactory(code => `return (function(...) ${code} end)("A", "B", "C", "D")`)
         .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toMatch("unpack"))
+        .ignoreDiagnostics([annotationDeprecated.code])
         .expectToEqual({ result: "ABCD" });
 });

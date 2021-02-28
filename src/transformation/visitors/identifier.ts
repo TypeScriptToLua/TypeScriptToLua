@@ -8,6 +8,7 @@ import {
     invalidMultiFunctionUse,
     invalidOperatorMappingUse,
     invalidRangeUse,
+    invalidVarargUse,
     invalidTableExtensionUse,
 } from "../utils/diagnostics";
 import { createExportedIdentifier, getSymbolExportScope } from "../utils/export";
@@ -18,6 +19,7 @@ import { isMultiFunctionNode } from "./language-extensions/multi";
 import { isOperatorMapping } from "./language-extensions/operators";
 import { isRangeFunctionNode } from "./language-extensions/range";
 import { isTableExtensionIdentifier } from "./language-extensions/table";
+import { isVarargConstantNode } from "./language-extensions/vararg";
 
 export function transformIdentifier(context: TransformationContext, identifier: ts.Identifier): lua.Identifier {
     if (isMultiFunctionNode(context, identifier)) {
@@ -35,6 +37,11 @@ export function transformIdentifier(context: TransformationContext, identifier: 
 
     if (isRangeFunctionNode(context, identifier)) {
         context.diagnostics.push(invalidRangeUse(identifier));
+        return lua.createAnonymousIdentifier(identifier);
+    }
+
+    if (isVarargConstantNode(context, identifier)) {
+        context.diagnostics.push(invalidVarargUse(identifier));
         return lua.createAnonymousIdentifier(identifier);
     }
 

@@ -62,6 +62,8 @@ export function getNumberLiteralValue(expression?: lua.Expression) {
     return undefined;
 }
 
+// Prefer use of transformToImmediatelyInvokedFunctionExpression to maintain correct scope. If you use this directly,
+// ensure you push/pop a function scope appropriately to avoid incorrect vararg optimization.
 export function createImmediatelyInvokedFunctionExpression(
     statements: lua.Statement[],
     result: lua.Expression | lua.Expression[],

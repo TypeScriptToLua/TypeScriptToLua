@@ -25,7 +25,7 @@ export function isMultiReturnCall(context: TransformationContext, expression: ts
 
 export function isMultiFunctionNode(context: TransformationContext, node: ts.Node): boolean {
     const symbol = context.checker.getSymbolAtLocation(node);
-    return symbol ? extensions.isExtensionFunction(context, symbol, extensions.ExtensionKind.MultiFunction) : false;
+    return symbol ? extensions.isExtensionValue(context, symbol, extensions.ExtensionKind.MultiFunction) : false;
 }
 
 export function isInMultiReturnFunction(context: TransformationContext, node: ts.Node) {
@@ -98,7 +98,7 @@ export function findMultiAssignmentViolations(
         if (!ts.isShorthandPropertyAssignment(element)) continue;
         const valueSymbol = context.checker.getShorthandAssignmentValueSymbol(element);
         if (valueSymbol) {
-            if (extensions.isExtensionFunction(context, valueSymbol, extensions.ExtensionKind.MultiFunction)) {
+            if (extensions.isExtensionValue(context, valueSymbol, extensions.ExtensionKind.MultiFunction)) {
                 context.diagnostics.push(invalidMultiFunctionUse(element));
                 result.push(element);
             }

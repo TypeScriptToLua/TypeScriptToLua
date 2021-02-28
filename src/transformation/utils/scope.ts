@@ -98,7 +98,7 @@ function isDeclaredInScope(symbol: ts.Symbol, scopeNode: ts.Node) {
 
 // Checks for references to local functions which haven't been defined yet,
 // and thus will be hoisted above the current position.
-export function hasUndefinedLocalFunction(context: TransformationContext, scope: Scope) {
+export function hasReferencedUndefinedLocalFunction(context: TransformationContext, scope: Scope) {
     if (!scope.referencedSymbols || !scope.node) {
         return false;
     }

@@ -35,6 +35,12 @@ declare const $range: ((start: number, limit: number, step?: number) => Iterable
     LuaExtension<"__luaRangeFunctionBrand">;
 
 /**
+ * Transpiles to the global vararg (`...`)
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ */
+declare const $vararg: string[] & LuaExtension<"__luaVarargConstantBrand">;
+
+/**
  * Represents a Lua-style iterator which is returned from a LuaIterable.
  * For simple iterators (with no state), this is just a function.
  * For complex iterators that use a state, this is a LuaMultiReturn tuple containing a function, the state, and the initial value to pass to the function.

@@ -4,10 +4,11 @@ import { FunctionVisitor, TransformationContext } from "../context";
 import { AnnotationKind, isTupleReturnCall, isVarargType } from "../utils/annotations";
 import { createUnpackCall } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
-import { findScope, hasReferencedSymbol, hasUndefinedLocalFunction, ScopeType } from "../utils/scope";
+import { findScope, hasReferencedSymbol, hasReferencedUndefinedLocalFunction, ScopeType } from "../utils/scope";
 import { isArrayType } from "../utils/typescript";
 import { returnsMultiType } from "./language-extensions/multi";
 import { annotationDeprecated } from "../utils/diagnostics";
+import { ExtensionKind, isExtensionValue } from "../utils/language-extensions";
 
 export function isOptimizableVarArgSpread(
     context: TransformationContext,
@@ -18,7 +19,10 @@ export function isOptimizableVarArgSpread(
         return false;
     }
     // Check for scopes which would stop optimization
-    const scope = findScope(context, ScopeType.Function | ScopeType.Try | ScopeType.Catch);
+    const scope = findScope(context, ScopeType.Function | ScopeType.Try | ScopeType.Catch | ScopeType.File);
+    if (scope?.type === ScopeType.File && isExtensionValue(context, symbol, ExtensionKind.VarargConstant)) {
+        return true; // $vararg global constant
+    }
     if (!scope?.node || !ts.isFunctionLike(scope.node)) {
         return false;
     }
@@ -34,7 +38,7 @@ export function isOptimizableVarArgSpread(
         return false;
     }
     // De-optimize if a function is being hoisted from below to above, as it may have modified the array
-    if (hasUndefinedLocalFunction(context, scope)) {
+    if (hasReferencedUndefinedLocalFunction(context, scope)) {
         return false;
     }
     return true;
@@ -42,10 +46,6 @@ export function isOptimizableVarArgSpread(
 
 // TODO: Currently it's also used as an array member
 export const transformSpreadElement: FunctionVisitor<ts.SpreadElement> = (node, context) => {
-    const innerExpression = context.transformExpression(node.expression);
-    if (isTupleReturnCall(context, node.expression)) return innerExpression;
-    if (ts.isCallExpression(node.expression) && returnsMultiType(context, node.expression)) return innerExpression;
-
     if (ts.isIdentifier(node.expression)) {
         if (isVarargType(context, node.expression)) {
             context.diagnostics.push(annotationDeprecated(node, AnnotationKind.Vararg));
@@ -56,6 +56,10 @@ export const transformSpreadElement: FunctionVisitor<ts.SpreadElement> = (node, 
             return lua.createDotsLiteral(node);
         }
     }
+
+    const innerExpression = context.transformExpression(node.expression);
+    if (isTupleReturnCall(context, node.expression)) return innerExpression;
+    if (ts.isCallExpression(node.expression) && returnsMultiType(context, node.expression)) return innerExpression;
 
     const type = context.checker.getTypeAtLocation(node.expression);
     if (isArrayType(context, type)) {

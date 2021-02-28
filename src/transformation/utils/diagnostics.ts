@@ -88,6 +88,10 @@ export const invalidForRangeCall = createErrorDiagnosticFactory(
 
 export const invalidRangeUse = createErrorDiagnosticFactory("$range can only be used in a for...of loop.");
 
+export const invalidVarargUse = createErrorDiagnosticFactory(
+    "$vararg can only be used in a spread element ('...$vararg') in global scope."
+);
+
 export const invalidRangeControlVariable = createErrorDiagnosticFactory(
     "For loop using $range must declare a single control variable."
 );

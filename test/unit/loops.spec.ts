@@ -573,7 +573,7 @@ test("do...while double-negation", () => {
 });
 
 test("for...in with pre-defined variable", () => {
-    util.testFunction`
+    const testBuilder = util.testFunction`
         const obj = { x: "y", foo: "bar" };
 
         let x = "";
@@ -582,16 +582,23 @@ test("for...in with pre-defined variable", () => {
             result.push(x);
         }
         return result;
-    `.expectToMatchJsResult();
+    `;
+    // Need custom matcher because order is not guaranteed in neither JS nor Lua
+    expect(testBuilder.getJsExecutionResult()).toEqual(expect.arrayContaining(testBuilder.getLuaExecutionResult()));
 });
 
 test("for...in with pre-defined variable keeps last value", () => {
-    util.testFunction`
-        const obj = { x: "y", foo: "bar" };
+    const keyX = "x";
+    const keyFoo = "foo";
+
+    const result = util.testFunction`
+        const obj = { x: "${keyX}", foo: "${keyFoo}" };
 
         let x = "";
         for (x in obj) {
         }
         return x;
-    `.expectToMatchJsResult();
+    `.getLuaExecutionResult();
+    // Need custom matcher because order is not guaranteed in neither JS nor Lua
+    expect([keyX, keyFoo]).toContain(result);
 });

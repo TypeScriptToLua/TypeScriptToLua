@@ -160,10 +160,19 @@ describe("array.length", () => {
             util.testExpression`[1, 2, 3].length = ${length}`.expectToEqual(length);
         });
 
-        test.each([-1, -7, 0.1, NaN, Infinity, -Infinity])("throws on invalid values (%p)", length => {
+        test.each([-1, -7, 0.1])("throws on invalid values (%p)", length => {
             util.testFunction`
                 [1, 2, 3].length = ${length};
             `.expectToEqual(new util.ExecutionError(`invalid array length: ${length}`));
+        });
+
+        test.each([NaN, Infinity, -Infinity])("throws on invalid special values (%p)", length => {
+            // Need to get the actual lua tostring version of inf/nan
+            // this is platform dependent so we can/should not hardcode it
+            const luaSpecialValueString = util.testExpression`(${length}).toString()`.getLuaExecutionResult();
+            util.testFunction`
+                [1, 2, 3].length = ${length};
+            `.expectToEqual(new util.ExecutionError(`invalid array length: ${luaSpecialValueString}`));
         });
 
         test("in array destructuring", () => {

@@ -4,7 +4,6 @@
         "rootDir": "..",
         "types": ["node", "jest"],
         "baseUrl": ".",
-        "paths": { "*": ["types/*"] }
     },
     "include": [".", "../src"],
     "exclude": [

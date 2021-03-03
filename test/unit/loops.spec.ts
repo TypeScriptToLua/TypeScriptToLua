@@ -592,7 +592,7 @@ test("for...in with pre-defined variable keeps last value", () => {
     const keyFoo = "foo";
 
     const result = util.testFunction`
-        const obj = { x: "${keyX}", foo: "${keyFoo}" };
+        const obj = { ${keyX}: "y", ${keyFoo}: "bar" };
 
         let x = "";
         for (x in obj) {

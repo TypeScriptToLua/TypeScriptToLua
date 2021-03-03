@@ -1,4 +1,3 @@
-import { lua } from "lua-wasm-bindings/dist/lua.54";
 import * as util from "../../util";
 
 test.each([

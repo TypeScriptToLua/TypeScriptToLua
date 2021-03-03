@@ -112,7 +112,7 @@ end
 
 
 local function encode_number(val)
-  if tostring(val) == tostring(0/0) then
+  if val ~= val then
     return "NaN"
   elseif val == math.huge then
     return "Infinity"

@@ -112,11 +112,11 @@ end
 
 
 local function encode_number(val)
-  if val ~= val then
+  if tostring(val) == tostring(0/0) then
     return "NaN"
-  elseif val == math.huge then
+  elseif val == math.huge or val == 1/0 then
     return "Infinity"
-  elseif val == -math.huge then
+  elseif val == -math.huge or -val == 1/0 then
     return "-Infinity"
   else
     return string.format("%.17g", val)

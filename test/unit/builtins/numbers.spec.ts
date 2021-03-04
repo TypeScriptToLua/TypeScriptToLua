@@ -56,8 +56,17 @@ test.each(toStringPairs)("(%p).toString(%p)", (value, radix) => {
     util.testExpressionTemplate`(${value}).toString(${radix})`.expectToMatchJsResult();
 });
 
-test.each([NaN, Infinity, -Infinity])("%p.toString(2)", value => {
-    util.testExpressionTemplate`(${value}).toString(2)`.expectToMatchJsResult();
+test.each([
+    [NaN, "(0/0)"],
+    [Infinity, "(1/0)"],
+    [-Infinity, "(-(1/0))"],
+])("%p.toString(2)", (value, luaNativeSpecialNum) => {
+    // Need to get the actual lua tostring version of inf/nan
+    // this is platform dependent so we can/should not hardcode it
+    const luaNativeSpecialNumString = util.testExpression`${luaNativeSpecialNum}.toString()`.getLuaExecutionResult();
+    // Cannot use expectToMatchJsResult because this actually wont be the same in JS in Lua
+    // TODO fix this in lualib/NumberToString.ts
+    util.testExpressionTemplate`(${value}).toString(2)`.expectToEqual(luaNativeSpecialNumString);
 });
 
 test.each(cases)("isNaN(%p)", value => {

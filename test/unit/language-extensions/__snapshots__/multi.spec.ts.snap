@@ -69,7 +69,9 @@ exports[`invalid $multi call (const [a = 0] = $multi()): diagnostics 1`] = `"mai
 
 exports[`invalid $multi call (const {} = $multi();): code 1`] = `
 "local ____ = {
-    ____(_G)
+    {
+        ____(_G)
+    }
 }"
 `;
 

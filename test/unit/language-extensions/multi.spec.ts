@@ -24,6 +24,19 @@ test("multi example use case", () => {
         .expectToEqual({ a: "foo", b: 5 });
 });
 
+test("multi #995", () => {
+    util.testModule`
+        function multiReturn(): LuaMultiReturn<[number, number, number]> {
+            return $multi(1, 2, 3);
+        }
+
+        const [a, ...b] = multiReturn();
+        export {a, b};
+    `
+        .setOptions(multiProjectOptions)
+        .expectToEqual({ a: 1, b: [2, 3] });
+});
+
 test.each<[string, any]>([
     ["$multi()", undefined],
     ["$multi(true)", true],

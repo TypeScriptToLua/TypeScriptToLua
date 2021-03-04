@@ -394,8 +394,7 @@ end)());`;
                 throw new Error(`Unsupported Lua return type: ${returnType}`);
             }
         } else {
-            // Filter out control characters appearing on some systems
-            const luaStackString = lua.lua_tostring(L, -1); // TODO .filter(c => c >= 20);
+            const luaStackString = lua.lua_tostring(L, -1);
             const message = luaStackString.replace(/^\[string "(--)?\.\.\."\]:\d+: /, "");
             lua.lua_close(L);
             return new ExecutionError(message);

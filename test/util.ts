@@ -1,6 +1,6 @@
 /* eslint-disable jest/no-standalone-expect */
 import * as nativeAssert from "assert";
-import { lauxlib, lua, lualib } from "lua-wasm-bindings/dist/lua.54";
+import { lauxlib, lua, lualib } from "lua-wasm-bindings/dist/lua.53";
 import { LUA_OK } from "lua-wasm-bindings/dist/lua";
 import * as fs from "fs";
 import { stringify } from "javascript-stringify";

@@ -46,8 +46,8 @@ test.each(["a+=b", "a-=b", "a*=b", "a/=b", "a%=b", "a**=b"])("Binary expressions
 });
 
 const supportedInAll = ["~a", "a&b", "a&=b", "a|b", "a|=b", "a^b", "a^=b", "a<<b", "a<<=b", "a>>>b", "a>>>=b"];
-const unsupportedIn53 = ["a>>b", "a>>=b"];
-const allBinaryOperators = [...supportedInAll, ...unsupportedIn53];
+const unsupportedIn53And54 = ["a>>b", "a>>=b"];
+const allBinaryOperators = [...supportedInAll, ...unsupportedIn53And54];
 test.each(allBinaryOperators)("Bitop [5.1] (%p)", input => {
     // Bit operations not supported in 5.1, expect an exception
     util.testExpression(input)
@@ -84,14 +84,14 @@ test.each(supportedInAll)("Bitop [5.4] (%p)", input => {
         .expectLuaToMatchSnapshot();
 });
 
-test.each(unsupportedIn53)("Unsupported bitop 5.3 (%p)", input => {
+test.each(unsupportedIn53And54)("Unsupported bitop 5.3 (%p)", input => {
     util.testExpression(input)
         .setOptions({ luaTarget: tstl.LuaTarget.Lua53, luaLibImport: tstl.LuaLibImportKind.None })
         .disableSemanticCheck()
         .expectDiagnosticsToMatchSnapshot([unsupportedRightShiftOperator.code]);
 });
 
-test.each(unsupportedIn53)("Unsupported bitop 5.4 (%p)", input => {
+test.each(unsupportedIn53And54)("Unsupported bitop 5.4 (%p)", input => {
     util.testExpression(input)
         .setOptions({ luaTarget: tstl.LuaTarget.Lua54, luaLibImport: tstl.LuaLibImportKind.None })
         .disableSemanticCheck()

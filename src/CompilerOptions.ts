@@ -49,6 +49,7 @@ export enum LuaTarget {
     Lua51 = "5.1",
     Lua52 = "5.2",
     Lua53 = "5.3",
+    Lua54 = "5.4",
     LuaJIT = "JIT",
 }
 

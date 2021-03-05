@@ -1,6 +1,6 @@
 /* eslint-disable jest/no-standalone-expect */
 import * as nativeAssert from "assert";
-import { lauxlib, lua, lualib } from "lua-wasm-bindings/dist/lua.53";
+import { lauxlib, lua, lualib } from "lua-wasm-bindings/dist/lua.54";
 import { LUA_OK } from "lua-wasm-bindings/dist/lua";
 import * as fs from "fs";
 import { stringify } from "javascript-stringify";
@@ -109,7 +109,7 @@ export abstract class TestBuilder {
     }
 
     private options: tstl.CompilerOptions = {
-        luaTarget: tstl.LuaTarget.Lua53,
+        luaTarget: tstl.LuaTarget.Lua54,
         noHeader: true,
         skipLibCheck: true,
         target: ts.ScriptTarget.ES2017,

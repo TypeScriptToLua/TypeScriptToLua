@@ -6,7 +6,7 @@ import { LuaTarget } from "../../../src";
 import { unsupportedForTarget } from "../../../src/transformation/utils/diagnostics";
 
 const operatorsProjectOptions: tstl.CompilerOptions = {
-    luaTarget: LuaTarget.Lua53,
+    luaTarget: LuaTarget.Lua54,
     types: [path.resolve(__dirname, "../../../language-extensions")],
 };
 

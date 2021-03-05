@@ -9,12 +9,11 @@ import { transformMemberExpressionOwnerName } from "./method";
 export function createPropertyDecoratingExpression(
     context: TransformationContext,
     node: ts.PropertyDeclaration | ts.AccessorDeclaration,
-    className: lua.Identifier,
-    noPrototype: boolean
+    className: lua.Identifier
 ): lua.Expression | undefined {
     if (!node.decorators) return;
     const propertyName = transformPropertyName(context, node.name);
-    const propertyOwnerTable = transformMemberExpressionOwnerName(node, className, noPrototype);
+    const propertyOwnerTable = transformMemberExpressionOwnerName(node, className);
     return createDecoratingExpression(
         context,
         node.kind,

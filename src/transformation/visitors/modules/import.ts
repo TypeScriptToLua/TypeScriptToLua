@@ -3,7 +3,7 @@ import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { formatPathToLuaPath } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
-import { AnnotationKind, getSymbolAnnotations, getTypeAnnotations } from "../../utils/annotations";
+import { AnnotationKind, getSymbolAnnotations } from "../../utils/annotations";
 import { createDefaultExportStringLiteral } from "../../utils/export";
 import { createHoistableVariableDeclarationStatement } from "../../utils/lua-ast";
 import { createSafeName } from "../../utils/safe-names";
@@ -60,13 +60,7 @@ export function createModuleRequire(
 }
 
 function shouldBeImported(context: TransformationContext, importNode: ts.ImportClause | ts.ImportSpecifier): boolean {
-    const annotations = getTypeAnnotations(context.checker.getTypeAtLocation(importNode));
-
-    return (
-        context.resolver.isReferencedAliasDeclaration(importNode) &&
-        !annotations.has(AnnotationKind.Extension) &&
-        !annotations.has(AnnotationKind.MetaExtension)
-    );
+    return context.resolver.isReferencedAliasDeclaration(importNode);
 }
 
 function transformImportSpecifier(

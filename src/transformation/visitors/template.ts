@@ -65,7 +65,7 @@ export const transformTaggedTemplateExpression: FunctionVisitor<ts.TaggedTemplat
 
     // Construct table with strings and literal strings
 
-    const rawStringsObject = ts.factory.createArrayLiteralExpression(
+    const rawStringsArray = ts.factory.createArrayLiteralExpression(
         rawStrings.map(text => ts.factory.createStringLiteral(text))
     );
 
@@ -76,7 +76,7 @@ export const transformTaggedTemplateExpression: FunctionVisitor<ts.TaggedTemplat
                 ts.factory.createStringLiteral(partialString)
             )
         ),
-        ts.factory.createPropertyAssignment("raw", rawStringsObject),
+        ts.factory.createPropertyAssignment("raw", rawStringsArray),
     ]);
 
     expressions.unshift(stringObject);

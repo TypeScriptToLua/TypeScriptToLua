@@ -45,6 +45,8 @@ export function trackSymbolReference(
         symbolInfo.set(symbolId, { symbol, firstSeenAtPos: identifier.pos });
     }
 
+    // Varargs won't be optimized if their identifier has already been used in other ways.
+    // So, don't mark them referenced until this happens.
     if (!isOptimizableVarArgSpread(context, symbol, identifier)) {
         markSymbolAsReferencedInCurrentScopes(context, symbolId, identifier);
     }

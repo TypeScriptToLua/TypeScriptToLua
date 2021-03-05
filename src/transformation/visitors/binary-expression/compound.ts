@@ -5,7 +5,7 @@ import { TransformationContext } from "../../context";
 import {
     ImmediatelyInvokedFunctionParameters,
     transformToImmediatelyInvokedFunctionExpression,
-} from "../../utils/lua-ast";
+} from "../../utils/transform";
 import { isArrayType, isExpressionWithEvaluationEffect } from "../../utils/typescript";
 import { transformBinaryOperation } from "../binary-expression";
 import { transformAssignment } from "./assignments";

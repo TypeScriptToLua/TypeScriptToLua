@@ -5,12 +5,7 @@ import { FunctionVisitor, TransformationContext } from "../context";
 import { isInTupleReturnFunction, isTupleReturnCall } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
 import { ContextType, getDeclarationContextType } from "../utils/function-context";
-import {
-    createUnpackCall,
-    ImmediatelyInvokedFunctionParameters,
-    transformToImmediatelyInvokedFunctionExpression,
-    wrapInTable,
-} from "../utils/lua-ast";
+import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isValidLuaIdentifier } from "../utils/safe-names";
 import { isExpressionWithEvaluationEffect, isInDestructingAssignment } from "../utils/typescript";
@@ -25,6 +20,10 @@ import {
     transformTableSetExpression,
 } from "./language-extensions/table";
 import { invalidTableSetExpression } from "../utils/diagnostics";
+import {
+    ImmediatelyInvokedFunctionParameters,
+    transformToImmediatelyInvokedFunctionExpression,
+} from "../utils/transform";
 
 export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
 

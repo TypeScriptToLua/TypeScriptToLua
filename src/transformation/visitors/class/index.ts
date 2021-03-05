@@ -19,12 +19,9 @@ import {
     hasDefaultExportModifier,
     isSymbolExported,
 } from "../../utils/export";
-import {
-    createSelfIdentifier,
-    transformToImmediatelyInvokedFunctionExpression,
-    unwrapVisitorResult,
-} from "../../utils/lua-ast";
+import { createSelfIdentifier, unwrapVisitorResult } from "../../utils/lua-ast";
 import { createSafeName, isUnsafeName } from "../../utils/safe-names";
+import { transformToImmediatelyInvokedFunctionExpression } from "../../utils/transform";
 import { isAmbientNode } from "../../utils/typescript";
 import { transformIdentifier } from "../identifier";
 import { transformPropertyName } from "../literal";

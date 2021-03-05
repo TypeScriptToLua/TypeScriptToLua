@@ -4,11 +4,17 @@ import { FunctionVisitor, TransformationContext } from "../context";
 import { AnnotationKind, isTupleReturnCall, isVarargType } from "../utils/annotations";
 import { createUnpackCall } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
-import { findScope, hasReferencedSymbol, hasReferencedUndefinedLocalFunction, ScopeType } from "../utils/scope";
+import {
+    findScope,
+    hasReferencedSymbol,
+    hasReferencedUndefinedLocalFunction,
+    isFunctionScopeWithDefinition,
+    ScopeType,
+} from "../utils/scope";
 import { isArrayType } from "../utils/typescript";
 import { returnsMultiType } from "./language-extensions/multi";
 import { annotationDeprecated } from "../utils/diagnostics";
-import { ExtensionKind, isExtensionValue } from "../utils/language-extensions";
+import { isGlobalVarargConstant } from "./language-extensions/vararg";
 
 export function isOptimizableVarArgSpread(
     context: TransformationContext,
@@ -18,25 +24,35 @@ export function isOptimizableVarArgSpread(
     if (!ts.isSpreadElement(identifier.parent)) {
         return false;
     }
-    // Check for scopes which would stop optimization
+
+    // Walk up, stopping at any scope types which could stop optimization
     const scope = findScope(context, ScopeType.Function | ScopeType.Try | ScopeType.Catch | ScopeType.File);
-    if (scope?.type === ScopeType.File && isExtensionValue(context, symbol, ExtensionKind.VarargConstant)) {
-        return true; // $vararg global constant
+    if (!scope) {
+        return;
     }
-    if (!scope?.node || !ts.isFunctionLike(scope.node)) {
+
+    // $vararg global constant
+    if (isGlobalVarargConstant(context, symbol, scope)) {
+        return true;
+    }
+
+    // Scope must be a function scope associated with a real ts function
+    if (!isFunctionScopeWithDefinition(scope)) {
         return false;
     }
-    // Identifier must be a var arg in the local function scope
-    function isSpreadParameter(p: ts.ParameterDeclaration) {
-        return p.dotDotDotToken && ts.isIdentifier(p.name) && context.checker.getSymbolAtLocation(p.name) === symbol;
-    }
+
+    // Identifier must be a vararg in the local function scope's parameters
+    const isSpreadParameter = (p: ts.ParameterDeclaration) =>
+        p.dotDotDotToken && ts.isIdentifier(p.name) && context.checker.getSymbolAtLocation(p.name) === symbol;
     if (!scope.node.parameters.some(isSpreadParameter)) {
         return false;
     }
-    // De-optimize if already referenced in outside of a spread, as the array may have been modified
+
+    // De-optimize if already referenced outside of a spread, as the array may have been modified
     if (hasReferencedSymbol(context, scope, symbol)) {
         return false;
     }
+
     // De-optimize if a function is being hoisted from below to above, as it may have modified the array
     if (hasReferencedUndefinedLocalFunction(context, scope)) {
         return false;

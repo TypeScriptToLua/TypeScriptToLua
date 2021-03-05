@@ -127,6 +127,10 @@ export function hasReferencedSymbol(context: TransformationContext, scope: Scope
     return false;
 }
 
+export function isFunctionScopeWithDefinition(scope: Scope): scope is Scope & { node: ts.SignatureDeclaration } {
+    return scope.node !== undefined && ts.isFunctionLike(scope.node);
+}
+
 export function performHoisting(context: TransformationContext, statements: lua.Statement[]): lua.Statement[] {
     const scope = peekScope(context);
     let result = statements;

@@ -4,7 +4,7 @@ import * as lua from "../../LuaAST";
 import { assert, castArray } from "../../utils";
 import { TransformationContext } from "../context";
 import { createExportedIdentifier, getIdentifierExportScope } from "./export";
-import { peekScope, ScopeType, Scope, pushScope, popScope } from "./scope";
+import { peekScope, ScopeType, Scope } from "./scope";
 import { transformLuaLibFunction } from "./lualib";
 import { LuaLibFeature } from "../../LuaLib";
 
@@ -73,22 +73,6 @@ export function createImmediatelyInvokedFunctionExpression(
     const flags = statements.length === 0 ? lua.FunctionExpressionFlags.Inline : lua.FunctionExpressionFlags.None;
     const iife = lua.createFunctionExpression(lua.createBlock(body), undefined, undefined, flags);
     return lua.createCallExpression(iife, [], tsOriginal);
-}
-
-export interface ImmediatelyInvokedFunctionParameters {
-    statements: lua.Statement | lua.Statement[];
-    result: lua.Expression | lua.Expression[];
-}
-
-export function transformToImmediatelyInvokedFunctionExpression(
-    context: TransformationContext,
-    transformFunction: () => ImmediatelyInvokedFunctionParameters,
-    tsOriginal?: ts.Node
-): lua.CallExpression {
-    pushScope(context, ScopeType.Function);
-    const { statements, result } = transformFunction();
-    popScope(context);
-    return createImmediatelyInvokedFunctionExpression(castArray(statements), result, tsOriginal);
 }
 
 export function createUnpackCall(

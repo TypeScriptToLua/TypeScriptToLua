@@ -3,7 +3,7 @@ import * as lua from "../../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
 import { extensionInvalidInstanceOf, luaTableInvalidInstanceOf } from "../../utils/diagnostics";
-import { transformToImmediatelyInvokedFunctionExpression, wrapInToStringForConcat } from "../../utils/lua-ast";
+import { wrapInToStringForConcat } from "../../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isStandardLibraryType, isStringType, typeCanSatisfy } from "../../utils/typescript";
 import { transformTypeOfBinaryExpression } from "../typeof";
@@ -16,6 +16,7 @@ import {
     unwrapCompoundAssignmentToken,
 } from "./compound";
 import { assert } from "../../../utils";
+import { transformToImmediatelyInvokedFunctionExpression } from "../../utils/transform";
 
 type SimpleOperator =
     | ts.AdditiveOperatorOrHigher

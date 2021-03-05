@@ -5,12 +5,7 @@ import { TransformationContext } from "../../context";
 import { isTupleReturnCall } from "../../utils/annotations";
 import { validateAssignment } from "../../utils/assignment-validation";
 import { createExportedIdentifier, getDependenciesOfSymbol, isSymbolExported } from "../../utils/export";
-import {
-    createUnpackCall,
-    ImmediatelyInvokedFunctionParameters,
-    transformToImmediatelyInvokedFunctionExpression,
-    wrapInTable,
-} from "../../utils/lua-ast";
+import { createUnpackCall, wrapInTable } from "../../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isDestructuringAssignment } from "../../utils/typescript";
 import { transformElementAccessArgument } from "../access";
@@ -18,6 +13,10 @@ import { transformLuaTablePropertyAccessInAssignment } from "../lua-table";
 import { isArrayLength, transformDestructuringAssignment } from "./destructuring-assignments";
 import { isMultiReturnCall } from "../language-extensions/multi";
 import { popScope, pushScope, ScopeType } from "../../utils/scope";
+import {
+    ImmediatelyInvokedFunctionParameters,
+    transformToImmediatelyInvokedFunctionExpression,
+} from "../../utils/transform";
 
 export function transformAssignmentLeftHandSideExpression(
     context: TransformationContext,

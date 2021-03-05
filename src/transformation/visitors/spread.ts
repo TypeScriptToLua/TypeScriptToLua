@@ -16,11 +16,7 @@ import { returnsMultiType } from "./language-extensions/multi";
 import { annotationDeprecated } from "../utils/diagnostics";
 import { isGlobalVarargConstant } from "./language-extensions/vararg";
 
-export function isOptimizableVarArgSpread(
-    context: TransformationContext,
-    symbol: ts.Symbol,
-    identifier: ts.Identifier
-) {
+export function isOptimizedVarArgSpread(context: TransformationContext, symbol: ts.Symbol, identifier: ts.Identifier) {
     if (!ts.isSpreadElement(identifier.parent)) {
         return false;
     }
@@ -68,7 +64,7 @@ export const transformSpreadElement: FunctionVisitor<ts.SpreadElement> = (node, 
             return lua.createDotsLiteral(node);
         }
         const symbol = context.checker.getSymbolAtLocation(node.expression);
-        if (symbol && isOptimizableVarArgSpread(context, symbol, node.expression)) {
+        if (symbol && isOptimizedVarArgSpread(context, symbol, node.expression)) {
             return lua.createDotsLiteral(node);
         }
     }

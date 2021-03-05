@@ -24,38 +24,6 @@ escapedCharsInTemplateString = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \
 nonEmptyTemplateString = (\\"Level 0: \\\\n\\\\t \\" .. ((\\"Level 1: \\\\n\\\\t\\\\t \\" .. ((\\"Level 3: \\\\n\\\\t\\\\t\\\\t \\" .. \\"Last level \\\\n --\\") .. \\" \\\\n --\\")) .. \\" \\\\n --\\")) .. \\" \\\\n --\\""
 `;
 
-exports[`Transformation (classExtension1) 1`] = `
-"function MyClass.myFunction(self)
-end"
-`;
-
-exports[`Transformation (classExtension2) 1`] = `
-"function TestClass.myFunction(self)
-end"
-`;
-
-exports[`Transformation (classExtension3) 1`] = `
-"function RenamedTestClass.myFunction(self)
-end
-function RenamedMyClass.myFunction(self)
-end"
-`;
-
-exports[`Transformation (classExtension4) 1`] = `
-"MyClass.test = \\"test\\"
-MyClass.testP = \\"testP\\"
-function MyClass.myFunction(self)
-end"
-`;
-
-exports[`Transformation (classPureAbstract) 1`] = `
-"require(\\"lualib_bundle\\");
-ClassB = __TS__Class()
-ClassB.name = \\"ClassB\\"
-function ClassB.prototype.____constructor(self)
-end"
-`;
-
 exports[`Transformation (exportStatement) 1`] = `
 "local ____exports = {}
 local xyz = 4
@@ -261,11 +229,6 @@ return ____exports"
 `;
 
 exports[`Transformation (modulesVariableNoExport) 1`] = `"foo = \\"bar\\""`;
-
-exports[`Transformation (namespacePhantom) 1`] = `
-"function nsMember(self)
-end"
-`;
 
 exports[`Transformation (returnDefault) 1`] = `
 "function myFunc(self)

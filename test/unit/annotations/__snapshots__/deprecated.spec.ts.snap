@@ -1,12 +1,22 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`extension deprecation: code 1`] = `""`;
+exports[`extension removed: code 1`] = `
+"require(\\"lualib_bundle\\");
+B = __TS__Class()
+B.name = \\"B\\"
+__TS__ClassExtends(B, A)"
+`;
 
-exports[`extension deprecation: code 2`] = `"local __meta__A = debug.getregistry().A"`;
+exports[`extension removed: code 2`] = `
+"require(\\"lualib_bundle\\");
+B = __TS__Class()
+B.name = \\"B\\"
+__TS__ClassExtends(B, A)"
+`;
 
-exports[`extension deprecation: diagnostics 1`] = `"main.ts(4,9): warning TSTL: '@extension' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile. See https://typescripttolua.github.io/docs/advanced/compiler-annotations#extension for more information."`;
+exports[`extension removed: diagnostics 1`] = `"main.ts(4,9): error TSTL: '@extension' has been removed and will no longer have any effect.See https://typescripttolua.github.io/docs/advanced/compiler-annotations#extension for more information."`;
 
-exports[`extension deprecation: diagnostics 2`] = `"main.ts(4,9): warning TSTL: '@metaExtension' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile. See https://typescripttolua.github.io/docs/advanced/compiler-annotations#metaextension for more information."`;
+exports[`extension removed: diagnostics 2`] = `"main.ts(4,9): error TSTL: '@metaExtension' has been removed and will no longer have any effect.See https://typescripttolua.github.io/docs/advanced/compiler-annotations#metaextension for more information."`;
 
 exports[`forRange deprecation: code 1`] = `
 "for i = 1, 10 do
@@ -15,19 +25,21 @@ end"
 
 exports[`forRange deprecation: diagnostics 1`] = `"main.ts(4,25): warning TSTL: '@forRange' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile. See https://typescripttolua.github.io/docs/advanced/compiler-annotations#forrange for more information."`;
 
-exports[`phantom deprecation: code 1`] = `
-"function nsMember(self)
+exports[`phantom removed: code 1`] = `
+"A = A or ({})
+do
+    local function nsMember(self)
+    end
 end"
 `;
 
-exports[`phantom deprecation: diagnostics 1`] = `"main.ts(3,9): warning TSTL: '@phantom' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile. See https://typescripttolua.github.io/docs/advanced/compiler-annotations#phantom for more information."`;
+exports[`phantom removed: diagnostics 1`] = `"main.ts(3,9): error TSTL: '@phantom' has been removed and will no longer have any effect.See https://typescripttolua.github.io/docs/advanced/compiler-annotations#phantom for more information."`;
 
-exports[`pureAbstract deprecation: code 1`] = `
+exports[`pureAbstract removed: code 1`] = `
 "require(\\"lualib_bundle\\");
 ClassB = __TS__Class()
 ClassB.name = \\"ClassB\\"
-function ClassB.prototype.____constructor(self)
-end"
+__TS__ClassExtends(ClassB, ClassA)"
 `;
 
-exports[`pureAbstract deprecation: diagnostics 1`] = `"main.ts(4,22): warning TSTL: '@pureAbstract' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile. See https://typescripttolua.github.io/docs/advanced/compiler-annotations#pureabstract for more information."`;
+exports[`pureAbstract removed: diagnostics 1`] = `"main.ts(4,22): error TSTL: '@pureAbstract' has been removed and will no longer have any effect.See https://typescripttolua.github.io/docs/advanced/compiler-annotations#pureabstract for more information."`;

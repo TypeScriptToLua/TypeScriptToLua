@@ -61,7 +61,7 @@
         "jest": "^26.0.1",
         "jest-circus": "^25.1.0",
         "lua-types": "^2.8.0",
-        "lua-wasm-bindings": "^0.1.4",
+        "lua-wasm-bindings": "^0.2.1",
         "prettier": "^2.0.5",
         "ts-jest": "^26.3.0",
         "ts-node": "^8.6.2"

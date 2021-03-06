@@ -1,7 +1,6 @@
 /* eslint-disable jest/no-standalone-expect */
 import * as nativeAssert from "assert";
-import { lauxlib, lua, lualib } from "lua-wasm-bindings/dist/lua.54";
-import { LUA_OK } from "lua-wasm-bindings/dist/lua";
+import { LauxLib, Lua, LuaLib, LUA_OK } from "lua-wasm-bindings/dist/lua";
 import * as fs from "fs";
 import { stringify } from "javascript-stringify";
 import * as path from "path";
@@ -16,6 +15,27 @@ const luaLib = fs.readFileSync(path.resolve(__dirname, "../dist/lualib/lualib_bu
 
 // Using `test` directly makes eslint-plugin-jest consider this file as a test
 const defineTest = test;
+
+function getLuaBindingsForVersion(target: tstl.LuaTarget): { lauxlib: LauxLib; lua: Lua; lualib: LuaLib } {
+    if (target === tstl.LuaTarget.Lua51) {
+        const { lauxlib, lua, lualib } = require("lua-wasm-bindings/dist/lua.51");
+        return { lauxlib, lua, lualib };
+    }
+    if (target === tstl.LuaTarget.Lua52) {
+        const { lauxlib, lua, lualib } = require("lua-wasm-bindings/dist/lua.52");
+        return { lauxlib, lua, lualib };
+    }
+    if (target === tstl.LuaTarget.Lua53) {
+        const { lauxlib, lua, lualib } = require("lua-wasm-bindings/dist/lua.53");
+        return { lauxlib, lua, lualib };
+    }
+    if (target === tstl.LuaTarget.LuaJIT) {
+        throw Error("Can't use executeLua() or expectToMatchJsResult() wit LuaJIT as target!");
+    }
+
+    const { lauxlib, lua, lualib } = require("lua-wasm-bindings/dist/lua.54");
+    return { lauxlib, lua, lualib };
+}
 
 export function assert(value: any, message?: string | Error): asserts value {
     nativeAssert(value, message);
@@ -338,6 +358,8 @@ export abstract class TestBuilder {
     private executeLua(): any {
         // Main file
         const mainFile = this.getMainLuaCodeChunk();
+
+        const { lauxlib, lua, lualib } = getLuaBindingsForVersion(this.options.luaTarget ?? tstl.LuaTarget.Lua54);
 
         const L = lauxlib.luaL_newstate();
         lualib.luaL_openlibs(L);

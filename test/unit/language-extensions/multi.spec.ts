@@ -24,7 +24,8 @@ test("multi example use case", () => {
         .expectToEqual({ a: "foo", b: 5 });
 });
 
-test("multi #995", () => {
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/995
+test("Destructuring assignment of LuaMultiReturn", () => {
     util.testModule`
         function multiReturn(): LuaMultiReturn<[number, number, number]> {
             return $multi(1, 2, 3);
@@ -35,6 +36,16 @@ test("multi #995", () => {
     `
         .setOptions(multiProjectOptions)
         .expectToEqual({ a: 1, b: [2, 3] });
+    util.testModule`
+        function multiReturn(): LuaMultiReturn<[number, number, number]> {
+            return;
+        }
+
+        const [a, ...b] = multiReturn();
+        export {a, b};
+    `
+        .setOptions(multiProjectOptions)
+        .expectToEqual({ b: [] });
 });
 
 test.each<[string, any]>([

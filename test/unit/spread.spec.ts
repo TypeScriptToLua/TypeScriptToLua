@@ -76,8 +76,8 @@ describe("in function call", () => {
             [tstl.LuaTarget.Universal]: builder => builder.tap(expectLualibUnpack),
             [tstl.LuaTarget.LuaJIT]: builder => builder.tap(expectUnpack),
             [tstl.LuaTarget.Lua51]: builder => builder.tap(expectUnpack),
-            [tstl.LuaTarget.Lua52]: builder => builder.tap(expectTableUnpack),
-            [tstl.LuaTarget.Lua53]: builder => builder.tap(expectTableUnpack),
+            [tstl.LuaTarget.Lua52]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
+            [tstl.LuaTarget.Lua53]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
             [tstl.LuaTarget.Lua54]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
         }
     );
@@ -87,9 +87,9 @@ describe("in array literal", () => {
     util.testEachVersion(undefined, () => util.testExpression`[...[0, 1, 2]]`, {
         [tstl.LuaTarget.Universal]: builder => builder.tap(expectLualibUnpack),
         [tstl.LuaTarget.LuaJIT]: builder => builder.tap(expectUnpack),
-        [tstl.LuaTarget.Lua51]: builder => builder.tap(expectUnpack),
-        [tstl.LuaTarget.Lua52]: builder => builder.tap(expectTableUnpack),
-        [tstl.LuaTarget.Lua53]: builder => builder.tap(expectTableUnpack),
+        [tstl.LuaTarget.Lua51]: builder => builder.tap(expectUnpack).expectToMatchJsResult(),
+        [tstl.LuaTarget.Lua52]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
+        [tstl.LuaTarget.Lua53]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
         [tstl.LuaTarget.Lua54]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
     });
 

@@ -368,9 +368,6 @@ test.each([
     { input: "true ? false : true", options: { luaTarget: tstl.LuaTarget.Lua51 } },
     { input: "false ? false : true", options: { luaTarget: tstl.LuaTarget.Lua51 } },
     { input: "true ? undefined : true", options: { luaTarget: tstl.LuaTarget.Lua51 } },
-    { input: "true ? false : true", options: { luaTarget: tstl.LuaTarget.LuaJIT } },
-    { input: "false ? false : true", options: { luaTarget: tstl.LuaTarget.LuaJIT } },
-    { input: "true ? undefined : true", options: { luaTarget: tstl.LuaTarget.LuaJIT } },
 ])("Ternary operator (%p)", ({ input, options }) => {
     util.testFunction`
         const literalValue = "literal";

@@ -2,6 +2,15 @@ import * as tstl from "../../src";
 import { forbiddenForIn, unsupportedForTarget } from "../../src/transformation/utils/diagnostics";
 import * as util from "../util";
 
+const multiVersionContinueExpects = {
+    [tstl.LuaTarget.Universal]: (builder: util.TestBuilder) => builder.expectToHaveDiagnostics(),
+    [tstl.LuaTarget.Lua51]: (builder: util.TestBuilder) => builder.expectToHaveDiagnostics(),
+    [tstl.LuaTarget.Lua52]: (builder: util.TestBuilder) => builder.expectToMatchJsResult(),
+    [tstl.LuaTarget.Lua53]: (builder: util.TestBuilder) => builder.expectToMatchJsResult(),
+    [tstl.LuaTarget.Lua54]: (builder: util.TestBuilder) => builder.expectToMatchJsResult(),
+    [tstl.LuaTarget.LuaJIT]: false,
+};
+
 test("while", () => {
     util.testFunction`
         let arrTest = [0, 1, 2, 3];
@@ -14,8 +23,9 @@ test("while", () => {
     `.expectToMatchJsResult();
 });
 
-test("while with continue", () => {
-    util.testFunction`
+util.testEachVersion(
+    "while with continue",
+    () => util.testFunction`
         let arrTest = [0, 1, 2, 3, 4];
         let i = 0;
         while (i < arrTest.length) {
@@ -36,11 +46,13 @@ test("while with continue", () => {
             i++;
         }
         return arrTest;
-    `.expectToMatchJsResult();
-});
+    `,
+    multiVersionContinueExpects
+);
 
-test("dowhile with continue", () => {
-    util.testFunction`
+util.testEachVersion(
+    "dowhile with continue",
+    () => util.testFunction`
         let arrTest = [0, 1, 2, 3, 4];
         let i = 0;
         do {
@@ -61,8 +73,9 @@ test("dowhile with continue", () => {
             i++;
         } while (i < arrTest.length)
         return arrTest;
-    `.expectToMatchJsResult();
-});
+    `,
+    multiVersionContinueExpects
+);
 
 test("for", () => {
     util.testFunction`
@@ -85,24 +98,27 @@ test("for with expression", () => {
     `.expectToMatchJsResult();
 });
 
-test("for with continue", () => {
-    util.testFunction`
-        let arrTest = [0, 1, 2, 3, 4];
-        for (let i = 0; i < arrTest.length; i++) {
-            if (i % 2 == 0) {
-                continue;
-            }
-
-            for (let j = 0; j < 2; j++) {
-                if (j == 1) {
+util.testEachVersion(
+    "for with continue",
+    () =>
+        util.testFunction`
+            let arrTest = [0, 1, 2, 3, 4];
+            for (let i = 0; i < arrTest.length; i++) {
+                if (i % 2 == 0) {
                     continue;
                 }
-                arrTest[i] = j;
+
+                for (let j = 0; j < 2; j++) {
+                    if (j == 1) {
+                        continue;
+                    }
+                    arrTest[i] = j;
+                }
             }
-        }
-        return arrTest;
-    `.expectToMatchJsResult();
-});
+            return arrTest;
+    `,
+    multiVersionContinueExpects
+);
 
 test("forMirror", () => {
     util.testFunction`
@@ -217,7 +233,9 @@ test("forin[Array]", () => {
 });
 
 test.each([{ inp: { a: 0, b: 1, c: 2, d: 3, e: 4 } }])("forin with continue (%p)", ({ inp }) => {
-    util.testFunctionTemplate`
+    util.testEachVersion(
+        expect.getState().currentTestName,
+        () => util.testFunctionTemplate`
             let obj = ${inp};
             for (let i in obj) {
                 if (obj[i] % 2 == 0) {
@@ -227,7 +245,9 @@ test.each([{ inp: { a: 0, b: 1, c: 2, d: 3, e: 4 } }])("forin with continue (%p)
                 obj[i] = 0;
             }
             return obj;
-        `.expectToMatchJsResult();
+        `,
+        multiVersionContinueExpects
+    );
 });
 
 test.each([{ inp: [0, 1, 2] }])("forof (%p)", ({ inp }) => {
@@ -298,27 +318,30 @@ test("forof destructing with existing variables", () => {
     `.expectToMatchJsResult();
 });
 
-test("forof with continue", () => {
-    util.testFunction`
-        let testArr = [0, 1, 2, 3, 4];
-        let a = 0;
-        for (let i of testArr) {
-            if (i % 2 == 0) {
-                a++;
-                continue;
-            }
-
-            for (let j of [0, 1]) {
-                if (j == 1) {
+util.testEachVersion(
+    "forof with continue",
+    () =>
+        util.testFunction`
+            let testArr = [0, 1, 2, 3, 4];
+            let a = 0;
+            for (let i of testArr) {
+                if (i % 2 == 0) {
+                    a++;
                     continue;
                 }
-                testArr[a] = j;
+
+                for (let j of [0, 1]) {
+                    if (j == 1) {
+                        continue;
+                    }
+                    testArr[a] = j;
+                }
+                a++;
             }
-            a++;
-        }
-        return testArr;
-    `.expectToMatchJsResult();
-});
+            return testArr;
+    `,
+    multiVersionContinueExpects
+);
 
 test("forof with iterator", () => {
     util.testFunction`

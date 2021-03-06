@@ -6,7 +6,7 @@ import { isTupleReturnCall } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
 import { unsupportedVarDeclaration } from "../utils/diagnostics";
 import { addExportToIdentifier } from "../utils/export";
-import { createLocalOrExportedOrGlobalDeclaration, createUnpackCall } from "../utils/lua-ast";
+import { createLocalOrExportedOrGlobalDeclaration, createUnpackCall, wrapInTable } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { transformIdentifier } from "./identifier";
 import { isMultiReturnCall } from "./language-extensions/multi";
@@ -158,9 +158,11 @@ export function transformBindingVariableDeclaration(
             // Contain the expression in a temporary variable
             table = lua.createAnonymousIdentifier();
             if (initializer) {
-                statements.push(
-                    lua.createVariableDeclarationStatement(table, context.transformExpression(initializer))
-                );
+                let expression = context.transformExpression(initializer);
+                if (isTupleReturnCall(context, initializer) || isMultiReturnCall(context, initializer)) {
+                    expression = wrapInTable(expression);
+                }
+                statements.push(lua.createVariableDeclarationStatement(table, expression));
             }
         }
         statements.push(...transformBindingPattern(context, bindingPattern, table));

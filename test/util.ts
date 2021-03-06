@@ -1,6 +1,7 @@
 /* eslint-disable jest/no-standalone-expect */
 import * as nativeAssert from "assert";
-import { lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
+import { lauxlib, lua, lualib } from "lua-wasm-bindings/dist/lua.53";
+import { LUA_OK } from "lua-wasm-bindings/dist/lua";
 import * as fs from "fs";
 import { stringify } from "javascript-stringify";
 import * as path from "path";
@@ -10,32 +11,8 @@ import * as vm from "vm";
 import * as tstl from "../src";
 import { createEmitOutputCollector } from "../src/transpilation/output-collector";
 
-export function toByteCode(luaCode: string) {
-    const L = lauxlib.luaL_newstate();
-
-    if (lauxlib.luaL_loadstring(L, to_luastring(luaCode)) !== lua.LUA_OK) throw Error(lua.lua_tojsstring(L, -1));
-
-    const writer = (_: any, newBytes: Uint8Array, size: number, data: number[]) => {
-        data.push(...newBytes.slice(0, size));
-        return 0;
-    };
-
-    const data: number[] = [];
-
-    const dumpExitCode = lua.lua_dump(L, writer, data, false);
-
-    if (dumpExitCode !== 0) {
-        throw Error("Unable to dump byte code");
-    }
-
-    return Uint8Array.from(data);
-}
-
 const jsonLib = fs.readFileSync(path.join(__dirname, "json.lua"), "utf8");
-const jsonLibByteCode = toByteCode(jsonLib);
-
 const luaLib = fs.readFileSync(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"), "utf8");
-const luaLibByteCode = toByteCode(luaLib);
 
 // Using `test` directly makes eslint-plugin-jest consider this file as a test
 const defineTest = test;
@@ -369,7 +346,7 @@ export abstract class TestBuilder {
         // Json
         lua.lua_getglobal(L, "package");
         lua.lua_getfield(L, -1, "preload");
-        lauxlib.luaL_loadstring(L, jsonLibByteCode);
+        lauxlib.luaL_loadstring(L, jsonLib);
         lua.lua_setfield(L, -2, "json");
         // Lua lib
         if (
@@ -378,7 +355,7 @@ export abstract class TestBuilder {
         ) {
             lua.lua_getglobal(L, "package");
             lua.lua_getfield(L, -1, "preload");
-            lauxlib.luaL_loadstring(L, luaLibByteCode);
+            lauxlib.luaL_loadstring(L, luaLib);
             lua.lua_setfield(L, -2, "lualib_bundle");
         }
 
@@ -392,7 +369,7 @@ export abstract class TestBuilder {
             if (transpiledExtraFile?.lua) {
                 lua.lua_getglobal(L, "package");
                 lua.lua_getfield(L, -1, "preload");
-                lauxlib.luaL_loadstring(L, to_luastring(transpiledExtraFile.lua));
+                lauxlib.luaL_loadstring(L, transpiledExtraFile.lua);
                 lua.lua_setfield(L, -2, fileName.replace(".ts", ""));
             }
         });
@@ -404,20 +381,22 @@ return JSON.stringify((function()
     ${this.getLuaCodeWithWrapper(mainFile)}
 end)());`;
 
-        const status = lauxlib.luaL_dostring(L, to_luastring(wrappedMainCode));
+        const status = lauxlib.luaL_dostring(L, wrappedMainCode);
 
-        if (status === lua.LUA_OK) {
+        if (status === LUA_OK) {
             if (lua.lua_isstring(L, -1)) {
-                const result = eval(`(${lua.lua_tojsstring(L, -1)})`);
+                const result = eval(`(${lua.lua_tostring(L, -1)})`);
+                lua.lua_close(L);
                 return result === null ? undefined : result;
             } else {
-                const returnType = to_jsstring(lua.lua_typename(L, lua.lua_type(L, -1)));
+                const returnType = lua.lua_typename(L, lua.lua_type(L, -1));
+                lua.lua_close(L);
                 throw new Error(`Unsupported Lua return type: ${returnType}`);
             }
         } else {
-            // Filter out control characters appearing on some systems
-            const luaStackString = lua.lua_tostring(L, -1).filter(c => c >= 20);
-            const message = to_jsstring(luaStackString).replace(/^\[string "(--)?\.\.\."\]:\d+: /, "");
+            const luaStackString = lua.lua_tostring(L, -1);
+            const message = luaStackString.replace(/^\[string "(--)?\.\.\."\]:\d+: /, "");
+            lua.lua_close(L);
             return new ExecutionError(message);
         }
     }

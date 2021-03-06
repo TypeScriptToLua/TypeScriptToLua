@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
-import { annotationInvalidArgumentCount, extensionCannotConstruct } from "../../utils/diagnostics";
+import { annotationInvalidArgumentCount } from "../../utils/diagnostics";
 import { importLuaLibFeature, LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { transformArguments } from "../call";
 import { isTableNewCall } from "../language-extensions/table";
@@ -69,10 +69,6 @@ export const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, 
     checkForLuaLibType(context, type);
 
     const annotations = getTypeAnnotations(type);
-
-    if (annotations.has(AnnotationKind.Extension) || annotations.has(AnnotationKind.MetaExtension)) {
-        context.diagnostics.push(extensionCannotConstruct(node));
-    }
 
     const customConstructorAnnotation = annotations.get(AnnotationKind.CustomConstructor);
     if (customConstructorAnnotation) {

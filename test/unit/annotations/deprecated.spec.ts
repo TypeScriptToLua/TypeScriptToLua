@@ -1,29 +1,29 @@
-import { annotationDeprecated } from "../../../src/transformation/utils/diagnostics";
+import { annotationDeprecated, annotationRemoved } from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
-test.each(["extension", "metaExtension"])("extension deprecation", extensionType => {
+test.each(["extension", "metaExtension"])("extension removed", extensionType => {
     util.testModule`
         declare class A {}
         /** @${extensionType} **/
         class B extends A {}
-    `.expectDiagnosticsToMatchSnapshot([annotationDeprecated.code]);
+    `.expectDiagnosticsToMatchSnapshot([annotationRemoved.code]);
 });
 
-test("phantom deprecation", () => {
+test("phantom removed", () => {
     util.testModule`
         /** @phantom **/
         namespace A {
             function nsMember() {}
         }
-    `.expectDiagnosticsToMatchSnapshot([annotationDeprecated.code]);
+    `.expectDiagnosticsToMatchSnapshot([annotationRemoved.code]);
 });
 
-test("pureAbstract deprecation", () => {
+test("pureAbstract removed", () => {
     util.testModule`
         /** @pureAbstract */
         declare class ClassA {}
         class ClassB extends ClassA {}
-    `.expectDiagnosticsToMatchSnapshot([annotationDeprecated.code]);
+    `.expectDiagnosticsToMatchSnapshot([annotationRemoved.code]);
 });
 
 test("forRange deprecation", () => {

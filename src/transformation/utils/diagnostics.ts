@@ -58,30 +58,6 @@ export const annotationInvalidArgumentCount = createErrorDiagnosticFactory(
     (kind: AnnotationKind, got: number, expected: number) => `'@${kind}' expects ${expected} arguments, but got ${got}.`
 );
 
-export const extensionCannotConstruct = createErrorDiagnosticFactory(
-    "Cannot construct classes with '@extension' or '@metaExtension' annotation."
-);
-
-export const extensionCannotExtend = createErrorDiagnosticFactory(
-    "Cannot extend classes with '@extension' or '@metaExtension' annotation."
-);
-
-export const extensionCannotExport = createErrorDiagnosticFactory(
-    "Cannot export classes with '@extension' or '@metaExtension' annotation."
-);
-
-export const extensionInvalidInstanceOf = createErrorDiagnosticFactory(
-    "Cannot use instanceof on classes with '@extension' or '@metaExtension' annotation."
-);
-
-export const extensionAndMetaExtensionConflict = createErrorDiagnosticFactory(
-    "Cannot use both '@extension' and '@metaExtension' annotations on the same class."
-);
-
-export const metaExtensionMissingExtends = createErrorDiagnosticFactory(
-    "'@metaExtension' annotation requires the extension of the metatable class."
-);
-
 export const invalidForRangeCall = createErrorDiagnosticFactory(
     (message: string) => `Invalid @forRange call: ${message}.`
 );
@@ -184,6 +160,12 @@ export const invalidTableExtensionUse = createErrorDiagnosticFactory(
 
 export const invalidTableSetExpression = createErrorDiagnosticFactory(
     "Table set extension can only be called as a stand-alone statement. It cannot be used as an expression in another statement."
+);
+
+export const annotationRemoved = createErrorDiagnosticFactory(
+    (kind: AnnotationKind) =>
+        `'@${kind}' has been removed and will no longer have any effect.` +
+        `See https://typescripttolua.github.io/docs/advanced/compiler-annotations#${kind.toLowerCase()} for more information.`
 );
 
 export const annotationDeprecated = createWarningDiagnosticFactory(

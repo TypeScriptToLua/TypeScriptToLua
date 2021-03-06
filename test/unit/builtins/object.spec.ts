@@ -11,15 +11,21 @@ test.each([
 });
 
 test.each([{}, { abc: 3 }, { abc: 3, def: "xyz" }])("Object.entries (%p)", obj => {
-    util.testExpressionTemplate`Object.entries(${obj})`.expectToMatchJsResult();
+    const testBuilder = util.testExpressionTemplate`Object.entries(${obj})`;
+    // Need custom matcher because order is not guaranteed in neither JS nor Lua
+    expect(testBuilder.getJsExecutionResult()).toEqual(expect.arrayContaining(testBuilder.getLuaExecutionResult()));
 });
 
 test.each([{}, { abc: 3 }, { abc: 3, def: "xyz" }])("Object.keys (%p)", obj => {
-    util.testExpressionTemplate`Object.keys(${obj})`.expectToMatchJsResult();
+    const testBuilder = util.testExpressionTemplate`Object.keys(${obj})`;
+    // Need custom matcher because order is not guaranteed in neither JS nor Lua
+    expect(testBuilder.getJsExecutionResult()).toEqual(expect.arrayContaining(testBuilder.getLuaExecutionResult()));
 });
 
 test.each([{}, { abc: "def" }, { abc: 3, def: "xyz" }])("Object.values (%p)", obj => {
-    util.testExpressionTemplate`Object.values(${obj})`.expectToMatchJsResult();
+    const testBuilder = util.testExpressionTemplate`Object.values(${obj})`;
+    // Need custom matcher because order is not guaranteed in neither JS nor Lua
+    expect(testBuilder.getJsExecutionResult()).toEqual(expect.arrayContaining(testBuilder.getLuaExecutionResult()));
 });
 
 test.each(["[]", '[["a", 1], ["b", 2]]', '[["a", 1], ["a", 2]]', 'new Map([["foo", "bar"]])'])(
@@ -209,5 +215,29 @@ describe("Object.getOwnPropertyDescriptors", () => {
             Object.defineProperty(foo, "bar", {});
             return Object.getOwnPropertyDescriptors(foo);
         `.expectToMatchJsResult();
+    });
+});
+
+describe("delete from object", () => {
+    test("delete from object", () => {
+        util.testFunction`
+            const obj = { foo: "bar", bar: "baz" };
+            delete obj["foo"];
+            return obj;
+        `
+            .setTsHeader("declare function setmetatable<T extends object>(this: void, table: T, metatable: any): T;")
+            .expectToEqual({ bar: "baz" });
+    });
+
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/993
+    test("delete from object with metatable", () => {
+        util.testFunction`
+        const obj = { foo: "bar", bar: "baz" };
+        setmetatable(obj, {});
+        delete obj["foo"];
+        return obj;
+    `
+            .setTsHeader("declare function setmetatable<T extends object>(this: void, table: T, metatable: any): T;")
+            .expectToEqual({ bar: "baz" });
     });
 });

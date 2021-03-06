@@ -3,19 +3,10 @@ import * as lua from "../../../LuaAST";
 import { getOrUpdate } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
-import {
-    annotationDeprecated,
-    extensionAndMetaExtensionConflict,
-    extensionCannotExport,
-    extensionCannotExtend,
-    luaTableCannotBeExtended,
-    luaTableMustBeAmbient,
-    metaExtensionMissingExtends,
-} from "../../utils/diagnostics";
+import { annotationRemoved, luaTableCannotBeExtended, luaTableMustBeAmbient } from "../../utils/diagnostics";
 import {
     createDefaultExportIdentifier,
     createExportedIdentifier,
-    getIdentifierExportScope,
     hasDefaultExportModifier,
     isSymbolExported,
 } from "../../utils/export";
@@ -24,7 +15,6 @@ import { createSafeName, isUnsafeName } from "../../utils/safe-names";
 import { transformToImmediatelyInvokedFunctionExpression } from "../../utils/transform";
 import { isAmbientNode } from "../../utils/typescript";
 import { transformIdentifier } from "../identifier";
-import { transformPropertyName } from "../literal";
 import { createDecoratingExpression, transformDecoratorExpression } from "./decorators";
 import { transformAccessorDeclarations } from "./members/accessors";
 import { createConstructorName, transformConstructorDeclaration } from "./members/constructor";
@@ -89,25 +79,11 @@ function transformClassLikeDeclaration(
 
     const annotations = getTypeAnnotations(context.checker.getTypeAtLocation(classDeclaration));
 
-    // Find out if this class is extension of existing class
-    const extensionDirective = annotations.get(AnnotationKind.Extension);
-    const isExtension = extensionDirective !== undefined;
-    const isMetaExtension = annotations.has(AnnotationKind.MetaExtension);
-
-    if (isExtension) {
-        context.diagnostics.push(annotationDeprecated(classDeclaration, AnnotationKind.Extension));
+    if (annotations.has(AnnotationKind.Extension)) {
+        context.diagnostics.push(annotationRemoved(classDeclaration, AnnotationKind.Extension));
     }
-    if (isMetaExtension) {
-        context.diagnostics.push(annotationDeprecated(classDeclaration, AnnotationKind.MetaExtension));
-    }
-
-    if (isExtension && isMetaExtension) {
-        context.diagnostics.push(extensionAndMetaExtensionConflict(classDeclaration));
-    }
-
-    if ((isExtension || isMetaExtension) && getIdentifierExportScope(context, className) !== undefined) {
-        // Cannot export extension classes
-        context.diagnostics.push(extensionCannotExport(classDeclaration));
+    if (annotations.has(AnnotationKind.MetaExtension)) {
+        context.diagnostics.push(annotationRemoved(classDeclaration, AnnotationKind.MetaExtension));
     }
 
     // Get type that is extended
@@ -119,14 +95,6 @@ function transformClassLikeDeclaration(
 
     if (extendedType) {
         checkForLuaLibType(context, extendedType);
-    }
-
-    if (!(isExtension || isMetaExtension) && extendedType) {
-        // Non-extensions cannot extend extension classes
-        const extendsAnnotations = getTypeAnnotations(extendedType);
-        if (extendsAnnotations.has(AnnotationKind.Extension) || extendsAnnotations.has(AnnotationKind.MetaExtension)) {
-            context.diagnostics.push(extensionCannotExtend(classDeclaration));
-        }
     }
 
     // You cannot extend LuaTable classes
@@ -149,43 +117,6 @@ function transformClassLikeDeclaration(
 
     const result: lua.Statement[] = [];
 
-    // Overwrite the original className with the class we are overriding for extensions
-    if (isMetaExtension) {
-        if (extendedType) {
-            const extendsName = lua.createStringLiteral(extendedType.symbol.name);
-            className = lua.createIdentifier("__meta__" + extendsName.value);
-
-            // local className = debug.getregistry()["extendsName"]
-            const assignDebugCallIndex = lua.createVariableDeclarationStatement(
-                className,
-                lua.createTableIndexExpression(
-                    lua.createCallExpression(
-                        lua.createTableIndexExpression(
-                            lua.createIdentifier("debug"),
-                            lua.createStringLiteral("getregistry")
-                        ),
-                        []
-                    ),
-                    extendsName
-                ),
-                classDeclaration
-            );
-
-            result.push(assignDebugCallIndex);
-        } else {
-            context.diagnostics.push(metaExtensionMissingExtends(classDeclaration));
-        }
-    }
-
-    if (extensionDirective !== undefined) {
-        const [extensionName] = extensionDirective.args;
-        if (extensionName) {
-            className = lua.createIdentifier(extensionName);
-        } else if (extendedType) {
-            className = lua.createIdentifier(extendedType.symbol.name);
-        }
-    }
-
     let localClassName: lua.Identifier;
     if (isUnsafeName(className.text)) {
         localClassName = lua.createIdentifier(
@@ -199,82 +130,60 @@ function transformClassLikeDeclaration(
         localClassName = className;
     }
 
-    if (!isExtension && !isMetaExtension) {
-        result.push(...createClassSetup(context, classDeclaration, className, localClassName, extendedType));
-    } else {
-        for (const f of instanceFields) {
-            const fieldName = transformPropertyName(context, f.name);
-
-            const value = f.initializer !== undefined ? context.transformExpression(f.initializer) : undefined;
-
-            // className["fieldName"]
-            const classField = lua.createTableIndexExpression(lua.cloneIdentifier(className), fieldName);
-
-            // className["fieldName"] = value;
-            const assignClassField = lua.createAssignmentStatement(classField, value);
-
-            result.push(assignClassField);
-        }
-    }
+    result.push(...createClassSetup(context, classDeclaration, className, localClassName, extendedType));
 
     // Find first constructor with body
-    if (!isExtension && !isMetaExtension) {
-        const constructor = classDeclaration.members.find(
-            (n): n is ts.ConstructorDeclaration => ts.isConstructorDeclaration(n) && n.body !== undefined
+    const constructor = classDeclaration.members.find(
+        (n): n is ts.ConstructorDeclaration => ts.isConstructorDeclaration(n) && n.body !== undefined
+    );
+
+    if (constructor) {
+        // Add constructor plus initialization of instance fields
+        const constructorResult = transformConstructorDeclaration(
+            context,
+            constructor,
+            localClassName,
+            instanceFields,
+            classDeclaration
         );
 
-        if (constructor) {
-            // Add constructor plus initialization of instance fields
-            const constructorResult = transformConstructorDeclaration(
-                context,
-                constructor,
-                localClassName,
-                instanceFields,
-                classDeclaration
-            );
+        if (constructorResult) result.push(constructorResult);
+    } else if (!extendedType) {
+        // Generate a constructor if none was defined in a base class
+        const constructorResult = transformConstructorDeclaration(
+            context,
+            ts.createConstructor([], [], [], ts.createBlock([], true)),
+            localClassName,
+            instanceFields,
+            classDeclaration
+        );
 
-            if (constructorResult) result.push(constructorResult);
-        } else if (!extendedType) {
-            // Generate a constructor if none was defined in a base class
-            const constructorResult = transformConstructorDeclaration(
-                context,
-                ts.createConstructor([], [], [], ts.createBlock([], true)),
-                localClassName,
-                instanceFields,
-                classDeclaration
-            );
-
-            if (constructorResult) result.push(constructorResult);
-        } else if (instanceFields.length > 0) {
-            // Generate a constructor if none was defined in a class with instance fields that need initialization
-            // localClassName.prototype.____constructor = function(self, ...)
-            //     baseClassName.prototype.____constructor(self, ...)
-            //     ...
-            const constructorBody = transformClassInstanceFields(context, instanceFields);
-            const superCall = lua.createExpressionStatement(
-                lua.createCallExpression(
-                    lua.createTableIndexExpression(
-                        context.transformExpression(ts.createSuper()),
-                        lua.createStringLiteral("____constructor")
-                    ),
-                    [createSelfIdentifier(), lua.createDotsLiteral()]
-                )
-            );
-            constructorBody.unshift(superCall);
-            const constructorFunction = lua.createFunctionExpression(
-                lua.createBlock(constructorBody),
-                [createSelfIdentifier()],
-                lua.createDotsLiteral(),
-                lua.FunctionExpressionFlags.Declaration
-            );
-            result.push(
-                lua.createAssignmentStatement(
-                    createConstructorName(localClassName),
-                    constructorFunction,
-                    classDeclaration
-                )
-            );
-        }
+        if (constructorResult) result.push(constructorResult);
+    } else if (instanceFields.length > 0) {
+        // Generate a constructor if none was defined in a class with instance fields that need initialization
+        // localClassName.prototype.____constructor = function(self, ...)
+        //     baseClassName.prototype.____constructor(self, ...)
+        //     ...
+        const constructorBody = transformClassInstanceFields(context, instanceFields);
+        const superCall = lua.createExpressionStatement(
+            lua.createCallExpression(
+                lua.createTableIndexExpression(
+                    context.transformExpression(ts.createSuper()),
+                    lua.createStringLiteral("____constructor")
+                ),
+                [createSelfIdentifier(), lua.createDotsLiteral()]
+            )
+        );
+        constructorBody.unshift(superCall);
+        const constructorFunction = lua.createFunctionExpression(
+            lua.createBlock(constructorBody),
+            [createSelfIdentifier()],
+            lua.createDotsLiteral(),
+            lua.FunctionExpressionFlags.Declaration
+        );
+        result.push(
+            lua.createAssignmentStatement(createConstructorName(localClassName), constructorFunction, classDeclaration)
+        );
     }
 
     // Transform accessors
@@ -289,18 +198,17 @@ function transformClassLikeDeclaration(
         }
     }
 
-    const noPrototype = isExtension || isMetaExtension;
     const decorationStatements: lua.Statement[] = [];
 
     for (const member of classDeclaration.members) {
         if (ts.isAccessor(member)) {
-            const expression = createPropertyDecoratingExpression(context, member, localClassName, noPrototype);
+            const expression = createPropertyDecoratingExpression(context, member, localClassName);
             if (expression) decorationStatements.push(lua.createExpressionStatement(expression));
         } else if (ts.isMethodDeclaration(member)) {
-            const statement = transformMethodDeclaration(context, member, localClassName, noPrototype);
+            const statement = transformMethodDeclaration(context, member, localClassName);
             if (statement) result.push(statement);
             if (member.body) {
-                const statement = createMethodDecoratingExpression(context, member, localClassName, noPrototype);
+                const statement = createMethodDecoratingExpression(context, member, localClassName);
                 if (statement) decorationStatements.push(statement);
             }
         } else if (ts.isPropertyDeclaration(member)) {
@@ -308,7 +216,7 @@ function transformClassLikeDeclaration(
                 const statement = transformStaticPropertyDeclaration(context, member, localClassName);
                 if (statement) decorationStatements.push(statement);
             }
-            const expression = createPropertyDecoratingExpression(context, member, localClassName, noPrototype);
+            const expression = createPropertyDecoratingExpression(context, member, localClassName);
             if (expression) decorationStatements.push(lua.createExpressionStatement(expression));
         }
     }

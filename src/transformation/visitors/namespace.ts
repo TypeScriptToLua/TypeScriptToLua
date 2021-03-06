@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
-import { annotationDeprecated } from "../utils/diagnostics";
+import { annotationRemoved } from "../utils/diagnostics";
 import { addExportToIdentifier, createExportedIdentifier, getIdentifierExportScope } from "../utils/export";
 import {
     createHoistableVariableDeclarationStatement,
@@ -53,9 +53,8 @@ const currentNamespaces = new WeakMap<TransformationContext, ts.ModuleDeclaratio
 export const transformModuleDeclaration: FunctionVisitor<ts.ModuleDeclaration> = (node, context) => {
     const annotations = getTypeAnnotations(context.checker.getTypeAtLocation(node));
     // If phantom namespace elide the declaration and return the body
-    if (annotations.has(AnnotationKind.Phantom) && node.body && ts.isModuleBlock(node.body)) {
-        context.diagnostics.push(annotationDeprecated(node, AnnotationKind.Phantom));
-        return context.transformStatements(node.body.statements);
+    if (annotations.has(AnnotationKind.Phantom)) {
+        context.diagnostics.push(annotationRemoved(node, AnnotationKind.Phantom));
     }
 
     const currentNamespace = currentNamespaces.get(context);

@@ -56,12 +56,12 @@
         "eslint": "^6.8.0",
         "eslint-plugin-import": "^2.20.1",
         "eslint-plugin-jest": "^23.8.2",
-        "fengari": "^0.1.4",
         "fs-extra": "^8.1.0",
         "javascript-stringify": "^2.0.1",
         "jest": "^26.0.1",
         "jest-circus": "^25.1.0",
         "lua-types": "^2.8.0",
+        "lua-wasm-bindings": "^0.1.4",
         "prettier": "^2.0.5",
         "ts-jest": "^26.3.0",
         "ts-node": "^8.6.2"

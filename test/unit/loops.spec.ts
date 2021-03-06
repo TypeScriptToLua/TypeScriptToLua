@@ -534,6 +534,7 @@ for (const testCase of [
         [tstl.LuaTarget.Lua51]: builder => builder.expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]),
         [tstl.LuaTarget.Lua52]: expectContinueGotoLabel,
         [tstl.LuaTarget.Lua53]: expectContinueGotoLabel,
+        [tstl.LuaTarget.Lua54]: expectContinueGotoLabel,
         [tstl.LuaTarget.LuaJIT]: expectContinueGotoLabel,
     });
 }

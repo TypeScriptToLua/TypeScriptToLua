@@ -335,6 +335,87 @@ ____exports.__result = a | b
 return ____exports"
 `;
 
+exports[`Bitop [5.4] ("~a") 1`] = `
+"local ____exports = {}
+____exports.__result = ~a
+return ____exports"
+`;
+
+exports[`Bitop [5.4] ("a&=b") 1`] = `
+"local ____exports = {}
+____exports.__result = (function()
+    a = a & b
+    return a
+end)()
+return ____exports"
+`;
+
+exports[`Bitop [5.4] ("a&b") 1`] = `
+"local ____exports = {}
+____exports.__result = a & b
+return ____exports"
+`;
+
+exports[`Bitop [5.4] ("a<<=b") 1`] = `
+"local ____exports = {}
+____exports.__result = (function()
+    a = a << b
+    return a
+end)()
+return ____exports"
+`;
+
+exports[`Bitop [5.4] ("a<<b") 1`] = `
+"local ____exports = {}
+____exports.__result = a << b
+return ____exports"
+`;
+
+exports[`Bitop [5.4] ("a>>>=b") 1`] = `
+"local ____exports = {}
+____exports.__result = (function()
+    a = a >> b
+    return a
+end)()
+return ____exports"
+`;
+
+exports[`Bitop [5.4] ("a>>>b") 1`] = `
+"local ____exports = {}
+____exports.__result = a >> b
+return ____exports"
+`;
+
+exports[`Bitop [5.4] ("a^=b") 1`] = `
+"local ____exports = {}
+____exports.__result = (function()
+    a = a ~ b
+    return a
+end)()
+return ____exports"
+`;
+
+exports[`Bitop [5.4] ("a^b") 1`] = `
+"local ____exports = {}
+____exports.__result = a ~ b
+return ____exports"
+`;
+
+exports[`Bitop [5.4] ("a|=b") 1`] = `
+"local ____exports = {}
+____exports.__result = (function()
+    a = a | b
+    return a
+end)()
+return ____exports"
+`;
+
+exports[`Bitop [5.4] ("a|b") 1`] = `
+"local ____exports = {}
+____exports.__result = a | b
+return ____exports"
+`;
+
 exports[`Bitop [JIT] ("~a") 1`] = `
 "local ____exports = {}
 ____exports.__result = bit.bnot(a)
@@ -553,3 +634,22 @@ return ____exports"
 `;
 
 exports[`Unsupported bitop 5.3 ("a>>b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Right shift operator is not supported for target Lua 5.3. Use \`>>>\` instead."`;
+
+exports[`Unsupported bitop 5.4 ("a>>=b"): code 1`] = `
+"local ____exports = {}
+____exports.__result = (function()
+    a = a >> b
+    return a
+end)()
+return ____exports"
+`;
+
+exports[`Unsupported bitop 5.4 ("a>>=b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Right shift operator is not supported for target Lua 5.3. Use \`>>>\` instead."`;
+
+exports[`Unsupported bitop 5.4 ("a>>b"): code 1`] = `
+"local ____exports = {}
+____exports.__result = a >> b
+return ____exports"
+`;
+
+exports[`Unsupported bitop 5.4 ("a>>b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Right shift operator is not supported for target Lua 5.3. Use \`>>>\` instead."`;

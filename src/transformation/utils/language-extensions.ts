@@ -5,6 +5,7 @@ export enum ExtensionKind {
     MultiFunction = "MultiFunction",
     MultiType = "MultiType",
     RangeFunction = "RangeFunction",
+    VarargConstant = "VarargConstant",
     IterableType = "IterableType",
     AdditionOperatorType = "AdditionOperatorType",
     AdditionOperatorMethodType = "AdditionOperatorMethodType",
@@ -49,15 +50,17 @@ export enum ExtensionKind {
     TableSetMethodType = "TableSetMethodType",
 }
 
-const extensionKindToFunctionName: { [T in ExtensionKind]?: string } = {
+const extensionKindToValueName: { [T in ExtensionKind]?: string } = {
     [ExtensionKind.MultiFunction]: "$multi",
     [ExtensionKind.RangeFunction]: "$range",
+    [ExtensionKind.VarargConstant]: "$vararg",
 };
 
 const extensionKindToTypeBrand: { [T in ExtensionKind]: string } = {
     [ExtensionKind.MultiFunction]: "__luaMultiFunctionBrand",
     [ExtensionKind.MultiType]: "__luaMultiReturnBrand",
     [ExtensionKind.RangeFunction]: "__luaRangeFunctionBrand",
+    [ExtensionKind.VarargConstant]: "__luaVarargConstantBrand",
     [ExtensionKind.IterableType]: "__luaIterableBrand",
     [ExtensionKind.AdditionOperatorType]: "__luaAdditionBrand",
     [ExtensionKind.AdditionOperatorMethodType]: "__luaAdditionMethodBrand",
@@ -107,13 +110,13 @@ export function isExtensionType(type: ts.Type, extensionKind: ExtensionKind): bo
     return typeBrand !== undefined && type.getProperty(typeBrand) !== undefined;
 }
 
-export function isExtensionFunction(
+export function isExtensionValue(
     context: TransformationContext,
     symbol: ts.Symbol,
     extensionKind: ExtensionKind
 ): boolean {
     return (
-        symbol.getName() === extensionKindToFunctionName[extensionKind] &&
+        symbol.getName() === extensionKindToValueName[extensionKind] &&
         symbol.declarations.some(d => isExtensionType(context.checker.getTypeAtLocation(d), extensionKind))
     );
 }

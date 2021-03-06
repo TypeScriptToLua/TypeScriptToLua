@@ -3,7 +3,7 @@ import * as lua from "../../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
 import { luaTableInvalidInstanceOf } from "../../utils/diagnostics";
-import { createImmediatelyInvokedFunctionExpression, wrapInToStringForConcat } from "../../utils/lua-ast";
+import { wrapInToStringForConcat } from "../../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isStandardLibraryType, isStringType, typeCanSatisfy } from "../../utils/typescript";
 import { transformTypeOfBinaryExpression } from "../typeof";
@@ -16,6 +16,7 @@ import {
     unwrapCompoundAssignmentToken,
 } from "./compound";
 import { assert } from "../../../utils";
+import { transformToImmediatelyInvokedFunctionExpression } from "../../utils/transform";
 
 type SimpleOperator =
     | ts.AdditiveOperatorOrHigher
@@ -121,9 +122,12 @@ export const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (
         }
 
         case ts.SyntaxKind.CommaToken: {
-            return createImmediatelyInvokedFunctionExpression(
-                context.transformStatements(ts.createExpressionStatement(node.left)),
-                context.transformExpression(node.right),
+            return transformToImmediatelyInvokedFunctionExpression(
+                context,
+                () => ({
+                    statements: context.transformStatements(ts.createExpressionStatement(node.left)),
+                    result: context.transformExpression(node.right),
+                }),
                 node
             );
         }

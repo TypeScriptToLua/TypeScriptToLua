@@ -2,16 +2,16 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { transformBuiltinCallExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { isInTupleReturnFunction, isTupleReturnCall, isVarargType } from "../utils/annotations";
+import { isInTupleReturnFunction, isTupleReturnCall } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
 import { ContextType, getDeclarationContextType } from "../utils/function-context";
-import { createImmediatelyInvokedFunctionExpression, createUnpackCall, wrapInTable } from "../utils/lua-ast";
+import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isValidLuaIdentifier } from "../utils/safe-names";
-import { isArrayType, isExpressionWithEvaluationEffect, isInDestructingAssignment } from "../utils/typescript";
+import { isExpressionWithEvaluationEffect, isInDestructingAssignment } from "../utils/typescript";
 import { transformElementAccessArgument } from "./access";
 import { transformLuaTableCallExpression } from "./lua-table";
-import { shouldMultiReturnCallBeWrapped, returnsMultiType } from "./language-extensions/multi";
+import { shouldMultiReturnCallBeWrapped } from "./language-extensions/multi";
 import { isOperatorMapping, transformOperatorMappingExpression } from "./language-extensions/operators";
 import {
     isTableGetCall,
@@ -20,6 +20,10 @@ import {
     transformTableSetExpression,
 } from "./language-extensions/table";
 import { invalidTableSetExpression } from "../utils/diagnostics";
+import {
+    ImmediatelyInvokedFunctionParameters,
+    transformToImmediatelyInvokedFunctionExpression,
+} from "../utils/transform";
 
 export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
 
@@ -113,10 +117,32 @@ export function transformArguments(
     return parameters;
 }
 
+function transformElementAccessCall(
+    context: TransformationContext,
+    left: ts.PropertyAccessExpression | ts.ElementAccessExpression,
+    args: ts.Expression[] | ts.NodeArray<ts.Expression>,
+    signature?: ts.Signature
+): ImmediatelyInvokedFunctionParameters {
+    const transformedArguments = transformArguments(context, args, signature, ts.factory.createIdentifier("____self"));
+
+    // Cache left-side if it has effects
+    // (function() local ____self = context; return ____self[argument](parameters); end)()
+    const argument = ts.isElementAccessExpression(left)
+        ? transformElementAccessArgument(context, left)
+        : lua.createStringLiteral(left.name.text);
+    const selfIdentifier = lua.createIdentifier("____self");
+    const callContext = context.transformExpression(left.expression);
+    const selfAssignment = lua.createVariableDeclarationStatement(selfIdentifier, callContext);
+    const index = lua.createTableIndexExpression(selfIdentifier, argument);
+    const callExpression = lua.createCallExpression(index, transformedArguments);
+    return { statements: selfAssignment, result: callExpression };
+}
+
 export function transformContextualCallExpression(
     context: TransformationContext,
     node: ts.CallExpression | ts.TaggedTemplateExpression,
-    transformedArguments: lua.Expression[]
+    args: ts.Expression[] | ts.NodeArray<ts.Expression>,
+    signature?: ts.Signature
 ): lua.Expression {
     const left = ts.isCallExpression(node) ? node.expression : node.tag;
     if (ts.isPropertyAccessExpression(left) && ts.isIdentifier(left.name) && isValidLuaIdentifier(left.name.text)) {
@@ -126,32 +152,25 @@ export function transformContextualCallExpression(
         return lua.createMethodCallExpression(
             table,
             lua.createIdentifier(left.name.text, left.name),
-            transformedArguments,
+            transformArguments(context, args, signature),
             node
         );
     } else if (ts.isElementAccessExpression(left) || ts.isPropertyAccessExpression(left)) {
-        const callContext = context.transformExpression(left.expression);
         if (isExpressionWithEvaluationEffect(left.expression)) {
-            // Inject context parameter
-            transformedArguments.unshift(lua.createIdentifier("____self"));
-
-            // Cache left-side if it has effects
-            // (function() local ____self = context; return ____self[argument](parameters); end)()
-            const argument = ts.isElementAccessExpression(left)
-                ? transformElementAccessArgument(context, left)
-                : lua.createStringLiteral(left.name.text);
-            const selfIdentifier = lua.createIdentifier("____self");
-            const selfAssignment = lua.createVariableDeclarationStatement(selfIdentifier, callContext);
-            const index = lua.createTableIndexExpression(selfIdentifier, argument);
-            const callExpression = lua.createCallExpression(index, transformedArguments);
-            return createImmediatelyInvokedFunctionExpression([selfAssignment], callExpression, node);
+            return transformToImmediatelyInvokedFunctionExpression(
+                context,
+                () => transformElementAccessCall(context, left, args, signature),
+                node
+            );
         } else {
+            const callContext = context.transformExpression(left.expression);
             const expression = context.transformExpression(left);
+            const transformedArguments = transformArguments(context, args, signature);
             return lua.createCallExpression(expression, [callContext, ...transformedArguments]);
         }
     } else if (ts.isIdentifier(left)) {
-        const callContext = context.isStrict ? lua.createNilLiteral() : lua.createIdentifier("_G");
-        transformedArguments.unshift(callContext);
+        const callContext = context.isStrict ? ts.factory.createNull() : ts.factory.createIdentifier("_G");
+        const transformedArguments = transformArguments(context, args, signature, callContext);
         const expression = context.transformExpression(left);
         return lua.createCallExpression(expression, transformedArguments, node);
     } else {
@@ -168,17 +187,17 @@ function transformPropertyCall(context: TransformationContext, node: PropertyCal
         return lua.createCallExpression(context.transformExpression(node.expression), parameters);
     }
 
-    const parameters = transformArguments(context, node.arguments, signature);
     const signatureDeclaration = signature?.getDeclaration();
     if (!signatureDeclaration || getDeclarationContextType(context, signatureDeclaration) !== ContextType.Void) {
         // table:name()
-        return transformContextualCallExpression(context, node, parameters);
+        return transformContextualCallExpression(context, node, node.arguments, signature);
     } else {
         const table = context.transformExpression(node.expression.expression);
 
         // table.name()
         const name = node.expression.name.text;
         const callPath = lua.createTableIndexExpression(table, lua.createStringLiteral(name), node.expression);
+        const parameters = transformArguments(context, node.arguments, signature);
         return lua.createCallExpression(callPath, parameters, node);
     }
 }
@@ -186,13 +205,13 @@ function transformPropertyCall(context: TransformationContext, node: PropertyCal
 function transformElementCall(context: TransformationContext, node: ts.CallExpression): lua.Expression {
     const signature = context.checker.getResolvedSignature(node);
     const signatureDeclaration = signature?.getDeclaration();
-    const parameters = transformArguments(context, node.arguments, signature);
     if (!signatureDeclaration || getDeclarationContextType(context, signatureDeclaration) !== ContextType.Void) {
         // A contextual parameter must be given to this call expression
-        return transformContextualCallExpression(context, node, parameters);
+        return transformContextualCallExpression(context, node, node.arguments, signature);
     } else {
         // No context
         const expression = context.transformExpression(node.expression);
+        const parameters = transformArguments(context, node.arguments, signature);
         return lua.createCallExpression(expression, parameters);
     }
 }
@@ -227,9 +246,10 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
 
     if (isTableSetCall(context, node)) {
         context.diagnostics.push(invalidTableSetExpression(node));
-        return createImmediatelyInvokedFunctionExpression(
-            [transformTableSetExpression(context, node)],
-            lua.createNilLiteral()
+        return transformToImmediatelyInvokedFunctionExpression(
+            context,
+            () => ({ statements: transformTableSetExpression(context, node), result: lua.createNilLiteral() }),
+            node
         );
     }
 
@@ -271,22 +291,4 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
 
     const callExpression = lua.createCallExpression(callPath, parameters, node);
     return wrapResult ? wrapInTable(callExpression) : callExpression;
-};
-
-// TODO: Currently it's also used as an array member
-export const transformSpreadElement: FunctionVisitor<ts.SpreadElement> = (node, context) => {
-    const innerExpression = context.transformExpression(node.expression);
-    if (isTupleReturnCall(context, node.expression)) return innerExpression;
-    if (ts.isCallExpression(node.expression) && returnsMultiType(context, node.expression)) return innerExpression;
-
-    if (ts.isIdentifier(node.expression) && isVarargType(context, node.expression)) {
-        return lua.createDotsLiteral(node);
-    }
-
-    const type = context.checker.getTypeAtLocation(node.expression);
-    if (isArrayType(context, type)) {
-        return createUnpackCall(context, innerExpression, node);
-    }
-
-    return transformLuaLibFunction(context, LuaLibFeature.Spread, node, innerExpression);
 };

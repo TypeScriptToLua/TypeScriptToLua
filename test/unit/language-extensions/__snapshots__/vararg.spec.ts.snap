@@ -1,0 +1,37 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`$vararg invalid use ("const l = $vararg.length"): code 1`] = `"l = #____"`;
+
+exports[`$vararg invalid use ("const l = $vararg.length"): diagnostics 1`] = `"main.ts(2,19): error TSTL: $vararg can only be used in a spread element ('...$vararg') in global scope."`;
+
+exports[`$vararg invalid use ("const x = $vararg;"): code 1`] = `"x = ____"`;
+
+exports[`$vararg invalid use ("const x = $vararg;"): diagnostics 1`] = `"main.ts(2,19): error TSTL: $vararg can only be used in a spread element ('...$vararg') in global scope."`;
+
+exports[`$vararg invalid use ("for (const x of $vararg) {}"): code 1`] = `
+"for ____, x in ipairs(____) do
+end"
+`;
+
+exports[`$vararg invalid use ("for (const x of $vararg) {}"): diagnostics 1`] = `"main.ts(2,25): error TSTL: $vararg can only be used in a spread element ('...$vararg') in global scope."`;
+
+exports[`$vararg invalid use ("function f(s: string[]) {} f($vararg);"): code 1`] = `
+"function f(self, s)
+end
+f(_G, ____)"
+`;
+
+exports[`$vararg invalid use ("function f(s: string[]) {} f($vararg);"): diagnostics 1`] = `"main.ts(2,38): error TSTL: $vararg can only be used in a spread element ('...$vararg') in global scope."`;
+
+exports[`$vararg invalid use ("function foo(...args: string[]) {} function bar() { foo(...$vararg); }"): code 1`] = `
+"function foo(self, ...)
+end
+function bar(self)
+    foo(
+        _G,
+        table.unpack(____)
+    )
+end"
+`;
+
+exports[`$vararg invalid use ("function foo(...args: string[]) {} function bar() { foo(...$vararg); }"): diagnostics 1`] = `"main.ts(2,68): error TSTL: $vararg can only be used in a spread element ('...$vararg') in global scope."`;

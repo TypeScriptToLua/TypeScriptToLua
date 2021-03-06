@@ -5,13 +5,18 @@ import { TransformationContext } from "../../context";
 import { isTupleReturnCall } from "../../utils/annotations";
 import { validateAssignment } from "../../utils/assignment-validation";
 import { createExportedIdentifier, getDependenciesOfSymbol, isSymbolExported } from "../../utils/export";
-import { createImmediatelyInvokedFunctionExpression, createUnpackCall, wrapInTable } from "../../utils/lua-ast";
+import { createUnpackCall, wrapInTable } from "../../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isDestructuringAssignment } from "../../utils/typescript";
 import { transformElementAccessArgument } from "../access";
 import { transformLuaTablePropertyAccessInAssignment } from "../lua-table";
 import { isArrayLength, transformDestructuringAssignment } from "./destructuring-assignments";
 import { isMultiReturnCall } from "../language-extensions/multi";
+import { popScope, pushScope, ScopeType } from "../../utils/scope";
+import {
+    ImmediatelyInvokedFunctionParameters,
+    transformToImmediatelyInvokedFunctionExpression,
+} from "../../utils/transform";
 
 export function transformAssignmentLeftHandSideExpression(
     context: TransformationContext,
@@ -68,6 +73,25 @@ export function transformAssignment(
     ];
 }
 
+function transformDestructuredAssignmentExpression(
+    context: TransformationContext,
+    expression: ts.DestructuringAssignment
+): ImmediatelyInvokedFunctionParameters {
+    const rootIdentifier = lua.createAnonymousIdentifier(expression.left);
+
+    let right = context.transformExpression(expression.right);
+    if (isTupleReturnCall(context, expression.right) || isMultiReturnCall(context, expression.right)) {
+        right = wrapInTable(right);
+    }
+
+    const statements = [
+        lua.createVariableDeclarationStatement(rootIdentifier, right),
+        ...transformDestructuringAssignment(context, expression, rootIdentifier),
+    ];
+
+    return { statements, result: rootIdentifier };
+}
+
 export function transformAssignmentExpression(
     context: TransformationContext,
     expression: ts.AssignmentExpression<ts.EqualsToken>
@@ -89,19 +113,11 @@ export function transformAssignmentExpression(
     }
 
     if (isDestructuringAssignment(expression)) {
-        const rootIdentifier = lua.createAnonymousIdentifier(expression.left);
-
-        let right = context.transformExpression(expression.right);
-        if (isTupleReturnCall(context, expression.right) || isMultiReturnCall(context, expression.right)) {
-            right = wrapInTable(right);
-        }
-
-        const statements = [
-            lua.createVariableDeclarationStatement(rootIdentifier, right),
-            ...transformDestructuringAssignment(context, expression, rootIdentifier),
-        ];
-
-        return createImmediatelyInvokedFunctionExpression(statements, rootIdentifier, expression);
+        return transformToImmediatelyInvokedFunctionExpression(
+            context,
+            () => transformDestructuredAssignmentExpression(context, expression),
+            expression
+        );
     }
 
     if (ts.isPropertyAccessExpression(expression.left) || ts.isElementAccessExpression(expression.left)) {
@@ -120,6 +136,7 @@ export function transformAssignmentExpression(
             indexParameter,
             valueParameter,
         ]);
+        pushScope(context, ScopeType.Function);
         const objExpression = context.transformExpression(expression.left.expression);
         let indexExpression: lua.Expression;
         if (ts.isPropertyAccessExpression(expression.left)) {
@@ -134,15 +151,19 @@ export function transformAssignmentExpression(
         }
 
         const args = [objExpression, indexExpression, context.transformExpression(expression.right)];
+        popScope(context);
         return lua.createCallExpression(iife, args, expression);
     } else {
-        // Simple assignment
-        // (function() ${left} = ${right}; return ${left} end)()
-        const left = context.transformExpression(expression.left);
-        const right = context.transformExpression(expression.right);
-        return createImmediatelyInvokedFunctionExpression(
-            transformAssignment(context, expression.left, right),
-            left,
+        return transformToImmediatelyInvokedFunctionExpression(
+            context,
+            () => {
+                // Simple assignment
+                // (function() ${left} = ${right}; return ${left} end)()
+                const left = context.transformExpression(expression.left);
+                const right = context.transformExpression(expression.right);
+                const statements = transformAssignment(context, expression.left, right);
+                return { statements, result: left };
+            },
             expression
         );
     }

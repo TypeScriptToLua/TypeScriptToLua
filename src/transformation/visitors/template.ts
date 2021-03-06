@@ -65,14 +65,21 @@ export const transformTaggedTemplateExpression: FunctionVisitor<ts.TaggedTemplat
 
     // Construct table with strings and literal strings
 
-    const rawStringsTable = lua.createTableExpression(
-        rawStrings.map(text => lua.createTableFieldExpression(lua.createStringLiteral(text)))
+    const rawStringsArray = ts.factory.createArrayLiteralExpression(
+        rawStrings.map(text => ts.factory.createStringLiteral(text))
     );
 
-    const stringTableLiteral = lua.createTableExpression([
-        ...strings.map(partialString => lua.createTableFieldExpression(lua.createStringLiteral(partialString))),
-        lua.createTableFieldExpression(rawStringsTable, lua.createStringLiteral("raw")),
+    const stringObject = ts.factory.createObjectLiteralExpression([
+        ...strings.map((partialString, i) =>
+            ts.factory.createPropertyAssignment(
+                ts.factory.createNumericLiteral(i + 1),
+                ts.factory.createStringLiteral(partialString)
+            )
+        ),
+        ts.factory.createPropertyAssignment("raw", rawStringsArray),
     ]);
+
+    expressions.unshift(stringObject);
 
     // Evaluate if there is a self parameter to be used.
     const signature = context.checker.getResolvedSignature(expression);
@@ -80,13 +87,12 @@ export const transformTaggedTemplateExpression: FunctionVisitor<ts.TaggedTemplat
     const useSelfParameter =
         signatureDeclaration && getDeclarationContextType(context, signatureDeclaration) !== ContextType.Void;
 
+    if (useSelfParameter) {
+        return transformContextualCallExpression(context, expression, expressions, signature);
+    }
+
     // Argument evaluation.
     const callArguments = transformArguments(context, expressions, signature);
-    callArguments.unshift(stringTableLiteral);
-
-    if (useSelfParameter) {
-        return transformContextualCallExpression(context, expression, callArguments);
-    }
 
     const leftHandSideExpression = context.transformExpression(expression.tag);
     return lua.createCallExpression(leftHandSideExpression, callArguments);

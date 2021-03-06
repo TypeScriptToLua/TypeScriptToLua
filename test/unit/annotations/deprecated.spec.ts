@@ -33,3 +33,14 @@ test("forRange deprecation", () => {
         for (const i of forRange(1, 10)) {}
     `.expectDiagnosticsToMatchSnapshot([annotationDeprecated.code]);
 });
+
+test("vararg deprecation", () => {
+    util.testModule`
+        /** @vararg */
+        type VarArg<T extends any[]> = T & { readonly __brand: unique symbol };
+        function foo(...args: any[]) {}
+        function vararg(...args: VarArg<any[]>) {
+            foo(...args);
+        }
+    `.expectDiagnosticsToMatchSnapshot([annotationDeprecated.code]);
+});

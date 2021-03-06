@@ -2,6 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { getOrUpdate } from "../../utils";
 import { TransformationContext } from "../context";
+import { isOptimizedVarArgSpread } from "../visitors/spread";
 import { markSymbolAsReferencedInCurrentScopes } from "./scope";
 
 const symbolIdCounters = new WeakMap<TransformationContext, number>();
@@ -44,7 +45,11 @@ export function trackSymbolReference(
         symbolInfo.set(symbolId, { symbol, firstSeenAtPos: identifier.pos });
     }
 
-    markSymbolAsReferencedInCurrentScopes(context, symbolId, identifier);
+    // If isOptimizedVarArgSpread returns true, the identifier will not appear in the resulting Lua.
+    // Only the optimized ellipses (...) will be used.
+    if (!isOptimizedVarArgSpread(context, symbol, identifier)) {
+        markSymbolAsReferencedInCurrentScopes(context, symbolId, identifier);
+    }
 
     return symbolId;
 }

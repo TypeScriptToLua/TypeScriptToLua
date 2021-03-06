@@ -3,7 +3,7 @@ import * as lua from "../../LuaAST";
 import { assert, getOrUpdate, isNonNull } from "../../utils";
 import { TransformationContext } from "../context";
 import { getSymbolInfo } from "./symbols";
-import { getFirstDeclarationInFile } from "./typescript";
+import { findFirstNodeAbove, getFirstDeclarationInFile } from "./typescript";
 
 export enum ScopeType {
     File = 1 << 0,
@@ -24,6 +24,7 @@ interface FunctionDefinitionInfo {
 export interface Scope {
     type: ScopeType;
     id: number;
+    node?: ts.Node;
     referencedSymbols?: Map<lua.SymbolId, ts.Node[]>;
     variableDeclarations?: lua.VariableDeclarationStatement[];
     functionDefinitions?: Map<lua.SymbolId, FunctionDefinitionInfo>;
@@ -89,6 +90,45 @@ export function popScope(context: TransformationContext): Scope {
     assert(scope);
 
     return scope;
+}
+
+function isDeclaredInScope(symbol: ts.Symbol, scopeNode: ts.Node) {
+    return symbol?.declarations.some(d => findFirstNodeAbove(d, (n): n is ts.Node => n === scopeNode));
+}
+
+// Checks for references to local functions which haven't been defined yet,
+// and thus will be hoisted above the current position.
+export function hasReferencedUndefinedLocalFunction(context: TransformationContext, scope: Scope) {
+    if (!scope.referencedSymbols || !scope.node) {
+        return false;
+    }
+    for (const [symbolId, nodes] of scope.referencedSymbols) {
+        const type = context.checker.getTypeAtLocation(nodes[0]);
+        if (
+            !scope.functionDefinitions?.has(symbolId) &&
+            type.getCallSignatures().length > 0 &&
+            isDeclaredInScope(type.symbol, scope.node)
+        ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+export function hasReferencedSymbol(context: TransformationContext, scope: Scope, symbol: ts.Symbol) {
+    if (!scope.referencedSymbols) {
+        return;
+    }
+    for (const nodes of scope.referencedSymbols.values()) {
+        if (nodes.some(node => context.checker.getSymbolAtLocation(node) === symbol)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+export function isFunctionScopeWithDefinition(scope: Scope): scope is Scope & { node: ts.SignatureDeclaration } {
+    return scope.node !== undefined && ts.isFunctionLike(scope.node);
 }
 
 export function performHoisting(context: TransformationContext, statements: lua.Statement[]): lua.Statement[] {

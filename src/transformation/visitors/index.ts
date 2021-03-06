@@ -4,7 +4,8 @@ import { transformElementAccessExpression, transformPropertyAccessExpression, tr
 import { transformBinaryExpression } from "./binary-expression";
 import { transformBlock } from "./block";
 import { transformBreakStatement, transformContinueStatement } from "./break-continue";
-import { transformCallExpression, transformSpreadElement } from "./call";
+import { transformCallExpression } from "./call";
+import { transformSpreadElement } from "./spread";
 import {
     transformClassAsExpression,
     transformClassDeclaration,

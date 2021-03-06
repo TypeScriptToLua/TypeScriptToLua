@@ -36,6 +36,9 @@ test("Destructuring assignment of LuaMultiReturn", () => {
     `
         .setOptions(multiProjectOptions)
         .expectToEqual({ a: 1, b: [2, 3] });
+});
+
+test("Destructuring assignment of LuaMultiReturn returning nil", () => {
     util.testModule`
         function multiReturn(): LuaMultiReturn<[number, number, number]> {
             return;
@@ -45,7 +48,7 @@ test("Destructuring assignment of LuaMultiReturn", () => {
         export {a, b};
     `
         .setOptions(multiProjectOptions)
-        .expectToEqual({ b: [] });
+        .expectToEqual({ a: undefined, b: [] });
 });
 
 test.each<[string, any]>([

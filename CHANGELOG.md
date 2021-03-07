@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.39.0
+
+- **[Breaking]** Removed support for `@phantom`, `@metaExtension`, `@extension`, `@pureAbstract` compiler annotations. As of this version **these will no longer function!** For help upgrading your code see [the deprecated annotation docs](https://typescripttolua.github.io/docs/advanced/compiler-annotations#deprecated).
+- Added official support for **Lua 5.4**.
+- Added the `LuaTable<TKey, TValue>` language extension. This allows the use of barebones Lua tables for key-value storage, without suffering from JS's forced string indexes. For more information see [the LuaTable docs](https://typescripttolua.github.io/docs/advanced/language-extensions#lua-table-types).
+- Deprecated `@vararg`. Instead, tstl will figure out itself when use of the Lua ellipsis token (`...`) is appropriate. Also language extension `$vararg` was added to force use of the ellipsis token. See [the docs](https://typescripttolua.github.io/docs/advanced/language-extensions#vararg-constant) for more information.
+- Added `trailingComments` and `leadingComments` fields to statements in the Lua AST. These can be modified by plugins to emit comments in the output lua. For an example see [the add-comments test plugin](https://github.com/TypeScriptToLua/TypeScriptToLua/blob/master/test/transpile/plugins/add-comments.ts).
+
+Under the hood:
+
+- Tests are now run on a WebAssembly-compiled version of official Lua releases. This means we can now execute test Lua on all Lua versions (except LuaJIT). Shoutout to [Fengari](https://github.com/fengari-lua/fengari) for serving us well for a long time.
+
 ## 0.38.0
 
 - **[Breaking]** Renamed `MultiReturn` to `LuaMultiReturn` to be consistent with other language extensions all starting with Lua-.

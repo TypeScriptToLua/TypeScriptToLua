@@ -130,7 +130,7 @@ module.exports = {
         "no-useless-return": ["error"],
 
         "import/no-default-export": "error",
-        // TODO only works for direct imports currently (useluess for now) https://github.com/benmosher/eslint-plugin-import/issues/1729
+        // TODO currently only works for direct imports (useless for now) https://github.com/benmosher/eslint-plugin-import/issues/1729
         // "import/no-deprecated": "error",
 
         "jest/expect-expect": "off",

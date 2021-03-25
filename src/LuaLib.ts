@@ -87,6 +87,7 @@ export enum LuaLibFeature {
     Unpack = "Unpack",
 }
 
+/* eslint-disable @typescript-eslint/naming-convention */
 const luaLibDependencies: Partial<Record<LuaLibFeature, LuaLibFeature[]>> = {
     ArrayConcat: [LuaLibFeature.ArrayIsArray],
     ArrayFlat: [LuaLibFeature.ArrayConcat, LuaLibFeature.ArrayIsArray],
@@ -108,6 +109,7 @@ const luaLibDependencies: Partial<Record<LuaLibFeature, LuaLibFeature[]>> = {
     StringSplit: [LuaLibFeature.StringSubstring],
     SymbolRegistry: [LuaLibFeature.Symbol],
 };
+/* eslint-enable @typescript-eslint/naming-convention */
 
 export function loadLuaLibFeatures(features: Iterable<LuaLibFeature>, emitHost: EmitHost): string {
     let result = "";

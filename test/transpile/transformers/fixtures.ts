@@ -9,7 +9,7 @@ export const program = (program: ts.Program, options: { value: any }): ts.Transf
 export const config = ({ value }: { value: any }): ts.TransformerFactory<ts.SourceFile> => context => file =>
     visitAndReplace(context, file, node => {
         if (!ts.isReturnStatement(node)) return;
-        return ts.updateReturn(node, ts.createLiteral(value));
+        return ts.factory.updateReturnStatement(node, value ? ts.factory.createTrue() : ts.factory.createFalse());
     });
 
 export const checker = (
@@ -20,13 +20,13 @@ export const checker = (
         if (!ts.isReturnStatement(node) || !node.expression) return;
         const type = checker.getTypeAtLocation(node.expression);
         if ((type.flags & ts.TypeFlags.BooleanLiteral) === 0) return;
-        return ts.updateReturn(node, ts.createLiteral(value));
+        return ts.factory.updateReturnStatement(node, value ? ts.factory.createTrue() : ts.factory.createFalse());
     });
 
 export const raw: ts.TransformerFactory<ts.SourceFile> = context => file =>
     visitAndReplace(context, file, node => {
         if (!ts.isReturnStatement(node)) return;
-        return ts.updateReturn(node, ts.createLiteral(true));
+        return ts.factory.updateReturnStatement(node, ts.factory.createTrue());
     });
 
 export const compilerOptions = (
@@ -35,6 +35,6 @@ export const compilerOptions = (
     assert(options.plugins?.length === 1);
     return visitAndReplace(context, file, node => {
         if (!ts.isReturnStatement(node)) return;
-        return ts.updateReturn(node, ts.createLiteral(true));
+        return ts.factory.updateReturnStatement(node, ts.factory.createTrue());
     });
 };

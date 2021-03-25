@@ -22,15 +22,15 @@ export function parseAccessExpressionWithEvaluationEffects(
         const type = context.checker.getTypeAtLocation(node.expression);
         if (isArrayType(context, type)) {
             // Offset arrays by one
-            const oneLit = ts.createNumericLiteral("1");
-            const exp = ts.createParen(node.argumentExpression);
-            const addExp = ts.createBinary(exp, ts.SyntaxKind.PlusToken, oneLit);
+            const oneLit = ts.factory.createNumericLiteral("1");
+            const exp = ts.factory.createParenthesizedExpression(node.argumentExpression);
+            const addExp = ts.factory.createBinaryExpression(exp, ts.SyntaxKind.PlusToken, oneLit);
             return [node.expression, addExp];
         } else {
             return [node.expression, node.argumentExpression];
         }
     } else if (ts.isPropertyAccessExpression(node) && isExpressionWithEvaluationEffect(node.expression)) {
-        return [node.expression, ts.createStringLiteral(node.name.text)];
+        return [node.expression, ts.factory.createStringLiteral(node.name.text)];
     }
 
     return [];

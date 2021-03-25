@@ -107,9 +107,9 @@ test("Hoisting with synthetic source file node", () => {
         .setCustomTransformers({
             before: [
                 () => sourceFile =>
-                    ts.updateSourceFileNode(
+                    ts.factory.updateSourceFile(
                         sourceFile,
-                        [ts.createNotEmittedStatement(undefined!), ...sourceFile.statements],
+                        [ts.factory.createNotEmittedStatement(undefined!), ...sourceFile.statements],
                         sourceFile.isDeclarationFile,
                         sourceFile.referencedFiles,
                         sourceFile.typeReferenceDirectives,

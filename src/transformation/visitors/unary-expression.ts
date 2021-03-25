@@ -25,7 +25,7 @@ export function transformUnaryExpressionStatement(
             context,
             expression,
             expression.operand,
-            ts.createLiteral(1),
+            ts.factory.createNumericLiteral(1),
             replacementOperator
         );
     } else if (ts.isPostfixUnaryExpression(expression)) {
@@ -37,7 +37,7 @@ export function transformUnaryExpressionStatement(
             context,
             expression,
             expression.operand,
-            ts.createLiteral(1),
+            ts.factory.createNumericLiteral(1),
             replacementOperator
         );
     }
@@ -50,7 +50,7 @@ export const transformPostfixUnaryExpression: FunctionVisitor<ts.PostfixUnaryExp
                 context,
                 expression,
                 expression.operand,
-                ts.createLiteral(1),
+                ts.factory.createNumericLiteral(1),
                 ts.SyntaxKind.PlusToken,
                 true
             );
@@ -60,7 +60,7 @@ export const transformPostfixUnaryExpression: FunctionVisitor<ts.PostfixUnaryExp
                 context,
                 expression,
                 expression.operand,
-                ts.createLiteral(1),
+                ts.factory.createNumericLiteral(1),
                 ts.SyntaxKind.MinusToken,
                 true
             );
@@ -77,7 +77,7 @@ export const transformPrefixUnaryExpression: FunctionVisitor<ts.PrefixUnaryExpre
                 context,
                 expression,
                 expression.operand,
-                ts.createLiteral(1),
+                ts.factory.createNumericLiteral(1),
                 ts.SyntaxKind.PlusToken,
                 false
             );
@@ -87,7 +87,7 @@ export const transformPrefixUnaryExpression: FunctionVisitor<ts.PrefixUnaryExpre
                 context,
                 expression,
                 expression.operand,
-                ts.createLiteral(1),
+                ts.factory.createNumericLiteral(1),
                 ts.SyntaxKind.MinusToken,
                 false
             );

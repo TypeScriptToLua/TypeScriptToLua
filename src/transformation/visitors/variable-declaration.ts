@@ -45,7 +45,7 @@ export function transformBindingPattern(
             // nested binding pattern
             const propertyName = ts.isObjectBindingPattern(pattern)
                 ? element.propertyName
-                : ts.createNumericLiteral(String(index + 1));
+                : ts.factory.createNumericLiteral(String(index + 1));
 
             if (propertyName !== undefined) {
                 propertyAccessStack.push(propertyName);

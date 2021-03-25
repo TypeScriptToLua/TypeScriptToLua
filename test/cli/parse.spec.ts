@@ -158,6 +158,7 @@ describe("tsconfig", () => {
     });
 
     test("should parse options case-sensitively", () => {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         const result = parseConfigFileContent({ tstl: { NoHeader: true } });
 
         expect(result.errors).toHaveDiagnostics();

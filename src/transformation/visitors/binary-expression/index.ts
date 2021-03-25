@@ -125,7 +125,7 @@ export const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (
             return transformToImmediatelyInvokedFunctionExpression(
                 context,
                 () => ({
-                    statements: context.transformStatements(ts.createExpressionStatement(node.left)),
+                    statements: context.transformStatements(ts.factory.createExpressionStatement(node.left)),
                     result: context.transformExpression(node.right),
                 }),
                 node
@@ -159,8 +159,8 @@ export function transformBinaryExpressionStatement(
         return transformAssignmentStatement(context, expression as ts.AssignmentExpression<ts.EqualsToken>);
     } else if (operator === ts.SyntaxKind.CommaToken) {
         const statements = [
-            ...context.transformStatements(ts.createExpressionStatement(expression.left)),
-            ...context.transformStatements(ts.createExpressionStatement(expression.right)),
+            ...context.transformStatements(ts.factory.createExpressionStatement(expression.left)),
+            ...context.transformStatements(ts.factory.createExpressionStatement(expression.right)),
         ];
 
         return lua.createDoStatement(statements, expression);

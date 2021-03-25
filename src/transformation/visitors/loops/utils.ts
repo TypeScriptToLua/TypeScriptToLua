@@ -36,7 +36,7 @@ export function getVariableDeclarationBinding(
     checkVariableDeclarationList(context, node);
 
     if (node.declarations.length === 0) {
-        return ts.createIdentifier("____");
+        return ts.factory.createIdentifier("____");
     }
 
     return node.declarations[0].name;

@@ -152,7 +152,7 @@ function transformClassLikeDeclaration(
         // Generate a constructor if none was defined in a base class
         const constructorResult = transformConstructorDeclaration(
             context,
-            ts.createConstructor([], [], [], ts.createBlock([], true)),
+            ts.factory.createConstructorDeclaration([], [], [], ts.factory.createBlock([], true)),
             localClassName,
             instanceFields,
             classDeclaration
@@ -168,7 +168,7 @@ function transformClassLikeDeclaration(
         const superCall = lua.createExpressionStatement(
             lua.createCallExpression(
                 lua.createTableIndexExpression(
-                    context.transformExpression(ts.createSuper()),
+                    context.transformExpression(ts.factory.createSuper()),
                     lua.createStringLiteral("____constructor")
                 ),
                 [createSelfIdentifier(), lua.createDotsLiteral()]

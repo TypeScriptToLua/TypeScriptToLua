@@ -10,7 +10,7 @@ test.each(invalidTestFunctionAssignments)(
     "Invalid function variable declaration (%p)",
     (testFunction, functionType, isSelfConversion) => {
         util.testModule`
-            ${testFunction.definition || ""}
+            ${testFunction.definition ?? ""}
             const fn: ${functionType} = ${testFunction.value};
         `.expectDiagnosticsToMatchSnapshot(
             [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
@@ -23,7 +23,7 @@ test.each(invalidTestFunctionAssignments)(
     "Invalid function assignment (%p)",
     (testFunction, functionType, isSelfConversion) => {
         util.testModule`
-            ${testFunction.definition || ""}
+            ${testFunction.definition ?? ""}
             let fn: ${functionType};
             fn = ${testFunction.value};
         `.expectDiagnosticsToMatchSnapshot(
@@ -35,7 +35,7 @@ test.each(invalidTestFunctionAssignments)(
 
 test.each(invalidTestFunctionCasts)("Invalid function assignment with cast (%p)", (testFunction, castedFunction) => {
     util.testModule`
-        ${testFunction.definition || ""}
+        ${testFunction.definition ?? ""}
         let fn: typeof ${testFunction.value};
         fn = ${castedFunction};
     `.expectDiagnosticsToMatchSnapshot(
@@ -48,7 +48,7 @@ test.each(invalidTestFunctionAssignments)(
     "Invalid function argument (%p)",
     (testFunction, functionType, isSelfConversion) => {
         util.testModule`
-            ${testFunction.definition || ""}
+            ${testFunction.definition ?? ""}
             declare function takesFunction(fn: ${functionType});
             takesFunction(${testFunction.value});
         `.expectDiagnosticsToMatchSnapshot(
@@ -68,7 +68,7 @@ test("Invalid lua lib function argument", () => {
 
 test.each(invalidTestFunctionCasts)("Invalid function argument with cast (%p)", (testFunction, castedFunction) => {
     util.testModule`
-        ${testFunction.definition || ""}
+        ${testFunction.definition ?? ""}
         declare function takesFunction(fn: typeof ${testFunction.value});
         takesFunction(${castedFunction});
     `.expectDiagnosticsToMatchSnapshot(
@@ -81,7 +81,7 @@ test.each(invalidTestFunctionAssignments)(
     "Invalid function generic argument (%p)",
     (testFunction, functionType, isSelfConversion) => {
         util.testModule`
-            ${testFunction.definition || ""}
+            ${testFunction.definition ?? ""}
             declare function takesFunction<T extends ${functionType}>(fn: T);
             takesFunction(${testFunction.value});
         `.expectDiagnosticsToMatchSnapshot(
@@ -95,7 +95,7 @@ test.each(invalidTestFunctionAssignments)(
     "Invalid function return (%p)",
     (testFunction, functionType, isSelfConversion) => {
         util.testModule`
-            ${testFunction.definition || ""}
+            ${testFunction.definition ?? ""}
             function returnsFunction(): ${functionType} {
                 return ${testFunction.value};
             }
@@ -110,7 +110,7 @@ test.each(invalidTestFunctionCasts)(
     "Invalid function return with cast (%p)",
     (testFunction, castedFunction, isSelfConversion) => {
         util.testModule`
-            ${testFunction.definition || ""}
+            ${testFunction.definition ?? ""}
             function returnsFunction(): typeof ${testFunction.value} {
                 return ${castedFunction};
             }

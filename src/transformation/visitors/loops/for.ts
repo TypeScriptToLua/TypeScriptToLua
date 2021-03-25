@@ -13,7 +13,7 @@ export const transformForStatement: FunctionVisitor<ts.ForStatement> = (statemen
             // local initializer = value
             result.push(...statement.initializer.declarations.flatMap(d => transformVariableDeclaration(context, d)));
         } else {
-            result.push(...context.transformStatements(ts.createExpressionStatement(statement.initializer)));
+            result.push(...context.transformStatements(ts.factory.createExpressionStatement(statement.initializer)));
         }
     }
 
@@ -25,7 +25,7 @@ export const transformForStatement: FunctionVisitor<ts.ForStatement> = (statemen
     const body: lua.Statement[] = transformLoopBody(context, statement);
 
     if (statement.incrementor) {
-        body.push(...context.transformStatements(ts.createExpressionStatement(statement.incrementor)));
+        body.push(...context.transformStatements(ts.factory.createExpressionStatement(statement.incrementor)));
     }
 
     // while (condition) do ... end

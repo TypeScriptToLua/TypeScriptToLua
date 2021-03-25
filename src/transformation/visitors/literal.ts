@@ -38,7 +38,7 @@ export function createShorthandIdentifier(
 
     const name = isUnsafeName ? createSafeName(propertyName) : propertyName;
 
-    let identifier = context.transformExpression(ts.createIdentifier(name));
+    let identifier = context.transformExpression(ts.factory.createIdentifier(name));
     lua.setNodeOriginal(identifier, propertyIdentifier);
     if (valueSymbol !== undefined && lua.isIdentifier(identifier)) {
         identifier.symbolId = getSymbolIdOfSymbol(context, valueSymbol);
@@ -137,7 +137,7 @@ const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpressi
 
 const transformArrayLiteralExpression: FunctionVisitor<ts.ArrayLiteralExpression> = (expression, context) => {
     const filteredElements = expression.elements.map(e =>
-        ts.isOmittedExpression(e) ? ts.createIdentifier("undefined") : e
+        ts.isOmittedExpression(e) ? ts.factory.createIdentifier("undefined") : e
     );
     const values = flattenSpreadExpressions(context, filteredElements).map(e => lua.createTableFieldExpression(e));
 

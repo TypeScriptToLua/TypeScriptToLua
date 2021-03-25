@@ -272,7 +272,7 @@ export class LuaPrinter {
                 }
             }
         });
-        return result || false;
+        return result ?? false;
     }
 
     protected printStatementArray(statements: lua.Statement[]): SourceChunk[] {

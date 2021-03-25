@@ -129,12 +129,15 @@ function transformExportSpecifiersFrom(
     exportSpecifiers: ts.ExportSpecifier[]
 ): lua.Statement {
     // First transpile as import clause
-    const importClause = ts.createImportClause(
+    const importClause = ts.factory.createImportClause(
+        false,
         undefined,
-        ts.createNamedImports(exportSpecifiers.map(s => ts.createImportSpecifier(s.propertyName, s.name)))
+        ts.factory.createNamedImports(
+            exportSpecifiers.map(s => ts.factory.createImportSpecifier(s.propertyName, s.name))
+        )
     );
 
-    const importDeclaration = ts.createImportDeclaration(
+    const importDeclaration = ts.factory.createImportDeclaration(
         statement.decorators,
         statement.modifiers,
         importClause,
@@ -142,7 +145,7 @@ function transformExportSpecifiersFrom(
     );
 
     // Wrap in block to prevent imports from hoisting out of `do` statement
-    const [block] = transformScopeBlock(context, ts.createBlock([importDeclaration]), ScopeType.Block);
+    const [block] = transformScopeBlock(context, ts.factory.createBlock([importDeclaration]), ScopeType.Block);
     const result = block.statements;
 
     // Now the module is imported, add the imports to the export table

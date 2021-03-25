@@ -183,7 +183,7 @@ function transformPropertyCall(context: TransformationContext, node: PropertyCal
 
     if (node.expression.expression.kind === ts.SyntaxKind.SuperKeyword) {
         // Super calls take the format of super.call(self,...)
-        const parameters = transformArguments(context, node.arguments, signature, ts.createThis());
+        const parameters = transformArguments(context, node.arguments, signature, ts.factory.createThis());
         return lua.createCallExpression(context.transformExpression(node.expression), parameters);
     }
 
@@ -267,11 +267,11 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
 
     // Handle super calls properly
     if (node.expression.kind === ts.SyntaxKind.SuperKeyword) {
-        const parameters = transformArguments(context, node.arguments, signature, ts.createThis());
+        const parameters = transformArguments(context, node.arguments, signature, ts.factory.createThis());
 
         return lua.createCallExpression(
             lua.createTableIndexExpression(
-                context.transformExpression(ts.createSuper()),
+                context.transformExpression(ts.factory.createSuper()),
                 lua.createStringLiteral("____constructor")
             ),
             parameters
@@ -285,7 +285,7 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     if (signatureDeclaration && getDeclarationContextType(context, signatureDeclaration) === ContextType.Void) {
         parameters = transformArguments(context, node.arguments, signature);
     } else {
-        const callContext = context.isStrict ? ts.createNull() : ts.createIdentifier("_G");
+        const callContext = context.isStrict ? ts.factory.createNull() : ts.factory.createIdentifier("_G");
         parameters = transformArguments(context, node.arguments, signature, callContext);
     }
 

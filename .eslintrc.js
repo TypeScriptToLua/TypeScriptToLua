@@ -130,6 +130,8 @@ module.exports = {
         "no-useless-return": ["error"],
 
         "import/no-default-export": "error",
+        // TODO only works for direct imports currently (useluess for now) https://github.com/benmosher/eslint-plugin-import/issues/1729
+        // "import/no-deprecated": "error",
 
         "jest/expect-expect": "off",
         "jest/consistent-test-it": ["error", { fn: "test", withinDescribe: "test" }],
@@ -154,31 +156,33 @@ module.exports = {
                 "@typescript-eslint/no-require-imports": "off",
                 "@typescript-eslint/no-unnecessary-condition": "off",
                 "@typescript-eslint/prefer-for-of": "error",
-                // TODO: https://github.com/typescript-eslint/typescript-eslint/issues/1265
-                // "@typescript-eslint/prefer-nullish-coalescing": "error",
+                "@typescript-eslint/prefer-nullish-coalescing": "error",
                 "@typescript-eslint/prefer-readonly": "off",
                 "@typescript-eslint/quotes": ["error", "double", { avoidEscape: true, allowTemplateLiterals: false }],
                 "@typescript-eslint/require-array-sort-compare": "off",
                 "@typescript-eslint/camelcase": "off",
 
-                // TODO: https://github.com/typescript-eslint/typescript-eslint/issues/1712
-                // "@typescript-eslint/naming-convention": [
-                //     "error",
-                //     {
-                //         selector: "default",
-                //         format: ["camelCase"],
-                //         leadingUnderscore: "allow",
-                //     },
-                //     {
-                //         selector: "variable",
-                //         format: ["camelCase", "UPPER_CASE"],
-                //         leadingUnderscore: "allow",
-                //     },
-                //     {
-                //         selector: "typeLike",
-                //         format: ["PascalCase"],
-                //     },
-                // ],
+                "@typescript-eslint/naming-convention": [
+                    "error",
+                    {
+                        selector: "default",
+                        format: ["camelCase"],
+                        leadingUnderscore: "allow",
+                    },
+                    {
+                        selector: "variable",
+                        format: ["camelCase", "UPPER_CASE"],
+                        leadingUnderscore: "allow",
+                    },
+                    {
+                        selector: "typeLike",
+                        format: ["PascalCase"],
+                    },
+                    {
+                        selector: "enumMember",
+                        format: ["PascalCase"],
+                    },
+                ],
             },
         },
         {
@@ -187,6 +191,13 @@ module.exports = {
                 "no-restricted-syntax": ["error", "LabeledStatement", "SequenceExpression"],
                 "@typescript-eslint/no-throw-literal": "off",
                 "@typescript-eslint/prefer-optional-chain": "off",
+                "@typescript-eslint/naming-convention": "off",
+            },
+        },
+        {
+            files: "language-extensions/index.d.ts",
+            rules: {
+                "@typescript-eslint/naming-convention": "off",
             },
         },
         {

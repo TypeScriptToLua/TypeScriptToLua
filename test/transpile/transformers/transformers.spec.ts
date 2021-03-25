@@ -23,6 +23,7 @@ test("transformer resolution error", () => {
         .expectToHaveDiagnostics();
 });
 
+// This tests plugin transformers by transforming the `return false` statement to a `return true` statement.
 describe("factory types", () => {
     test.each(["program", "config", "checker", "raw", "compilerOptions"] as const)("%s", type => {
         util.testFunction`

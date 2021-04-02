@@ -174,10 +174,12 @@ export function setNodeOriginal<T extends Node>(node: T | undefined, tsOriginal:
 }
 
 function getSourcePosition(sourceNode: ts.Node): TextRange | undefined {
-    if (sourceNode.getSourceFile() !== undefined && sourceNode.pos >= 0) {
+    const parseTreeNode = ts.getParseTreeNode(sourceNode) ?? sourceNode;
+    const sourceFile = parseTreeNode.getSourceFile();
+    if (sourceFile !== undefined && parseTreeNode.pos >= 0) {
         const { line, character } = ts.getLineAndCharacterOfPosition(
-            sourceNode.getSourceFile(),
-            sourceNode.pos + sourceNode.getLeadingTriviaWidth()
+            sourceFile,
+            parseTreeNode.pos + parseTreeNode.getLeadingTriviaWidth()
         );
 
         return { line, column: character };

@@ -348,3 +348,16 @@ test("switch fallthrough does not enter earlier default", () => {
         return out;
     `.expectToMatchJsResult();
 });
+
+test("switch fallthrough stops after default", () => {
+    util.testFunction`
+        const out = [];
+        switch (4 as number) {
+            default:
+                out.push("default");
+            case 3:
+                out.push("3");
+        }
+        return out;
+    `.expectToMatchJsResult();
+});

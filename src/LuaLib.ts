@@ -106,7 +106,7 @@ const luaLibDependencies: Partial<Record<LuaLibFeature, LuaLibFeature[]>> = {
     WeakMap: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol, LuaLibFeature.Class],
     WeakSet: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol, LuaLibFeature.Class],
     Spread: [LuaLibFeature.Iterator, LuaLibFeature.Unpack],
-    StringSplit: [LuaLibFeature.StringSubstring],
+    StringSplit: [LuaLibFeature.StringSubstring, LuaLibFeature.StringAccess],
     SymbolRegistry: [LuaLibFeature.Symbol],
 };
 /* eslint-enable @typescript-eslint/naming-convention */

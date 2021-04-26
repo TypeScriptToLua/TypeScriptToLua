@@ -47,13 +47,16 @@ test.each(["namespace", "module"])("%s with TS transformer plugin", moduleOrName
         import { ns } from "module";
         export const result = ns.returnsBool();
     `
-        .addExtraFile("module.ts", `
+        .addExtraFile(
+            "module.ts",
+            `
             export ${moduleOrNamespace} ns {
                 export function returnsBool() {
                     return false;
                 }
             }
-        `)
+        `
+        )
         .setOptions({ plugins: [{ transform: path.join(__dirname, "transformer-plugin.js") }] })
         .expectNoExecutionError();
 });

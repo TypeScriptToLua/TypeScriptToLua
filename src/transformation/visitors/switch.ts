@@ -37,13 +37,25 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
         statements.push(concatenatedIf);
     }
 
-    const hasDefaultCase = statement.caseBlock.clauses.some(ts.isDefaultClause);
+    const defaultCase = statement.caseBlock.clauses.find(ts.isDefaultClause);
+    const hasDefaultCase = defaultCase !== undefined;
+
     statements.push(lua.createGotoStatement(`${switchName}_${hasDefaultCase ? "case_default" : "end"}`));
 
-    for (const [index, clause] of statement.caseBlock.clauses.entries()) {
-        const labelName = `${switchName}_case_${ts.isCaseClause(clause) ? index : "default"}`;
+    // Handle all non-default cases
+    for (const [index, clause] of caseClauses.entries()) {
+        const labelName = `${switchName}_case_${index}`;
         statements.push(lua.createLabelStatement(labelName));
-        statements.push(lua.createDoStatement(context.transformStatements(clause.statements)));
+
+        const caseStatements = context.transformStatements(clause.statements);
+        statements.push(lua.createDoStatement(caseStatements));
+    }
+
+    // Always handle default case last
+    if (defaultCase !== undefined) {
+        const labelName = `${switchName}_case_default`;
+        statements.push(lua.createLabelStatement(labelName));
+        statements.push(lua.createDoStatement(context.transformStatements(defaultCase.statements)));
     }
 
     statements.push(lua.createLabelStatement(`${switchName}_end`));

@@ -336,7 +336,7 @@ test("switch fallthrough enters default", () => {
     `.expectToMatchJsResult();
 });
 
-test("switch fallthrough does not enter earlier", () => {
+test("switch fallthrough does not enter earlier default", () => {
     util.testFunction`
         const out = [];
         switch (3 as number) {
@@ -346,5 +346,5 @@ test("switch fallthrough does not enter earlier", () => {
                 out.push("3");
         }
         return out;
-    `.debug().expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });

@@ -18,10 +18,13 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
 
     let statements: lua.Statement[] = [];
 
-    const caseClauses = statement.caseBlock.clauses.filter(ts.isCaseClause);
-
     // Starting from the back, concatenating ifs into one big if/elseif statement
-    const concatenatedIf = caseClauses.reduceRight((previousCondition, clause, index) => {
+    const concatenatedIf = statement.caseBlock.clauses.reduceRight((previousCondition, clause, index) => {
+        if (ts.isDefaultClause(clause)) {
+            // Skip default clause here (needs to be included to ensure index lines up with index later)
+            return previousCondition;
+        }
+
         // If the clause condition holds, go to the correct label
         const condition = lua.createBinaryExpression(
             switchVariable,
@@ -37,25 +40,13 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
         statements.push(concatenatedIf);
     }
 
-    const defaultCase = statement.caseBlock.clauses.find(ts.isDefaultClause);
-    const hasDefaultCase = defaultCase !== undefined;
-
+    const hasDefaultCase = statement.caseBlock.clauses.some(ts.isDefaultClause);
     statements.push(lua.createGotoStatement(`${switchName}_${hasDefaultCase ? "case_default" : "end"}`));
 
-    // Handle all non-default cases
-    for (const [index, clause] of caseClauses.entries()) {
-        const labelName = `${switchName}_case_${index}`;
+    for (const [index, clause] of statement.caseBlock.clauses.entries()) {
+        const labelName = `${switchName}_case_${ts.isCaseClause(clause) ? index : "default"}`;
         statements.push(lua.createLabelStatement(labelName));
-
-        const caseStatements = context.transformStatements(clause.statements);
-        statements.push(lua.createDoStatement(caseStatements));
-    }
-
-    // Always handle default case last
-    if (defaultCase !== undefined) {
-        const labelName = `${switchName}_case_default`;
-        statements.push(lua.createLabelStatement(labelName));
-        statements.push(lua.createDoStatement(context.transformStatements(defaultCase.statements)));
+        statements.push(lua.createDoStatement(context.transformStatements(clause.statements)));
     }
 
     statements.push(lua.createLabelStatement(`${switchName}_end`));

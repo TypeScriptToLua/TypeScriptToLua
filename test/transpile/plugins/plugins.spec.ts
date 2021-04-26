@@ -41,15 +41,19 @@ test("statement comments", () => {
         .expectLuaToMatchSnapshot();
 });
 
-test("namespace with TS transformer plugin", () => {
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1013
+test.each(["namespace", "module"])("%s with TS transformer plugin", moduleOrNamespace => {
     util.testModule`
-        export namespace ns {
-            export function returnsBool() {
-                return false;
-            }
-        }
+        import { ns } from "module";
+        export const result = ns.returnsBool();
     `
+        .addExtraFile("module.ts", `
+            export ${moduleOrNamespace} ns {
+                export function returnsBool() {
+                    return false;
+                }
+            }
+        `)
         .setOptions({ plugins: [{ transform: path.join(__dirname, "transformer-plugin.js") }] })
-        .expectNoExecutionError()
-        .expectLuaToMatchSnapshot();
+        .expectNoExecutionError();
 });

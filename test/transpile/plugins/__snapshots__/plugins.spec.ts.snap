@@ -1,5 +1,15 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`namespace with TS transformer plugin 1`] = `
+"local ____exports = {}
+do
+    function ns.returnsBool(self)
+        return true
+    end
+end
+return ____exports"
+`;
+
 exports[`statement comments 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)

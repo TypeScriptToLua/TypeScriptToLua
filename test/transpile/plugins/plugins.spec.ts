@@ -40,3 +40,16 @@ test("statement comments", () => {
         .setOptions({ luaPlugins: [{ name: path.join(__dirname, "add-comments.ts") }] })
         .expectLuaToMatchSnapshot();
 });
+
+test("namespace with TS transformer plugin", () => {
+    util.testModule`
+        export namespace ns {
+            export function returnsBool() {
+                return false;
+            }
+        }
+    `
+        .setOptions({ plugins: [{ transform: path.join(__dirname, "transformer-plugin.js") }] })
+        .expectNoExecutionError()
+        .expectLuaToMatchSnapshot();
+});

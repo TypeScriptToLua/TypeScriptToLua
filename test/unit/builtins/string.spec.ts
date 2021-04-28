@@ -200,6 +200,13 @@ test("string.split inline", () => {
         .expectToMatchJsResult();
 });
 
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1009
+test("string.split inline empty separator", () => {
+    util.testExpression`"a, b, c".split("")`
+        .setOptions({ luaLibImport: LuaLibImportKind.Inline })
+        .expectToMatchJsResult();
+});
+
 test.each([
     { inp: "hello test", index: 0 },
     { inp: "hello test", index: 1 },

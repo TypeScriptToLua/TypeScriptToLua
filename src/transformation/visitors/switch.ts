@@ -18,10 +18,13 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
 
     let statements: lua.Statement[] = [];
 
-    const caseClauses = statement.caseBlock.clauses.filter(ts.isCaseClause);
-
     // Starting from the back, concatenating ifs into one big if/elseif statement
-    const concatenatedIf = caseClauses.reduceRight((previousCondition, clause, index) => {
+    const concatenatedIf = statement.caseBlock.clauses.reduceRight((previousCondition, clause, index) => {
+        if (ts.isDefaultClause(clause)) {
+            // Skip default clause here (needs to be included to ensure index lines up with index later)
+            return previousCondition;
+        }
+
         // If the clause condition holds, go to the correct label
         const condition = lua.createBinaryExpression(
             switchVariable,

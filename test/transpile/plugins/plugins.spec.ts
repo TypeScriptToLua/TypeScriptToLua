@@ -57,6 +57,6 @@ test.each(["namespace", "module"])("%s with TS transformer plugin", moduleOrName
             }
         `
         )
-        .setOptions({ plugins: [{ transform: path.join(__dirname, "transformer-plugin.js") }] })
+        .setOptions({ plugins: [{ transform: path.join(__dirname, "transformer-plugin.ts") }] })
         .expectNoExecutionError();
 });

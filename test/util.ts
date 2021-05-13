@@ -9,6 +9,7 @@ import * as ts from "typescript";
 import * as vm from "vm";
 import * as tstl from "../src";
 import { createEmitOutputCollector } from "../src/transpilation/output-collector";
+import { transpileProject } from "../src";
 
 const jsonLib = fs.readFileSync(path.join(__dirname, "json.lua"), "utf8");
 const luaLib = fs.readFileSync(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"), "utf8");
@@ -128,7 +129,7 @@ export abstract class TestBuilder {
         return this;
     }
 
-    private options: tstl.CompilerOptions = {
+    protected options: tstl.CompilerOptions = {
         luaTarget: tstl.LuaTarget.Lua54,
         noHeader: true,
         skipLibCheck: true,
@@ -148,7 +149,7 @@ export abstract class TestBuilder {
     protected mainFileName = "main.ts";
     public setMainFileName(mainFileName: string): this {
         expect(this.hasProgram).toBe(false);
-        this.mainFileName = mainFileName;
+        this.mainFileName = path.normalize(mainFileName);
         return this;
     }
 
@@ -202,7 +203,8 @@ export abstract class TestBuilder {
         const { transpiledFiles } = this.getLuaResult();
         const mainFile = this.options.luaBundle
             ? transpiledFiles[0]
-            : transpiledFiles.find(({ sourceFiles }) => sourceFiles.some(f => f.fileName === this.mainFileName));
+            : transpiledFiles.find(({ sourceFiles }) => sourceFiles.some(f => path.normalize(f.fileName) === this.mainFileName));
+
         expect(mainFile).toMatchObject({ lua: expect.any(String), luaSourceMap: expect.any(String) });
         return mainFile as ExecutableTranspiledFile;
     }
@@ -539,6 +541,21 @@ class ExpressionTestBuilder extends AccessorTestBuilder {
     }
 }
 
+class ProjectTestBuilder extends ModuleTestBuilder {
+    constructor(private tsConfig: string) {
+        super("");
+    }
+
+    @memoize
+    public getLuaResult(): tstl.TranspileVirtualProjectResult {
+        // Override getLuaResult to use transpileProject with tsconfig.json instead
+        const collector = createEmitOutputCollector();
+        const { diagnostics } = transpileProject(this.tsConfig, this.options, collector.writeFile);
+
+        return { diagnostics: [...diagnostics], transpiledFiles: collector.files };
+    }
+}
+
 const createTestBuilderFactory = <T extends TestBuilder>(
     builder: new (_tsCode: string) => T,
     serializeSubstitutions: boolean
@@ -566,3 +583,4 @@ export const testFunction = createTestBuilderFactory(FunctionTestBuilder, false)
 export const testFunctionTemplate = createTestBuilderFactory(FunctionTestBuilder, true);
 export const testExpression = createTestBuilderFactory(ExpressionTestBuilder, false);
 export const testExpressionTemplate = createTestBuilderFactory(ExpressionTestBuilder, true);
+export const testProject = createTestBuilderFactory(ProjectTestBuilder, false);

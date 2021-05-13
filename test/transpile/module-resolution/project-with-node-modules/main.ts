@@ -31,7 +31,3 @@ export const testResult = [
 
     moduleWithDependency.callDependency()
 ];
-
-export function sup() {
-    return 3;
-}

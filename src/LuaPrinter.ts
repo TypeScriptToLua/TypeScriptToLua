@@ -125,6 +125,7 @@ export class LuaPrinter {
     constructor(private emitHost: EmitHost, program: ts.Program, fileName: string) {
         this.options = program.getCompilerOptions();
 
+        // TODO remove?
         if (this.options.outDir) {
             const relativeFileName = path.relative(program.getCommonSourceDirectory(), fileName);
             if (this.options.sourceRoot) {

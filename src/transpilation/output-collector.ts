@@ -2,6 +2,7 @@ import * as ts from "typescript";
 import { intersection, union } from "../utils";
 
 export interface TranspiledFile {
+    outPath: string;
     sourceFiles: ts.SourceFile[];
     lua?: string;
     luaSourceMap?: string;
@@ -18,7 +19,7 @@ export function createEmitOutputCollector() {
     const writeFile: ts.WriteFileCallback = (fileName, data, _bom, _onError, sourceFiles = []) => {
         let file = files.find(f => intersection(f.sourceFiles, sourceFiles).length > 0);
         if (!file) {
-            file = { sourceFiles: [...sourceFiles] };
+            file = { outPath: fileName, sourceFiles: [...sourceFiles] };
             files.push(file);
         } else {
             file.sourceFiles = union(file.sourceFiles, sourceFiles);

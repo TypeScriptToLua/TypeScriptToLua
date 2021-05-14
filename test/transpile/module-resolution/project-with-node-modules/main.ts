@@ -12,22 +12,28 @@ import * as moduleWithoutDeclarationsBaz from "lua-module-without-decls/baz";
 
 import * as moduleWithDependency from "lua-module-with-dependency";
 
-export const testResult = [
-    fooGlobal(),
-    barGlobal("global with declarations!"),
-    bazGlobal(),
+export const globalWithDeclarationsResults = {
+    foo: fooGlobal(),
+    bar: barGlobal("global with declarations!"),
+    baz: bazGlobal(),
+};
 
-    fooGlobalWithoutDecls(),
-    barGlobalWithoutDecls("global without declarations!"),
-    bazGlobalWithoutDecls(),
+export const globalWithoutDeclarationsResults = {
+    foo: fooGlobalWithoutDecls(),
+    bar: barGlobalWithoutDecls("global without declarations!"),
+    baz: bazGlobalWithoutDecls(),
+};
 
-    moduleWithDeclarations.foo(),
-    moduleWithDeclarations.bar("module with declarations!"),
-    moduleWithDeclarationsBaz.baz(),
+export const moduleWithDeclarationsResults = {
+    foo: moduleWithDeclarations.foo(),
+    bar: moduleWithDeclarations.bar("module with declarations!"),
+    baz: moduleWithDeclarationsBaz.baz(),
+};
 
-    moduleWithoutDeclarations.foo(),
-    moduleWithoutDeclarations.bar("module without declarations!"),
-    moduleWithoutDeclarationsBaz.baz(),
+export const moduleWithoutDeclarationsResults = {
+    foo: moduleWithoutDeclarations.foo(),
+    bar: moduleWithoutDeclarations.bar("module without declarations!"),
+    baz: moduleWithoutDeclarationsBaz.baz(),
+};
 
-    moduleWithDependency.callDependency()
-];
+export const moduleWithDependencyResult = moduleWithDependency.callDependency();

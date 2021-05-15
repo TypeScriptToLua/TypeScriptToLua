@@ -35,9 +35,7 @@ export class Transpiler {
             emitOptions
         );
 
-        const resolvedFiles = resolveDependencies(program, freshFiles, this.emitHost);
-
-        const { emitPlan } = this.getEmitPlan(program, diagnostics, resolvedFiles);
+        const { emitPlan } = this.getEmitPlan(program, diagnostics, freshFiles);
 
         const options = program.getCompilerOptions();
         const emitBOM = options.emitBOM ?? false;
@@ -66,13 +64,16 @@ export class Transpiler {
             files.unshift({ fileName, code: getLuaLibBundle(this.emitHost) });
         }
 
+        // Resolve imported modules and modify output Lua
+        const resolvedFiles = resolveDependencies(program, files, this.emitHost);
+
         let emitPlan: EmitFile[];
         if (isBundleEnabled(options)) {
-            const [bundleDiagnostics, bundleFile] = getBundleResult(program, this.emitHost, files);
+            const [bundleDiagnostics, bundleFile] = getBundleResult(program, this.emitHost, resolvedFiles);
             diagnostics.push(...bundleDiagnostics);
             emitPlan = [bundleFile];
         } else {
-            emitPlan = files.map(file => {
+            emitPlan = resolvedFiles.map(file => {
                 const pathInOutDir = path.resolve(outDir, path.relative(rootDir, file.fileName));
                 const outputPath = normalizeSlashes(trimExtension(pathInOutDir) + ".lua");
                 return { ...file, outputPath };

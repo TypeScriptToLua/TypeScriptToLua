@@ -83,7 +83,7 @@ export function getBundleResult(
 
 function moduleSourceNode({ code, sourceMapNode }: ProcessedFile, modulePath: string): SourceNode {
     const tableEntryHead = `[${modulePath}] = function() `;
-    const tableEntryTail = "end,\n";
+    const tableEntryTail = " end,\n";
 
     return joinSourceChunks([tableEntryHead, sourceMapNode ?? code, tableEntryTail]);
 }

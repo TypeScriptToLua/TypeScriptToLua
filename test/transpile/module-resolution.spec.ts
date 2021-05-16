@@ -86,17 +86,17 @@ describe("module resolution with chained dependencies", () => {
     const projectPath = path.resolve(__dirname, "module-resolution", "project-with-dependency-chain");
 
     test("can resolve dependencies in chain", () => {
+        //transpileProject(path.join(projectPath, "tsconfig.json"))
         util.testProject(path.join(projectPath, "tsconfig.json"))
             .setMainFileName(path.join(projectPath, "main.ts"))
-            .expectToEqual({});
+            .expectToEqual({ result: "dependency3" });
     });
 
-    test.only("resolved package dependency included in bundle", () => {
+    test("resolved package dependency included in bundle", () => {
         const mainFile = path.join(projectPath, "main.ts");
         util.testProject(path.join(projectPath, "tsconfig.json"))
             .setMainFileName(mainFile)
             .setOptions({ luaBundle: "bundle.lua", luaBundleEntry: mainFile })
-            .debug()
-            .expectToEqual({});
+            .expectToEqual({ result: "dependency3" });
     });
 });

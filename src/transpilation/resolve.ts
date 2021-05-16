@@ -21,12 +21,11 @@ export function resolveDependencies(program: ts.Program, files: ProcessedFile[],
     return outFiles;
 }
 
-function resolveFileDependencies(file: ProcessedFile, rootDir: string, emitHost: EmitHost): ProcessedFile[] {
-    const fileDir = path.dirname(file.fileName);
+function resolveFileDependencies(file: ProcessedFile, projectRootDir: string, emitHost: EmitHost): ProcessedFile[] {
     const dependencies: ProcessedFile[] = [];
     for (const required of findRequiredPaths(file.code)) {
         // Try to resolve the import starting from the directory `file` is in
-        const resolvedDependency = resolveDependency(fileDir, required);
+        const resolvedDependency = resolveDependency(projectRootDir, required);
         if (resolvedDependency) {
             // If dependency resolved successfully, read its content
             const dependencyContent = emitHost.readFile(resolvedDependency);
@@ -35,26 +34,20 @@ function resolveFileDependencies(file: ProcessedFile, rootDir: string, emitHost:
             }
 
             // Figure out resolved require path and dependency  output path
-            let resolvedRequire = path.relative(fileDir, resolvedDependency);
-            let dependencyOutPath = resolvedDependency;
-            if (resolvedRequire.includes("..")) {
-                // If the resolved require includes a parent, copy the dependency to a new path
-                // to avoid require paths with parent directories
-                resolvedRequire = path.relative(rootDir, resolvedDependency);
-                dependencyOutPath = path.join(fileDir, resolvedRequire);
-            }
+            const resolvedRequire = path.relative(projectRootDir, resolvedDependency);
 
             replaceRequireInCode(file, required, resolvedRequire);
             replaceRequireInSourceMap(file, required, resolvedRequire);
 
             // Add dependency to output and resolve its dependencies recursively
             const dependency = {
-                fileName: dependencyOutPath,
+                fileName: resolvedDependency,
                 code: dependencyContent,
             };
-            dependencies.push(dependency, ...resolveFileDependencies(dependency, rootDir, emitHost));
+            dependencies.push(dependency, ...resolveFileDependencies(dependency, projectRootDir, emitHost));
         } else {
             //throw `TODO: COULD NOT RESOLVE ${required}`;
+            console.error(`Failed to resolve ${required} referenced in ${file.fileName}.`);
         }
     }
     return dependencies;

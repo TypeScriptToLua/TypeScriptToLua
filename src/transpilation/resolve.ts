@@ -6,7 +6,7 @@ import { EmitHost, ProcessedFile } from "./utils";
 import { SourceNode } from "source-map";
 
 const resolver = resolve.ResolverFactory.createResolver({
-    extensions: [".lua", ".ts"],
+    extensions: [".lua"],
     fileSystem: { ...new resolve.CachedInputFileSystem(fs) },
     useSyncFileSystemCalls: true,
 });
@@ -15,7 +15,7 @@ export function resolveDependencies(program: ts.Program, files: ProcessedFile[],
     const outFiles = [];
 
     for (const file of files) {
-        outFiles.push(file, ...resolveFileDependencies(file, program.getCommonSourceDirectory(), emitHost));
+        outFiles.push(file, ...resolveFileDependencies(file, program.getCompilerOptions().rootDir ?? program.getCommonSourceDirectory(), emitHost));
     }
 
     return outFiles;
@@ -24,8 +24,14 @@ export function resolveDependencies(program: ts.Program, files: ProcessedFile[],
 function resolveFileDependencies(file: ProcessedFile, projectRootDir: string, emitHost: EmitHost): ProcessedFile[] {
     const dependencies: ProcessedFile[] = [];
     for (const required of findRequiredPaths(file.code)) {
+        // Do no resolve lualib
+        if (required === "lualib_bundle") {
+            continue;
+        }
+        
         // Try to resolve the import starting from the directory `file` is in
-        const resolvedDependency = resolveDependency(projectRootDir, required);
+        const fileDir = path.dirname(file.fileName);
+        const resolvedDependency = resolveDependency(fileDir, projectRootDir, required, emitHost);
         if (resolvedDependency) {
             // If dependency resolved successfully, read its content
             const dependencyContent = emitHost.readFile(resolvedDependency);
@@ -48,6 +54,7 @@ function resolveFileDependencies(file: ProcessedFile, projectRootDir: string, em
         } else {
             //throw `TODO: COULD NOT RESOLVE ${required}`;
             console.error(`Failed to resolve ${required} referenced in ${file.fileName}.`);
+            console.error(projectRootDir);
         }
     }
     return dependencies;
@@ -95,13 +102,25 @@ function findRequiredPaths(code: string): string[] {
     return paths;
 }
 
-function resolveDependency(fromDirectory: string, dependency: string): string | undefined {
+function resolveDependency(fileDirectory: string, rootDirectory: string, dependency: string, emitHost: EmitHost): string | undefined {
+    // Check if 
+    const dependencyPath = dependency.replace(".", "/");
+    const projectFilePath = path.join(fileDirectory, dependencyPath + ".ts");
+    if (emitHost.fileExists(projectFilePath)) {
+        return projectFilePath;
+    }
+
+    const projectIndexPath = path.join(fileDirectory, dependencyPath, "index.ts");
+    if (emitHost.fileExists(projectIndexPath)) {
+        return projectIndexPath;
+    }
+
     try {
-        const resolveResult = resolver.resolveSync({}, fromDirectory, dependency.replace(".", "/"));
+        const resolveResult = resolver.resolveSync({}, rootDirectory, dependencyPath);
         if (resolveResult) {
             return resolveResult;
         }
-    } catch {
+    } catch (e) {
         // resolveSync errors if it fails to resolve
     }
 

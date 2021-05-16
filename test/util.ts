@@ -385,7 +385,7 @@ export abstract class TestBuilder {
         const { transpiledFiles } = this.getLuaResult();
         for (const transpiledFile of transpiledFiles) {
             if (transpiledFile.lua) {
-                const filePath = path.relative(path.dirname(this.mainFileName), transpiledFile.outPath);
+                const filePath = path.relative(this.options.outDir ?? this.getProgram().getCommonSourceDirectory(), transpiledFile.outPath);
                 this.packagePreloadLuaFile(L, lua, lauxlib, filePath, transpiledFile.lua);
             }
         }

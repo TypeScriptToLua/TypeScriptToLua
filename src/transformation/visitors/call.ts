@@ -15,6 +15,7 @@ import { shouldMultiReturnCallBeWrapped } from "./language-extensions/multi";
 import { isOperatorMapping, transformOperatorMappingExpression } from "./language-extensions/operators";
 import {
     isTableGetCall,
+    isTableHasCall,
     isTableSetCall,
     transformTableGetExpression,
     transformTableSetExpression,
@@ -251,6 +252,10 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
             () => ({ statements: transformTableSetExpression(context, node), result: lua.createNilLiteral() }),
             node
         );
+    }
+
+    if (isTableHasCall(context, node)) {
+        return transformTableGetExpression(context, node);
     }
 
     if (ts.isPropertyAccessExpression(node.expression)) {

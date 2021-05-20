@@ -9,7 +9,12 @@ const tableGetExtensions = [extensions.ExtensionKind.TableGetType, extensions.Ex
 const tableSetExtensions = [extensions.ExtensionKind.TableSetType, extensions.ExtensionKind.TableSetMethodType];
 const tableHasExtensions = [extensions.ExtensionKind.TableHasType, extensions.ExtensionKind.TableHasMethodType];
 
-const tableExtensions = [extensions.ExtensionKind.TableNewType, ...tableGetExtensions, ...tableSetExtensions, ...tableHasExtensions];
+const tableExtensions = [
+    extensions.ExtensionKind.TableNewType,
+    ...tableGetExtensions,
+    ...tableSetExtensions,
+    ...tableHasExtensions,
+];
 
 function getTableExtensionKindForCall(
     context: TransformationContext,
@@ -31,6 +36,10 @@ export function isTableGetCall(context: TransformationContext, node: ts.CallExpr
 
 export function isTableSetCall(context: TransformationContext, node: ts.CallExpression) {
     return getTableExtensionKindForCall(context, node, tableSetExtensions) !== undefined;
+}
+
+export function isTableHasCall(context: TransformationContext, node: ts.CallExpression) {
+    return getTableExtensionKindForCall(context, node, tableHasExtensions) !== undefined;
 }
 
 export function isTableNewCall(context: TransformationContext, node: ts.NewExpression) {

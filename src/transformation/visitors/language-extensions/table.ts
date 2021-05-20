@@ -6,10 +6,10 @@ import { getFunctionTypeForCall } from "../../utils/typescript";
 import { assert } from "../../../utils";
 
 const tableGetExtensions = [extensions.ExtensionKind.TableGetType, extensions.ExtensionKind.TableGetMethodType];
-
 const tableSetExtensions = [extensions.ExtensionKind.TableSetType, extensions.ExtensionKind.TableSetMethodType];
+const tableHasExtensions = [extensions.ExtensionKind.TableHasType, extensions.ExtensionKind.TableHasMethodType];
 
-const tableExtensions = [extensions.ExtensionKind.TableNewType, ...tableGetExtensions, ...tableSetExtensions];
+const tableExtensions = [extensions.ExtensionKind.TableNewType, ...tableGetExtensions, ...tableSetExtensions, ...tableHasExtensions];
 
 function getTableExtensionKindForCall(
     context: TransformationContext,

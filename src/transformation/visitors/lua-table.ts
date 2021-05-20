@@ -37,6 +37,15 @@ function validateLuaTableCall(
                 );
             }
             break;
+
+        case "has": {
+            if (callArguments.length !== 1) {
+                context.diagnostics.push(
+                    luaTableForbiddenUsage(node, `Expected 1 arguments, but got ${callArguments.length}`)
+                );
+            }
+            break;
+        }
     }
 }
 
@@ -56,17 +65,22 @@ export function transformLuaTableExpressionStatement(
     validateLuaTableCall(context, expression, methodName, expression.arguments);
     const signature = context.checker.getResolvedSignature(expression);
     const params = transformArguments(context, expression.arguments, signature);
+    const tableIndexExpression = lua.createTableIndexExpression(
+        luaTable,
+        params[0] ?? lua.createNilLiteral(),
+        expression
+    );
 
     switch (methodName) {
         case "get":
             return lua.createVariableDeclarationStatement(
                 lua.createAnonymousIdentifier(expression),
-                lua.createTableIndexExpression(luaTable, params[0] ?? lua.createNilLiteral(), expression),
+                tableIndexExpression,
                 expression
             );
         case "set":
             return lua.createAssignmentStatement(
-                lua.createTableIndexExpression(luaTable, params[0] ?? lua.createNilLiteral(), expression),
+                tableIndexExpression,
                 [params[1] ?? lua.createNilLiteral()],
                 expression
             );
@@ -93,6 +107,8 @@ export function transformLuaTableCallExpression(
     switch (methodName) {
         case "get":
             return lua.createTableIndexExpression(luaTable, params[0] ?? lua.createNilLiteral(), node);
+        case "has":
+            return lua.createBinaryExpression(luaTable, lua.createNilLiteral(), lua.SyntaxKind.EqualityOperator);
         default:
             context.diagnostics.push(unsupportedProperty(node.expression.name, "LuaTable", methodName));
     }

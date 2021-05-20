@@ -48,6 +48,8 @@ export enum ExtensionKind {
     TableGetMethodType = "TableGetMethodType",
     TableSetType = "TableSetType",
     TableSetMethodType = "TableSetMethodType",
+    TableHasType = "TableHasType",
+    TableHasMethodType = "TableHasMethodType",
 }
 
 const extensionKindToValueName: { [T in ExtensionKind]?: string } = {
@@ -103,6 +105,8 @@ const extensionKindToTypeBrand: { [T in ExtensionKind]: string } = {
     [ExtensionKind.TableGetMethodType]: "__luaTableGetMethodBrand",
     [ExtensionKind.TableSetType]: "__luaTableSetBrand",
     [ExtensionKind.TableSetMethodType]: "__luaTableSetMethodBrand",
+    [ExtensionKind.TableHasType]: "__luaTableHasBrand",
+    [ExtensionKind.TableHasMethodType]: "__luaTableHasMethodBrand",
 };
 
 export function isExtensionType(type: ts.Type, extensionKind: ExtensionKind): boolean {

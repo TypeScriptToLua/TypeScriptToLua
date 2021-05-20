@@ -145,6 +145,7 @@ test.each([tableLibClass])("LuaTable functional tests", tableLib => {
         ["const t = new Table(); t.set(1, true); return t.length", 1],
         ["const t = new Table(); t.set(t.length + 1, true); t.set(t.length + 1, true); return t.length", 2],
         ['const k = "k"; const t = { data: new Table() }; t.data.set(k, 3); return t.data.get(k);', 3],
+        ['const t = new Table(); t.set("foo", "bar"); return t.has("foo");', "bar"],
     ])("LuaTable test (%p)", (code, expectedReturnValue) => {
         util.testFunction(code).setTsHeader(tableLib).expectToEqual(expectedReturnValue);
     });

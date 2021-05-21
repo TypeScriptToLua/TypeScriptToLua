@@ -87,3 +87,22 @@ export function transformTableSetExpression(context: TransformationContext, node
         context.transformExpression(args[2])
     );
 }
+
+export function transformTableHasExpression(context: TransformationContext, node: ts.CallExpression): lua.Statement {
+    const extensionKind = getTableExtensionKindForCall(context, node, tableSetExtensions);
+    assert(extensionKind);
+
+    const args = node.arguments.slice();
+    if (
+        args.length === 1 &&
+        (ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression))
+    ) {
+        args.unshift(node.expression.expression);
+    }
+
+    return lua.createTableIndexExpression(
+        context.transformExpression(args[0]),
+        context.transformExpression(args[1]),
+        node
+    );
+}

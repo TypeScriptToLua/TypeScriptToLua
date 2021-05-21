@@ -19,6 +19,7 @@ import {
     isTableSetCall,
     transformTableGetExpression,
     transformTableSetExpression,
+    transformTableHasExpression,
 } from "./language-extensions/table";
 import { invalidTableSetExpression } from "../utils/diagnostics";
 import {
@@ -255,7 +256,7 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     }
 
     if (isTableHasCall(context, node)) {
-        return transformTableGetExpression(context, node);
+        return transformTableHasExpression(context, node);
     }
 
     if (ts.isPropertyAccessExpression(node.expression)) {

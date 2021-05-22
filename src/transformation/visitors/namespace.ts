@@ -76,7 +76,7 @@ export const transformModuleDeclaration: FunctionVisitor<ts.ModuleDeclaration> =
     const isFirstDeclaration =
         symbol === undefined ||
         (!symbol.declarations.some(d => ts.isClassLike(d) || ts.isFunctionDeclaration(d)) &&
-            node === symbol.declarations.find(ts.isModuleDeclaration));
+            ts.getOriginalNode(node) === symbol.declarations.find(ts.isModuleDeclaration));
 
     if (isNonModuleMergeable) {
         // 'local NS = NS or {}' or 'exportTable.NS = exportTable.NS or {}'

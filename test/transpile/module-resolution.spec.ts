@@ -104,7 +104,8 @@ describe("module resolution with outDir", () => {
     const projectPath = path.resolve(__dirname, "module-resolution", "project-with-dependency-chain");
 
     test("emits files in outDir", () => {
-        const builder = util.testProject(path.join(projectPath, "tsconfig.json"))
+        const builder = util
+            .testProject(path.join(projectPath, "tsconfig.json"))
             .setMainFileName(path.join(projectPath, "main.ts"))
             .setOptions({ outDir: "tstl-out" })
             .expectToEqual({ result: "dependency3" });
@@ -112,18 +113,25 @@ describe("module resolution with outDir", () => {
         // Get the output paths relative to the project path
         const outPaths = builder.getLuaResult().transpiledFiles.map(f => path.relative(projectPath, f.outPath));
         expect(outPaths).toHaveLength(4);
-        expect(outPaths).toContain("tstl-out/main.lua");     
-        expect(outPaths).toContain("tstl-out/node_modules/dependency1/index.lua");     
-        expect(outPaths).toContain("tstl-out/node_modules/dependency2/index.lua");     
-        expect(outPaths).toContain("tstl-out/node_modules/dependency3/index.lua");        
+        expect(outPaths).toContain(path.join("tstl-out", "main.lua"));
+        // Note: outputs to lua_modules
+        expect(outPaths).toContain(path.join("tstl-out", "lua_modules", "dependency1", "index.lua"));
+        expect(outPaths).toContain(path.join("tstl-out", "lua_modules", "dependency2", "index.lua"));
+        expect(outPaths).toContain(path.join("tstl-out", "lua_modules", "dependency3", "index.lua"));
     });
 
     test("emits bundle in outDir", () => {
         const mainFile = path.join(projectPath, "main.ts");
-        const builder = util.testProject(path.join(projectPath, "tsconfig.json"))
+        const builder = util
+            .testProject(path.join(projectPath, "tsconfig.json"))
             .setMainFileName(mainFile)
-            .setOptions({ luaBundle: "tstl-out/bundle.lua", luaBundleEntry: mainFile })
+            .setOptions({ outDir: "tstl-out", luaBundle: "bundle.lua", luaBundleEntry: mainFile })
             .expectToEqual({ result: "dependency3" });
+        
+        // Get the output paths relative to the project path
+        const outPaths = builder.getLuaResult().transpiledFiles.map(f => path.relative(projectPath, f.outPath));
+        expect(outPaths).toHaveLength(1);
+        expect(outPaths).toContain(path.join("tstl-out", "bundle.lua"));
     });
 });
 
@@ -134,7 +142,7 @@ describe("module resolution with sourceDir", () => {
         util.testProject(path.join(projectPath, "tsconfig.json"))
             .setMainFileName(path.join(projectPath, "src", "main.ts"))
             .setOptions({ outDir: "tstl-out" })
-            .expectToEqual({ result: "dependency3" });
+            .expectToEqual({ result: "dependency3", result2: "non-node_modules import" });
     });
 
     test("can resolve dependencies and bundle files with sourceDir", () => {
@@ -142,6 +150,6 @@ describe("module resolution with sourceDir", () => {
         util.testProject(path.join(projectPath, "tsconfig.json"))
             .setMainFileName(mainFile)
             .setOptions({ luaBundle: "bundle.lua", luaBundleEntry: mainFile })
-            .expectToEqual({ result: "dependency3" });
+            .expectToEqual({ result: "dependency3", result2: "non-node_modules import" });
     });
 });

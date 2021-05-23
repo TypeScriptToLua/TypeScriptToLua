@@ -4,6 +4,7 @@ import * as ts from "typescript";
 import * as fs from "fs";
 import { EmitHost, ProcessedFile } from "./utils";
 import { SourceNode } from "source-map";
+import { getEmitPathRelativeToOutDir, getSourceDir } from "./transpiler";
 
 const resolver = resolve.ResolverFactory.createResolver({
     extensions: [".lua"],
@@ -15,17 +16,26 @@ export function resolveDependencies(program: ts.Program, files: ProcessedFile[],
     const outFiles = [];
 
     for (const file of files) {
-        outFiles.push(file, ...resolveFileDependencies(file, program.getCompilerOptions().rootDir ?? program.getCommonSourceDirectory(), emitHost));
+        outFiles.push(file, ...resolveFileDependencies(file, program, emitHost));
     }
 
     return outFiles;
 }
 
-function resolveFileDependencies(file: ProcessedFile, projectRootDir: string, emitHost: EmitHost): ProcessedFile[] {
+function resolveFileDependencies(file: ProcessedFile, program: ts.Program, emitHost: EmitHost): ProcessedFile[] {
+    const projectRootDir = getSourceDir(program);
     const dependencies: ProcessedFile[] = [];
     for (const required of findRequiredPaths(file.code)) {
         // Do no resolve lualib
         if (required === "lualib_bundle") {
+            continue;
+        }
+
+        // Do not resolve noResolution paths
+        if (required.startsWith("@NoResolution:")) {
+            const path = required.replace("@NoResolution:", "")
+            replaceRequireInCode(file, required, path);
+            replaceRequireInSourceMap(file, required, path);
             continue;
         }
         
@@ -39,20 +49,21 @@ function resolveFileDependencies(file: ProcessedFile, projectRootDir: string, em
                 throw `TODO: FAILED TO READ ${resolvedDependency}`;
             }
 
-            // Figure out resolved require path and dependency  output path
-            const resolvedRequire = path.relative(projectRootDir, resolvedDependency);
+            // Figure out resolved require path and dependency output path
+            const resolvedRequire = getEmitPathRelativeToOutDir(resolvedDependency, program);
 
             replaceRequireInCode(file, required, resolvedRequire);
             replaceRequireInSourceMap(file, required, resolvedRequire);
 
-            // Add dependency to output and resolve its dependencies recursively
-            const dependency = {
-                fileName: resolvedDependency,
-                code: dependencyContent,
-            };
-            dependencies.push(dependency, ...resolveFileDependencies(dependency, projectRootDir, emitHost));
+            // If dependency is not part of sources, add dependency to output and resolve its dependencies recursively
+            if (!program.getSourceFile(resolvedDependency)) {
+                const dependency = {
+                    fileName: resolvedDependency,
+                    code: dependencyContent,
+                };
+                dependencies.push(dependency, ...resolveFileDependencies(dependency, program, emitHost));
+            }
         } else {
-            //throw `TODO: COULD NOT RESOLVE ${required}`;
             console.error(`Failed to resolve ${required} referenced in ${file.fileName}.`);
             console.error(projectRootDir);
         }
@@ -103,14 +114,16 @@ function findRequiredPaths(code: string): string[] {
 }
 
 function resolveDependency(fileDirectory: string, rootDirectory: string, dependency: string, emitHost: EmitHost): string | undefined {
-    // Check if 
-    const dependencyPath = dependency.replace(".", "/");
-    const projectFilePath = path.join(fileDirectory, dependencyPath + ".ts");
-    if (emitHost.fileExists(projectFilePath)) {
-        return projectFilePath;
+    // Check if file is a TS file in the project
+    const dependencyPath = dependency;
+    const resolvedPath = path.resolve(fileDirectory, dependencyPath);
+    const resolvedFile = resolvedPath + ".ts";
+
+    if (emitHost.fileExists(resolvedFile)) {
+        return resolvedPath + ".ts";
     }
 
-    const projectIndexPath = path.join(fileDirectory, dependencyPath, "index.ts");
+    const projectIndexPath = path.resolve(fileDirectory, dependencyPath, "index.ts");
     if (emitHost.fileExists(projectIndexPath)) {
         return projectIndexPath;
     }

@@ -9,7 +9,7 @@ import * as ts from "typescript";
 import * as vm from "vm";
 import * as tstl from "../src";
 import { createEmitOutputCollector } from "../src/transpilation/output-collector";
-import { transpileProject } from "../src";
+import { getEmitOutDir, transpileProject } from "../src";
 import { normalizeSlashes } from "../src/utils";
 
 const jsonLib = fs.readFileSync(path.join(__dirname, "json.lua"), "utf8");
@@ -385,7 +385,7 @@ export abstract class TestBuilder {
         const { transpiledFiles } = this.getLuaResult();
         for (const transpiledFile of transpiledFiles) {
             if (transpiledFile.lua) {
-                const filePath = path.relative(this.options.outDir ?? this.getProgram().getCommonSourceDirectory(), transpiledFile.outPath);
+                const filePath = path.relative(getEmitOutDir(this.getProgram()), transpiledFile.outPath);
                 this.packagePreloadLuaFile(L, lua, lauxlib, filePath, transpiledFile.lua);
             }
         }
@@ -544,6 +544,7 @@ class ExpressionTestBuilder extends AccessorTestBuilder {
 class ProjectTestBuilder extends ModuleTestBuilder {
     constructor(private tsConfig: string) {
         super("");
+        this.setOptions({ configFilePath: this.tsConfig });
     }
 
     @memoize

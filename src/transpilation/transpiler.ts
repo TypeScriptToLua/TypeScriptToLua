@@ -55,31 +55,74 @@ export class Transpiler {
         files: ProcessedFile[]
     ): { emitPlan: EmitFile[] } {
         const options = program.getCompilerOptions();
-        const rootDir = program.getCommonSourceDirectory();
-        const outDir = options.outDir ?? rootDir;
 
         const lualibRequired = files.some(f => f.code.includes('require("lualib_bundle")'));
         if (lualibRequired) {
-            const fileName = normalizeSlashes(path.resolve(rootDir, "lualib_bundle.lua"));
+            const fileName = normalizeSlashes(path.resolve(getEmitOutDir(program), "lualib_bundle.lua"));
             files.unshift({ fileName, code: getLuaLibBundle(this.emitHost) });
         }
 
-        // Resolve imported modules and modify output Lua
+        // Resolve imported modules and modify output Lua requires
         const resolvedFiles = resolveDependencies(program, files, this.emitHost);
 
         let emitPlan: EmitFile[];
         if (isBundleEnabled(options)) {
-            const [bundleDiagnostics, bundleFile] = getBundleResult(program, this.emitHost, resolvedFiles);
+            const [bundleDiagnostics, bundleFile] = getBundleResult(program, resolvedFiles);
             diagnostics.push(...bundleDiagnostics);
             emitPlan = [bundleFile];
         } else {
-            emitPlan = resolvedFiles.map(file => {
-                const pathInOutDir = path.resolve(outDir, path.relative(rootDir, file.fileName));
-                const outputPath = normalizeSlashes(trimExtension(pathInOutDir) + ".lua");
-                return { ...file, outputPath };
-            });
+            emitPlan = resolvedFiles.map(file => ({ ...file, outputPath: getEmitPath(file.fileName, program) }));
         }
 
         return { emitPlan };
     }
+}
+
+export function getEmitPath(file: string, program: ts.Program): string {
+    const relativeOutputPath = getEmitPathRelativeToOutDir(file, program);
+    const outDir = getEmitOutDir(program);
+
+    return path.join(outDir, relativeOutputPath);
+}
+
+export function getEmitPathRelativeToOutDir(fileName: string, program: ts.Program): string {
+    const sourceDir = getSourceDir(program);
+    // Default output path is relative path in source dir
+    let emitPath = path.relative(sourceDir, fileName).split(path.sep);
+
+    // If source is in a parent directory of source dir, move it into the source dir
+    emitPath = emitPath.filter(s => s !== "..");
+
+    // To avoid overwriting lua sources in node_modules, emit into lua_modules
+    if (emitPath[0] === "node_modules") {
+        emitPath[0] = "lua_modules";
+    }
+
+    // Make extension lua
+    emitPath[emitPath.length - 1] = trimExtension(emitPath[emitPath.length - 1]) + ".lua";
+
+    return path.join(...emitPath);
+}
+
+export function getSourceDir(program: ts.Program): string {
+    const rootDir = program.getCompilerOptions().rootDir;
+    if (rootDir && rootDir.length > 0) {
+        return path.isAbsolute(rootDir) ? rootDir : path.resolve(getProjectRoot(program), rootDir);
+    }
+    return program.getCommonSourceDirectory();
+}
+
+export function getEmitOutDir(program: ts.Program): string {
+    const outDir = program.getCompilerOptions().outDir;
+    if (outDir && outDir.length > 0) {
+        return path.isAbsolute(outDir) ? outDir : path.resolve(getProjectRoot(program), outDir);
+    }
+    return program.getCommonSourceDirectory();
+}
+
+export function getProjectRoot(program: ts.Program): string {
+    // Try to get the directory the tsconfig is in
+    const tsConfigPath = program.getCompilerOptions().configFilePath;
+    // If no tsconfig is known, use common source directory
+    return tsConfigPath ? path.dirname(tsConfigPath) : program.getCommonSourceDirectory();
 }

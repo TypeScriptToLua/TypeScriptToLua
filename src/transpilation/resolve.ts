@@ -160,6 +160,11 @@ function resolveDependency(
     // Check if file is a file in the project
     const resolvedPath = path.resolve(fileDirectory, dependency);
 
+    if (isProjectFile(resolvedPath)) {
+        // JSON files need their extension as part of the import path, caught by this branch
+        return resolvedPath;
+    }
+
     const resolvedFile = resolvedPath + ".ts";
     if (isProjectFile(resolvedFile)) {
         return resolvedFile;

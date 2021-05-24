@@ -6,7 +6,8 @@ describe("basic module resolution", () => {
 
     const projectWithNodeModules = util
         .testProject(path.join(projectPath, "tsconfig.json"))
-        .setMainFileName(path.join(projectPath, "main.ts"));
+        .setMainFileName(path.join(projectPath, "main.ts"))
+        .debug();
 
     test("can resolve global dependencies with declarations", () => {
         // Declarations in the node_modules directory
@@ -152,6 +153,7 @@ describe("module resolution with sourceDir", () => {
         util.testProject(path.join(projectPath, "tsconfig.json"))
             .setMainFileName(path.join(projectPath, "src", "main.ts"))
             .setOptions({ outDir: "tstl-out" })
+            .debug()
             .expectToEqual(expectedResult);
     });
 

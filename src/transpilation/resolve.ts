@@ -8,6 +8,7 @@ import { getEmitPathRelativeToOutDir, getSourceDir } from "./transpiler";
 
 const resolver = resolve.ResolverFactory.createResolver({
     extensions: [".lua"],
+    enforceExtension: true, // Must be a lua file
     fileSystem: { ...new resolve.CachedInputFileSystem(fs) },
     useSyncFileSystemCalls: true,
 });

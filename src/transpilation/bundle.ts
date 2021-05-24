@@ -33,10 +33,7 @@ local function require(file)
 end
 `;
 
-export function getBundleResult(
-    program: ts.Program,
-    files: ProcessedFile[]
-): [ts.Diagnostic[], EmitFile] {
+export function getBundleResult(program: ts.Program, files: ProcessedFile[]): [ts.Diagnostic[], EmitFile] {
     const diagnostics: ts.Diagnostic[] = [];
 
     const options = program.getCompilerOptions() as CompilerOptions;

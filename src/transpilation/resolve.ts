@@ -4,7 +4,9 @@ import * as ts from "typescript";
 import * as fs from "fs";
 import { EmitHost, ProcessedFile } from "./utils";
 import { SourceNode } from "source-map";
-import { getEmitPathRelativeToOutDir, getSourceDir } from "./transpiler";
+import { getEmitPathRelativeToOutDir, getProjectRoot, getSourceDir } from "./transpiler";
+import { formatPathToLuaPath } from "../utils";
+import { couldNotReadDependency, couldNotResolveRequire } from "./diagnostics";
 
 const resolver = resolve.ResolverFactory.createResolver({
     extensions: [".lua"],
@@ -13,19 +15,38 @@ const resolver = resolve.ResolverFactory.createResolver({
     useSyncFileSystemCalls: true,
 });
 
-export function resolveDependencies(program: ts.Program, files: ProcessedFile[], emitHost: EmitHost): ProcessedFile[] {
-    const outFiles = [];
+const projectFiles = new Map<string, string>();
 
-    for (const file of files) {
-        outFiles.push(file, ...resolveFileDependencies(file, program, emitHost));
-    }
-
-    return outFiles;
+interface ResolutionResult {
+    resolvedFiles: ProcessedFile[];
+    diagnostics: ts.Diagnostic[];
 }
 
-function resolveFileDependencies(file: ProcessedFile, program: ts.Program, emitHost: EmitHost): ProcessedFile[] {
+export function resolveDependencies(program: ts.Program, files: ProcessedFile[], emitHost: EmitHost): ResolutionResult {
+    const outFiles: ProcessedFile[] = [];
+    const diagnostics: ts.Diagnostic[] = [];
+
+    const projectRoot = getProjectRoot(program);
+    for (const sourceFile of program.getSourceFiles()) {
+        const filePath = path.isAbsolute(sourceFile.fileName)
+            ? path.normalize(sourceFile.fileName)
+            : path.resolve(projectRoot, sourceFile.fileName);
+        projectFiles.set(filePath, sourceFile.text);
+    }
+
+    for (const file of files) {
+        const resolutionResult = resolveFileDependencies(file, program, emitHost);
+        outFiles.push(file, ...resolutionResult.resolvedFiles);
+        diagnostics.push(...resolutionResult.diagnostics);
+    }
+
+    return { resolvedFiles: outFiles, diagnostics };
+}
+
+function resolveFileDependencies(file: ProcessedFile, program: ts.Program, emitHost: EmitHost): ResolutionResult {
     const projectRootDir = getSourceDir(program);
     const dependencies: ProcessedFile[] = [];
+    const diagnostics: ts.Diagnostic[] = [];
     for (const required of findRequiredPaths(file.code)) {
         // Do no resolve lualib
         if (required === "lualib_bundle") {
@@ -34,20 +55,21 @@ function resolveFileDependencies(file: ProcessedFile, program: ts.Program, emitH
 
         // Do not resolve noResolution paths
         if (required.startsWith("@NoResolution:")) {
-            const path = required.replace("@NoResolution:", "")
+            const path = required.replace("@NoResolution:", "");
             replaceRequireInCode(file, required, path);
             replaceRequireInSourceMap(file, required, path);
             continue;
         }
-        
+
         // Try to resolve the import starting from the directory `file` is in
         const fileDir = path.dirname(file.fileName);
-        const resolvedDependency = resolveDependency(fileDir, projectRootDir, required, emitHost);
+        const resolvedDependency = resolveDependency(fileDir, projectRootDir, required);
         if (resolvedDependency) {
             // If dependency resolved successfully, read its content
-            const dependencyContent = emitHost.readFile(resolvedDependency);
+            const dependencyContent = projectFiles.get(resolvedDependency) ?? emitHost.readFile(resolvedDependency);
             if (dependencyContent === undefined) {
-                throw `TODO: FAILED TO READ ${resolvedDependency}`;
+                diagnostics.push(couldNotReadDependency(resolvedDependency));
+                continue;
             }
 
             // Figure out resolved require path and dependency output path
@@ -57,28 +79,34 @@ function resolveFileDependencies(file: ProcessedFile, program: ts.Program, emitH
             replaceRequireInSourceMap(file, required, resolvedRequire);
 
             // If dependency is not part of sources, add dependency to output and resolve its dependencies recursively
-            if (!program.getSourceFile(resolvedDependency)) {
+            if (!projectFiles.has(resolvedDependency)) {
                 const dependency = {
                     fileName: resolvedDependency,
                     code: dependencyContent,
                 };
-                dependencies.push(dependency, ...resolveFileDependencies(dependency, program, emitHost));
+                const nestedDependencies = resolveFileDependencies(dependency, program, emitHost);
+                dependencies.push(dependency, ...nestedDependencies.resolvedFiles);
+                diagnostics.push(...nestedDependencies.diagnostics);
             }
         } else {
-            console.error(`Failed to resolve ${required} referenced in ${file.fileName}.`);
-            console.error(projectRootDir);
+            // Could not resolve dependency, add a diagnostic and make some fallback path
+            diagnostics.push(couldNotResolveRequire(required, path.relative(projectRootDir, file.fileName)));
+
+            const fallbackRequire = fallbackResolve(required, projectRootDir, fileDir);
+            replaceRequireInCode(file, required, fallbackRequire);
+            replaceRequireInSourceMap(file, required, fallbackRequire);
         }
     }
-    return dependencies;
+    return { resolvedFiles: dependencies, diagnostics };
 }
 
 function replaceRequireInCode(file: ProcessedFile, originalRequire: string, newRequire: string) {
-    const requirePath = newRequire.replace(".lua", "").replace(/\\/g, ".");
+    const requirePath = formatPathToLuaPath(newRequire.replace(".lua", ""));
     file.code = file.code.replace(`require("${originalRequire}")`, `require("${requirePath}")`);
 }
 
 function replaceRequireInSourceMap(file: ProcessedFile, originalRequire: string, newRequire: string) {
-    const requirePath = newRequire.replace(".lua", "").replace(/\\/g, ".");
+    const requirePath = formatPathToLuaPath(newRequire.replace(".lua", ""));
     if (file.sourceMapNode) {
         replaceInSourceMap(file.sourceMapNode, file.sourceMapNode, `"${originalRequire}"`, `"${requirePath}"`);
     }
@@ -114,23 +142,22 @@ function findRequiredPaths(code: string): string[] {
     return paths;
 }
 
-function resolveDependency(fileDirectory: string, rootDirectory: string, dependency: string, emitHost: EmitHost): string | undefined {
+function resolveDependency(fileDirectory: string, rootDirectory: string, dependency: string): string | undefined {
     // Check if file is a TS file in the project
-    const dependencyPath = dependency;
-    const resolvedPath = path.resolve(fileDirectory, dependencyPath);
-    const resolvedFile = resolvedPath + ".ts";
+    const resolvedPath = path.resolve(fileDirectory, dependency);
 
-    if (emitHost.fileExists(resolvedFile)) {
-        return resolvedPath + ".ts";
+    const resolvedFile = resolvedPath + ".ts";
+    if (projectFiles.has(resolvedFile)) {
+        return resolvedFile;
     }
 
-    const projectIndexPath = path.resolve(fileDirectory, dependencyPath, "index.ts");
-    if (emitHost.fileExists(projectIndexPath)) {
+    const projectIndexPath = path.resolve(resolvedPath, "index.ts");
+    if (projectFiles.has(projectIndexPath)) {
         return projectIndexPath;
     }
 
     try {
-        const resolveResult = resolver.resolveSync({}, rootDirectory, dependencyPath);
+        const resolveResult = resolver.resolveSync({}, rootDirectory, dependency);
         if (resolveResult) {
             return resolveResult;
         }
@@ -139,4 +166,15 @@ function resolveDependency(fileDirectory: string, rootDirectory: string, depende
     }
 
     return undefined;
+}
+
+// Transform an import path to a lua require that is probably not correct, but can be used as fallback when regular resolution fails
+function fallbackResolve(required: string, projectRootDir: string, fileDir: string): string {
+    return formatPathToLuaPath(
+        path
+            .normalize(path.join(path.relative(projectRootDir, fileDir), required))
+            .split(path.sep)
+            .filter(s => s !== "." && s !== "..")
+            .join(path.sep)
+    );
 }

@@ -4,6 +4,15 @@ import { createSerialDiagnosticFactory } from "../utils";
 const createDiagnosticFactory = <TArgs extends any[]>(getMessage: (...args: TArgs) => string) =>
     createSerialDiagnosticFactory((...args: TArgs) => ({ messageText: getMessage(...args) }));
 
+export const couldNotResolveRequire = createDiagnosticFactory(
+    (require: string, containingFile: string) =>
+        `Could not resolve require path '${require}' in file ${containingFile}.`
+);
+
+export const couldNotReadDependency = createDiagnosticFactory(
+    (dependency: string) => `Could not read content of resolved dependency ${dependency}.`
+);
+
 export const toLoadItShouldBeTranspiled = createDiagnosticFactory(
     (kind: string, transform: string) =>
         `To load "${transform}" ${kind} it should be transpiled or "ts-node" should be installed.`

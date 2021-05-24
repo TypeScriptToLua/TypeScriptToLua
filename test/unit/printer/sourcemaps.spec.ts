@@ -1,5 +1,6 @@
 import { Position, SourceMapConsumer } from "source-map";
 import * as tstl from "../../../src";
+import { couldNotResolveRequire } from "../../../src/transpilation/diagnostics";
 import * as util from "../../util";
 
 test.each([
@@ -144,7 +145,11 @@ test.each([
         ],
     },
 ])("Source map has correct mapping (%p)", async ({ code, assertPatterns }) => {
-    const file = util.testModule(code).expectToHaveNoDiagnostics().getMainLuaFileResult();
+    const file = util
+        .testModule(code)
+        .ignoreDiagnostics([couldNotResolveRequire.code])
+        .expectToHaveNoDiagnostics()
+        .getMainLuaFileResult();
 
     const consumer = await new SourceMapConsumer(file.luaSourceMap);
     for (const { luaPattern, typeScriptPattern } of assertPatterns) {

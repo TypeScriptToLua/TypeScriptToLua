@@ -58,20 +58,25 @@ export class Transpiler {
 
         const lualibRequired = files.some(f => f.code.includes('require("lualib_bundle")'));
         if (lualibRequired) {
-            const fileName = normalizeSlashes(path.resolve(getEmitOutDir(program), "lualib_bundle.lua"));
+            // Add lualib bundle to source dir 'virtually', will be moved to correct output dir in emitPlan
+            const fileName = normalizeSlashes(path.resolve(getSourceDir(program), "lualib_bundle.lua"));
             files.unshift({ fileName, code: getLuaLibBundle(this.emitHost) });
         }
 
         // Resolve imported modules and modify output Lua requires
-        const resolvedFiles = resolveDependencies(program, files, this.emitHost);
+        const resolutionResult = resolveDependencies(program, files, this.emitHost);
+        diagnostics.push(...resolutionResult.diagnostics);
 
         let emitPlan: EmitFile[];
         if (isBundleEnabled(options)) {
-            const [bundleDiagnostics, bundleFile] = getBundleResult(program, resolvedFiles);
+            const [bundleDiagnostics, bundleFile] = getBundleResult(program, resolutionResult.resolvedFiles);
             diagnostics.push(...bundleDiagnostics);
             emitPlan = [bundleFile];
         } else {
-            emitPlan = resolvedFiles.map(file => ({ ...file, outputPath: getEmitPath(file.fileName, program) }));
+            emitPlan = resolutionResult.resolvedFiles.map(file => ({
+                ...file,
+                outputPath: getEmitPath(file.fileName, program),
+            }));
         }
 
         return { emitPlan };

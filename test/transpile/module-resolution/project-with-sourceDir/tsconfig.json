@@ -8,6 +8,6 @@
         "lib": ["esnext"],
         "types": [],
         "rootDir": "src",
-        "outDir": "tstl-out",
+        "outDir": "tstl-out"
     }
 }

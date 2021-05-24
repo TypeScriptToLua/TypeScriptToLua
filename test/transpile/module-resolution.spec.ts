@@ -127,7 +127,7 @@ describe("module resolution with outDir", () => {
             .setMainFileName(mainFile)
             .setOptions({ outDir: "tstl-out", luaBundle: "bundle.lua", luaBundleEntry: mainFile })
             .expectToEqual({ result: "dependency3" });
-        
+
         // Get the output paths relative to the project path
         const outPaths = builder.getLuaResult().transpiledFiles.map(f => path.relative(projectPath, f.outPath));
         expect(outPaths).toHaveLength(1);

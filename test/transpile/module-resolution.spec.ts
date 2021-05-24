@@ -84,7 +84,7 @@ describe("basic module resolution", () => {
 
 describe("module resolution with chained dependencies", () => {
     const projectPath = path.resolve(__dirname, "module-resolution", "project-with-dependency-chain");
-    const expectedResult = { result: "dependency3" };
+    const expectedResult = { result: "dependency3", result2: "someFunc from otherfile.lua" };
 
     test("can resolve dependencies in chain", () => {
         util.testProject(path.join(projectPath, "tsconfig.json"))
@@ -103,7 +103,7 @@ describe("module resolution with chained dependencies", () => {
 
 describe("module resolution with outDir", () => {
     const projectPath = path.resolve(__dirname, "module-resolution", "project-with-dependency-chain");
-    const expectedResult = { result: "dependency3" };
+    const expectedResult = { result: "dependency3", result2: "someFunc from otherfile.lua" };
 
     test("emits files in outDir", () => {
         const builder = util
@@ -114,10 +114,11 @@ describe("module resolution with outDir", () => {
 
         // Get the output paths relative to the project path
         const outPaths = builder.getLuaResult().transpiledFiles.map(f => path.relative(projectPath, f.outPath));
-        expect(outPaths).toHaveLength(4);
+        expect(outPaths).toHaveLength(5);
         expect(outPaths).toContain(path.join("tstl-out", "main.lua"));
         // Note: outputs to lua_modules
         expect(outPaths).toContain(path.join("tstl-out", "lua_modules", "dependency1", "index.lua"));
+        expect(outPaths).toContain(path.join("tstl-out", "lua_modules", "dependency1", "otherfile.lua"));
         expect(outPaths).toContain(path.join("tstl-out", "lua_modules", "dependency2", "index.lua"));
         expect(outPaths).toContain(path.join("tstl-out", "lua_modules", "dependency3", "index.lua"));
     });

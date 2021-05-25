@@ -78,6 +78,15 @@ jobs:
       - name: Build benchmark Lua 5.3 master
         run: node ../dist/tstl.js -p tsconfig.53.json
         working-directory: master/benchmark
+      - name: List Lua 5.3 benchmark dir
+        run: ls dist
+        working-directory: master/benchmark
+      - name: 'Upload Artifact'
+        uses: actions/upload-artifact@v2
+        working-directory: master/benchmark
+        with:
+          name: benchmark-build
+          path: dist
       - name: Run benchmark Lua 5.3 master
         id: benchmark-lua-master
         run: lua5.3 -- run.lua ../../../commit/benchmark/data/benchmark_master_53.json

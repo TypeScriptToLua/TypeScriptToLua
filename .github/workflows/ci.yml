@@ -76,14 +76,14 @@ jobs:
         run: rm -rf ./master/benchmark && cp -rf ./commit/benchmark ./master/benchmark
       # Run master benchmark first and output to commit benchmark data
       - name: Build benchmark Lua 5.3 master
-        run: node ../dist/tstl.js -p tsconfig.53.json
+        run: node ../../commit/dist/tstl.js -p tsconfig.53.json
         working-directory: master/benchmark
       - name: Run benchmark Lua 5.3 master
         id: benchmark-lua-master
         run: lua5.3 -- run.lua ../../../commit/benchmark/data/benchmark_master_53.json
         working-directory: master/benchmark/dist
       - name: Build benchmark LuaJIT master
-        run: node ../dist/tstl.js -p tsconfig.jit.json
+        run: node ../../commit/dist/tstl.js -p tsconfig.jit.json
         working-directory: master/benchmark
       - name: Run benchmark LuaJIT master
         id: benchmark-jit-master
@@ -91,14 +91,14 @@ jobs:
         working-directory: master/benchmark/dist
       # Run commit benchmark and compare with master
       - name: Build benchmark Lua 5.3 commit
-        run: node ../dist/tstl.js -p tsconfig.53.json
+        run: node ../../commit/dist/tstl.js -p tsconfig.53.json
         working-directory: commit/benchmark
       - name: Run benchmark Lua 5.3 commit
         id: benchmark-lua-commit
         run: lua5.3 -- run.lua ../data/benchmark_master_vs_commit_53.json ../data/benchmark_master_53.json
         working-directory: commit/benchmark/dist
       - name: Build benchmark LuaJIT commit
-        run: node ../dist/tstl.js -p tsconfig.jit.json
+        run: node ../../commit/dist/tstl.js -p tsconfig.jit.json
         working-directory: commit/benchmark
       - name: Run benchmark LuaJIT commit
         id: benchmark-jit-commit

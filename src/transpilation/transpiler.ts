@@ -67,6 +67,9 @@ export class Transpiler {
         const resolutionResult = resolveDependencies(program, files, this.emitHost);
         diagnostics.push(...resolutionResult.diagnostics);
 
+        console.log("RESOLVED FILES:");
+        console.log(resolutionResult.resolvedFiles);
+
         let emitPlan: EmitFile[];
         if (isBundleEnabled(options)) {
             const [bundleDiagnostics, bundleFile] = getBundleResult(program, resolutionResult.resolvedFiles);
@@ -78,6 +81,9 @@ export class Transpiler {
                 outputPath: getEmitPath(file.fileName, program),
             }));
         }
+
+        console.log("EMIT PLAN");
+        console.log(emitPlan.map(f => [f.outputPath, f.code]));
 
         return { emitPlan };
     }

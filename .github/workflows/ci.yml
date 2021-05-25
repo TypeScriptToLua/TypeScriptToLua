@@ -83,10 +83,9 @@ jobs:
         working-directory: master/benchmark
       - name: 'Upload Artifact'
         uses: actions/upload-artifact@v2
-        working-directory: master/benchmark
         with:
           name: benchmark-build
-          path: dist
+          path: master/benchmark/dist
       - name: Run benchmark Lua 5.3 master
         id: benchmark-lua-master
         run: lua5.3 -- run.lua ../../../commit/benchmark/data/benchmark_master_53.json

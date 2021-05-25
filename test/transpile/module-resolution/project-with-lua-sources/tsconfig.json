@@ -1,10 +1,9 @@
 {
     "compilerOptions": {
         "strict": true,
-        "moduleResolution": "Node",
         "target": "esnext",
         "lib": ["esnext"],
         "types": [],
-        "rootDir": "src"
+        "outDir": "tstl-out"
     }
 }

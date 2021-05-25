@@ -163,3 +163,26 @@ describe("module resolution with sourceDir", () => {
             .expectToEqual(expectedResult);
     });
 });
+
+describe("module resolution project with lua sources", () => {
+    const projectPath = path.resolve(__dirname, "module-resolution", "project-with-lua-sources");
+    const expectedResult = {
+        funcFromLuaFile: "lua file in subdir",
+        funcFromSubDirLuaFile: "lua file in subdir",
+    };
+
+    test("can resolve lua dependencies", () => {
+        util.testProject(path.join(projectPath, "tsconfig.json"))
+            .setMainFileName(path.join(projectPath, "main.ts"))
+            .setOptions({ outDir: "tstl-out" })
+            .expectToEqual(expectedResult);
+    });
+
+    test("can resolve dependencies and bundle files with sourceDir", () => {
+        const mainFile = path.join(projectPath, "main.ts");
+        util.testProject(path.join(projectPath, "tsconfig.json"))
+            .setMainFileName(mainFile)
+            .setOptions({ luaBundle: "bundle.lua", luaBundleEntry: mainFile })
+            .expectToEqual(expectedResult);
+    });
+});

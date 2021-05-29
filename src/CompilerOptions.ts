@@ -25,6 +25,7 @@ export interface LuaPluginImport {
 }
 
 export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> & {
+    compileMode?: CompileMode;
     noImplicitSelf?: boolean;
     noHeader?: boolean;
     luaBundle?: string;
@@ -51,6 +52,11 @@ export enum LuaTarget {
     Lua53 = "5.3",
     Lua54 = "5.4",
     LuaJIT = "JIT",
+}
+
+export enum CompileMode {
+    Application = "application",
+    Library = "library",
 }
 
 export const isBundleEnabled = (options: CompilerOptions) =>

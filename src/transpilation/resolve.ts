@@ -7,6 +7,7 @@ import { SourceNode } from "source-map";
 import { getEmitPathRelativeToOutDir, getProjectRoot, getSourceDir } from "./transpiler";
 import { formatPathToLuaPath } from "../utils";
 import { couldNotReadDependency, couldNotResolveRequire } from "./diagnostics";
+import { CompileMode } from "../CompilerOptions";
 
 const resolver = resolve.ResolverFactory.createResolver({
     extensions: [".lua"],
@@ -54,6 +55,7 @@ function resolveFileDependencies(file: ProcessedFile, program: ts.Program, emitH
     const dependencies: ProcessedFile[] = [];
     const diagnostics: ts.Diagnostic[] = [];
 
+    const options = program.getCompilerOptions();
     const projectRootDir = getSourceDir(program);
 
     for (const required of findRequiredPaths(file.code)) {
@@ -77,11 +79,17 @@ function resolveFileDependencies(file: ProcessedFile, program: ts.Program, emitH
             // Figure out resolved require path and dependency output path
             const resolvedRequire = getEmitPathRelativeToOutDir(resolvedDependency, program);
 
-            replaceRequireInCode(file, required, resolvedRequire);
-            replaceRequireInSourceMap(file, required, resolvedRequire);
+            if (!isExternalDependencyFile(resolvedDependency, program) || options.compileMode !== CompileMode.Library) {
+                replaceRequireInCode(file, required, resolvedRequire);
+                replaceRequireInSourceMap(file, required, resolvedRequire);
+            }
 
             // If dependency is not part of project, add dependency to output and resolve its dependencies recursively
-            if (!isProjectFile(resolvedDependency)) {
+            if (
+                (isExternalDependencyFile(resolvedDependency, program) &&
+                    options.compileMode !== CompileMode.Library) ||
+                resolvedDependency.endsWith(".lua")
+            ) {
                 // If dependency resolved successfully, read its content
                 const dependencyContent = emitHost.readFile(resolvedDependency);
                 if (dependencyContent === undefined) {
@@ -107,6 +115,19 @@ function resolveFileDependencies(file: ProcessedFile, program: ts.Program, emitH
         }
     }
     return { resolvedFiles: dependencies, diagnostics };
+}
+
+function findRequiredPaths(code: string): string[] {
+    // Find all require("<path>") paths in a lua code string
+    const paths: string[] = [];
+    const pattern = /require\("(.+)"\)/g;
+    // eslint-disable-next-line @typescript-eslint/ban-types
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(code))) {
+        paths.push(match[1]);
+    }
+
+    return paths;
 }
 
 function replaceRequireInCode(file: ProcessedFile, originalRequire: string, newRequire: string): void {
@@ -136,19 +157,6 @@ function replaceInSourceMap(node: SourceNode, parent: SourceNode, require: strin
     }
 
     return false; // Did not find the require
-}
-
-function findRequiredPaths(code: string): string[] {
-    // Find all require("<path>") paths in the code
-    const paths: string[] = [];
-    const pattern = /require\("(.+)"\)/g;
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    let match: RegExpExecArray | null;
-    while ((match = pattern.exec(code))) {
-        paths.push(match[1]);
-    }
-
-    return paths;
 }
 
 function resolveDependency(
@@ -192,6 +200,13 @@ function resolveDependency(
     }
 
     return undefined;
+}
+
+function isExternalDependencyFile(filePath: string, program: ts.Program) {
+    const inSourceRoot = filePath.includes(path.normalize(getSourceDir(program)));
+    const inNodeModules = filePath.split(path.sep).some(p => p === "node_modules");
+
+    return !inSourceRoot || inNodeModules;
 }
 
 // Transform an import path to a lua require that is probably not correct, but can be used as fallback when regular resolution fails

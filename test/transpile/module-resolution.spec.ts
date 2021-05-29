@@ -1,4 +1,5 @@
 import * as path from "path";
+import * as tstl from "../../src";
 import * as util from "../util";
 
 describe("basic module resolution", () => {
@@ -184,5 +185,59 @@ describe("module resolution project with lua sources", () => {
             .setMainFileName(mainFile)
             .setOptions({ luaBundle: "bundle.lua", luaBundleEntry: mainFile })
             .expectToEqual(expectedResult);
+    });
+});
+
+describe("module resolution in library mode", () => {
+    test("can resolve dependencies in chain", () => {
+        const projectPath = path.resolve(__dirname, "module-resolution", "project-with-dependency-chain");
+
+        const { transpiledFiles } = util
+            .testProject(path.join(projectPath, "tsconfig.json"))
+            .setMainFileName(path.join(projectPath, "main.ts"))
+            .setOptions({ compileMode: tstl.CompileMode.Library })
+            .expectToHaveNoDiagnostics()
+            .getLuaResult();
+
+        for (const file of transpiledFiles) {
+            expect(file.lua).not.toContain('require("lua_modules');
+        }
+    });
+
+    test("project works in library mode because no external dependencies", () => {
+        const projectPath = path.resolve(__dirname, "module-resolution", "project-with-lua-sources");
+
+        const { transpiledFiles } = util
+            .testProject(path.join(projectPath, "tsconfig.json"))
+            .setMainFileName(path.join(projectPath, "main.ts"))
+            .setOptions({ outDir: "tstl-out", compileMode: tstl.CompileMode.Library })
+            .expectToEqual({
+                funcFromLuaFile: "lua file in subdir",
+                funcFromSubDirLuaFile: "lua file in subdir",
+            })
+            .getLuaResult();
+
+        for (const file of transpiledFiles) {
+            expect(file.lua).not.toContain('require("lua_modules');
+        }
+    });
+
+    test("bundle works in library mode because no external dependencies", () => {
+        const projectPath = path.resolve(__dirname, "module-resolution", "project-with-lua-sources");
+        const mainFile = path.join(projectPath, "main.ts");
+
+        const { transpiledFiles } = util
+            .testProject(path.join(projectPath, "tsconfig.json"))
+            .setMainFileName(path.join(projectPath, "main.ts"))
+            .setOptions({ compileMode: tstl.CompileMode.Library, luaBundle: "bundle.lua", luaBundleEntry: mainFile })
+            .expectToEqual({
+                funcFromLuaFile: "lua file in subdir",
+                funcFromSubDirLuaFile: "lua file in subdir",
+            })
+            .getLuaResult();
+
+        for (const file of transpiledFiles) {
+            expect(file.lua).not.toContain('require("lua_modules');
+        }
     });
 });

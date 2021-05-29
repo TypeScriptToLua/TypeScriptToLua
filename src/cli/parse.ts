@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import { CompileMode, CompilerOptions, LuaLibImportKind, LuaTarget } from "../CompilerOptions";
+import { BuildMode, CompilerOptions, LuaLibImportKind, LuaTarget } from "../CompilerOptions";
 import * as cliDiagnostics from "./diagnostics";
 
 export interface ParsedCommandLine extends ts.ParsedCommandLine {
@@ -25,10 +25,10 @@ type CommandLineOption = CommandLineOptionOfEnum | CommandLineOptionOfPrimitive;
 
 export const optionDeclarations: CommandLineOption[] = [
     {
-        name: "compileMode",
-        description: "Default: application. Compiling as library will not resolve external dependencies.",
+        name: "buildMode",
+        description: "'default' or  'library'. Compiling as library will not resolve external dependencies.",
         type: "enum",
-        choices: Object.values(CompileMode),
+        choices: Object.values(BuildMode),
     },
     {
         name: "luaBundle",

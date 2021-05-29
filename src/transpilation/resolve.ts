@@ -7,7 +7,7 @@ import { SourceNode } from "source-map";
 import { getEmitPathRelativeToOutDir, getProjectRoot, getSourceDir } from "./transpiler";
 import { formatPathToLuaPath } from "../utils";
 import { couldNotReadDependency, couldNotResolveRequire } from "./diagnostics";
-import { CompileMode } from "../CompilerOptions";
+import { BuildMode } from "../CompilerOptions";
 
 const resolver = resolve.ResolverFactory.createResolver({
     extensions: [".lua"],
@@ -79,15 +79,14 @@ function resolveFileDependencies(file: ProcessedFile, program: ts.Program, emitH
             // Figure out resolved require path and dependency output path
             const resolvedRequire = getEmitPathRelativeToOutDir(resolvedDependency, program);
 
-            if (!isExternalDependencyFile(resolvedDependency, program) || options.compileMode !== CompileMode.Library) {
+            if (!isExternalDependencyFile(resolvedDependency, program) || options.buildMode !== BuildMode.Library) {
                 replaceRequireInCode(file, required, resolvedRequire);
                 replaceRequireInSourceMap(file, required, resolvedRequire);
             }
 
             // If dependency is not part of project, add dependency to output and resolve its dependencies recursively
             if (
-                (isExternalDependencyFile(resolvedDependency, program) &&
-                    options.compileMode !== CompileMode.Library) ||
+                (isExternalDependencyFile(resolvedDependency, program) && options.buildMode !== BuildMode.Library) ||
                 resolvedDependency.endsWith(".lua")
             ) {
                 // If dependency resolved successfully, read its content

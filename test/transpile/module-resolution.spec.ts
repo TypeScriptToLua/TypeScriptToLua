@@ -189,13 +189,13 @@ describe("module resolution project with lua sources", () => {
 });
 
 describe("module resolution in library mode", () => {
-    test("can resolve dependencies in chain", () => {
+    test("result does not contain resolved paths", () => {
         const projectPath = path.resolve(__dirname, "module-resolution", "project-with-dependency-chain");
 
         const { transpiledFiles } = util
             .testProject(path.join(projectPath, "tsconfig.json"))
             .setMainFileName(path.join(projectPath, "main.ts"))
-            .setOptions({ compileMode: tstl.CompileMode.Library })
+            .setOptions({ buildMode: tstl.BuildMode.Library })
             .expectToHaveNoDiagnostics()
             .getLuaResult();
 
@@ -210,7 +210,7 @@ describe("module resolution in library mode", () => {
         const { transpiledFiles } = util
             .testProject(path.join(projectPath, "tsconfig.json"))
             .setMainFileName(path.join(projectPath, "main.ts"))
-            .setOptions({ outDir: "tstl-out", compileMode: tstl.CompileMode.Library })
+            .setOptions({ outDir: "tstl-out", buildMode: tstl.BuildMode.Library })
             .expectToEqual({
                 funcFromLuaFile: "lua file in subdir",
                 funcFromSubDirLuaFile: "lua file in subdir",
@@ -229,7 +229,7 @@ describe("module resolution in library mode", () => {
         const { transpiledFiles } = util
             .testProject(path.join(projectPath, "tsconfig.json"))
             .setMainFileName(path.join(projectPath, "main.ts"))
-            .setOptions({ compileMode: tstl.CompileMode.Library, luaBundle: "bundle.lua", luaBundleEntry: mainFile })
+            .setOptions({ buildMode: tstl.BuildMode.Library, luaBundle: "bundle.lua", luaBundleEntry: mainFile })
             .expectToEqual({
                 funcFromLuaFile: "lua file in subdir",
                 funcFromSubDirLuaFile: "lua file in subdir",

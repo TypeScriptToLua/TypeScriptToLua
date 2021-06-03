@@ -4,8 +4,8 @@ import * as ts from "typescript";
 import * as fs from "fs";
 import { EmitHost, ProcessedFile } from "./utils";
 import { SourceNode } from "source-map";
-import { getEmitPathRelativeToOutDir, getProjectRoot, getSourceDir } from "./transpiler";
-import { formatPathToLuaPath } from "../utils";
+import { getEmitPathRelativeToOutDir, getSourceDir } from "./transpiler";
+import { formatPathToLuaPath, trimExtension } from "../utils";
 import { couldNotReadDependency, couldNotResolveRequire } from "./diagnostics";
 import { BuildMode } from "../CompilerOptions";
 
@@ -21,25 +21,9 @@ interface ResolutionResult {
     diagnostics: ts.Diagnostic[];
 }
 
-// Cache for getting source files from the program
-const projectFileCache = new Set<string>();
-function isProjectFile(file: string): boolean {
-    // Check if file is in the project ts.program
-    return projectFileCache.has(path.normalize(file));
-}
-
 export function resolveDependencies(program: ts.Program, files: ProcessedFile[], emitHost: EmitHost): ResolutionResult {
     const outFiles: ProcessedFile[] = [...files];
     const diagnostics: ts.Diagnostic[] = [];
-
-    // Add files to project cache
-    const projectRoot = getProjectRoot(program);
-    for (const sourceFile of program.getSourceFiles()) {
-        const filePath = path.isAbsolute(sourceFile.fileName)
-            ? path.normalize(sourceFile.fileName)
-            : path.resolve(projectRoot, sourceFile.fileName);
-        projectFileCache.add(filePath);
-    }
 
     // Resolve dependencies for all processed files
     for (const file of files) {
@@ -55,7 +39,6 @@ function resolveFileDependencies(file: ProcessedFile, program: ts.Program, emitH
     const dependencies: ProcessedFile[] = [];
     const diagnostics: ts.Diagnostic[] = [];
 
-    const options = program.getCompilerOptions();
     const projectRootDir = getSourceDir(program);
 
     for (const required of findRequiredPaths(file.code)) {
@@ -74,21 +57,18 @@ function resolveFileDependencies(file: ProcessedFile, program: ts.Program, emitH
 
         // Try to resolve the import starting from the directory `file` is in
         const fileDir = path.dirname(file.fileName);
-        const resolvedDependency = resolveDependency(fileDir, projectRootDir, required, emitHost);
+        const resolvedDependency = resolveDependency(fileDir, required, program, emitHost);
         if (resolvedDependency) {
             // Figure out resolved require path and dependency output path
             const resolvedRequire = getEmitPathRelativeToOutDir(resolvedDependency, program);
 
-            if (!isExternalDependencyFile(resolvedDependency, program) || options.buildMode !== BuildMode.Library) {
+            if (shouldRewriteRequires(resolvedDependency, program)) {
                 replaceRequireInCode(file, required, resolvedRequire);
                 replaceRequireInSourceMap(file, required, resolvedRequire);
             }
 
             // If dependency is not part of project, add dependency to output and resolve its dependencies recursively
-            if (
-                (isExternalDependencyFile(resolvedDependency, program) && options.buildMode !== BuildMode.Library) ||
-                resolvedDependency.endsWith(".lua")
-            ) {
+            if (shouldIncludeDependency(resolvedDependency, program)) {
                 // If dependency resolved successfully, read its content
                 const dependencyContent = emitHost.readFile(resolvedDependency);
                 if (dependencyContent === undefined) {
@@ -114,6 +94,28 @@ function resolveFileDependencies(file: ProcessedFile, program: ts.Program, emitH
         }
     }
     return { resolvedFiles: dependencies, diagnostics };
+}
+
+function shouldRewriteRequires(resolvedDependency: string, program: ts.Program) {
+    return !isNodeModulesFile(resolvedDependency) || !isBuildModeLibrary(program);
+}
+
+function shouldIncludeDependency(resolvedDependency: string, program: ts.Program) {
+    // Never include lua files (again) that are transpiled from project sources
+    if (!hasSourceFileInProject(resolvedDependency, program)) {
+        // Always include lua files not in node_modules (internal lua sources)
+        if (!isNodeModulesFile(resolvedDependency)) {
+            return true;
+        } else {
+            // Only include node_modules files if not in library mode
+            return !isBuildModeLibrary(program)
+        }
+    }
+    return false;
+}
+
+function isBuildModeLibrary(program: ts.Program) {
+    return program.getCompilerOptions().buildMode === BuildMode.Library;
 }
 
 function findRequiredPaths(code: string): string[] {
@@ -160,25 +162,25 @@ function replaceInSourceMap(node: SourceNode, parent: SourceNode, require: strin
 
 function resolveDependency(
     fileDirectory: string,
-    rootDirectory: string,
     dependency: string,
+    program: ts.Program,
     emitHost: EmitHost
 ): string | undefined {
     // Check if file is a file in the project
     const resolvedPath = path.resolve(fileDirectory, dependency);
 
-    if (isProjectFile(resolvedPath)) {
+    if (isProjectFile(resolvedPath, program)) {
         // JSON files need their extension as part of the import path, caught by this branch
         return resolvedPath;
     }
 
     const resolvedFile = resolvedPath + ".ts";
-    if (isProjectFile(resolvedFile)) {
+    if (isProjectFile(resolvedFile, program)) {
         return resolvedFile;
     }
 
     const projectIndexPath = path.resolve(resolvedPath, "index.ts");
-    if (isProjectFile(projectIndexPath)) {
+    if (isProjectFile(projectIndexPath, program)) {
         return projectIndexPath;
     }
 
@@ -190,7 +192,7 @@ function resolveDependency(
 
     // Not a TS file in our project sources, use resolver to check if we can find dependency
     try {
-        const resolveResult = resolver.resolveSync({}, rootDirectory, dependency);
+        const resolveResult = resolver.resolveSync({}, fileDirectory, dependency);
         if (resolveResult) {
             return resolveResult;
         }
@@ -201,11 +203,17 @@ function resolveDependency(
     return undefined;
 }
 
-function isExternalDependencyFile(filePath: string, program: ts.Program) {
-    const inSourceRoot = filePath.includes(path.normalize(getSourceDir(program)));
-    const inNodeModules = filePath.split(path.sep).some(p => p === "node_modules");
+function isNodeModulesFile(filePath: string): boolean {
+    return path.normalize(filePath).split(path.sep).some(p => p === "node_modules");
+}
 
-    return !inSourceRoot || inNodeModules;
+function isProjectFile(file: string, program: ts.Program): boolean {
+    return program.getSourceFile(file) !== undefined;
+}
+
+function hasSourceFileInProject(filePath: string, program: ts.Program) {
+    const pathWithoutExtension = trimExtension(filePath);
+    return isProjectFile(pathWithoutExtension + ".ts", program) || isProjectFile(pathWithoutExtension + ".json", program);
 }
 
 // Transform an import path to a lua require that is probably not correct, but can be used as fallback when regular resolution fails

@@ -44,7 +44,7 @@ export function getBundleResult(program: ts.Program, files: ProcessedFile[]): [t
     const resolvedEntryModule = path.resolve(getSourceDir(program), entryModule);
     const outputPath = normalizeSlashes(path.resolve(getEmitOutDir(program), bundleFile));
 
-    if (!files.some(f => f.fileName === resolvedEntryModule)) {
+    if (program.getSourceFile(resolvedEntryModule) === undefined && program.getSourceFile(entryModule) === undefined) {
         diagnostics.push(couldNotFindBundleEntryPoint(entryModule));
         return [diagnostics, { outputPath, code: "" }];
     }

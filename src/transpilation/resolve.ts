@@ -4,7 +4,7 @@ import * as ts from "typescript";
 import * as fs from "fs";
 import { EmitHost, ProcessedFile } from "./utils";
 import { SourceNode } from "source-map";
-import { getEmitPathRelativeToOutDir, getSourceDir } from "./transpiler";
+import { getEmitPathRelativeToOutDir, getProjectRoot, getSourceDir } from "./transpiler";
 import { formatPathToLuaPath, trimExtension } from "../utils";
 import { couldNotReadDependency, couldNotResolveRequire } from "./diagnostics";
 import { BuildMode } from "../CompilerOptions";
@@ -38,8 +38,6 @@ export function resolveDependencies(program: ts.Program, files: ProcessedFile[],
 function resolveFileDependencies(file: ProcessedFile, program: ts.Program, emitHost: EmitHost): ResolutionResult {
     const dependencies: ProcessedFile[] = [];
     const diagnostics: ts.Diagnostic[] = [];
-
-    const projectRootDir = getSourceDir(program);
 
     for (const required of findRequiredPaths(file.code)) {
         // Do no resolve lualib
@@ -86,9 +84,9 @@ function resolveFileDependencies(file: ProcessedFile, program: ts.Program, emitH
             }
         } else {
             // Could not resolve dependency, add a diagnostic and make some fallback path
-            diagnostics.push(couldNotResolveRequire(required, path.relative(projectRootDir, file.fileName)));
+            diagnostics.push(couldNotResolveRequire(required, path.relative(getProjectRoot(program), file.fileName)));
 
-            const fallbackRequire = fallbackResolve(required, projectRootDir, fileDir);
+            const fallbackRequire = fallbackResolve(required, getSourceDir(program), fileDir);
             replaceRequireInCode(file, required, fallbackRequire);
             replaceRequireInSourceMap(file, required, fallbackRequire);
         }
@@ -167,7 +165,7 @@ function resolveDependency(
     emitHost: EmitHost
 ): string | undefined {
     // Check if file is a file in the project
-    const resolvedPath = path.resolve(fileDirectory, dependency);
+    const resolvedPath = path.join(fileDirectory, dependency);
 
     if (isProjectFile(resolvedPath, program)) {
         // JSON files need their extension as part of the import path, caught by this branch
@@ -217,10 +215,10 @@ function hasSourceFileInProject(filePath: string, program: ts.Program) {
 }
 
 // Transform an import path to a lua require that is probably not correct, but can be used as fallback when regular resolution fails
-function fallbackResolve(required: string, projectRootDir: string, fileDir: string): string {
+function fallbackResolve(required: string, sourceRootDir: string, fileDir: string): string {
     return formatPathToLuaPath(
         path
-            .normalize(path.join(path.relative(projectRootDir, fileDir), required))
+            .normalize(path.join(path.relative(sourceRootDir, fileDir), required))
             .split(path.sep)
             .filter(s => s !== "." && s !== "..")
             .join(path.sep)

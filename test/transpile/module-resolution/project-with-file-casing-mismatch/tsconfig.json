@@ -1,9 +1,0 @@
-{
-    "compilerOptions": {
-        "strict": true,
-        "target": "esnext",
-        "lib": ["esnext"],
-        "types": [],
-        "outDir": "tstl-out"
-    }
-}

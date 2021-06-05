@@ -196,29 +196,6 @@ describe("module resolution project with lua sources", () => {
     });
 });
 
-describe("module resolution project with import/file casing mismatch", () => {
-    const projectPath = path.resolve(__dirname, "module-resolution", "project-with-file-casing-mismatch");
-    const expectedResult = {
-        funcFromLuaFile: "lua file in subdir",
-        funcFromSubDirFile: "ts file in subdir",
-    };
-
-    test("can resolve lua dependencies", () => {
-        util.testProject(path.join(projectPath, "tsconfig.json"))
-            .setMainFileName(path.join(projectPath, "main.ts"))
-            .setOptions({ outDir: "tstl-out" })
-            .expectToEqual(expectedResult);
-    });
-
-    test("can resolve dependencies and bundle files with sourceDir", () => {
-        const mainFile = path.join(projectPath, "main.ts");
-        util.testProject(path.join(projectPath, "tsconfig.json"))
-            .setMainFileName(mainFile)
-            .setOptions({ luaBundle: "bundle.lua", luaBundleEntry: mainFile })
-            .expectToEqual(expectedResult);
-    });
-});
-
 describe("module resolution in library mode", () => {
     test("result does not contain resolved paths", () => {
         const projectPath = path.resolve(__dirname, "module-resolution", "project-with-dependency-chain");

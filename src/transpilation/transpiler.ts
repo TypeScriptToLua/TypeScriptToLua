@@ -93,20 +93,20 @@ export function getEmitPath(file: string, program: ts.Program): string {
 export function getEmitPathRelativeToOutDir(fileName: string, program: ts.Program): string {
     const sourceDir = getSourceDir(program);
     // Default output path is relative path in source dir
-    let emitPath = path.relative(sourceDir, fileName).split(path.sep);
+    let emitPathSplits = path.relative(sourceDir, fileName).split(path.sep);
 
     // If source is in a parent directory of source dir, move it into the source dir
-    emitPath = emitPath.filter(s => s !== "..");
+    emitPathSplits = emitPathSplits.filter(s => s !== "..");
 
     // To avoid overwriting lua sources in node_modules, emit into lua_modules
-    if (emitPath[0] === "node_modules") {
-        emitPath[0] = "lua_modules";
+    if (emitPathSplits[0] === "node_modules") {
+        emitPathSplits[0] = "lua_modules";
     }
 
     // Make extension lua
-    emitPath[emitPath.length - 1] = trimExtension(emitPath[emitPath.length - 1]) + ".lua";
+    emitPathSplits[emitPathSplits.length - 1] = trimExtension(emitPathSplits[emitPathSplits.length - 1]) + ".lua";
 
-    return path.join(...emitPath);
+    return path.join(...emitPathSplits);
 }
 
 export function getSourceDir(program: ts.Program): string {

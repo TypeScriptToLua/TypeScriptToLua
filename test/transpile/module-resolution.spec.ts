@@ -1,6 +1,7 @@
 import * as path from "path";
 import * as tstl from "../../src";
 import * as util from "../util";
+import * as ts from "typescript";
 
 describe("basic module resolution", () => {
     const projectPath = path.resolve(__dirname, "module-resolution", "project-with-node-modules");
@@ -100,6 +101,13 @@ describe("module resolution with chained dependencies", () => {
             .setOptions({ luaBundle: "bundle.lua", luaBundleEntry: mainFile })
             .expectToEqual(expectedResult);
     });
+
+    test("works with different module setting", () => {
+        util.testProject(path.join(projectPath, "tsconfig.json"))
+            .setMainFileName(path.join(projectPath, "main.ts"))
+            .setOptions({ module: ts.ModuleKind.ESNext })
+            .expectToEqual(expectedResult);
+    });
 });
 
 describe("module resolution with outDir", () => {
@@ -170,6 +178,29 @@ describe("module resolution project with lua sources", () => {
     const expectedResult = {
         funcFromLuaFile: "lua file in subdir",
         funcFromSubDirLuaFile: "lua file in subdir",
+    };
+
+    test("can resolve lua dependencies", () => {
+        util.testProject(path.join(projectPath, "tsconfig.json"))
+            .setMainFileName(path.join(projectPath, "main.ts"))
+            .setOptions({ outDir: "tstl-out" })
+            .expectToEqual(expectedResult);
+    });
+
+    test("can resolve dependencies and bundle files with sourceDir", () => {
+        const mainFile = path.join(projectPath, "main.ts");
+        util.testProject(path.join(projectPath, "tsconfig.json"))
+            .setMainFileName(mainFile)
+            .setOptions({ luaBundle: "bundle.lua", luaBundleEntry: mainFile })
+            .expectToEqual(expectedResult);
+    });
+});
+
+describe("module resolution project with import/file casing mismatch", () => {
+    const projectPath = path.resolve(__dirname, "module-resolution", "project-with-file-casing-mismatch");
+    const expectedResult = {
+        funcFromLuaFile: "lua file in subdir",
+        funcFromSubDirFile: "ts file in subdir",
     };
 
     test("can resolve lua dependencies", () => {

@@ -7,8 +7,8 @@ const createDiagnosticFactory = <TArgs extends any[]>(
 ) => createSerialDiagnosticFactory((...args: TArgs) => ({ messageText: getMessage(...args), category }));
 
 export const couldNotResolveRequire = createDiagnosticFactory(
-    (require: string, containingFile: string) =>
-        `Could not resolve require path '${require}' in file ${containingFile}.`,
+    (requirePath: string, containingFile: string) =>
+        `Could not resolve require path '${requirePath}' in file ${containingFile}.`,
     ts.DiagnosticCategory.Warning
 );
 

@@ -94,6 +94,49 @@ function resolveFileDependencies(file: ProcessedFile, program: ts.Program, emitH
     return { resolvedFiles: dependencies, diagnostics };
 }
 
+function resolveDependency(
+    fileDirectory: string,
+    dependency: string,
+    program: ts.Program,
+    emitHost: EmitHost
+): string | undefined {
+    // Check if file is a file in the project
+    const resolvedPath = path.join(fileDirectory, dependency);
+
+    if (isProjectFile(resolvedPath, program)) {
+        // JSON files need their extension as part of the import path, caught by this branch
+        return resolvedPath;
+    }
+
+    const resolvedFile = resolvedPath + ".ts";
+    if (isProjectFile(resolvedFile, program)) {
+        return resolvedFile;
+    }
+
+    const projectIndexPath = path.resolve(resolvedPath, "index.ts");
+    if (isProjectFile(projectIndexPath, program)) {
+        return projectIndexPath;
+    }
+
+    // Check if this is a sibling of a required lua file
+    const luaFilePath = path.resolve(fileDirectory, dependency + ".lua");
+    if (emitHost.fileExists(luaFilePath)) {
+        return luaFilePath;
+    }
+
+    // Not a TS file in our project sources, use resolver to check if we can find dependency
+    try {
+        const resolveResult = resolver.resolveSync({}, fileDirectory, dependency);
+        if (resolveResult) {
+            return resolveResult;
+        }
+    } catch (e) {
+        // resolveSync errors if it fails to resolve
+    }
+
+    return undefined;
+}
+
 function shouldRewriteRequires(resolvedDependency: string, program: ts.Program) {
     return !isNodeModulesFile(resolvedDependency) || !isBuildModeLibrary(program);
 }
@@ -156,49 +199,6 @@ function replaceInSourceMap(node: SourceNode, parent: SourceNode, require: strin
     }
 
     return false; // Did not find the require
-}
-
-function resolveDependency(
-    fileDirectory: string,
-    dependency: string,
-    program: ts.Program,
-    emitHost: EmitHost
-): string | undefined {
-    // Check if file is a file in the project
-    const resolvedPath = path.join(fileDirectory, dependency);
-
-    if (isProjectFile(resolvedPath, program)) {
-        // JSON files need their extension as part of the import path, caught by this branch
-        return resolvedPath;
-    }
-
-    const resolvedFile = resolvedPath + ".ts";
-    if (isProjectFile(resolvedFile, program)) {
-        return resolvedFile;
-    }
-
-    const projectIndexPath = path.resolve(resolvedPath, "index.ts");
-    if (isProjectFile(projectIndexPath, program)) {
-        return projectIndexPath;
-    }
-
-    // Check if this is a sibling of a required lua file
-    const luaFilePath = path.resolve(fileDirectory, dependency + ".lua");
-    if (emitHost.fileExists(luaFilePath)) {
-        return luaFilePath;
-    }
-
-    // Not a TS file in our project sources, use resolver to check if we can find dependency
-    try {
-        const resolveResult = resolver.resolveSync({}, fileDirectory, dependency);
-        if (resolveResult) {
-            return resolveResult;
-        }
-    } catch (e) {
-        // resolveSync errors if it fails to resolve
-    }
-
-    return undefined;
 }
 
 function isNodeModulesFile(filePath: string): boolean {

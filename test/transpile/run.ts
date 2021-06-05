@@ -1,7 +1,6 @@
 import * as path from "path";
 import * as ts from "typescript";
 import * as tstl from "../../src";
-import { parseConfigFileWithSystem } from "../../src/cli/tsconfig";
 import { normalizeSlashes } from "../../src/utils";
 
 export function transpileFilesResult(rootNames: string[], options: tstl.CompilerOptions) {
@@ -15,13 +14,4 @@ export function transpileFilesResult(rootNames: string[], options: tstl.Compiler
     });
 
     return { diagnostics, emittedFiles };
-}
-
-export function transpileProjectResult(configFileName: string) {
-    const parseResult = parseConfigFileWithSystem(configFileName);
-    if (parseResult.errors.length > 0) {
-        return { diagnostics: parseResult.errors, emittedFiles: [] };
-    }
-
-    return transpileFilesResult(parseResult.fileNames, parseResult.options);
 }

@@ -65,7 +65,12 @@ export function getProgramTranspileResult(
         diagnostics.push(...transformDiagnostics);
         if (!options.noEmit && !options.emitDeclarationOnly) {
             const printResult = printer(program, emitHost, sourceFile.fileName, file);
-            transpiledFiles.push({ sourceFiles: [sourceFile], fileName: path.normalize(sourceFile.fileName), luaAst: file, ...printResult });
+            transpiledFiles.push({
+                sourceFiles: [sourceFile],
+                fileName: path.normalize(sourceFile.fileName),
+                luaAst: file,
+                ...printResult,
+            });
         }
     };
 

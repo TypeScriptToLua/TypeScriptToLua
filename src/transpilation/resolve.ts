@@ -106,7 +106,7 @@ function shouldIncludeDependency(resolvedDependency: string, program: ts.Program
             return true;
         } else {
             // Only include node_modules files if not in library mode
-            return !isBuildModeLibrary(program)
+            return !isBuildModeLibrary(program);
         }
     }
     return false;
@@ -202,7 +202,10 @@ function resolveDependency(
 }
 
 function isNodeModulesFile(filePath: string): boolean {
-    return path.normalize(filePath).split(path.sep).some(p => p === "node_modules");
+    return path
+        .normalize(filePath)
+        .split(path.sep)
+        .some(p => p === "node_modules");
 }
 
 function isProjectFile(file: string, program: ts.Program): boolean {
@@ -211,7 +214,9 @@ function isProjectFile(file: string, program: ts.Program): boolean {
 
 function hasSourceFileInProject(filePath: string, program: ts.Program) {
     const pathWithoutExtension = trimExtension(filePath);
-    return isProjectFile(pathWithoutExtension + ".ts", program) || isProjectFile(pathWithoutExtension + ".json", program);
+    return (
+        isProjectFile(pathWithoutExtension + ".ts", program) || isProjectFile(pathWithoutExtension + ".json", program)
+    );
 }
 
 // Transform an import path to a lua require that is probably not correct, but can be used as fallback when regular resolution fails

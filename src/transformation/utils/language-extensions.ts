@@ -117,6 +117,6 @@ export function isExtensionValue(
 ): boolean {
     return (
         symbol.getName() === extensionKindToValueName[extensionKind] &&
-        symbol.declarations.some(d => isExtensionType(context.checker.getTypeAtLocation(d), extensionKind))
+        symbol.declarations?.some(d => isExtensionType(context.checker.getTypeAtLocation(d), extensionKind)) === true
     );
 }

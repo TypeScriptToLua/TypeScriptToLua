@@ -109,8 +109,10 @@ export function transformArguments(
         for (const [index, param] of params.entries()) {
             const signatureParameter = signature.parameters[index];
             const paramType = context.checker.getTypeAtLocation(param);
-            const signatureType = context.checker.getTypeAtLocation(signatureParameter.valueDeclaration);
-            validateAssignment(context, param, paramType, signatureType, signatureParameter.name);
+            if (signatureParameter.valueDeclaration !== undefined) {
+                const signatureType = context.checker.getTypeAtLocation(signatureParameter.valueDeclaration);
+                validateAssignment(context, param, paramType, signatureType, signatureParameter.name);
+            }
         }
     }
 

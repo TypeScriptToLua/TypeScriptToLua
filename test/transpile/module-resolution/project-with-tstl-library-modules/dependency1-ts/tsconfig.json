@@ -1,0 +1,9 @@
+{
+    "compilerOptions": {
+        "outDir": "../node_modules/dependency1",
+        "declaration": true
+    },
+    "tstl": {
+        "buildMode": "library"
+    }
+}

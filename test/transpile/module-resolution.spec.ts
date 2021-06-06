@@ -2,6 +2,7 @@ import * as path from "path";
 import * as tstl from "../../src";
 import * as util from "../util";
 import * as ts from "typescript";
+import { transpileProject } from "../../src";
 
 describe("basic module resolution", () => {
     const projectPath = path.resolve(__dirname, "module-resolution", "project-with-node-modules");
@@ -247,5 +248,35 @@ describe("module resolution in library mode", () => {
         for (const file of transpiledFiles) {
             expect(file.lua).not.toContain('require("lua_modules');
         }
+    });
+});
+
+describe("module resolution project with dependencies built by tstl library mode", () => {
+    const projectPath = path.resolve(__dirname, "module-resolution", "project-with-tstl-library-modules");
+
+    // First compile dependencies into node_modules. NOTE: Actually writing to disk, very slow
+    transpileProject(path.join(projectPath, "dependency1-ts", "tsconfig.json"));
+    transpileProject(path.join(projectPath, "dependency2-ts", "tsconfig.json"));
+
+    const expectedResult = {
+        dependency1IndexResult: "function in dependency 1 index: dependency1OtherFileFunc in dependency1/d1otherfile",
+        dependency1OtherFileFuncResult: "dependency1OtherFileFunc in dependency1/d1otherfile",
+        dependency2MainResult: "dependency 2 main",
+        dependency2OtherFileResult: "Dependency 2 func: my string argument",
+    };
+
+    test("can resolve lua dependencies", () => {
+        util.testProject(path.join(projectPath, "tsconfig.json"))
+            .setMainFileName(path.join(projectPath, "main.ts"))
+            .setOptions({ outDir: "tstl-out" })
+            .expectToEqual(expectedResult);
+    });
+
+    test("can resolve dependencies and bundle", () => {
+        const mainFile = path.join(projectPath, "main.ts");
+        util.testProject(path.join(projectPath, "tsconfig.json"))
+            .setMainFileName(mainFile)
+            .setOptions({ luaBundle: "bundle.lua", luaBundleEntry: mainFile })
+            .expectToEqual(expectedResult);
     });
 });

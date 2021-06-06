@@ -162,32 +162,25 @@ test.each([
 });
 
 test.each([
-    { fileName: "/proj/foo.ts", config: {}, mapSource: "foo.ts", fullSource: "foo.ts" },
+    { fileName: "/proj/foo.ts", config: {} },
     {
         fileName: "/proj/src/foo.ts",
         config: { outDir: "/proj/dst" },
-        mapSource: "../src/foo.ts",
-        fullSource: "../src/foo.ts",
     },
     {
         fileName: "/proj/src/foo.ts",
         config: { rootDir: "/proj/src", outDir: "/proj/dst" },
-        mapSource: "../src/foo.ts",
-        fullSource: "../src/foo.ts",
     },
     {
         fileName: "/proj/src/sub/foo.ts",
         config: { rootDir: "/proj/src", outDir: "/proj/dst" },
-        mapSource: "../../src/sub/foo.ts",
-        fullSource: "../../src/sub/foo.ts",
     },
     {
         fileName: "/proj/src/sub/main.ts",
         config: { rootDir: "/proj/src", outDir: "/proj/dst", sourceRoot: "bin" },
-        mapSource: "sub/main.ts",
-        fullSource: "bin/sub/main.ts",
+        fullSource: "bin/proj/src/sub/main.ts",
     },
-])("Source map has correct sources (%p)", async ({ fileName, config, mapSource, fullSource }) => {
+])("Source map has correct sources (%p)", async ({ fileName, config, fullSource }) => {
     const file = util.testModule`
         const foo = "foo"
     `
@@ -197,11 +190,11 @@ test.each([
 
     const sourceMap = JSON.parse(file.luaSourceMap);
     expect(sourceMap.sources).toHaveLength(1);
-    expect(sourceMap.sources[0]).toBe(mapSource);
+    expect(sourceMap.sources[0]).toBe(fileName);
 
     const consumer = await new SourceMapConsumer(file.luaSourceMap);
     expect(consumer.sources).toHaveLength(1);
-    expect(consumer.sources[0]).toBe(fullSource);
+    expect(consumer.sources[0]).toBe(fullSource ?? fileName);
 });
 
 test.each([

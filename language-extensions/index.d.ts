@@ -1,3 +1,7 @@
+type AnyTable = Record<any, any>;
+// eslint-disable-next-line @typescript-eslint/ban-types, @typescript-eslint/consistent-type-definitions
+type AnyNotNil = {};
+
 /**
  * Indicates a type is a language extension provided by TypescriptToLua.
  * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
@@ -445,7 +449,10 @@ declare type LuaLengthMethod<TReturn> = (() => TReturn) & LuaExtension<"__luaLen
  * @param TKey The type of the key to use to access the table.
  * @param TValue The type of the value stored in the table.
  */
-declare type LuaTableGet<TTable extends object, TKey extends {}, TValue> = ((table: TTable, key: TKey) => TValue) &
+declare type LuaTableGet<TTable extends AnyTable, TKey extends AnyNotNil, TValue> = ((
+    table: TTable,
+    key: TKey
+) => TValue) &
     LuaExtension<"__luaTableGetBrand">;
 
 /**
@@ -455,7 +462,7 @@ declare type LuaTableGet<TTable extends object, TKey extends {}, TValue> = ((tab
  * @param TKey The type of the key to use to access the table.
  * @param TValue The type of the value stored in the table.
  */
-declare type LuaTableGetMethod<TKey extends {}, TValue> = ((key: TKey) => TValue) &
+declare type LuaTableGetMethod<TKey extends AnyNotNil, TValue> = ((key: TKey) => TValue) &
     LuaExtension<"__luaTableGetMethodBrand">;
 
 /**
@@ -466,7 +473,7 @@ declare type LuaTableGetMethod<TKey extends {}, TValue> = ((key: TKey) => TValue
  * @param TKey The type of the key to use to access the table.
  * @param TValue The type of the value to assign to the table.
  */
-declare type LuaTableSet<TTable extends object, TKey extends {}, TValue> = ((
+declare type LuaTableSet<TTable extends AnyTable, TKey extends AnyNotNil, TValue> = ((
     table: TTable,
     key: TKey,
     value: TValue
@@ -480,7 +487,7 @@ declare type LuaTableSet<TTable extends object, TKey extends {}, TValue> = ((
  * @param TKey The type of the key to use to access the table.
  * @param TValue The type of the value to assign to the table.
  */
-declare type LuaTableSetMethod<TKey extends {}, TValue> = ((key: TKey, value: TValue) => void) &
+declare type LuaTableSetMethod<TKey extends AnyNonNil, TValue> = ((key: TKey, value: TValue) => void) &
     LuaExtension<"__luaTableSetMethodBrand">;
 
 /**
@@ -490,7 +497,7 @@ declare type LuaTableSetMethod<TKey extends {}, TValue> = ((key: TKey, value: TV
  * @param TKey The type of the keys used to access the table.
  * @param TValue The type of the values stored in the table.
  */
-declare interface LuaTable<TKey extends {} = {}, TValue = any> {
+declare interface LuaTable<TKey extends AnyTable = AnyNotNil, TValue = any> {
     length: LuaLengthMethod<number>;
     get: LuaTableGetMethod<TKey, TValue>;
     set: LuaTableSetMethod<TKey, TValue>;
@@ -503,7 +510,10 @@ declare interface LuaTable<TKey extends {} = {}, TValue = any> {
  * @param TKey The type of the keys used to access the table.
  * @param TValue The type of the values stored in the table.
  */
-declare type LuaTableConstructor = (new <TKey extends {} = {}, TValue = any>() => LuaTable<TKey, TValue>) &
+declare type LuaTableConstructor = (new <TKey extends AnyNotNil = AnyNotNil, TValue = any>() => LuaTable<
+    TKey,
+    TValue
+>) &
     LuaExtension<"__luaTableNewBrand">;
 
 /**

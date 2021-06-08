@@ -6,7 +6,7 @@ declare function error(...args: any[]): never;
 declare namespace debug {
     function traceback(...args: any[]): string;
 
-    interface FunctionInfo<T extends Function = Function> {
+    interface FunctionInfo<T extends () => any = () => any> {
         func: T;
         name?: string;
         namewhat: "global" | "local" | "method" | "field" | "";

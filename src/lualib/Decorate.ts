@@ -1,7 +1,18 @@
 /**
  * SEE: https://github.com/Microsoft/TypeScript/blob/master/src/compiler/transformers/ts.ts#L3598
  */
-function __TS__Decorate(this: void, decorators: Function[], target: any, key?: any, desc?: any): {} {
+type Decorator<TTarget extends AnyTable, TKey extends keyof TTarget> = (
+    target: TTarget,
+    key?: TKey,
+    descriptor?: PropertyDescriptor
+) => TTarget;
+function __TS__Decorate<TTarget extends AnyTable, TKey extends keyof TTarget>(
+    this: void,
+    decorators: Array<Decorator<TTarget, TKey>>,
+    target: TTarget,
+    key?: TKey,
+    desc?: any
+): TTarget {
     let result = target;
 
     for (let i = decorators.length; i >= 0; i--) {

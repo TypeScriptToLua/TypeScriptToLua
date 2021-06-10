@@ -96,7 +96,7 @@ export function getExportedSymbolsFromScope(
 export function getDependenciesOfSymbol(context: TransformationContext, originalSymbol: ts.Symbol): ts.Symbol[] {
     return getExportedSymbolsFromScope(context, context.sourceFile).filter(exportSymbol =>
         exportSymbol.declarations
-            .filter(ts.isExportSpecifier)
+            ?.filter(ts.isExportSpecifier)
             .map(context.checker.getExportSpecifierLocalTargetSymbol)
             .includes(originalSymbol)
     );

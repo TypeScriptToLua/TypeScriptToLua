@@ -1,4 +1,4 @@
-WeakMap = class WeakMap<K extends object, V> {
+WeakMap = class WeakMap<K, V> {
     public static [Symbol.species] = WeakMap;
     public [Symbol.toStringTag] = "WeakMap";
 

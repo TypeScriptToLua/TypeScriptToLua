@@ -806,7 +806,7 @@ export function isInlineFunctionExpression(expression: FunctionExpression): expr
     return (
         expression.body.statements?.length === 1 &&
         isReturnStatement(expression.body.statements[0]) &&
-        (expression.body.statements[0] as ReturnStatement).expressions !== undefined &&
+        expression.body.statements[0].expressions !== undefined &&
         (expression.flags & FunctionExpressionFlags.Inline) !== 0
     );
 }

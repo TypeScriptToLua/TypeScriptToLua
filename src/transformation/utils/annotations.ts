@@ -35,7 +35,7 @@ export type AnnotationsMap = Map<AnnotationKind, Annotation>;
 
 function collectAnnotations(source: ts.Symbol | ts.Signature, annotationsMap: AnnotationsMap): void {
     for (const tag of source.getJsDocTags()) {
-        const annotation = createAnnotation(tag.name, tag.text ? tag.text.split(" ") : []);
+        const annotation = createAnnotation(tag.name, tag.text?.map(p => p.text) ?? []);
         if (annotation) {
             annotationsMap.set(annotation.kind, annotation);
         }
@@ -62,7 +62,7 @@ export function getNodeAnnotations(node: ts.Node): AnnotationsMap {
 
     for (const tag of ts.getJSDocTags(node)) {
         const tagName = tag.tagName.text;
-        const annotation = createAnnotation(tagName, tag.comment ? tag.comment.split(" ") : []);
+        const annotation = createAnnotation(tagName, getTagArgsFromComment(tag));
         if (annotation) {
             annotationsMap.set(annotation.kind, annotation);
         }
@@ -80,7 +80,7 @@ export function getFileAnnotations(sourceFile: ts.SourceFile): AnnotationsMap {
         if (jsDoc) {
             for (const tag of jsDoc.flatMap(x => x.tags ?? [])) {
                 const tagName = tag.tagName.text;
-                const annotation = createAnnotation(tagName, tag.comment ? tag.comment.split(" ") : []);
+                const annotation = createAnnotation(tagName, getTagArgsFromComment(tag));
                 if (annotation) {
                     annotationsMap.set(annotation.kind, annotation);
                 }
@@ -177,4 +177,16 @@ export function isVarargType(context: TransformationContext, node: ts.Node): boo
 export function isForRangeType(context: TransformationContext, node: ts.Node): boolean {
     const type = context.checker.getTypeAtLocation(node);
     return getTypeAnnotations(type).has(AnnotationKind.ForRange);
+}
+
+export function getTagArgsFromComment(tag: ts.JSDocTag): string[] {
+    if (tag.comment) {
+        if (typeof tag.comment === "string") {
+            return tag.comment.split(" ");
+        } else {
+            return tag.comment.map(part => part.text);
+        }
+    }
+
+    return [];
 }

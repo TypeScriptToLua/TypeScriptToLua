@@ -1,4 +1,4 @@
-WeakSet = class WeakSet<T extends object> {
+WeakSet = class WeakSet<T> {
     public static [Symbol.species] = WeakSet;
     public [Symbol.toStringTag] = "WeakSet";
 

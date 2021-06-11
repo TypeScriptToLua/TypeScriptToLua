@@ -1,4 +1,4 @@
-type Graph<T extends {}> = Map<T, T[]>;
+type Graph<T> = Map<T, T[]>;
 
 function range(start: number, end: number): number[] {
     if (start > end) return [];

@@ -12,7 +12,7 @@ export function locateConfigFile(commandLine: ParsedCommandLine): ts.Diagnostic 
             return undefined;
         }
 
-        const searchPath = normalizeSlashes(ts.sys.getCurrentDirectory());
+        const searchPath = normalizeSlashes(process.cwd());
         return ts.findConfigFile(searchPath, ts.sys.fileExists);
     }
 
@@ -21,7 +21,7 @@ export function locateConfigFile(commandLine: ParsedCommandLine): ts.Diagnostic 
     }
 
     // TODO: Unlike tsc, this resolves `.` to absolute path
-    const fileOrDirectory = normalizeSlashes(path.resolve(ts.sys.getCurrentDirectory(), project));
+    const fileOrDirectory = normalizeSlashes(path.resolve(process.cwd(), project));
     if (ts.sys.directoryExists(fileOrDirectory)) {
         const configFileName = path.posix.join(fileOrDirectory, "tsconfig.json");
         if (ts.sys.fileExists(configFileName)) {

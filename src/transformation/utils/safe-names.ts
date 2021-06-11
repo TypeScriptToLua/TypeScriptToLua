@@ -72,7 +72,7 @@ export function hasUnsafeSymbolName(
     symbol: ts.Symbol,
     tsOriginal: ts.Identifier
 ): boolean {
-    const isAmbient = symbol.declarations && symbol.declarations.some(d => isAmbientNode(d));
+    const isAmbient = symbol.declarations?.some(d => isAmbientNode(d)) ?? false;
 
     // Catch ambient declarations of identifiers with bad names
     if (isAmbient && checkName(context, symbol.name, tsOriginal)) {

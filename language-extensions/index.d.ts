@@ -491,6 +491,25 @@ declare type LuaTableSetMethod<TKey extends AnyNotNil, TValue> = ((key: TKey, va
     LuaExtension<"__luaTableSetMethodBrand">;
 
 /**
+ * Calls to functions with this type are translated to `table[key] ~= nil`.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TTable The type to access as a Lua table.
+ * @param TKey The type of the key to use to access the table.
+ */
+declare type LuaTableHas<TTable extends AnyTable, TKey extends AnyNotNil> = ((table: TTable, key: TKey) => boolean) &
+    LuaExtension<"__luaTableHasBrand">;
+
+/**
+ * Calls to methods with this type are translated to `table[key] ~= nil`, where `table` is the object with the method.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TKey The type of the key to use to access the table.
+ */
+declare type LuaTableHasMethod<TKey extends AnyNotNil> = ((key: TKey) => boolean) &
+    LuaExtension<"__luaTableHasMethodBrand">;
+
+/**
  * A convenience type for working directly with a Lua table.
  * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
  *
@@ -501,6 +520,7 @@ declare interface LuaTable<TKey extends AnyTable = AnyNotNil, TValue = any> {
     length: LuaLengthMethod<number>;
     get: LuaTableGetMethod<TKey, TValue>;
     set: LuaTableSetMethod<TKey, TValue>;
+    has: LuaTableHasMethod<TKey>;
 }
 
 /**

@@ -487,7 +487,7 @@ declare type LuaTableSet<TTable extends AnyTable, TKey extends AnyNotNil, TValue
  * @param TKey The type of the key to use to access the table.
  * @param TValue The type of the value to assign to the table.
  */
-declare type LuaTableSetMethod<TKey extends AnyNonNil, TValue> = ((key: TKey, value: TValue) => void) &
+declare type LuaTableSetMethod<TKey extends AnyNotNil, TValue> = ((key: TKey, value: TValue) => void) &
     LuaExtension<"__luaTableSetMethodBrand">;
 
 /**

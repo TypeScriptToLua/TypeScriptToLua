@@ -25,12 +25,13 @@
     "scripts": {
         "build": "tsc && npm run build-lualib",
         "build-lualib": "node build-lualib.js",
-        "pretest": "npm run lint && npm run build-lualib",
+        "pretest": "npm run lint && npm run check:language-extensions && npm run build-lualib",
         "test": "jest",
         "lint": "npm run lint:eslint && npm run lint:prettier",
         "lint:prettier": "prettier --check . || (echo 'Run `npm run fix:prettier` to fix it.' && exit 1)",
         "lint:eslint": "eslint . --ext .js,.ts",
         "fix:prettier": "prettier --write .",
+        "check:language-extensions": "tsc language-extensions/index.d.ts",
         "preversion": "npm run build && npm test",
         "postversion": "git push && git push --tags"
     },

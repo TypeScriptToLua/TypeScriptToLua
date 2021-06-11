@@ -46,6 +46,8 @@ export enum ExtensionKind {
     TableNewType = "TableNewType",
     TableGetType = "TableGetType",
     TableGetMethodType = "TableGetMethodType",
+    TableHasType = "TableHasType",
+    TableHasMethodType = "TableHasMethodType",
     TableSetType = "TableSetType",
     TableSetMethodType = "TableSetMethodType",
 }
@@ -101,6 +103,8 @@ const extensionKindToTypeBrand: { [T in ExtensionKind]: string } = {
     [ExtensionKind.TableNewType]: "__luaTableNewBrand",
     [ExtensionKind.TableGetType]: "__luaTableGetBrand",
     [ExtensionKind.TableGetMethodType]: "__luaTableGetMethodBrand",
+    [ExtensionKind.TableHasType]: "__luaTableHasBrand",
+    [ExtensionKind.TableHasMethodType]: "__luaTableHasMethodBrand",
     [ExtensionKind.TableSetType]: "__luaTableSetBrand",
     [ExtensionKind.TableSetMethodType]: "__luaTableSetMethodBrand",
 };

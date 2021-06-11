@@ -97,6 +97,17 @@ describe("LuaTableHas extension", () => {
             .expectToEqual({ hasFoo: true, hasBaz: false });
     });
 
+    test("LuaTableHas nested expression", () => {
+        util.testModule`
+            declare const tableHas: LuaTableHas<{}, string>;
+            const table = { foo: "bar" };
+
+            export const result = \`table has foo: \${tableHas(table, "foo")}\`;
+        `
+            .setOptions(tableProjectOptions)
+            .expectToEqual({ result: "table has foo: true" });
+    });
+
     test("LuaTableHas namespace function", () => {
         util.testModule`
             declare namespace Table {
@@ -114,7 +125,7 @@ describe("LuaTableHas extension", () => {
     test("LuaTableHasMethod method", () => {
         util.testModule`
             interface TableWithHas {
-                has: LuaTableHas<string>;
+                has: LuaTableHasMethod<string>;
                 set: LuaTableSetMethod<string, number>;
             }
             const table = {} as TableWithHas;
@@ -150,7 +161,7 @@ describe("LuaTableHas extension", () => {
     test.each([
         "const foo: unknown = tableHas;",
         "const foo = `${tableHas}`;",
-        "declare function foo(tableHas: LuaTableGet<{}, string, number>): void; foo(tableHas);",
+        "declare function foo(tableHas: LuaTableHas<{}, string>): void; foo(tableHas);",
         "const foo = (tableHas as any)(1, 2);",
         "const foo = [tableHas];",
     ])("invalid use (%p)", statement => {

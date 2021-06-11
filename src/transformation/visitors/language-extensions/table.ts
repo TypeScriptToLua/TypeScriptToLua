@@ -7,9 +7,16 @@ import { assert } from "../../../utils";
 
 const tableGetExtensions = [extensions.ExtensionKind.TableGetType, extensions.ExtensionKind.TableGetMethodType];
 
+const tableHasExtensions = [extensions.ExtensionKind.TableHasType, extensions.ExtensionKind.TableHasMethodType];
+
 const tableSetExtensions = [extensions.ExtensionKind.TableSetType, extensions.ExtensionKind.TableSetMethodType];
 
-const tableExtensions = [extensions.ExtensionKind.TableNewType, ...tableGetExtensions, ...tableSetExtensions];
+const tableExtensions = [
+    extensions.ExtensionKind.TableNewType,
+    ...tableGetExtensions,
+    ...tableHasExtensions,
+    ...tableSetExtensions,
+];
 
 function getTableExtensionKindForCall(
     context: TransformationContext,
@@ -27,6 +34,10 @@ export function isTableExtensionIdentifier(context: TransformationContext, node:
 
 export function isTableGetCall(context: TransformationContext, node: ts.CallExpression) {
     return getTableExtensionKindForCall(context, node, tableGetExtensions) !== undefined;
+}
+
+export function isTableHasCall(context: TransformationContext, node: ts.CallExpression) {
+    return getTableExtensionKindForCall(context, node, tableHasExtensions) !== undefined;
 }
 
 export function isTableSetCall(context: TransformationContext, node: ts.CallExpression) {
@@ -47,12 +58,41 @@ export function transformTableGetExpression(context: TransformationContext, node
         args.length === 1 &&
         (ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression))
     ) {
+        // In case of method (no table argument), push method owner to front of args list
         args.unshift(node.expression.expression);
     }
 
     return lua.createTableIndexExpression(
         context.transformExpression(args[0]),
         context.transformExpression(args[1]),
+        node
+    );
+}
+
+export function transformTableHasExpression(context: TransformationContext, node: ts.CallExpression): lua.Expression {
+    const extensionKind = getTableExtensionKindForCall(context, node, tableHasExtensions);
+    assert(extensionKind);
+
+    const args = node.arguments.slice();
+    if (
+        args.length === 1 &&
+        (ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression))
+    ) {
+        // In case of method (no table argument), push method owner to front of args list
+        args.unshift(node.expression.expression);
+    }
+
+    // table[key]
+    const tableIndexExpression = lua.createTableIndexExpression(
+        context.transformExpression(args[0]),
+        context.transformExpression(args[1])
+    );
+
+    // table[key] ~= nil
+    return lua.createBinaryExpression(
+        tableIndexExpression,
+        lua.createNilLiteral(),
+        lua.SyntaxKind.InequalityOperator,
         node
     );
 }
@@ -66,6 +106,7 @@ export function transformTableSetExpression(context: TransformationContext, node
         args.length === 2 &&
         (ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression))
     ) {
+        // In case of method (no table argument), push method owner to front of args list
         args.unshift(node.expression.expression);
     }
 

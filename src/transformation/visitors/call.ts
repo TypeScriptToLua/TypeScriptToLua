@@ -15,8 +15,10 @@ import { shouldMultiReturnCallBeWrapped } from "./language-extensions/multi";
 import { isOperatorMapping, transformOperatorMappingExpression } from "./language-extensions/operators";
 import {
     isTableGetCall,
+    isTableHasCall,
     isTableSetCall,
     transformTableGetExpression,
+    transformTableHasExpression,
     transformTableSetExpression,
 } from "./language-extensions/table";
 import { invalidTableSetExpression } from "../utils/diagnostics";
@@ -244,6 +246,10 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
 
     if (isTableGetCall(context, node)) {
         return transformTableGetExpression(context, node);
+    }
+
+    if (isTableHasCall(context, node)) {
+        return transformTableHasExpression(context, node);
     }
 
     if (isTableSetCall(context, node)) {

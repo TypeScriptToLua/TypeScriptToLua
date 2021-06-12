@@ -1,4 +1,4 @@
-import { annotationDeprecated, annotationRemoved } from "../../../src/transformation/utils/diagnostics";
+import { annotationRemoved } from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
 test.each(["extension", "metaExtension"])("extension removed", extensionType => {

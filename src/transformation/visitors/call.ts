@@ -14,12 +14,16 @@ import { transformLuaTableCallExpression } from "./lua-table";
 import { shouldMultiReturnCallBeWrapped } from "./language-extensions/multi";
 import { isOperatorMapping, transformOperatorMappingExpression } from "./language-extensions/operators";
 import {
+    isTableDeleteCall,
     isTableGetCall,
+    isTableHasCall,
     isTableSetCall,
+    transformTableDeleteExpression,
     transformTableGetExpression,
+    transformTableHasExpression,
     transformTableSetExpression,
 } from "./language-extensions/table";
-import { invalidTableSetExpression } from "../utils/diagnostics";
+import { invalidTableDeleteExpression, invalidTableSetExpression } from "../utils/diagnostics";
 import {
     ImmediatelyInvokedFunctionParameters,
     transformToImmediatelyInvokedFunctionExpression,
@@ -242,8 +246,21 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
         return transformOperatorMappingExpression(context, node);
     }
 
+    if (isTableDeleteCall(context, node)) {
+        context.diagnostics.push(invalidTableDeleteExpression(node));
+        return transformToImmediatelyInvokedFunctionExpression(
+            context,
+            () => ({ statements: transformTableDeleteExpression(context, node), result: lua.createNilLiteral() }),
+            node
+        );
+    }
+
     if (isTableGetCall(context, node)) {
         return transformTableGetExpression(context, node);
+    }
+
+    if (isTableHasCall(context, node)) {
+        return transformTableHasExpression(context, node);
     }
 
     if (isTableSetCall(context, node)) {

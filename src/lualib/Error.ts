@@ -3,7 +3,7 @@ interface ErrorType {
     new (...args: any[]): Error;
 }
 
-function __TS__GetErrorStack(constructor: Function): string {
+function __TS__GetErrorStack(constructor: () => any): string {
     let level = 1;
     while (true) {
         const info = debug.getinfo(level, "f");

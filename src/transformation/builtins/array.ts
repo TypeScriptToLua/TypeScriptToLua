@@ -36,6 +36,8 @@ export function transformArrayPrototypeCall(
     switch (expressionName) {
         case "concat":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayConcat, node, caller, ...params);
+        case "entries":
+            return transformLuaLibFunction(context, LuaLibFeature.ArrayEntries, node, caller);
         case "push":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayPush, node, caller, ...params);
         case "reverse":

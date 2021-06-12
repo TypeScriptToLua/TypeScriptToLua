@@ -150,7 +150,7 @@ export class LuaPrinter {
 
         const sourceRoot = this.options.sourceRoot
             ? // According to spec, sourceRoot is simply prepended to the source name, so the slash should be included
-              this.options.sourceRoot.replace(/[\\/]+$/, "") + "/"
+              `${this.options.sourceRoot.replace(/[\\/]+$/, "")}/`
             : "";
         const rootSourceNode = this.printFile(file);
         const sourceMap = this.buildSourceMap(sourceRoot, rootSourceNode);

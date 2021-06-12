@@ -1,6 +1,6 @@
 {
     "name": "typescript-to-lua",
-    "version": "0.39.3",
+    "version": "0.39.5",
     "description": "A generic TypeScript to Lua transpiler. Write your code in TypeScript and publish Lua!",
     "repository": "https://github.com/TypeScriptToLua/TypeScriptToLua",
     "homepage": "https://typescripttolua.github.io/",
@@ -25,12 +25,13 @@
     "scripts": {
         "build": "tsc && npm run build-lualib",
         "build-lualib": "node build-lualib.js",
-        "pretest": "npm run lint && npm run build-lualib",
+        "pretest": "npm run lint && npm run check:language-extensions && npm run build-lualib",
         "test": "jest",
         "lint": "npm run lint:eslint && npm run lint:prettier",
         "lint:prettier": "prettier --check . || (echo 'Run `npm run fix:prettier` to fix it.' && exit 1)",
         "lint:eslint": "eslint . --ext .js,.ts",
         "fix:prettier": "prettier --write .",
+        "check:language-extensions": "tsc language-extensions/index.d.ts",
         "preversion": "npm run build && npm test",
         "postversion": "git push && git push --tags"
     },
@@ -43,7 +44,7 @@
     "dependencies": {
         "resolve": "^1.15.1",
         "source-map": "^0.7.3",
-        "typescript": ">=4.0.2"
+        "typescript": "~4.3.2"
     },
     "devDependencies": {
         "@types/fs-extra": "^8.1.0",
@@ -51,9 +52,9 @@
         "@types/jest": "^25.1.3",
         "@types/node": "^13.7.7",
         "@types/resolve": "1.14.0",
-        "@typescript-eslint/eslint-plugin": "^2.31.0",
-        "@typescript-eslint/parser": "^4.1.0",
-        "eslint": "^6.8.0",
+        "@typescript-eslint/eslint-plugin": "^4.26.1",
+        "@typescript-eslint/parser": "^4.26.1",
+        "eslint": "^7.28.0",
         "eslint-plugin-import": "^2.20.1",
         "eslint-plugin-jest": "^23.8.2",
         "fs-extra": "^8.1.0",

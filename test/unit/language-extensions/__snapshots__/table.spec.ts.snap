@@ -1,5 +1,48 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`LuaTableDelete extension LuaTableDelete invalid use as expression ("const foo = [tableDelete({}, \\"foo\\")];"): code 1`] = `
+"foo = {
+    (function()
+        ({}).foo = nil
+        return nil
+    end)()
+}"
+`;
+
+exports[`LuaTableDelete extension LuaTableDelete invalid use as expression ("const foo = [tableDelete({}, \\"foo\\")];"): diagnostics 1`] = `"main.ts(3,26): error TSTL: Table delete extension can only be called as a stand-alone statement. It cannot be used as an expression in another statement."`;
+
+exports[`LuaTableDelete extension LuaTableDelete invalid use as expression ("const foo = \`\${tableDelete({}, \\"foo\\")}\`;"): code 1`] = `
+"foo = tostring(
+    (function()
+        ({}).foo = nil
+        return nil
+    end)()
+)"
+`;
+
+exports[`LuaTableDelete extension LuaTableDelete invalid use as expression ("const foo = \`\${tableDelete({}, \\"foo\\")}\`;"): diagnostics 1`] = `"main.ts(3,28): error TSTL: Table delete extension can only be called as a stand-alone statement. It cannot be used as an expression in another statement."`;
+
+exports[`LuaTableDelete extension LuaTableDelete invalid use as expression ("const foo = tableDelete({}, \\"foo\\");"): code 1`] = `
+"foo = (function()
+    ({}).foo = nil
+    return nil
+end)()"
+`;
+
+exports[`LuaTableDelete extension LuaTableDelete invalid use as expression ("const foo = tableDelete({}, \\"foo\\");"): diagnostics 1`] = `"main.ts(3,25): error TSTL: Table delete extension can only be called as a stand-alone statement. It cannot be used as an expression in another statement."`;
+
+exports[`LuaTableDelete extension LuaTableDelete invalid use as expression ("declare function foo(arg: any): void; foo(tableDelete({}, \\"foo\\"));"): code 1`] = `
+"foo(
+    _G,
+    (function()
+        ({}).foo = nil
+        return nil
+    end)()
+)"
+`;
+
+exports[`LuaTableDelete extension LuaTableDelete invalid use as expression ("declare function foo(arg: any): void; foo(tableDelete({}, \\"foo\\"));"): diagnostics 1`] = `"main.ts(3,55): error TSTL: Table delete extension can only be called as a stand-alone statement. It cannot be used as an expression in another statement."`;
+
 exports[`LuaTableGet & LuaTableSet extensions LuaTableSet invalid use as expression ("const foo = [setTable({}, \\"foo\\", 3)];"): code 1`] = `
 "foo = {
     (function()
@@ -62,3 +105,23 @@ exports[`LuaTableGet & LuaTableSet extensions invalid use ("const foo: unknown =
 exports[`LuaTableGet & LuaTableSet extensions invalid use ("declare function foo(getTable: LuaTableGet<{}, string, number>): void; foo(getTable);"): code 1`] = `"foo(_G, getTable)"`;
 
 exports[`LuaTableGet & LuaTableSet extensions invalid use ("declare function foo(getTable: LuaTableGet<{}, string, number>): void; foo(getTable);"): diagnostics 1`] = `"main.ts(3,88): error TSTL: This function must be called directly and cannot be referred to."`;
+
+exports[`LuaTableHas extension invalid use ("const foo = (tableHas as any)(1, 2);"): code 1`] = `"foo = tableHas(_G, 1, 2)"`;
+
+exports[`LuaTableHas extension invalid use ("const foo = (tableHas as any)(1, 2);"): diagnostics 1`] = `"main.ts(3,26): error TSTL: This function must be called directly and cannot be referred to."`;
+
+exports[`LuaTableHas extension invalid use ("const foo = [tableHas];"): code 1`] = `"foo = {tableHas}"`;
+
+exports[`LuaTableHas extension invalid use ("const foo = [tableHas];"): diagnostics 1`] = `"main.ts(3,26): error TSTL: This function must be called directly and cannot be referred to."`;
+
+exports[`LuaTableHas extension invalid use ("const foo = \`\${tableHas}\`;"): code 1`] = `"foo = tostring(tableHas)"`;
+
+exports[`LuaTableHas extension invalid use ("const foo = \`\${tableHas}\`;"): diagnostics 1`] = `"main.ts(3,28): error TSTL: This function must be called directly and cannot be referred to."`;
+
+exports[`LuaTableHas extension invalid use ("const foo: unknown = tableHas;"): code 1`] = `"foo = tableHas"`;
+
+exports[`LuaTableHas extension invalid use ("const foo: unknown = tableHas;"): diagnostics 1`] = `"main.ts(3,34): error TSTL: This function must be called directly and cannot be referred to."`;
+
+exports[`LuaTableHas extension invalid use ("declare function foo(tableHas: LuaTableHas<{}, string>): void; foo(tableHas);"): code 1`] = `"foo(_G, tableHas)"`;
+
+exports[`LuaTableHas extension invalid use ("declare function foo(tableHas: LuaTableHas<{}, string>): void; foo(tableHas);"): diagnostics 1`] = `"main.ts(3,80): error TSTL: This function must be called directly and cannot be referred to."`;

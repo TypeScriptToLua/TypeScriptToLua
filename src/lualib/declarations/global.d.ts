@@ -1,6 +1,10 @@
 /* eslint-disable no-var */
 /** @noSelfInFile */
 
+type AnyTable = Record<string, any>;
+// eslint-disable-next-line
+type AnyNotNil = {};
+
 declare var __TS__sourcemap: Record<number, number> | undefined;
 declare var __TS__originalTraceback:
     | ((this: void, thread?: any, message?: string, level?: number) => string)
@@ -13,8 +17,8 @@ declare function tonumber(value: any, base?: number): number | undefined;
 declare function type(
     value: any
 ): "nil" | "number" | "string" | "boolean" | "table" | "function" | "thread" | "userdata";
-declare function setmetatable<T extends object>(table: T, metatable: any): T;
-declare function getmetatable<T extends object>(table: T): any;
+declare function setmetatable<T extends AnyTable>(table: T, metatable: any): T;
+declare function getmetatable<T extends AnyTable>(table: T): any;
 declare function rawget<T, K extends keyof T>(table: T, key: K): T[K];
 declare function rawset<T, K extends keyof T>(table: T, key: K, val: T[K]): void;
 /** @tupleReturn */

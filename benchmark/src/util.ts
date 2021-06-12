@@ -12,7 +12,7 @@ export function calculatePercentageChange(oldValue: number, newValue: number): n
 export const isWindows = package.config.startsWith("\\");
 
 export const json: {
-    decode: (this: void, str: string) => {};
+    decode: (this: void, str: string) => Record<string, unknown> | unknown[];
     encode: (this: void, val: any) => string;
 } = require("json");
 

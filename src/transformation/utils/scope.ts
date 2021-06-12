@@ -93,7 +93,7 @@ export function popScope(context: TransformationContext): Scope {
 }
 
 function isDeclaredInScope(symbol: ts.Symbol, scopeNode: ts.Node) {
-    return symbol?.declarations.some(d => findFirstNodeAbove(d, (n): n is ts.Node => n === scopeNode));
+    return symbol?.declarations?.some(d => findFirstNodeAbove(d, (n): n is ts.Node => n === scopeNode));
 }
 
 // Checks for references to local functions which haven't been defined yet,

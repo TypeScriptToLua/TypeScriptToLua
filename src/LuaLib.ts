@@ -3,6 +3,7 @@ import { EmitHost } from "./transpilation";
 
 export enum LuaLibFeature {
     ArrayConcat = "ArrayConcat",
+    ArrayEntries = "ArrayEntries",
     ArrayEvery = "ArrayEvery",
     ArrayFilter = "ArrayFilter",
     ArrayForEach = "ArrayForEach",

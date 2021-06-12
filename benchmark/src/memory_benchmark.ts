@@ -1,7 +1,7 @@
 import { BenchmarkKind, MemoryBenchmarkResult, ComparisonInfo, MemoryBenchmarkCategory } from "./benchmark_types";
 import { toFixed, json, calculatePercentageChange } from "./util";
 
-export function runMemoryBenchmark(benchmarkFunction: Function): MemoryBenchmarkResult {
+export function runMemoryBenchmark(benchmarkFunction: () => void): MemoryBenchmarkResult {
     const result: MemoryBenchmarkResult = {
         kind: BenchmarkKind.Memory,
         benchmarkName: "NO_NAME",

@@ -598,15 +598,26 @@ test.each([{ array: [] }, { array: ["a", "b", "c"] }, { array: [{ foo: "foo" }, 
     "array.entries (%p)",
     ({ array }) => {
         util.testFunction`
-        const array = ${util.formatCode(array)};
+            const array = ${util.formatCode(array)};
+            const result = [];
+            for (const [i, v] of array.entries()) {
+                result.push([i, v]);
+            }
+            return result;
+        `.expectToMatchJsResult();
+    }
+);
+
+test("array.entries indirect use", () => {
+    util.testFunction`
+        const entries = ["a", "b", "c"].entries();
         const result = [];
-        for (const [i, v] of array.entries()) {
+        for (const [i, v] of entries) {
             result.push([i, v]);
         }
         return result;
     `.expectToMatchJsResult();
-    }
-);
+});
 
 const genericChecks = [
     "function generic<T extends number[]>(array: T)",

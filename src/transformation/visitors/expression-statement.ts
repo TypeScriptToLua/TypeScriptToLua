@@ -13,7 +13,7 @@ import { transformUnaryExpressionStatement } from "./unary-expression";
 export const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatement> = (node, context) => {
     const expression = node.expression;
 
-    if (ts.isCallExpression(expression) && isTableDeleteCall(context, node.expression)) {
+    if (ts.isCallExpression(expression) && isTableDeleteCall(context, expression)) {
         return transformTableDeleteExpression(context, expression);
     }
 

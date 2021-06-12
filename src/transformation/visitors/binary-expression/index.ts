@@ -1,8 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../../context";
-import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
-import { luaTableInvalidInstanceOf } from "../../utils/diagnostics";
 import { wrapInToStringForConcat } from "../../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isStandardLibraryType, isStringType, typeCanSatisfy } from "../../utils/typescript";
@@ -108,11 +106,6 @@ export const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (
             const lhs = context.transformExpression(node.left);
             const rhs = context.transformExpression(node.right);
             const rhsType = context.checker.getTypeAtLocation(node.right);
-            const annotations = getTypeAnnotations(rhsType);
-
-            if (annotations.has(AnnotationKind.LuaTable)) {
-                context.diagnostics.push(luaTableInvalidInstanceOf(node));
-            }
 
             if (isStandardLibraryType(context, rhsType, "ObjectConstructor")) {
                 return transformLuaLibFunction(context, LuaLibFeature.InstanceOfObject, node, lhs);

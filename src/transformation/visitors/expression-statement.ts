@@ -3,17 +3,13 @@ import * as lua from "../../LuaAST";
 import { FunctionVisitor } from "../context";
 import { transformBinaryExpressionStatement } from "./binary-expression";
 import { isTableSetCall, transformTableSetExpression } from "./language-extensions/table";
-import { transformLuaTableExpressionStatement } from "./lua-table";
 import { transformUnaryExpressionStatement } from "./unary-expression";
 
 export const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatement> = (node, context) => {
-    const luaTableResult = transformLuaTableExpressionStatement(context, node);
-    if (luaTableResult) {
-        return luaTableResult;
-    }
+    const expression = node.expression;
 
-    if (ts.isCallExpression(node.expression) && isTableSetCall(context, node.expression)) {
-        return transformTableSetExpression(context, node.expression);
+    if (ts.isCallExpression(expression) && isTableSetCall(context, expression)) {
+        return transformTableSetExpression(context, expression);
     }
 
     const unaryExpressionResult = transformUnaryExpressionStatement(context, node);
@@ -26,7 +22,6 @@ export const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatemen
         return binaryExpressionResult;
     }
 
-    const expression = ts.isExpressionStatement(node) ? node.expression : node;
     const result = context.transformExpression(expression);
     return lua.isCallExpression(result) || lua.isMethodCallExpression(result)
         ? lua.createExpressionStatement(result)

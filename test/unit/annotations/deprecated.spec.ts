@@ -26,15 +26,15 @@ test("pureAbstract removed", () => {
     `.expectDiagnosticsToMatchSnapshot([annotationRemoved.code]);
 });
 
-test("forRange deprecation", () => {
+test("forRange removed", () => {
     util.testModule`
         /** @forRange */
         declare function forRange(start: number, limit: number, step?: number): number[];
         for (const i of forRange(1, 10)) {}
-    `.expectDiagnosticsToMatchSnapshot([annotationDeprecated.code]);
+    `.expectDiagnosticsToMatchSnapshot([annotationRemoved.code]);
 });
 
-test("vararg deprecation", () => {
+test("vararg removed", () => {
     util.testModule`
         /** @vararg */
         type VarArg<T extends any[]> = T & { readonly __brand: unique symbol };
@@ -42,5 +42,67 @@ test("vararg deprecation", () => {
         function vararg(...args: VarArg<any[]>) {
             foo(...args);
         }
-    `.expectDiagnosticsToMatchSnapshot([annotationDeprecated.code]);
+    `.expectDiagnosticsToMatchSnapshot([annotationRemoved.code]);
+});
+
+test("luaiterator removed", () => {
+    util.testFunction`
+        const arr = ["a", "b", "c"];
+        /** @luaIterator */
+        interface Iter extends Iterable<string> {}
+        function luaIter(): Iter {
+            let i = 0;
+            return (() => arr[i++]) as any;
+        }
+        let result = "";
+        for (let e of luaIter()) { result += e; }
+        return result;
+    `
+        .setTsHeader(tableLibClass)
+        .expectDiagnosticsToMatchSnapshot([annotationRemoved.code]);
+});
+
+const tableLibClass = `
+/** @luaTable */
+declare class Table<K extends {} = {}, V = any> {
+    length: number;
+    constructor(notAllowed?: any);
+    set(key?: K, value?: V, notAllowed?: any): void;
+    get(key?: K, notAllowed?: any): V;
+    other(): void;
+}
+declare let tbl: Table;
+`;
+
+test("LuaTable removed warning constructor", () => {
+    util.testModule("const table = new Table();")
+        .setTsHeader(tableLibClass)
+        .expectDiagnosticsToMatchSnapshot([annotationRemoved.code]);
+});
+
+test("LuaTable removed warning property access length", () => {
+    util.testFunction`
+        const table = new Table();
+        return tbl.length;
+    `
+        .setTsHeader(tableLibClass)
+        .expectDiagnosticsToMatchSnapshot([annotationRemoved.code]);
+});
+
+test("LuaTable removed warning property access get", () => {
+    util.testFunction`
+        const table = new Table();
+        return tbl.get("foo");
+    `
+        .setTsHeader(tableLibClass)
+        .expectDiagnosticsToMatchSnapshot([annotationRemoved.code]);
+});
+
+test("LuaTable deprecation warning property access set", () => {
+    util.testFunction`
+        const table = new Table();
+        return tbl.set("foo", 0);
+    `
+        .setTsHeader(tableLibClass)
+        .expectDiagnosticsToMatchSnapshot([annotationRemoved.code]);
 });

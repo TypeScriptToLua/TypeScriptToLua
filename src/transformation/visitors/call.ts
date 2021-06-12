@@ -10,7 +10,6 @@ import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isValidLuaIdentifier } from "../utils/safe-names";
 import { isExpressionWithEvaluationEffect, isInDestructingAssignment } from "../utils/typescript";
 import { transformElementAccessArgument } from "./access";
-import { transformLuaTableCallExpression } from "./lua-table";
 import { shouldMultiReturnCallBeWrapped } from "./language-extensions/multi";
 import { isOperatorMapping, transformOperatorMappingExpression } from "./language-extensions/operators";
 import {
@@ -217,11 +216,6 @@ function transformElementCall(context: TransformationContext, node: ts.CallExpre
 }
 
 export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node, context) => {
-    const luaTableResult = transformLuaTableCallExpression(context, node);
-    if (luaTableResult) {
-        return luaTableResult;
-    }
-
     const isTupleReturn = isTupleReturnCall(context, node);
     const isTupleReturnForward =
         node.parent && ts.isReturnStatement(node.parent) && isInTupleReturnFunction(context, node);

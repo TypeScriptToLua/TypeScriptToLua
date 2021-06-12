@@ -3,13 +3,12 @@ import * as lua from "../../LuaAST";
 import { transformBuiltinPropertyAccessExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
-import { invalidMultiReturnAccess, optionalChainingNotSupported } from "../utils/diagnostics";
+import { annotationRemoved, invalidMultiReturnAccess, optionalChainingNotSupported } from "../utils/diagnostics";
 import { addToNumericExpression } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isArrayType, isNumberType, isStringType } from "../utils/typescript";
 import { tryGetConstEnumValue } from "./enum";
 import { returnsMultiType } from "./language-extensions/multi";
-import { transformLuaTablePropertyAccessExpression, validateLuaTableElementAccessExpression } from "./lua-table";
 
 export function transformElementAccessArgument(
     context: TransformationContext,
@@ -27,7 +26,10 @@ export function transformElementAccessArgument(
 }
 
 export const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessExpression> = (node, context) => {
-    validateLuaTableElementAccessExpression(context, node);
+    const annotations = getTypeAnnotations(context.checker.getTypeAtLocation(node.expression));
+    if (annotations.has(AnnotationKind.LuaTable)) {
+        context.diagnostics.push(annotationRemoved(node, AnnotationKind.LuaTable));
+    }
 
     const constEnumValue = tryGetConstEnumValue(context, node);
     if (constEnumValue) {
@@ -70,11 +72,6 @@ export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAcces
     const constEnumValue = tryGetConstEnumValue(context, expression);
     if (constEnumValue) {
         return constEnumValue;
-    }
-
-    const luaTableResult = transformLuaTablePropertyAccessExpression(context, expression);
-    if (luaTableResult) {
-        return luaTableResult;
     }
 
     const builtinResult = transformBuiltinPropertyAccessExpression(context, expression);

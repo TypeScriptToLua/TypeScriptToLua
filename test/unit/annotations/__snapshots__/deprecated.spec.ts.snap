@@ -1,5 +1,48 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`LuaTable deprecation warning property access set: code 1`] = `
+"require(\\"lualib_bundle\\");
+local ____exports = {}
+function ____exports.__main(self)
+    local ____table = __TS__New(Table)
+    return tbl:set(\\"foo\\", 0)
+end
+return ____exports"
+`;
+
+exports[`LuaTable deprecation warning property access set: diagnostics 1`] = `"main.ts(12,23): error TSTL: '@luaTable' has been removed and will no longer have any effect.See https://typescripttolua.github.io/docs/advanced/compiler-annotations#luatable for more information."`;
+
+exports[`LuaTable removed warning constructor: code 1`] = `
+"require(\\"lualib_bundle\\");
+____table = __TS__New(Table)"
+`;
+
+exports[`LuaTable removed warning constructor: diagnostics 1`] = `"main.ts(11,15): error TSTL: '@luaTable' has been removed and will no longer have any effect.See https://typescripttolua.github.io/docs/advanced/compiler-annotations#luatable for more information."`;
+
+exports[`LuaTable removed warning property access get: code 1`] = `
+"require(\\"lualib_bundle\\");
+local ____exports = {}
+function ____exports.__main(self)
+    local ____table = __TS__New(Table)
+    return tbl:get(\\"foo\\")
+end
+return ____exports"
+`;
+
+exports[`LuaTable removed warning property access get: diagnostics 1`] = `"main.ts(12,23): error TSTL: '@luaTable' has been removed and will no longer have any effect.See https://typescripttolua.github.io/docs/advanced/compiler-annotations#luatable for more information."`;
+
+exports[`LuaTable removed warning property access length: code 1`] = `
+"require(\\"lualib_bundle\\");
+local ____exports = {}
+function ____exports.__main(self)
+    local ____table = __TS__New(Table)
+    return tbl.length
+end
+return ____exports"
+`;
+
+exports[`LuaTable removed warning property access length: diagnostics 1`] = `"main.ts(12,23): error TSTL: '@luaTable' has been removed and will no longer have any effect.See https://typescripttolua.github.io/docs/advanced/compiler-annotations#luatable for more information."`;
+
 exports[`extension removed: code 1`] = `
 "require(\\"lualib_bundle\\");
 B = __TS__Class()
@@ -18,12 +61,29 @@ exports[`extension removed: diagnostics 1`] = `"main.ts(4,9): error TSTL: '@exte
 
 exports[`extension removed: diagnostics 2`] = `"main.ts(4,9): error TSTL: '@metaExtension' has been removed and will no longer have any effect.See https://typescripttolua.github.io/docs/advanced/compiler-annotations#metaextension for more information."`;
 
-exports[`forRange deprecation: code 1`] = `
-"for i = 1, 10 do
-end"
+exports[`forRange removed: code 1`] = `""`;
+
+exports[`forRange removed: diagnostics 1`] = `"main.ts(4,25): error TSTL: '@forRange' has been removed and will no longer have any effect.See https://typescripttolua.github.io/docs/advanced/compiler-annotations#forrange for more information."`;
+
+exports[`luaiterator removed: code 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local arr = {\\"a\\", \\"b\\", \\"c\\"}
+    local function luaIter(self)
+        local i = 0
+        return function() return arr[(function()
+            local ____tmp = i
+            i = ____tmp + 1
+            return ____tmp
+        end)() + 1] end
+    end
+    local result = \\"\\"
+    return result
+end
+return ____exports"
 `;
 
-exports[`forRange deprecation: diagnostics 1`] = `"main.ts(4,25): warning TSTL: '@forRange' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile. See https://typescripttolua.github.io/docs/advanced/compiler-annotations#forrange for more information."`;
+exports[`luaiterator removed: diagnostics 1`] = `"main.ts(20,23): error TSTL: '@luaIterator' has been removed and will no longer have any effect.See https://typescripttolua.github.io/docs/advanced/compiler-annotations#luaiterator for more information."`;
 
 exports[`phantom removed: code 1`] = `
 "A = A or ({})
@@ -44,7 +104,7 @@ __TS__ClassExtends(ClassB, ClassA)"
 
 exports[`pureAbstract removed: diagnostics 1`] = `"main.ts(4,22): error TSTL: '@pureAbstract' has been removed and will no longer have any effect.See https://typescripttolua.github.io/docs/advanced/compiler-annotations#pureabstract for more information."`;
 
-exports[`vararg deprecation: code 1`] = `
+exports[`vararg removed: code 1`] = `
 "function foo(self, ...)
 end
 function vararg(self, ...)
@@ -52,4 +112,4 @@ function vararg(self, ...)
 end"
 `;
 
-exports[`vararg deprecation: diagnostics 1`] = `"main.ts(6,17): warning TSTL: '@vararg' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile. See https://typescripttolua.github.io/docs/advanced/compiler-annotations#vararg for more information."`;
+exports[`vararg removed: diagnostics 1`] = `"main.ts(6,17): error TSTL: '@vararg' has been removed and will no longer have any effect.See https://typescripttolua.github.io/docs/advanced/compiler-annotations#vararg for more information."`;

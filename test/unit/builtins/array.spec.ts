@@ -594,6 +594,20 @@ describe.each(["reduce", "reduceRight"])("array.%s", reduce => {
     });
 });
 
+test.each([{ array: [] }, { array: ["a", "b", "c"] }, { array: [{ foo: "foo" }, { bar: "bar" }] }])(
+    "array.entries (%p)",
+    ({ array }) => {
+        util.testFunction`
+        const array = ${util.formatCode(array)};
+        const result = [];
+        for (const [i, v] of array.entries()) {
+            result.push([i, v]);
+        }
+        return result;
+    `.expectToMatchJsResult();
+    }
+);
+
 const genericChecks = [
     "function generic<T extends number[]>(array: T)",
     "function generic<T extends [...number[]]>(array: T)",

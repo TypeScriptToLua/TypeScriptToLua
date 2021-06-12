@@ -516,17 +516,17 @@ declare type LuaTableHasMethod<TKey extends AnyNotNil> = ((key: TKey) => boolean
  * @param TTable The type to access as a Lua table.
  * @param TKey The type of the key to use to access the table.
  */
- declare type LuaTableDelete<TTable extends AnyTable, TKey extends AnyNotNil> = ((table: TTable, key: TKey) => boolean) &
- LuaExtension<"__luaTableDeleteBrand">;
+declare type LuaTableDelete<TTable extends AnyTable, TKey extends AnyNotNil> = ((table: TTable, key: TKey) => boolean) &
+    LuaExtension<"__luaTableDeleteBrand">;
 
 /**
-* Calls to methods with this type are translated to `table[key] = nil`, where `table` is the object with the method.
-* For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
-*
-* @param TKey The type of the key to use to access the table.
-*/
+ * Calls to methods with this type are translated to `table[key] = nil`, where `table` is the object with the method.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TKey The type of the key to use to access the table.
+ */
 declare type LuaTableDeleteMethod<TKey extends AnyNotNil> = ((key: TKey) => boolean) &
- LuaExtension<"__luaTableDeleteMethodBrand">;
+    LuaExtension<"__luaTableDeleteMethodBrand">;
 
 /**
  * A convenience type for working directly with a Lua table.

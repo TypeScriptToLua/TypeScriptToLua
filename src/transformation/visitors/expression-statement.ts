@@ -2,7 +2,12 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor } from "../context";
 import { transformBinaryExpressionStatement } from "./binary-expression";
-import { isTableSetCall, transformTableSetExpression } from "./language-extensions/table";
+import {
+    isTableDeleteCall,
+    isTableSetCall,
+    transformTableDeleteExpression,
+    transformTableSetExpression,
+} from "./language-extensions/table";
 import { transformLuaTableExpressionStatement } from "./lua-table";
 import { transformUnaryExpressionStatement } from "./unary-expression";
 
@@ -10,6 +15,10 @@ export const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatemen
     const luaTableResult = transformLuaTableExpressionStatement(context, node);
     if (luaTableResult) {
         return luaTableResult;
+    }
+
+    if (ts.isCallExpression(node.expression) && isTableDeleteCall(context, node.expression)) {
+        return transformTableDeleteExpression(context, node.expression);
     }
 
     if (ts.isCallExpression(node.expression) && isTableSetCall(context, node.expression)) {

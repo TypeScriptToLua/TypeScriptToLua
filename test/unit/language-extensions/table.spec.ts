@@ -174,6 +174,61 @@ describe("LuaTableHas extension", () => {
     });
 });
 
+describe("LuaTableDelete extension", () => {
+    test("LuaTableDelete standalone function", () => {
+        util.testModule`
+            declare const tableDelete: LuaTableDelete<{}, string>;
+
+            export const table = { foo: "bar", baz: "baz" };
+            tableDelete(table, "foo");
+        `
+            .setOptions(tableProjectOptions)
+            .expectToEqual({ foo: "bar" });
+    });
+
+    test("LuaTableDelete namespace function", () => {
+        util.testModule`
+            declare namespace Table {
+                export const tableDelete: LuaTableDelete<{}, string>;
+            }
+
+            export const table = { foo: "bar", baz: "baz" };
+            Table.tableDelete(table, "foo");
+        `
+            .setOptions(tableProjectOptions)
+            .expectToEqual({ result: { foo: "bar" } });
+    });
+
+    test("LuaTableHasMethod method", () => {
+        util.testModule`
+            interface TableWithDelete {
+                delete: LuaTableDeleteMethod<string>;
+                set: LuaTableSetMethod<string, number>;
+            }
+            export const table = {} as TableWithDelete;
+            table.set("foo", 42);
+            table.set("bar", 12);
+            table.delete("foo");
+        `
+            .setOptions(tableProjectOptions)
+            .expectToEqual({ foo: 42 });
+    });
+
+    test.each([
+        'const foo = tableDelete({}, "foo");',
+        'const foo = `${tableDelete({}, "foo")}`;',
+        'declare function foo(arg: any): void; foo(tableDelete({}, "foo"));',
+        'const foo = [tableDelete({}, "foo")];',
+    ])("LuaTableDelete invalid use as expression (%p)", expression => {
+        util.testModule`
+            declare const setTable: LuaTableDelete<{}, string>;
+            ${expression}
+        `
+            .setOptions(tableProjectOptions)
+            .expectDiagnosticsToMatchSnapshot([invalidTableSetExpression.code]);
+    });
+});
+
 describe("LuaTable extension interface", () => {
     test("untyped table", () => {
         util.testFunction`
@@ -226,6 +281,20 @@ describe("LuaTable extension interface", () => {
         `
             .setOptions(tableProjectOptions)
             .expectToEqual([false, true]);
+    });
+
+    test("table delete", () => {
+        util.testFunction`
+            const tbl = new LuaTable<number, string>();
+            tbl.set(1, "foo");
+            tbl.set(3, "bar");
+            tbl.set(5, "baz");
+            tbl.delete(3);
+            tbl.delete(1);
+            return tbl;
+        `
+            .setOptions(tableProjectOptions)
+            .expectToEqual({ 5: "baz" });
     });
 
     test.each(['new LuaTable().get("foo");', 'new LuaTable().set("foo", "bar");'])(

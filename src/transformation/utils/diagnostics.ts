@@ -68,16 +68,6 @@ export const invalidRangeControlVariable = createErrorDiagnosticFactory(
     "For loop using $range must declare a single control variable."
 );
 
-export const luaTableForbiddenUsage = createErrorDiagnosticFactory(
-    (description: string) => `Invalid @luaTable usage: ${description}.`
-);
-
-export const luaIteratorForbiddenUsage = createErrorDiagnosticFactory(
-    "Unsupported use of lua iterator with '@tupleReturn' annotation in for...of statement. " +
-        "You must use a destructuring statement to catch results from a lua iterator with " +
-        "the '@tupleReturn' annotation."
-);
-
 export const invalidMultiIterableWithoutDestructuring = createErrorDiagnosticFactory(
     "LuaIterable with a LuaMultiReturn return value type must be destructured."
 );

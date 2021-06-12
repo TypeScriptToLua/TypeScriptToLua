@@ -621,7 +621,7 @@ test("array.entries indirect use", () => {
 
 test("array.entries destructured", () => {
     util.testExpression`[...["a", "b", "c"].entries()]`.expectToMatchJsResult();
-})
+});
 
 const genericChecks = [
     "function generic<T extends number[]>(array: T)",

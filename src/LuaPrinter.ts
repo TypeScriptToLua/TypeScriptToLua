@@ -24,6 +24,8 @@ const escapeStringMap: Record<string, string> = {
 
 export const escapeString = (value: string) => `"${value.replace(escapeStringRegExp, char => escapeStringMap[char])}"`;
 
+export const tstlHeader = "--[[ Generated with https://github.com/TypeScriptToLua/TypeScriptToLua ]]\n";
+
 /**
  * Checks that a name is valid for use in lua function declaration syntax:
  *
@@ -185,7 +187,7 @@ export class LuaPrinter {
         let header = file.trivia;
 
         if (!this.options.noHeader) {
-            header += "--[[ Generated with https://github.com/TypeScriptToLua/TypeScriptToLua ]]\n";
+            header += tstlHeader;
         }
 
         const luaLibImport = this.options.luaLibImport ?? LuaLibImportKind.Require;

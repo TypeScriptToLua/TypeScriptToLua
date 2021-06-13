@@ -2,7 +2,7 @@ import * as path from "path";
 import { SourceNode } from "source-map";
 import * as ts from "typescript";
 import { CompilerOptions } from "../CompilerOptions";
-import { escapeString } from "../LuaPrinter";
+import { escapeString, tstlHeader } from "../LuaPrinter";
 import { cast, formatPathToLuaPath, isNonNull, normalizeSlashes, trimExtension } from "../utils";
 import { couldNotFindBundleEntryPoint } from "./diagnostics";
 import { getEmitOutDir, getEmitPathRelativeToOutDir, getSourceDir } from "./transpiler";
@@ -57,7 +57,13 @@ export function getBundleResult(program: ts.Program, files: ProcessedFile[]): [t
     // return require("<entry module path>")
     const entryPoint = `return require(${createModulePath(entryModule, program)})\n`;
 
-    const bundleNode = joinSourceChunks([requireOverride, moduleTable, entryPoint]);
+    const sourceChunks = [requireOverride, moduleTable, entryPoint];
+
+    if (!options.noHeader) {
+        sourceChunks.unshift(tstlHeader);
+    }
+
+    const bundleNode = joinSourceChunks(sourceChunks);
     const { code, map } = bundleNode.toStringWithSourceMap();
 
     return [

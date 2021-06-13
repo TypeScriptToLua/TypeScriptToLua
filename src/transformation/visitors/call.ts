@@ -272,7 +272,7 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
         if (annotations.has(AnnotationKind.LuaTable)) {
             context.diagnostics.push(annotationRemoved(node, AnnotationKind.LuaTable));
         }
-    
+
         const result = transformPropertyCall(context, node as PropertyCallExpression);
         return wrapResult ? wrapInTable(result) : result;
     }

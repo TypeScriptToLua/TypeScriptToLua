@@ -56,15 +56,12 @@ export const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessE
     return lua.createTableIndexExpression(table, accessExpression, node);
 };
 
-export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAccessExpression> = (
-    node,
-    context
-) => {
+export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAccessExpression> = (node, context) => {
     const property = node.name.text;
     const type = context.checker.getTypeAtLocation(node.expression);
 
     const annotations = getTypeAnnotations(type);
-    
+
     if (annotations.has(AnnotationKind.LuaTable)) {
         context.diagnostics.push(annotationRemoved(node, AnnotationKind.LuaTable));
     }

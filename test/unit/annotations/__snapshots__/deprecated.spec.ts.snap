@@ -1,16 +1,14 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`LuaTable deprecation warning property access set: code 1`] = `
-"require(\\"lualib_bundle\\");
-local ____exports = {}
+"local ____exports = {}
 function ____exports.__main(self)
-    local ____table = __TS__New(Table)
     return tbl:set(\\"foo\\", 0)
 end
 return ____exports"
 `;
 
-exports[`LuaTable deprecation warning property access set: diagnostics 1`] = `"main.ts(12,23): error TSTL: '@luaTable' has been removed and will no longer have any effect.See https://typescripttolua.github.io/docs/advanced/compiler-annotations#luatable for more information."`;
+exports[`LuaTable deprecation warning property access set: diagnostics 1`] = `"main.ts(12,16): error TSTL: '@luaTable' has been removed and will no longer have any effect.See https://typescripttolua.github.io/docs/advanced/compiler-annotations#luatable for more information."`;
 
 exports[`LuaTable removed warning constructor: code 1`] = `
 "require(\\"lualib_bundle\\");
@@ -20,28 +18,24 @@ ____table = __TS__New(Table)"
 exports[`LuaTable removed warning constructor: diagnostics 1`] = `"main.ts(11,15): error TSTL: '@luaTable' has been removed and will no longer have any effect.See https://typescripttolua.github.io/docs/advanced/compiler-annotations#luatable for more information."`;
 
 exports[`LuaTable removed warning property access get: code 1`] = `
-"require(\\"lualib_bundle\\");
-local ____exports = {}
+"local ____exports = {}
 function ____exports.__main(self)
-    local ____table = __TS__New(Table)
     return tbl:get(\\"foo\\")
 end
 return ____exports"
 `;
 
-exports[`LuaTable removed warning property access get: diagnostics 1`] = `"main.ts(12,23): error TSTL: '@luaTable' has been removed and will no longer have any effect.See https://typescripttolua.github.io/docs/advanced/compiler-annotations#luatable for more information."`;
+exports[`LuaTable removed warning property access get: diagnostics 1`] = `"main.ts(12,16): error TSTL: '@luaTable' has been removed and will no longer have any effect.See https://typescripttolua.github.io/docs/advanced/compiler-annotations#luatable for more information."`;
 
 exports[`LuaTable removed warning property access length: code 1`] = `
-"require(\\"lualib_bundle\\");
-local ____exports = {}
+"local ____exports = {}
 function ____exports.__main(self)
-    local ____table = __TS__New(Table)
     return tbl.length
 end
 return ____exports"
 `;
 
-exports[`LuaTable removed warning property access length: diagnostics 1`] = `"main.ts(12,23): error TSTL: '@luaTable' has been removed and will no longer have any effect.See https://typescripttolua.github.io/docs/advanced/compiler-annotations#luatable for more information."`;
+exports[`LuaTable removed warning property access length: diagnostics 1`] = `"main.ts(12,16): error TSTL: '@luaTable' has been removed and will no longer have any effect.See https://typescripttolua.github.io/docs/advanced/compiler-annotations#luatable for more information."`;
 
 exports[`extension removed: code 1`] = `
 "require(\\"lualib_bundle\\");
@@ -83,7 +77,7 @@ end
 return ____exports"
 `;
 
-exports[`luaiterator removed: diagnostics 1`] = `"main.ts(20,23): error TSTL: '@luaIterator' has been removed and will no longer have any effect.See https://typescripttolua.github.io/docs/advanced/compiler-annotations#luaiterator for more information."`;
+exports[`luaiterator removed: diagnostics 1`] = `"main.ts(10,23): error TSTL: '@luaIterator' has been removed and will no longer have any effect.See https://typescripttolua.github.io/docs/advanced/compiler-annotations#luaiterator for more information."`;
 
 exports[`phantom removed: code 1`] = `
 "A = A or ({})

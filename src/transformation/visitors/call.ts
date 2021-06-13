@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { transformBuiltinCallExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { isInTupleReturnFunction, isTupleReturnCall } from "../utils/annotations";
+import { AnnotationKind, getTypeAnnotations, isInTupleReturnFunction, isTupleReturnCall } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
 import { ContextType, getDeclarationContextType } from "../utils/function-context";
 import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
@@ -22,7 +22,7 @@ import {
     transformTableHasExpression,
     transformTableSetExpression,
 } from "./language-extensions/table";
-import { invalidTableDeleteExpression, invalidTableSetExpression } from "../utils/diagnostics";
+import { annotationRemoved, invalidTableDeleteExpression, invalidTableSetExpression } from "../utils/diagnostics";
 import {
     ImmediatelyInvokedFunctionParameters,
     transformToImmediatelyInvokedFunctionExpression,
@@ -267,6 +267,12 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     }
 
     if (ts.isPropertyAccessExpression(node.expression)) {
+        const ownerType = context.checker.getTypeAtLocation(node.expression.expression);
+        const annotations = getTypeAnnotations(ownerType);
+        if (annotations.has(AnnotationKind.LuaTable)) {
+            context.diagnostics.push(annotationRemoved(node, AnnotationKind.LuaTable));
+        }
+    
         const result = transformPropertyCall(context, node as PropertyCallExpression);
         return wrapResult ? wrapInTable(result) : result;
     }

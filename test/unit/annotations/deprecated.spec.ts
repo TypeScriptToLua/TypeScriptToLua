@@ -57,9 +57,7 @@ test("luaiterator removed", () => {
         let result = "";
         for (let e of luaIter()) { result += e; }
         return result;
-    `
-        .setTsHeader(tableLibClass)
-        .expectDiagnosticsToMatchSnapshot([annotationRemoved.code]);
+    `.expectDiagnosticsToMatchSnapshot([annotationRemoved.code]);
 });
 
 const tableLibClass = `
@@ -82,7 +80,6 @@ test("LuaTable removed warning constructor", () => {
 
 test("LuaTable removed warning property access length", () => {
     util.testFunction`
-        const table = new Table();
         return tbl.length;
     `
         .setTsHeader(tableLibClass)
@@ -91,7 +88,6 @@ test("LuaTable removed warning property access length", () => {
 
 test("LuaTable removed warning property access get", () => {
     util.testFunction`
-        const table = new Table();
         return tbl.get("foo");
     `
         .setTsHeader(tableLibClass)
@@ -100,7 +96,6 @@ test("LuaTable removed warning property access get", () => {
 
 test("LuaTable deprecation warning property access set", () => {
     util.testFunction`
-        const table = new Table();
         return tbl.set("foo", 0);
     `
         .setTsHeader(tableLibClass)

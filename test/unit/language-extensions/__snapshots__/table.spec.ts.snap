@@ -1,5 +1,51 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`LuaTable extension interface LuaTable in strict mode does not accept key type that could be nil ("null"): code 1`] = `
+"local ____exports = {}
+____exports.__result = {}
+return ____exports"
+`;
+
+exports[`LuaTable extension interface LuaTable in strict mode does not accept key type that could be nil ("null"): diagnostics 1`] = `"main.ts(1,38): error TS2344: Type 'null' does not satisfy the constraint 'AnyNotNil'."`;
+
+exports[`LuaTable extension interface LuaTable in strict mode does not accept key type that could be nil ("number | undefined"): code 1`] = `
+"local ____exports = {}
+____exports.__result = {}
+return ____exports"
+`;
+
+exports[`LuaTable extension interface LuaTable in strict mode does not accept key type that could be nil ("number | undefined"): diagnostics 1`] = `
+"main.ts(1,38): error TS2344: Type 'number | undefined' does not satisfy the constraint 'AnyNotNil'.
+  Type 'undefined' is not assignable to type 'AnyNotNil'."
+`;
+
+exports[`LuaTable extension interface LuaTable in strict mode does not accept key type that could be nil ("string | null"): code 1`] = `
+"local ____exports = {}
+____exports.__result = {}
+return ____exports"
+`;
+
+exports[`LuaTable extension interface LuaTable in strict mode does not accept key type that could be nil ("string | null"): diagnostics 1`] = `
+"main.ts(1,38): error TS2344: Type 'string | null' does not satisfy the constraint 'AnyNotNil'.
+  Type 'null' is not assignable to type 'AnyNotNil'."
+`;
+
+exports[`LuaTable extension interface LuaTable in strict mode does not accept key type that could be nil ("undefined"): code 1`] = `
+"local ____exports = {}
+____exports.__result = {}
+return ____exports"
+`;
+
+exports[`LuaTable extension interface LuaTable in strict mode does not accept key type that could be nil ("undefined"): diagnostics 1`] = `"main.ts(1,38): error TS2344: Type 'undefined' does not satisfy the constraint 'AnyNotNil'."`;
+
+exports[`LuaTable extension interface LuaTable in strict mode does not accept key type that could be nil ("unknown"): code 1`] = `
+"local ____exports = {}
+____exports.__result = {}
+return ____exports"
+`;
+
+exports[`LuaTable extension interface LuaTable in strict mode does not accept key type that could be nil ("unknown"): diagnostics 1`] = `"main.ts(1,38): error TS2344: Type 'unknown' does not satisfy the constraint 'AnyNotNil'."`;
+
 exports[`LuaTableDelete extension LuaTableDelete invalid use as expression ("const foo = [tableDelete({}, \\"foo\\")];"): code 1`] = `
 "foo = {
     (function()

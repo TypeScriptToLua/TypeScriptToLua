@@ -8,8 +8,7 @@ const createDiagnosticFactory = <TArgs extends any[]>(
 
 export const couldNotResolveRequire = createDiagnosticFactory(
     (requirePath: string, containingFile: string) =>
-        `Could not resolve require path '${requirePath}' in file ${containingFile}.`,
-    ts.DiagnosticCategory.Warning
+        `Could not resolve require path '${requirePath}' in file ${containingFile}.`
 );
 
 export const couldNotReadDependency = createDiagnosticFactory(

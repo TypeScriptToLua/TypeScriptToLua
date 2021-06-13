@@ -535,7 +535,7 @@ declare type LuaTableDeleteMethod<TKey extends AnyNotNil> = ((key: TKey) => bool
  * @param TKey The type of the keys used to access the table.
  * @param TValue The type of the values stored in the table.
  */
-declare interface LuaTable<TKey extends AnyTable = AnyNotNil, TValue = any> {
+declare interface LuaTable<TKey extends AnyNotNil = AnyNotNil, TValue = any> {
     length: LuaLengthMethod<number>;
     get: LuaTableGetMethod<TKey, TValue>;
     set: LuaTableSetMethod<TKey, TValue>;

@@ -254,6 +254,29 @@ describe("LuaTable extension interface", () => {
             .expectToEqual(3);
     });
 
+    // Test to catch issue from https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1033
+    test("typed table in type declaration", () => {
+        util.testFunction`
+            function fill(tbl: LuaTable<string, number>) {
+                tbl.set("foo", 3);
+                return tbl;
+            }
+            return fill(new LuaTable()).get("foo");
+        `
+            .setOptions(tableProjectOptions)
+            .expectToEqual(3);
+    });
+
+    test.each([["null"], ["undefined"], ["number | undefined"], ["string | null"], ["unknown"]])(
+        "LuaTable in strict mode does not accept key type that could be nil (%p)",
+        keyType => {
+            util.testExpression`new LuaTable<${keyType}, unknown>()`
+                .setOptions({ ...tableProjectOptions, strict: true })
+                .expectToHaveDiagnostics()
+                .expectDiagnosticsToMatchSnapshot();
+        }
+    );
+
     test("object keyed table", () => {
         util.testFunction`
             interface Key { keyStr: string }

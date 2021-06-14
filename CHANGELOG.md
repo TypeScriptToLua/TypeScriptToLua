@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.40.0
+
+- Added support for using external Lua code in your project. This means you can create and install node_modules packages containing Lua code. It also lets you include Lua source files as part of your source files. Used Lua will automatically be added to your output. For more information, see the [External Lua Code](https://typescripttolua.github.io/docs/external-lua-code) page in the docs.
+- **[Breaking]** Removed support for deprecated annotations that have been replaced with language extensions: `/** @luaIterator */`, `/** @vararg */`, `/** @luatable */` and `/** forRange */`. If you were still using these, see [the docs](https://typescripttolua.github.io/docs/advanced/compiler-annotations#vararg) for instructions how to upgrade.
+- Added support for `array.entries()`.
+- Added support for `LuaTable.has(key)` and `LuaTable.delete(key)` to the language extensions. See [docs](https://typescripttolua.github.io/docs/advanced/language-extensions#lua-table-types) for more info.
+- Made language extension types more strict, disallowing `null` and `undefined` in some places where they would cause problems in Lua.
+
+- Fixed an issue where using TypeScript transformer plugins would cause invalid namespace and module code, as well as breaking hoisting.
+- Fixed invalid switch statement output when the `default` clause was not the last clause in the switch.
+- Fixed missing LuaLib dependency when using `string.split`.
+- Fixed **lots** of bundling bugs and issues, also added the TypeScriptToLua header to the top of the bundle unless _noHeader_ is specified.
+
+Under the hood:
+
+- Various improvements to testing infrastructure for testing (virtual) projects with multiple files.
+
 ## 0.39.0
 
 - **[Breaking]** Removed support for `@phantom`, `@metaExtension`, `@extension`, `@pureAbstract` compiler annotations. As of this version **these will no longer function!** For help upgrading your code see [the deprecated annotation docs](https://typescripttolua.github.io/docs/advanced/compiler-annotations#deprecated).

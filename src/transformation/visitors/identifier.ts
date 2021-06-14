@@ -2,19 +2,18 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { transformBuiltinIdentifierExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { isForRangeType } from "../utils/annotations";
+import { AnnotationKind, isForRangeType } from "../utils/annotations";
 import {
-    invalidForRangeCall,
     invalidMultiFunctionUse,
     invalidOperatorMappingUse,
     invalidRangeUse,
     invalidVarargUse,
     invalidTableExtensionUse,
+    annotationRemoved,
 } from "../utils/diagnostics";
 import { createExportedIdentifier, getSymbolExportScope } from "../utils/export";
 import { createSafeName, hasUnsafeIdentifierName } from "../utils/safe-names";
 import { getIdentifierSymbolId } from "../utils/symbols";
-import { findFirstNodeAbove } from "../utils/typescript";
 import { isMultiFunctionNode } from "./language-extensions/multi";
 import { isOperatorMapping } from "./language-extensions/operators";
 import { isRangeFunctionNode } from "./language-extensions/range";
@@ -46,12 +45,7 @@ export function transformIdentifier(context: TransformationContext, identifier: 
     }
 
     if (isForRangeType(context, identifier)) {
-        const callExpression = findFirstNodeAbove(identifier, ts.isCallExpression);
-        if (!callExpression || !callExpression.parent || !ts.isForOfStatement(callExpression.parent)) {
-            context.diagnostics.push(
-                invalidForRangeCall(identifier, "can be used only as an iterable in a for...of loop")
-            );
-        }
+        context.diagnostics.push(annotationRemoved(identifier, AnnotationKind.ForRange));
     }
 
     const text = hasUnsafeIdentifierName(context, identifier) ? createSafeName(identifier.text) : identifier.text;

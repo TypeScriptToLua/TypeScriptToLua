@@ -465,54 +465,6 @@ describe("for...of empty destructuring", () => {
                 return i;
             `.expectToMatchJsResult();
         });
-
-        test("luaIterator", () => {
-            const luaResult = util.testFunction`
-                const arr = [["a"], ["b"], ["c"]];
-                /** @luaIterator */
-                interface Iter extends Iterable<string[]> {}
-                function luaIter(): Iter {
-                    let it = 0;
-                    return (() => arr[it++]) as any;
-                }
-                let i = 0;
-                for (${destructuringPrefix}[] of luaIter()) {
-                    ++i;
-                }
-                return i;
-            `.getLuaExecutionResult();
-            // Can't use expectToMatchJsResult because above is not valid TS/JS
-            expect(luaResult).toBe(3);
-        });
-
-        test("luaIterator+tupleReturn", () => {
-            const luaResult = util.testFunction`
-                const arr = [["a", "b"], ["c", "d"], ["e", "f"]];
-                /**
-                 * @luaIterator
-                 * @tupleReturn
-                 */
-                interface Iter extends Iterable<[string, string]> {}
-                function luaIter(): Iter {
-                    let it = 0;
-                    /** @tupleReturn */
-                    function iter() {
-                        const e = arr[it++];
-                        if (e) {
-                            return e;
-                        }
-                    }
-                    return iter as any;
-                }
-                let i = 0;
-                for (${destructuringPrefix}[] of luaIter()) {
-                    ++i;
-                }
-                return i;
-            `.getLuaExecutionResult();
-            // Can't use expectToMatchJsResult because above is not valid TS/JS
-            expect(luaResult).toBe(3);
-        });
     };
 
     describe("declaration", () => declareTests("const "));

@@ -13,7 +13,7 @@ import {
 } from "../utils/scope";
 import { isArrayType } from "../utils/typescript";
 import { returnsMultiType } from "./language-extensions/multi";
-import { annotationDeprecated } from "../utils/diagnostics";
+import { annotationRemoved } from "../utils/diagnostics";
 import { isGlobalVarargConstant } from "./language-extensions/vararg";
 
 export function isOptimizedVarArgSpread(context: TransformationContext, symbol: ts.Symbol, identifier: ts.Identifier) {
@@ -60,8 +60,7 @@ export function isOptimizedVarArgSpread(context: TransformationContext, symbol: 
 export const transformSpreadElement: FunctionVisitor<ts.SpreadElement> = (node, context) => {
     if (ts.isIdentifier(node.expression)) {
         if (isVarargType(context, node.expression)) {
-            context.diagnostics.push(annotationDeprecated(node, AnnotationKind.Vararg));
-            return lua.createDotsLiteral(node);
+            context.diagnostics.push(annotationRemoved(node, AnnotationKind.Vararg));
         }
         const symbol = context.checker.getSymbolAtLocation(node.expression);
         if (symbol && isOptimizedVarArgSpread(context, symbol, node.expression)) {

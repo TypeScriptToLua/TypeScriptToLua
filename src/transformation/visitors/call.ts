@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { transformBuiltinCallExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { isInTupleReturnFunction, isTupleReturnCall } from "../utils/annotations";
+import { AnnotationKind, getTypeAnnotations, isInTupleReturnFunction, isTupleReturnCall } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
 import { ContextType, getDeclarationContextType } from "../utils/function-context";
 import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
@@ -10,7 +10,6 @@ import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isValidLuaIdentifier } from "../utils/safe-names";
 import { isExpressionWithEvaluationEffect, isInDestructingAssignment } from "../utils/typescript";
 import { transformElementAccessArgument } from "./access";
-import { transformLuaTableCallExpression } from "./lua-table";
 import { shouldMultiReturnCallBeWrapped } from "./language-extensions/multi";
 import { isOperatorMapping, transformOperatorMappingExpression } from "./language-extensions/operators";
 import {
@@ -23,7 +22,7 @@ import {
     transformTableHasExpression,
     transformTableSetExpression,
 } from "./language-extensions/table";
-import { invalidTableDeleteExpression, invalidTableSetExpression } from "../utils/diagnostics";
+import { annotationRemoved, invalidTableDeleteExpression, invalidTableSetExpression } from "../utils/diagnostics";
 import {
     ImmediatelyInvokedFunctionParameters,
     transformToImmediatelyInvokedFunctionExpression,
@@ -223,11 +222,6 @@ function transformElementCall(context: TransformationContext, node: ts.CallExpre
 }
 
 export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node, context) => {
-    const luaTableResult = transformLuaTableCallExpression(context, node);
-    if (luaTableResult) {
-        return luaTableResult;
-    }
-
     const isTupleReturn = isTupleReturnCall(context, node);
     const isTupleReturnForward =
         node.parent && ts.isReturnStatement(node.parent) && isInTupleReturnFunction(context, node);
@@ -273,6 +267,12 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     }
 
     if (ts.isPropertyAccessExpression(node.expression)) {
+        const ownerType = context.checker.getTypeAtLocation(node.expression.expression);
+        const annotations = getTypeAnnotations(ownerType);
+        if (annotations.has(AnnotationKind.LuaTable)) {
+            context.diagnostics.push(annotationRemoved(node, AnnotationKind.LuaTable));
+        }
+
         const result = transformPropertyCall(context, node as PropertyCallExpression);
         return wrapResult ? wrapInTable(result) : result;
     }

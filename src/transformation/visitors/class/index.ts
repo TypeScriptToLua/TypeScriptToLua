@@ -3,7 +3,7 @@ import * as lua from "../../../LuaAST";
 import { getOrUpdate } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
-import { annotationRemoved, luaTableCannotBeExtended, luaTableMustBeAmbient } from "../../utils/diagnostics";
+import { annotationRemoved } from "../../utils/diagnostics";
 import {
     createDefaultExportIdentifier,
     createExportedIdentifier,
@@ -13,7 +13,6 @@ import {
 import { createSelfIdentifier, unwrapVisitorResult } from "../../utils/lua-ast";
 import { createSafeName, isUnsafeName } from "../../utils/safe-names";
 import { transformToImmediatelyInvokedFunctionExpression } from "../../utils/transform";
-import { isAmbientNode } from "../../utils/typescript";
 import { transformIdentifier } from "../identifier";
 import { createDecoratingExpression, transformDecoratorExpression } from "./decorators";
 import { transformAccessorDeclarations } from "./members/accessors";
@@ -95,18 +94,6 @@ function transformClassLikeDeclaration(
 
     if (extendedType) {
         checkForLuaLibType(context, extendedType);
-    }
-
-    // You cannot extend LuaTable classes
-    if (extendedType) {
-        const annotations = getTypeAnnotations(extendedType);
-        if (annotations.has(AnnotationKind.LuaTable)) {
-            context.diagnostics.push(luaTableCannotBeExtended(extendedTypeNode!));
-        }
-    }
-
-    if (annotations.has(AnnotationKind.LuaTable) && !isAmbientNode(classDeclaration)) {
-        context.diagnostics.push(luaTableMustBeAmbient(classDeclaration));
     }
 
     // Get all properties with value

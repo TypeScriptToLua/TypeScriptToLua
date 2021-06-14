@@ -2,11 +2,10 @@ import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
-import { annotationInvalidArgumentCount } from "../../utils/diagnostics";
+import { annotationInvalidArgumentCount, annotationRemoved } from "../../utils/diagnostics";
 import { importLuaLibFeature, LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { transformArguments } from "../call";
 import { isTableNewCall } from "../language-extensions/table";
-import { transformLuaTableNewExpression } from "../lua-table";
 
 const builtinErrorTypeNames = new Set([
     "Error",
@@ -49,9 +48,12 @@ export function checkForLuaLibType(context: TransformationContext, type: ts.Type
 }
 
 export const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, context) => {
-    const luaTableResult = transformLuaTableNewExpression(context, node);
-    if (luaTableResult) {
-        return luaTableResult;
+    const type = context.checker.getTypeAtLocation(node);
+
+    const annotations = getTypeAnnotations(type);
+
+    if (annotations.has(AnnotationKind.LuaTable)) {
+        context.diagnostics.push(annotationRemoved(node, AnnotationKind.LuaTable));
     }
 
     if (isTableNewCall(context, node)) {
@@ -64,11 +66,7 @@ export const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, 
         ? transformArguments(context, node.arguments, signature)
         : [lua.createBooleanLiteral(true)];
 
-    const type = context.checker.getTypeAtLocation(node);
-
     checkForLuaLibType(context, type);
-
-    const annotations = getTypeAnnotations(type);
 
     const customConstructorAnnotation = annotations.get(AnnotationKind.CustomConstructor);
     if (customConstructorAnnotation) {

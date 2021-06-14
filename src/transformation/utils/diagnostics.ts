@@ -58,10 +58,6 @@ export const annotationInvalidArgumentCount = createErrorDiagnosticFactory(
     (kind: AnnotationKind, got: number, expected: number) => `'@${kind}' expects ${expected} arguments, but got ${got}.`
 );
 
-export const invalidForRangeCall = createErrorDiagnosticFactory(
-    (message: string) => `Invalid @forRange call: ${message}.`
-);
-
 export const invalidRangeUse = createErrorDiagnosticFactory("$range can only be used in a for...of loop.");
 
 export const invalidVarargUse = createErrorDiagnosticFactory(
@@ -70,32 +66,6 @@ export const invalidVarargUse = createErrorDiagnosticFactory(
 
 export const invalidRangeControlVariable = createErrorDiagnosticFactory(
     "For loop using $range must declare a single control variable."
-);
-
-export const luaTableMustBeAmbient = createErrorDiagnosticFactory(
-    "Classes with the '@luaTable' annotation must be ambient."
-);
-
-export const luaTableCannotBeExtended = createErrorDiagnosticFactory(
-    "Cannot extend classes with the '@luaTable' annotation."
-);
-
-export const luaTableInvalidInstanceOf = createErrorDiagnosticFactory(
-    "The instanceof operator cannot be used with a '@luaTable' class."
-);
-
-export const luaTableCannotBeAccessedDynamically = createErrorDiagnosticFactory(
-    "@luaTable cannot be accessed dynamically."
-);
-
-export const luaTableForbiddenUsage = createErrorDiagnosticFactory(
-    (description: string) => `Invalid @luaTable usage: ${description}.`
-);
-
-export const luaIteratorForbiddenUsage = createErrorDiagnosticFactory(
-    "Unsupported use of lua iterator with '@tupleReturn' annotation in for...of statement. " +
-        "You must use a destructuring statement to catch results from a lua iterator with " +
-        "the '@tupleReturn' annotation."
 );
 
 export const invalidMultiIterableWithoutDestructuring = createErrorDiagnosticFactory(

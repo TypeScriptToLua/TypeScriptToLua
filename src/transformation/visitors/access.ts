@@ -3,13 +3,12 @@ import * as lua from "../../LuaAST";
 import { transformBuiltinPropertyAccessExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
-import { invalidMultiReturnAccess, optionalChainingNotSupported } from "../utils/diagnostics";
+import { annotationRemoved, invalidMultiReturnAccess, optionalChainingNotSupported } from "../utils/diagnostics";
 import { addToNumericExpression } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isArrayType, isNumberType, isStringType } from "../utils/typescript";
 import { tryGetConstEnumValue } from "./enum";
 import { returnsMultiType } from "./language-extensions/multi";
-import { transformLuaTablePropertyAccessExpression, validateLuaTableElementAccessExpression } from "./lua-table";
 
 export function transformElementAccessArgument(
     context: TransformationContext,
@@ -27,8 +26,6 @@ export function transformElementAccessArgument(
 }
 
 export const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessExpression> = (node, context) => {
-    validateLuaTableElementAccessExpression(context, node);
-
     const constEnumValue = tryGetConstEnumValue(context, node);
     if (constEnumValue) {
         return constEnumValue;
@@ -59,53 +56,50 @@ export const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessE
     return lua.createTableIndexExpression(table, accessExpression, node);
 };
 
-export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAccessExpression> = (
-    expression,
-    context
-) => {
-    if (ts.isOptionalChain(expression)) {
-        context.diagnostics.push(optionalChainingNotSupported(expression));
+export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAccessExpression> = (node, context) => {
+    const property = node.name.text;
+    const type = context.checker.getTypeAtLocation(node.expression);
+
+    const annotations = getTypeAnnotations(type);
+
+    if (annotations.has(AnnotationKind.LuaTable)) {
+        context.diagnostics.push(annotationRemoved(node, AnnotationKind.LuaTable));
     }
 
-    const constEnumValue = tryGetConstEnumValue(context, expression);
+    if (ts.isOptionalChain(node)) {
+        context.diagnostics.push(optionalChainingNotSupported(node));
+    }
+
+    const constEnumValue = tryGetConstEnumValue(context, node);
     if (constEnumValue) {
         return constEnumValue;
     }
 
-    const luaTableResult = transformLuaTablePropertyAccessExpression(context, expression);
-    if (luaTableResult) {
-        return luaTableResult;
-    }
-
-    const builtinResult = transformBuiltinPropertyAccessExpression(context, expression);
+    const builtinResult = transformBuiltinPropertyAccessExpression(context, node);
     if (builtinResult) {
         return builtinResult;
     }
 
-    if (ts.isCallExpression(expression.expression) && returnsMultiType(context, expression.expression)) {
-        context.diagnostics.push(invalidMultiReturnAccess(expression));
+    if (ts.isCallExpression(node.expression) && returnsMultiType(context, node.expression)) {
+        context.diagnostics.push(invalidMultiReturnAccess(node));
     }
 
-    const property = expression.name.text;
-    const type = context.checker.getTypeAtLocation(expression.expression);
-
-    const annotations = getTypeAnnotations(type);
     // Do not output path for member only enums
     if (annotations.has(AnnotationKind.CompileMembersOnly)) {
-        if (ts.isPropertyAccessExpression(expression.expression)) {
+        if (ts.isPropertyAccessExpression(node.expression)) {
             // in case of ...x.enum.y transform to ...x.y
             return lua.createTableIndexExpression(
-                context.transformExpression(expression.expression.expression),
+                context.transformExpression(node.expression.expression),
                 lua.createStringLiteral(property),
-                expression
+                node
             );
         } else {
-            return lua.createIdentifier(property, expression);
+            return lua.createIdentifier(property, node);
         }
     }
 
-    const callPath = context.transformExpression(expression.expression);
-    return lua.createTableIndexExpression(callPath, lua.createStringLiteral(property), expression);
+    const callPath = context.transformExpression(node.expression);
+    return lua.createTableIndexExpression(callPath, lua.createStringLiteral(property), node);
 };
 
 export const transformQualifiedName: FunctionVisitor<ts.QualifiedName> = (node, context) => {

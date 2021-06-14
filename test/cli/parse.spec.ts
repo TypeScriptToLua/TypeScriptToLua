@@ -105,6 +105,9 @@ describe("command line", () => {
             ["sourceMapTraceback", "false", { sourceMapTraceback: false }],
             ["sourceMapTraceback", "true", { sourceMapTraceback: true }],
 
+            ["buildMode", "default", { buildMode: tstl.BuildMode.Default }],
+            ["buildMode", "library", { buildMode: tstl.BuildMode.Library }],
+
             ["luaLibImport", "none", { luaLibImport: tstl.LuaLibImportKind.None }],
             ["luaLibImport", "always", { luaLibImport: tstl.LuaLibImportKind.Always }],
             ["luaLibImport", "inline", { luaLibImport: tstl.LuaLibImportKind.Inline }],
@@ -212,6 +215,9 @@ describe("tsconfig", () => {
             ["noHeader", true, { noHeader: true }],
             ["sourceMapTraceback", false, { sourceMapTraceback: false }],
             ["sourceMapTraceback", true, { sourceMapTraceback: true }],
+
+            ["buildMode", "default", { buildMode: tstl.BuildMode.Default }],
+            ["buildMode", "library", { buildMode: tstl.BuildMode.Library }],
 
             ["luaLibImport", "none", { luaLibImport: tstl.LuaLibImportKind.None }],
             ["luaLibImport", "always", { luaLibImport: tstl.LuaLibImportKind.Always }],

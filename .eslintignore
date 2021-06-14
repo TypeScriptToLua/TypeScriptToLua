@@ -3,4 +3,5 @@
 /test/cli/errors
 /test/cli/watch
 /test/transpile/directories
+/test/transpile/module-resolution/*/node_modules
 /test/transpile/outFile

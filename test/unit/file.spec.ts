@@ -10,6 +10,20 @@ describe("JSON", () => {
             .setMainFileName("main.json")
             .expectToEqual(new util.ExecutionError("Unexpected end of JSON input"));
     });
+
+    test("JSON modules can be imported", () => {
+        util.testModule`
+            import * as jsonData from "./jsonModule.json";
+            export const result = jsonData;
+        `
+            .addExtraFile("jsonModule.json", '{ "jsonField1": "hello, this is JSON", "jsonField2": ["a", "b", "c"] }')
+            .expectToEqual({
+                result: {
+                    jsonField1: "hello, this is JSON",
+                    jsonField2: ["a", "b", "c"],
+                },
+            });
+    });
 });
 
 describe("shebang", () => {

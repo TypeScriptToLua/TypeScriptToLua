@@ -1,8 +1,15 @@
 import * as path from "path";
-import { transpileProjectResult } from "./run";
+import * as util from "../util";
 
 test("should transpile", () => {
-    const { diagnostics, emittedFiles } = transpileProjectResult(path.join(__dirname, "project", "tsconfig.json"));
-    expect(diagnostics).not.toHaveDiagnostics();
-    expect(emittedFiles).toMatchSnapshot();
+    const projectDir = path.join(__dirname, "project");
+    const { transpiledFiles } = util
+        .testProject(path.join(projectDir, "tsconfig.json"))
+        .setMainFileName(path.join(projectDir, "index.ts"))
+        .expectToHaveNoDiagnostics()
+        .getLuaResult();
+
+    expect(
+        transpiledFiles.map(f => ({ filePath: path.relative(projectDir, f.outPath), lua: f.lua }))
+    ).toMatchSnapshot();
 });

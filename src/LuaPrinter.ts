@@ -1,4 +1,3 @@
-import * as path from "path";
 import { Mapping, SourceMapGenerator, SourceNode } from "source-map";
 import * as ts from "typescript";
 import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
@@ -6,7 +5,7 @@ import * as lua from "./LuaAST";
 import { loadLuaLibFeatures, LuaLibFeature } from "./LuaLib";
 import { isValidLuaIdentifier } from "./transformation/utils/safe-names";
 import { EmitHost } from "./transpilation";
-import { intersperse, normalizeSlashes, trimExtension } from "./utils";
+import { intersperse, trimExtension } from "./utils";
 
 // https://www.lua.org/pil/2.4.html
 // https://www.ecma-international.org/ecma-262/10.0/index.html#table-34
@@ -24,6 +23,8 @@ const escapeStringMap: Record<string, string> = {
 };
 
 export const escapeString = (value: string) => `"${value.replace(escapeStringRegExp, char => escapeStringMap[char])}"`;
+
+export const tstlHeader = "--[[ Generated with https://github.com/TypeScriptToLua/TypeScriptToLua ]]\n";
 
 /**
  * Checks that a name is valid for use in lua function declaration syntax:
@@ -124,22 +125,7 @@ export class LuaPrinter {
 
     constructor(private emitHost: EmitHost, program: ts.Program, fileName: string) {
         this.options = program.getCompilerOptions();
-
-        if (this.options.outDir) {
-            const relativeFileName = path.relative(program.getCommonSourceDirectory(), fileName);
-            if (this.options.sourceRoot) {
-                // When sourceRoot is specified, just use relative path inside rootDir
-                this.sourceFile = relativeFileName;
-            } else {
-                // Calculate relative path from rootDir to outDir
-                const outputPath = path.resolve(this.options.outDir, relativeFileName);
-                this.sourceFile = path.relative(path.dirname(outputPath), fileName);
-            }
-            // We want forward slashes, even in windows
-            this.sourceFile = normalizeSlashes(this.sourceFile);
-        } else {
-            this.sourceFile = path.basename(fileName); // File will be in same dir as source
-        }
+        this.sourceFile = fileName;
     }
 
     public print(file: lua.File): PrintResult {
@@ -201,7 +187,7 @@ export class LuaPrinter {
         let header = file.trivia;
 
         if (!this.options.noHeader) {
-            header += "--[[ Generated with https://github.com/TypeScriptToLua/TypeScriptToLua ]]\n";
+            header += tstlHeader;
         }
 
         const luaLibImport = this.options.luaLibImport ?? LuaLibImportKind.Require;

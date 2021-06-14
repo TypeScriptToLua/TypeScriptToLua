@@ -58,8 +58,7 @@ test.each(["ke-bab", "dollar$", "singlequote'", "hash#", "s p a c e", "ɥɣɎɌ�
             import { foo } from "./${name}";
             export { foo };
         `
-            .disableSemanticCheck()
-            .setLuaHeader('setmetatable(package.loaded, { __index = function() return { foo = "bar" } end })')
+            .addExtraFile(`${name}.ts`, 'export const foo = "bar";')
             .setReturnExport("foo")
             .expectToEqual("bar");
     }

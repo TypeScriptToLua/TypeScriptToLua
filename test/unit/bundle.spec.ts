@@ -59,6 +59,16 @@ test("entry point in directory", () => {
         .expectToEqual({ value: true });
 });
 
+test("entry point in rootDir", () => {
+    util.testModule`
+        export { value } from "./module";
+    `
+        .setMainFileName("src/main.ts")
+        .addExtraFile("src/module.ts", "export const value = true")
+        .setOptions({ rootDir: "src", luaBundle: "bundle.lua", luaBundleEntry: "src/main.ts" })
+        .expectToEqual({ value: true });
+});
+
 test("LuaLibImportKind.Require", () => {
     util.testBundle`
         export const result = [1, 2];

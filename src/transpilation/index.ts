@@ -45,7 +45,7 @@ const libCache: { [key: string]: ts.SourceFile } = {};
 /** @internal */
 export function createVirtualProgram(input: Record<string, string>, options: CompilerOptions = {}): ts.Program {
     const compilerHost: ts.CompilerHost = {
-        fileExists: () => true,
+        fileExists: fileName => fileName in input || ts.sys.fileExists(fileName),
         getCanonicalFileName: fileName => fileName,
         getCurrentDirectory: () => "",
         getDefaultLibFileName: ts.getDefaultLibFileName,

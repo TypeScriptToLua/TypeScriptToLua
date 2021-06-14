@@ -1,8 +1,19 @@
 import * as ts from "typescript";
 import { createSerialDiagnosticFactory } from "../utils";
 
-const createDiagnosticFactory = <TArgs extends any[]>(getMessage: (...args: TArgs) => string) =>
-    createSerialDiagnosticFactory((...args: TArgs) => ({ messageText: getMessage(...args) }));
+const createDiagnosticFactory = <TArgs extends any[]>(
+    getMessage: (...args: TArgs) => string,
+    category: ts.DiagnosticCategory = ts.DiagnosticCategory.Error
+) => createSerialDiagnosticFactory((...args: TArgs) => ({ messageText: getMessage(...args), category }));
+
+export const couldNotResolveRequire = createDiagnosticFactory(
+    (requirePath: string, containingFile: string) =>
+        `Could not resolve require path '${requirePath}' in file ${containingFile}.`
+);
+
+export const couldNotReadDependency = createDiagnosticFactory(
+    (dependency: string) => `Could not read content of resolved dependency ${dependency}.`
+);
 
 export const toLoadItShouldBeTranspiled = createDiagnosticFactory(
     (kind: string, transform: string) =>

@@ -8,6 +8,7 @@ import * as lua from "../LuaAST";
 import * as diagnosticFactories from "./diagnostics";
 
 export interface EmitHost {
+    fileExists(path: string): boolean;
     getCurrentDirectory(): string;
     readFile(path: string): string | undefined;
     writeFile: ts.WriteFileCallback;

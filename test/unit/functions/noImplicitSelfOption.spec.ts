@@ -1,3 +1,4 @@
+import { couldNotResolveRequire } from "../../../src/transpilation/diagnostics";
 import * as util from "../../util";
 
 test("enables noSelfInFile behavior for functions", () => {
@@ -31,10 +32,13 @@ test("generates declaration files with @noSelfInFile", () => {
     const fooDeclaration = fooBuilder.getLuaResult().transpiledFiles.find(f => f.declaration)?.declaration;
     util.assert(fooDeclaration !== undefined);
 
+    expect(fooDeclaration).toContain("@noSelfInFile");
+
     util.testModule`
-        import { bar } from "./foo.d";
+        import { bar } from "./foo";
         const test: (this: void) => void = bar;
     `
         .addExtraFile("foo.d.ts", fooDeclaration)
+        .ignoreDiagnostics([couldNotResolveRequire.code]) // no foo implementation in the project to create foo.lua
         .expectToHaveNoDiagnostics();
 });

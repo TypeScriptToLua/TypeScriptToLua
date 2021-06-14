@@ -1,6 +1,6 @@
 /* eslint-disable jest/no-standalone-expect */
 import * as nativeAssert from "assert";
-import { LauxLib, Lua, LuaLib, LUA_OK } from "lua-wasm-bindings/dist/lua";
+import { LauxLib, Lua, LuaLib, LuaState, LUA_OK } from "lua-wasm-bindings/dist/lua";
 import * as fs from "fs";
 import { stringify } from "javascript-stringify";
 import * as path from "path";
@@ -9,6 +9,8 @@ import * as ts from "typescript";
 import * as vm from "vm";
 import * as tstl from "../src";
 import { createEmitOutputCollector } from "../src/transpilation/output-collector";
+import { getEmitOutDir, transpileProject } from "../src";
+import { formatPathToLuaPath, normalizeSlashes } from "../src/utils";
 
 const jsonLib = fs.readFileSync(path.join(__dirname, "json.lua"), "utf8");
 const luaLib = fs.readFileSync(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"), "utf8");
@@ -128,7 +130,7 @@ export abstract class TestBuilder {
         return this;
     }
 
-    private options: tstl.CompilerOptions = {
+    protected options: tstl.CompilerOptions = {
         luaTarget: tstl.LuaTarget.Lua54,
         noHeader: true,
         skipLibCheck: true,
@@ -148,7 +150,7 @@ export abstract class TestBuilder {
     protected mainFileName = "main.ts";
     public setMainFileName(mainFileName: string): this {
         expect(this.hasProgram).toBe(false);
-        this.mainFileName = mainFileName;
+        this.mainFileName = normalizeSlashes(mainFileName);
         return this;
     }
 
@@ -176,7 +178,10 @@ export abstract class TestBuilder {
     @memoize
     public getProgram(): ts.Program {
         this.hasProgram = true;
-        return tstl.createVirtualProgram({ ...this.extraFiles, [this.mainFileName]: this.getTsCode() }, this.options);
+        return tstl.createVirtualProgram(
+            { ...this.extraFiles, [normalizeSlashes(this.mainFileName)]: this.getTsCode() },
+            this.options
+        );
     }
 
     @memoize
@@ -202,7 +207,10 @@ export abstract class TestBuilder {
         const { transpiledFiles } = this.getLuaResult();
         const mainFile = this.options.luaBundle
             ? transpiledFiles[0]
-            : transpiledFiles.find(({ sourceFiles }) => sourceFiles.some(f => f.fileName === this.mainFileName));
+            : transpiledFiles.find(({ sourceFiles }) =>
+                  sourceFiles.some(f => normalizeSlashes(f.fileName) === this.mainFileName)
+              );
+
         expect(mainFile).toMatchObject({ lua: expect.any(String), luaSourceMap: expect.any(String) });
         return mainFile as ExecutableTranspiledFile;
     }
@@ -259,9 +267,7 @@ export abstract class TestBuilder {
 
     public debug(): this {
         const transpiledFiles = this.getLuaResult().transpiledFiles;
-        const luaCode = transpiledFiles.map(
-            f => `[${f.sourceFiles.map(sf => sf.fileName).join(",")}]:\n${f.lua?.replace(/^/gm, "  ")}`
-        );
+        const luaCode = transpiledFiles.map(f => `[${f.outPath}]:\n${f.lua?.replace(/^/gm, "  ")}`);
         const value = prettyFormat(this.getLuaExecutionResult()).replace(/^/gm, "  ");
         console.log(`Lua Code:\n${luaCode.join("\n")}\n\nValue:\n${value}`);
         return this;
@@ -366,35 +372,23 @@ export abstract class TestBuilder {
 
         // Load modules
         // Json
-        lua.lua_getglobal(L, "package");
-        lua.lua_getfield(L, -1, "preload");
-        lauxlib.luaL_loadstring(L, jsonLib);
-        lua.lua_setfield(L, -2, "json");
+        this.packagePreloadLuaFile(L, lua, lauxlib, "json", jsonLib);
         // Lua lib
         if (
             this.options.luaLibImport === tstl.LuaLibImportKind.Require ||
             mainFile.includes('require("lualib_bundle")')
         ) {
-            lua.lua_getglobal(L, "package");
-            lua.lua_getfield(L, -1, "preload");
-            lauxlib.luaL_loadstring(L, luaLib);
-            lua.lua_setfield(L, -2, "lualib_bundle");
+            this.packagePreloadLuaFile(L, lua, lauxlib, "lualib_bundle", luaLib);
         }
 
-        // Extra files
+        // Load all transpiled files into Lua's package cache
         const { transpiledFiles } = this.getLuaResult();
-
-        Object.keys(this.extraFiles).forEach(fileName => {
-            const transpiledExtraFile = transpiledFiles.find(({ sourceFiles }) =>
-                sourceFiles.some(f => f.fileName === fileName)
-            );
-            if (transpiledExtraFile?.lua) {
-                lua.lua_getglobal(L, "package");
-                lua.lua_getfield(L, -1, "preload");
-                lauxlib.luaL_loadstring(L, transpiledExtraFile.lua);
-                lua.lua_setfield(L, -2, fileName.replace(".ts", ""));
+        for (const transpiledFile of transpiledFiles) {
+            if (transpiledFile.lua) {
+                const filePath = path.relative(getEmitOutDir(this.getProgram()), transpiledFile.outPath);
+                this.packagePreloadLuaFile(L, lua, lauxlib, filePath, transpiledFile.lua);
             }
-        });
+        }
 
         // Execute Main
         const wrappedMainCode = `
@@ -421,6 +415,14 @@ end)());`;
             lua.lua_close(L);
             return new ExecutionError(message);
         }
+    }
+
+    private packagePreloadLuaFile(state: LuaState, lua: Lua, lauxlib: LauxLib, fileName: string, fileContent: string) {
+        // Adding source Lua to the package.preload cache will allow require to find it
+        lua.lua_getglobal(state, "package");
+        lua.lua_getfield(state, -1, "preload");
+        lauxlib.luaL_loadstring(state, fileContent);
+        lua.lua_setfield(state, -2, formatPathToLuaPath(fileName.replace(".lua", "")));
     }
 
     private executeJs(): any {
@@ -539,6 +541,22 @@ class ExpressionTestBuilder extends AccessorTestBuilder {
     }
 }
 
+class ProjectTestBuilder extends ModuleTestBuilder {
+    constructor(private tsConfig: string) {
+        super("");
+        this.setOptions({ configFilePath: this.tsConfig, ...tstl.parseConfigFileWithSystem(this.tsConfig) });
+    }
+
+    @memoize
+    public getLuaResult(): tstl.TranspileVirtualProjectResult {
+        // Override getLuaResult to use transpileProject with tsconfig.json instead
+        const collector = createEmitOutputCollector();
+        const { diagnostics } = transpileProject(this.tsConfig, this.options, collector.writeFile);
+
+        return { diagnostics: [...diagnostics], transpiledFiles: collector.files };
+    }
+}
+
 const createTestBuilderFactory = <T extends TestBuilder>(
     builder: new (_tsCode: string) => T,
     serializeSubstitutions: boolean
@@ -566,3 +584,4 @@ export const testFunction = createTestBuilderFactory(FunctionTestBuilder, false)
 export const testFunctionTemplate = createTestBuilderFactory(FunctionTestBuilder, true);
 export const testExpression = createTestBuilderFactory(ExpressionTestBuilder, false);
 export const testExpressionTemplate = createTestBuilderFactory(ExpressionTestBuilder, true);
+export const testProject = createTestBuilderFactory(ProjectTestBuilder, false);

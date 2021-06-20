@@ -12,7 +12,7 @@ test("should transpile into one file", () => {
 
     const { outPath, lua } = transpiledFiles[0];
     // Verify the name is as specified in tsconfig
-    expect(outPath.endsWith("bundle/bundle.lua")).toBe(true);
+    expect(outPath.endsWith(path.join("bundle", "bundle.lua"))).toBe(true);
     // Verify exported module by executing
     // Use an empty TS string because we already transpiled the TS project
     util.testModule("").setLuaHeader(lua!).expectToEqual({ myNumber: 3 });

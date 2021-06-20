@@ -3,7 +3,7 @@
 ## 0.40.0
 
 - Added support for using external Lua code in your project. This means you can create and install node_modules packages containing Lua code. It also lets you include Lua source files as part of your source files. Used Lua will automatically be added to your output. For more information, see the [External Lua Code](https://typescripttolua.github.io/docs/external-lua-code) page in the docs.
-- **[Breaking]** Removed support for deprecated annotations that have been replaced with language extensions: `/** @luaIterator */`, `/** @vararg */`, `/** @luatable */` and `/** forRange */`. If you were still using these, see [the docs](https://typescripttolua.github.io/docs/advanced/compiler-annotations#vararg) for instructions how to upgrade.
+- **[Breaking]** Removed support for deprecated annotations that have been replaced with language extensions: `/** @luaIterator */`, `/** @vararg */`, `/** @luatable */` and `/** forRange */`. If you were still using these, see [the docs](https://typescripttolua.github.io/docs/advanced/compiler-annotations) for instructions how to upgrade.
 - Added support for `array.entries()`.
 - Added support for `LuaTable.has(key)` and `LuaTable.delete(key)` to the language extensions. See [docs](https://typescripttolua.github.io/docs/advanced/language-extensions#lua-table-types) for more info.
 - Made language extension types more strict, disallowing `null` and `undefined` in some places where they would cause problems in Lua.

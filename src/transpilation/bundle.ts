@@ -3,7 +3,7 @@ import { SourceNode } from "source-map";
 import * as ts from "typescript";
 import { CompilerOptions } from "../CompilerOptions";
 import { escapeString, tstlHeader } from "../LuaPrinter";
-import { cast, formatPathToLuaPath, isNonNull, normalizeSlashes, trimExtension } from "../utils";
+import { cast, formatPathToLuaPath, isNonNull, trimExtension } from "../utils";
 import { couldNotFindBundleEntryPoint } from "./diagnostics";
 import { getEmitOutDir, getEmitPathRelativeToOutDir, getSourceDir } from "./transpiler";
 import { EmitFile, ProcessedFile } from "./utils";
@@ -42,7 +42,7 @@ export function getBundleResult(program: ts.Program, files: ProcessedFile[]): [t
 
     // Resolve project settings relative to project file.
     const resolvedEntryModule = path.resolve(getSourceDir(program), entryModule);
-    const outputPath = normalizeSlashes(path.resolve(getEmitOutDir(program), bundleFile));
+    const outputPath = path.resolve(getEmitOutDir(program), bundleFile);
 
     if (program.getSourceFile(resolvedEntryModule) === undefined && program.getSourceFile(entryModule) === undefined) {
         diagnostics.push(couldNotFindBundleEntryPoint(entryModule));

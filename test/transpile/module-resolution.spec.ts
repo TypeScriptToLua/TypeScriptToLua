@@ -280,3 +280,18 @@ describe("module resolution project with dependencies built by tstl library mode
             .expectToEqual(expectedResult);
     });
 });
+
+// Test fix for https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1037
+describe("module resolution with tsx", () => {
+    const projectPath = path.resolve(__dirname, "module-resolution", "project-with-tsx");
+
+    test("project with tsx files", () => {
+        util.testProject(path.join(projectPath, "tsconfig.json"))
+            .setMainFileName(path.join(projectPath, "main.tsx"))
+            .debug()
+            .expectToEqual({
+                result: "hello from other.tsx",
+                indexResult: "hello from dir/index.tsx",
+            });
+    });
+});

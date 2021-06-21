@@ -103,19 +103,18 @@ function resolveDependency(
     // Check if file is a file in the project
     const resolvedPath = path.join(fileDirectory, dependency);
 
-    if (isProjectFile(resolvedPath, program)) {
-        // JSON files need their extension as part of the import path, caught by this branch
-        return resolvedPath;
-    }
+    const possibleProjectFiles = [
+        resolvedPath, // JSON files need their extension as part of the import path, caught by this branch,
+        resolvedPath + ".ts", // Regular ts file
+        path.join(resolvedPath, "index.ts"), // Index ts file,
+        resolvedPath + ".tsx", // tsx file
+        path.join(resolvedPath, "index.tsx"), // tsx index
+    ];
 
-    const resolvedFile = resolvedPath + ".ts";
-    if (isProjectFile(resolvedFile, program)) {
-        return resolvedFile;
-    }
-
-    const projectIndexPath = path.resolve(resolvedPath, "index.ts");
-    if (isProjectFile(projectIndexPath, program)) {
-        return projectIndexPath;
+    for (const possibleFile of possibleProjectFiles) {
+        if (isProjectFile(possibleFile, program)) {
+            return possibleFile;
+        }
     }
 
     // Check if this is a sibling of a required lua file
@@ -215,7 +214,9 @@ function isProjectFile(file: string, program: ts.Program): boolean {
 function hasSourceFileInProject(filePath: string, program: ts.Program) {
     const pathWithoutExtension = trimExtension(filePath);
     return (
-        isProjectFile(pathWithoutExtension + ".ts", program) || isProjectFile(pathWithoutExtension + ".json", program)
+        isProjectFile(pathWithoutExtension + ".ts", program) ||
+        isProjectFile(pathWithoutExtension + ".tsx", program) ||
+        isProjectFile(pathWithoutExtension + ".json", program)
     );
 }
 

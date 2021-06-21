@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as ts from "typescript";
-import { getEmitOutDir, getSourceDir } from "../../src";
+import { getSourceDir } from "../../src";
 import * as util from "../util";
 
 const cwd = process.cwd();
@@ -41,26 +41,6 @@ describe("getSourceDir", () => {
     });
 });
 
-describe("getEmitOutDir", () => {
-    test("with outDir", () => {
-        const program = ts.createProgram(["main.ts", "src/otherfile.ts"], { configFilePath, outDir: "out" });
-
-        // getCommonSourceDirectory does not work right so mock it
-        jest.spyOn(program, "getCommonSourceDirectory").mockReturnValue(cwd);
-
-        expect(getEmitOutDir(program)).toBe(path.join(cwd, "out"));
-    });
-
-    test("without outDir", () => {
-        const program = ts.createProgram(["src/main.ts", "src/otherfile.ts"], { configFilePath });
-
-        // getCommonSourceDirectory does not work right so mock it
-        jest.spyOn(program, "getCommonSourceDirectory").mockReturnValue(path.join(cwd, "src"));
-
-        expect(normalize(getEmitOutDir(program))).toBe(cwd);
-    });
-});
-
 describe("getEmitPath", () => {
     test("puts files next to input without options", () => {
         const { transpiledFiles } = util.testModule``
@@ -75,29 +55,31 @@ describe("getEmitPath", () => {
     });
 
     test("puts files in outdir", () => {
+        const outDir = path.join(cwd, "tstl-out");
         const { transpiledFiles } = util.testModule``
             .setMainFileName("main.ts")
             .addExtraFile("dir/extra.ts", "")
-            .setOptions({ outDir: path.join(cwd, "tstl-out") })
+            .setOptions({ outDir })
             .expectToHaveNoDiagnostics()
             .getLuaResult();
 
         const fileNames = transpiledFiles.map(f => f.outPath);
-        expect(fileNames).toContain(path.join(cwd, "tstl-out", "main.lua"));
-        expect(fileNames).toContain(path.join(cwd, "tstl-out", "dir", "extra.lua"));
+        expect(fileNames).toContain(path.join(outDir, "main.lua"));
+        expect(fileNames).toContain(path.join(outDir, "dir", "extra.lua"));
     });
 
     test("puts files from rootDir in outdir", () => {
+        const outDir = path.join(cwd, "tstl-out");
         const { transpiledFiles } = util.testModule``
             .setMainFileName("src/main.ts")
             .addExtraFile("src/extra.ts", "")
-            .setOptions({ rootDir: "src", outDir: path.join(cwd, "tstl-out") })
+            .setOptions({ rootDir: "src", outDir })
             .expectToHaveNoDiagnostics()
             .getLuaResult();
 
         const fileNames = transpiledFiles.map(f => f.outPath);
-        expect(fileNames).toContain(path.join(cwd, "tstl-out", "main.lua"));
-        expect(fileNames).toContain(path.join(cwd, "tstl-out", "extra.lua"));
+        expect(fileNames).toContain(path.join(outDir, "main.lua"));
+        expect(fileNames).toContain(path.join(outDir, "extra.lua"));
     });
 
     test("puts bundle relative to project root", () => {

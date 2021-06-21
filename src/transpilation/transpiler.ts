@@ -122,7 +122,9 @@ export function getEmitOutDir(program: ts.Program): string {
     if (outDir && outDir.length > 0) {
         return path.isAbsolute(outDir) ? outDir : path.resolve(getProjectRoot(program), outDir);
     }
-    return program.getCommonSourceDirectory();
+
+    // If no outDir is provided, emit in project root
+    return getProjectRoot(program);
 }
 
 export function getProjectRoot(program: ts.Program): string {

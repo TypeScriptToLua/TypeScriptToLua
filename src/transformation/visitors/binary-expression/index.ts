@@ -125,6 +125,12 @@ export const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (
             );
         }
 
+        case ts.SyntaxKind.QuestionQuestionToken: {
+            // Even though this is also handled in transformBinaryOperation, also handle it here
+            // to avoid transforming node.left and node.right twice (unexpected quadratic complexity)
+            return transformNullishCoalescingExpression(context, node);
+        }
+
         default:
             return transformBinaryOperation(
                 context,

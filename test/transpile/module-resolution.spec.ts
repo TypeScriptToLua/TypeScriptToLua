@@ -288,7 +288,6 @@ describe("module resolution with tsx", () => {
     test("project with tsx files", () => {
         util.testProject(path.join(projectPath, "tsconfig.json"))
             .setMainFileName(path.join(projectPath, "main.tsx"))
-            .debug()
             .expectToEqual({
                 result: "hello from other.tsx",
                 indexResult: "hello from dir/index.tsx",

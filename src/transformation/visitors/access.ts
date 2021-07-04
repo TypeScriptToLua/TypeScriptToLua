@@ -3,7 +3,7 @@ import * as lua from "../../LuaAST";
 import { transformBuiltinPropertyAccessExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
-import { annotationRemoved, invalidMultiReturnAccess, optionalChainingNotSupported } from "../utils/diagnostics";
+import { annotationRemoved, invalidMultiReturnAccess } from "../utils/diagnostics";
 import { addToNumericExpression } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isArrayType, isNumberType, isStringType } from "../utils/typescript";
@@ -53,6 +53,10 @@ export const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessE
         return selectCall;
     }
 
+    if (ts.isOptionalChain(node)) {
+        return transformLuaLibFunction(context, LuaLibFeature.OptionalChainAccess, node, table, accessExpression);
+    }
+
     return lua.createTableIndexExpression(table, accessExpression, node);
 };
 
@@ -64,10 +68,6 @@ export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAcces
 
     if (annotations.has(AnnotationKind.LuaTable)) {
         context.diagnostics.push(annotationRemoved(node, AnnotationKind.LuaTable));
-    }
-
-    if (ts.isOptionalChain(node)) {
-        context.diagnostics.push(optionalChainingNotSupported(node));
     }
 
     const constEnumValue = tryGetConstEnumValue(context, node);
@@ -98,9 +98,24 @@ export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAcces
         }
     }
 
+    if (ts.isOptionalChain(node)) {
+        // Only handle full optional chains separately, not partial ones
+        return transformOptionalChain(context, node);
+    }
+
     const callPath = context.transformExpression(node.expression);
     return lua.createTableIndexExpression(callPath, lua.createStringLiteral(property), node);
 };
+
+function transformOptionalChain(
+    context: TransformationContext,
+    node: ts.OptionalChain & ts.PropertyAccessExpression
+): lua.CallExpression {
+    const left = context.transformExpression(node.expression);
+    const right = lua.createStringLiteral(node.name.text, node.name);
+
+    return transformLuaLibFunction(context, LuaLibFeature.OptionalChainAccess, node, left, right);
+}
 
 export const transformQualifiedName: FunctionVisitor<ts.QualifiedName> = (node, context) => {
     const right = lua.createStringLiteral(node.right.text, node.right);

@@ -38,16 +38,19 @@ test.each(["[1, 2, 3, 4]", "undefined"])("optional array access (%p)", value => 
     `.expectToMatchJsResult();
 });
 
-test("optional array access nested", () => {
-    util.testFunction`
-        const arr: [number, [number, [number, [number, number]]]] = [1, [2, [3, [4, 5]]]];
+test.each(["[1, [2, [3, [4, 5]]]]", "[1, [2, [3, undefined]]] ", "[1, undefined]"])(
+    "optional array access nested (%p)",
+    value => {
+        util.testFunction`
+        const arr: [number, [number, [number, [number, number] | undefined]]] | [number, undefined] = ${value};
         return arr[1]?.[1][1]?.[0];
     `.expectToMatchJsResult();
-});
+    }
+);
 
-test("optional nested access properties", () => {
+test.each(["{ }", "{ a: { } }", "{ a: { b: [{ c: 10 }] } }"])("optional nested access properties (%p)", value => {
     util.testFunction`
-        const obj: {a?: {b?: Array<{c: number }> } } = { a: { b: [{ c: 10 }] } };
+        const obj: {a?: {b?: Array<{c: number }> } } = ${value};
         return [obj["a"]?.["b"]?.[0]?.["c"] ?? "not found", obj["a"]?.["b"]?.[2]?.["c"] ?? "not found"];
     `.expectToMatchJsResult();
 });

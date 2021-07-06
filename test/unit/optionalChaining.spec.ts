@@ -39,7 +39,7 @@ test.each(["[1, 2, 3, 4]", "undefined"])("optional array access (%p)", value => 
 });
 
 test.each(["[1, [2, [3, [4, 5]]]]", "[1, [2, [3, undefined]]] ", "[1, undefined]"])(
-    "optional array access nested (%p)",
+    "optional element access nested (%p)",
     value => {
         util.testFunction`
         const arr: [number, [number, [number, [number, number] | undefined]]] | [number, undefined] = ${value};
@@ -48,10 +48,37 @@ test.each(["[1, [2, [3, [4, 5]]]]", "[1, [2, [3, undefined]]] ", "[1, undefined]
     }
 );
 
-test.each(["{ }", "{ a: { } }", "{ a: { b: [{ c: 10 }] } }"])("optional nested access properties (%p)", value => {
-    util.testFunction`
+test.each(["{ }", "{ a: { } }", "{ a: { b: [{ c: 10 }] } }"])(
+    "optional nested element access properties (%p)",
+    value => {
+        util.testFunction`
         const obj: {a?: {b?: Array<{c: number }> } } = ${value};
         return [obj["a"]?.["b"]?.[0]?.["c"] ?? "not found", obj["a"]?.["b"]?.[2]?.["c"] ?? "not found"];
+    `.expectToMatchJsResult();
+    }
+);
+
+test("optional element function calls", () => {
+    util.testFunction`
+        const obj: { value: string; foo?(this: void, v: number): number; bar?(this: void, v: number): number; } = {
+            value: "foobar",
+            foo: (v: number) => v + 10
+        }
+        const fooKey = "foo";
+        const barKey = "bar";
+        return obj[barKey]?.(5) ?? obj[fooKey]?.(15);
+    `.expectToMatchJsResult();
+});
+
+test("optional element access method calls", () => {
+    util.testFunction`
+        const obj: { value: string; foo?(prefix: string): string; bar?(prefix: string): string; } = {
+            value: "foobar",
+            foo(prefix: string) { return prefix + this.value; }
+        }
+        const fooKey = "foo";
+        const barKey = "bar";
+        return obj[barKey]?.("bar?") ?? obj[fooKey]?.("foo?");
     `.expectToMatchJsResult();
 });
 

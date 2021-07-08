@@ -54,7 +54,7 @@ export function transformBinaryOperation(
 
     if (operator === ts.SyntaxKind.QuestionQuestionToken) {
         assert(ts.isBinaryExpression(node));
-        return transformNullishCoalescingExpression(context, node);
+        return transformNullishCoalescingExpression(context, node, left, right);
     }
 
     let luaOperator = simpleOperatorsToLua[operator];
@@ -125,12 +125,6 @@ export const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (
             );
         }
 
-        case ts.SyntaxKind.QuestionQuestionToken: {
-            // Even though this is also handled in transformBinaryOperation, also handle it here
-            // to avoid transforming node.left and node.right twice (unexpected quadratic complexity)
-            return transformNullishCoalescingExpression(context, node);
-        }
-
         default:
             return transformBinaryOperation(
                 context,
@@ -168,7 +162,9 @@ export function transformBinaryExpressionStatement(
 
 function transformNullishCoalescingExpression(
     context: TransformationContext,
-    node: ts.BinaryExpression
+    node: ts.BinaryExpression,
+    transformedLeft: lua.Expression,
+    transformedRight: lua.Expression
 ): lua.Expression {
     const lhsType = context.checker.getTypeAtLocation(node.left);
 
@@ -187,18 +183,18 @@ function transformNullishCoalescingExpression(
         // if ____ == nil then return rhs else return ____ end
         const ifStatement = lua.createIfStatement(
             nilComparison,
-            lua.createBlock([lua.createReturnStatement([context.transformExpression(node.right)])]),
+            lua.createBlock([lua.createReturnStatement([transformedRight])]),
             lua.createBlock([lua.createReturnStatement([lua.cloneIdentifier(lhsIdentifier)])])
         );
         // (function(lhs') if lhs' == nil then return rhs else return lhs' end)(lhs)
         return lua.createCallExpression(lua.createFunctionExpression(lua.createBlock([ifStatement]), [lhsIdentifier]), [
-            context.transformExpression(node.left),
+            transformedLeft,
         ]);
     } else {
         // lhs or rhs
         return lua.createBinaryExpression(
-            context.transformExpression(node.left),
-            context.transformExpression(node.right),
+            transformedLeft,
+            transformedRight,
             lua.SyntaxKind.OrOperator,
             node
         );

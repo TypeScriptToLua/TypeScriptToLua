@@ -192,11 +192,6 @@ function transformNullishCoalescingExpression(
         ]);
     } else {
         // lhs or rhs
-        return lua.createBinaryExpression(
-            transformedLeft,
-            transformedRight,
-            lua.SyntaxKind.OrOperator,
-            node
-        );
+        return lua.createBinaryExpression(transformedLeft, transformedRight, lua.SyntaxKind.OrOperator, node);
     }
 }

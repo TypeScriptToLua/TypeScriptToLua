@@ -66,6 +66,21 @@ end
 return ____exports"
 `;
 
+exports[`vararg spread optimization curry 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local function test(self, fn, ...)
+        return fn(nil, ...)
+    end
+    return test(
+        nil,
+        function(____, arg) return arg end,
+        \\"foobar\\"
+    )
+end
+return ____exports"
+`;
+
 exports[`vararg spread optimization finally clause 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)

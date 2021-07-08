@@ -94,7 +94,7 @@ class __TS__Promise<T> implements Promise<T> {
     }
 
     private execute(): void {
-        this.executor(this.resolve, this.reject);
+        this.executor(this.resolve.bind(this), this.reject.bind(this));
     }
 
     private resolve(data: T): void {

@@ -4,6 +4,7 @@ import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
 import { annotationInvalidArgumentCount, annotationRemoved } from "../../utils/diagnostics";
 import { importLuaLibFeature, LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
+import { isStandardLibraryType } from "../../utils/typescript";
 import { transformArguments } from "../call";
 import { isTableNewCall } from "../language-extensions/table";
 
@@ -60,13 +61,18 @@ export const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, 
         return lua.createTableExpression(undefined, node);
     }
 
-    const name = context.transformExpression(node.expression);
+    let name = context.transformExpression(node.expression);
     const signature = context.checker.getResolvedSignature(node);
     const params = node.arguments
         ? transformArguments(context, node.arguments, signature)
         : [lua.createBooleanLiteral(true)];
 
     checkForLuaLibType(context, type);
+
+    if (isStandardLibraryType(context, type, "Promise")) {
+        importLuaLibFeature(context, LuaLibFeature.Promise)
+        name = lua.createIdentifier("__TS__Promise", node.expression);
+    }
 
     const customConstructorAnnotation = annotations.get(AnnotationKind.CustomConstructor);
     if (customConstructorAnnotation) {

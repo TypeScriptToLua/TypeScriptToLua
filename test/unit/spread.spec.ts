@@ -230,6 +230,17 @@ describe("vararg spread optimization", () => {
             .expectLuaToMatchSnapshot()
             .expectToEqual("b");
     });
+
+    test("curry", () => {
+        util.testFunction`
+            function test<A extends any[]>(fn: (...args: A) => void, ...args: A) {
+                return fn(...args);
+            }
+            return test((arg: string) => arg, "foobar");
+        `
+            .expectLuaToMatchSnapshot()
+            .expectToMatchJsResult();
+    });
 });
 
 describe("vararg spread de-optimization", () => {

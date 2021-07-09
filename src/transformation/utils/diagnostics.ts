@@ -143,5 +143,3 @@ export const annotationDeprecated = createWarningDiagnosticFactory(
         `'@${kind}' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile. ` +
         `See https://typescripttolua.github.io/docs/advanced/compiler-annotations#${kind.toLowerCase()} for more information.`
 );
-
-export const optionalChainingNotSupported = createErrorDiagnosticFactory("Optional chaining is not supported yet.");

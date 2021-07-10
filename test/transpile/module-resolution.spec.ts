@@ -230,25 +230,6 @@ describe("module resolution in library mode", () => {
             expect(file.lua).not.toContain('require("lua_modules');
         }
     });
-
-    test("bundle works in library mode because no external dependencies", () => {
-        const projectPath = path.resolve(__dirname, "module-resolution", "project-with-lua-sources");
-        const mainFile = path.join(projectPath, "main.ts");
-
-        const { transpiledFiles } = util
-            .testProject(path.join(projectPath, "tsconfig.json"))
-            .setMainFileName(path.join(projectPath, "main.ts"))
-            .setOptions({ buildMode: tstl.BuildMode.Library, luaBundle: "bundle.lua", luaBundleEntry: mainFile })
-            .expectToEqual({
-                funcFromLuaFile: "lua file in subdir",
-                funcFromSubDirLuaFile: "lua file in subdir",
-            })
-            .getLuaResult();
-
-        for (const file of transpiledFiles) {
-            expect(file.lua).not.toContain('require("lua_modules');
-        }
-    });
 });
 
 describe("module resolution project with dependencies built by tstl library mode", () => {

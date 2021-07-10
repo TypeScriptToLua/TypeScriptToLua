@@ -1,4 +1,4 @@
-import { LuaLibImportKind } from "../../src";
+import { BuildMode, LuaLibImportKind } from "../../src";
 import * as diagnosticFactories from "../../src/transpilation/diagnostics";
 import * as util from "../util";
 
@@ -119,4 +119,10 @@ test("luaEntry doesn't exist", () => {
     util.testBundle``
         .setEntryPoint("entry.ts")
         .expectDiagnosticsToMatchSnapshot([diagnosticFactories.couldNotFindBundleEntryPoint.code], true);
+});
+
+test("bundling not allowed for buildmode library", () => {
+    util.testBundle``
+        .setOptions({ buildMode: BuildMode.Library })
+        .expectDiagnosticsToMatchSnapshot([diagnosticFactories.cannotBundleLibrary.code], true);
 });

@@ -73,5 +73,9 @@ export function validateOptions(options: CompilerOptions): ts.Diagnostic[] {
         diagnostics.push(diagnosticFactories.usingLuaBundleWithInlineMightGenerateDuplicateCode());
     }
 
+    if (options.luaBundle && options.buildMode === BuildMode.Library) {
+        diagnostics.push(diagnosticFactories.cannotBundleLibrary());
+    }
+
     return diagnostics;
 }

@@ -27,8 +27,7 @@ export interface DiagnosticsProducingTypeChecker extends ts.TypeChecker {
 
 export class TransformationContext {
     public readonly diagnostics: ts.Diagnostic[] = [];
-    public readonly checker: DiagnosticsProducingTypeChecker = (this
-        .program as any).getDiagnosticsProducingTypeChecker();
+    public readonly checker: DiagnosticsProducingTypeChecker = this.program.getDiagnosticsProducingTypeChecker();
     public readonly resolver: EmitResolver;
 
     public readonly options: CompilerOptions = this.program.getCompilerOptions();

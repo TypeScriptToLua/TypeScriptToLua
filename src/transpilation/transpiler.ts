@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as ts from "typescript";
-import { isBundleEnabled } from "../CompilerOptions";
+import { CompilerOptions, isBundleEnabled } from "../CompilerOptions";
 import { getLuaLibBundle } from "../LuaLib";
 import { normalizeSlashes, trimExtension } from "../utils";
 import { getBundleResult } from "./bundle";
@@ -29,6 +29,7 @@ export class Transpiler {
 
     public emit(emitOptions: EmitOptions): EmitResult {
         const { program, writeFile = this.emitHost.writeFile } = emitOptions;
+        const verbose = (program.getCompilerOptions() as CompilerOptions).tstlVerbose;
         const { diagnostics, transpiledFiles: freshFiles } = getProgramTranspileResult(
             this.emitHost,
             writeFile,
@@ -37,13 +38,25 @@ export class Transpiler {
 
         const { emitPlan } = this.getEmitPlan(program, diagnostics, freshFiles);
 
+        if (verbose) {
+            console.log("Emitting output");
+        }
+
         const options = program.getCompilerOptions();
         const emitBOM = options.emitBOM ?? false;
         for (const { outputPath, code, sourceMap, sourceFiles } of emitPlan) {
+            if (verbose) {
+                console.log(`Emitting ${normalizeSlashes(outputPath)}`);
+            }
+
             writeFile(outputPath, code, emitBOM, undefined, sourceFiles);
             if (options.sourceMap && sourceMap !== undefined) {
                 writeFile(outputPath + ".map", sourceMap, emitBOM, undefined, sourceFiles);
             }
+        }
+
+        if (verbose) {
+            console.log("Emit finished!");
         }
 
         return { diagnostics, emitSkipped: emitPlan.length === 0 };
@@ -54,10 +67,18 @@ export class Transpiler {
         diagnostics: ts.Diagnostic[],
         files: ProcessedFile[]
     ): { emitPlan: EmitFile[] } {
-        const options = program.getCompilerOptions();
+        const options = program.getCompilerOptions() as CompilerOptions;
+
+        if (options.tstlVerbose) {
+            console.log("Constructing emit plan");
+        }
 
         const lualibRequired = files.some(f => f.code.includes('require("lualib_bundle")'));
         if (lualibRequired) {
+            if (options.tstlVerbose) {
+                console.log("Including lualib bundle");
+            }
+
             // Add lualib bundle to source dir 'virtually', will be moved to correct output dir in emitPlan
             const fileName = normalizeSlashes(path.resolve(getSourceDir(program), "lualib_bundle.lua"));
             files.unshift({ fileName, code: getLuaLibBundle(this.emitHost) });

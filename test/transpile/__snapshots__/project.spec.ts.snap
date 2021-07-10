@@ -1,5 +1,25 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`should give verbose output 1`] = `
+Array [
+  "Parsing project settings",
+  "Successfully loaded 0 plugins",
+  "Transforming <cwd>/test/transpile/project/otherFile.ts",
+  "Printing <cwd>/test/transpile/project/otherFile.ts",
+  "Transforming <cwd>/test/transpile/project/index.ts",
+  "Printing <cwd>/test/transpile/project/index.ts",
+  "Constructing emit plan",
+  "Resolving dependencies for <cwd>/test/transpile/project/otherFile.ts",
+  "Resolving dependencies for <cwd>/test/transpile/project/index.ts",
+  "Resolving \\"./otherFile\\" from <cwd>/test/transpile/project",
+  "Resolved ./otherFile to <cwd>/test/transpile/project/otherFile.ts",
+  "Emitting output",
+  "Emitting <cwd>/test/transpile/project/otherFile.lua",
+  "Emitting <cwd>/test/transpile/project/index.lua",
+  "Emit finished!",
+]
+`;
+
 exports[`should transpile 1`] = `
 Array [
   Object {

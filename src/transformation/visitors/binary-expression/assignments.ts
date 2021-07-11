@@ -16,6 +16,7 @@ import {
     ImmediatelyInvokedFunctionParameters,
     transformToImmediatelyInvokedFunctionExpression,
 } from "../../utils/transform";
+import { notAllowedOptionalAssignment } from "../../utils/diagnostics";
 
 export function transformAssignmentLeftHandSideExpression(
     context: TransformationContext,
@@ -36,6 +37,11 @@ export function transformAssignment(
     right: lua.Expression,
     parent?: ts.Expression
 ): lua.Statement[] {
+    if (ts.isOptionalChain(lhs)) {
+        context.diagnostics.push(notAllowedOptionalAssignment(lhs));
+        return [];
+    }
+
     if (isArrayLength(context, lhs)) {
         const arrayLengthAssignment = lua.createExpressionStatement(
             transformLuaLibFunction(

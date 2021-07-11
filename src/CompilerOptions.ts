@@ -1,13 +1,9 @@
 import * as ts from "typescript";
 import * as diagnosticFactories from "./transpilation/diagnostics";
 
-type KnownKeys<T> = { [K in keyof T]: string extends K ? never : number extends K ? never : K } extends {
-    [K in keyof T]: infer U;
-}
-    ? U
-    : never;
-
-type OmitIndexSignature<T extends Record<any, any>> = Pick<T, KnownKeys<T>>;
+type OmitIndexSignature<T> = {
+    [K in keyof T as string extends K ? never : number extends K ? never : K]: T[K];
+};
 
 export interface TransformerImport {
     transform: string;
@@ -35,6 +31,7 @@ export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> & {
     sourceMapTraceback?: boolean;
     luaPlugins?: LuaPluginImport[];
     plugins?: Array<ts.PluginImport | TransformerImport>;
+    tstlVerbose?: boolean;
     [option: string]: any;
 };
 
@@ -71,6 +68,10 @@ export function validateOptions(options: CompilerOptions): ts.Diagnostic[] {
 
     if (options.luaBundle && options.luaLibImport === LuaLibImportKind.Inline) {
         diagnostics.push(diagnosticFactories.usingLuaBundleWithInlineMightGenerateDuplicateCode());
+    }
+
+    if (options.luaBundle && options.buildMode === BuildMode.Library) {
+        diagnostics.push(diagnosticFactories.cannotBundleLibrary());
     }
 
     return diagnostics;

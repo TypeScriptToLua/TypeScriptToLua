@@ -73,6 +73,11 @@ export const optionDeclarations: CommandLineOption[] = [
         description: "List of TypeScriptToLua plugins.",
         type: "object",
     },
+    {
+        name: "tstlVerbose",
+        description: "Provide verbose output useful for diagnosing problems.",
+        type: "boolean",
+    },
 ];
 
 export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): ParsedCommandLine {

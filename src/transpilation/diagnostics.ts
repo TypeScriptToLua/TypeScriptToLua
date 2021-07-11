@@ -48,3 +48,8 @@ export const usingLuaBundleWithInlineMightGenerateDuplicateCode = createSerialDi
         "Using 'luaBundle' with 'luaLibImport: \"inline\"' might generate duplicate code. " +
         "It is recommended to use 'luaLibImport: \"require\"'.",
 }));
+
+export const cannotBundleLibrary = createDiagnosticFactory(
+    () =>
+        'Cannot bundle probjects with"buildmode": "library". Projects including the library can still bundle (which will include external library files).'
+);

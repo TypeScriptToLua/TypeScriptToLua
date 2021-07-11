@@ -239,8 +239,9 @@ export abstract class TestBuilder {
     @memoize
     public getMainJsCodeChunk(): string {
         const { transpiledFiles } = this.getJsResult();
-        const code = transpiledFiles.find(({ sourceFiles }) => sourceFiles.some(f => f.fileName === this.mainFileName))
-            ?.js;
+        const code = transpiledFiles.find(({ sourceFiles }) =>
+            sourceFiles.some(f => f.fileName === this.mainFileName)
+        )?.js;
         assert(code !== undefined);
 
         const header = this.jsHeader ? `${this.jsHeader.trimRight()}\n` : "";
@@ -557,25 +558,24 @@ class ProjectTestBuilder extends ModuleTestBuilder {
     }
 }
 
-const createTestBuilderFactory = <T extends TestBuilder>(
-    builder: new (_tsCode: string) => T,
-    serializeSubstitutions: boolean
-) => (...args: [string] | [TemplateStringsArray, ...any[]]): T => {
-    let tsCode: string;
-    if (typeof args[0] === "string") {
-        expect(serializeSubstitutions).toBe(false);
-        tsCode = args[0];
-    } else {
-        let [raw, ...substitutions] = args;
-        if (serializeSubstitutions) {
-            substitutions = substitutions.map(s => formatCode(s));
+const createTestBuilderFactory =
+    <T extends TestBuilder>(builder: new (_tsCode: string) => T, serializeSubstitutions: boolean) =>
+    (...args: [string] | [TemplateStringsArray, ...any[]]): T => {
+        let tsCode: string;
+        if (typeof args[0] === "string") {
+            expect(serializeSubstitutions).toBe(false);
+            tsCode = args[0];
+        } else {
+            let [raw, ...substitutions] = args;
+            if (serializeSubstitutions) {
+                substitutions = substitutions.map(s => formatCode(s));
+            }
+
+            tsCode = String.raw(Object.assign([], { raw }), ...substitutions);
         }
 
-        tsCode = String.raw(Object.assign([], { raw }), ...substitutions);
-    }
-
-    return new builder(tsCode);
-};
+        return new builder(tsCode);
+    };
 
 export const testBundle = createTestBuilderFactory(BundleTestBuilder, false);
 export const testModule = createTestBuilderFactory(ModuleTestBuilder, false);

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.41.0
+
+- Added support for [optional chaining](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html) `a?.b`, `a?.[b]` and `a?.()`.
+- Added an error when trying to bundle a library (`"buildmode": "library"`) project.
+- Added `--tstlVerbose` CLI flag to help with diagnosing problems.
+- Fixed a bug where vararg (`...`) was not correctly optimized.
+- Fixed .tsx files not correctly being resolved.
+- Fixed a bug where files were emitted to the wrong location if no `outDir` was specified.
+
 ## 0.40.0
 
 - Added support for using external Lua code in your project. This means you can create and install node_modules packages containing Lua code. It also lets you include Lua source files as part of your source files. Used Lua will automatically be added to your output. For more information, see the [External Lua Code](https://typescripttolua.github.io/docs/external-lua-code) page in the docs.

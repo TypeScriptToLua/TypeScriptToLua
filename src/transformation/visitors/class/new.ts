@@ -1,5 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
+import { transformNewPromise } from "../../builtins/promise";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
 import { annotationInvalidArgumentCount, annotationRemoved } from "../../utils/diagnostics";
@@ -61,7 +62,6 @@ export const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, 
         return lua.createTableExpression(undefined, node);
     }
 
-    let name = context.transformExpression(node.expression);
     const signature = context.checker.getResolvedSignature(node);
     const params = node.arguments
         ? transformArguments(context, node.arguments, signature)
@@ -70,9 +70,10 @@ export const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, 
     checkForLuaLibType(context, type);
 
     if (isStandardLibraryType(context, type, "Promise")) {
-        importLuaLibFeature(context, LuaLibFeature.Promise)
-        name = lua.createIdentifier("__TS__Promise", node.expression);
+        return transformNewPromise(context, node, params);
     }
+
+    const name = context.transformExpression(node.expression);
 
     const customConstructorAnnotation = annotations.get(AnnotationKind.CustomConstructor);
     if (customConstructorAnnotation) {

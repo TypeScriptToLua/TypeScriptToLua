@@ -2,7 +2,7 @@
 
 // Promises implemented based on https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise
 // and https://promisesaplus.com/
- 
+
 enum __TS__PromiseState {
     Pending,
     Fulfilled,
@@ -10,7 +10,7 @@ enum __TS__PromiseState {
 }
 
 type FulfillCallback<TData, TResult> = (value: TData) => TResult | PromiseLike<TResult>;
-type RejectCallback<TResult> = (reason: any) => TResult | PromiseLike<TResult>;
+type RejectCallback<TResult> = (reason: string) => TResult | PromiseLike<TResult>;
 
 function __TS__PromiseDeferred<T>() {
     let resolve: FulfillCallback<T, unknown>;
@@ -30,12 +30,29 @@ function __TS__IsPromiseLike<T>(thing: unknown): thing is PromiseLike<T> {
 class __TS__Promise<T> implements Promise<T> {
     private state = __TS__PromiseState.Pending;
     private value?: T;
+    private rejectionReason?: string;
 
     private fulfilledCallbacks: Array<FulfillCallback<T, unknown>> = [];
     private rejectedCallbacks: Array<RejectCallback<unknown>> = [];
     private finallyCallbacks: Array<() => void> = [];
 
     public [Symbol.toStringTag]: string;
+
+    public static resolve<TData>(this: void, data: TData): Promise<TData> {
+        // Create and return a promise instance that is already resolved
+        const promise = new __TS__Promise<TData>(() => {});
+        promise.state = __TS__PromiseState.Fulfilled;
+        promise.value = data;
+        return promise;
+    }
+
+    public static reject(this: void, reason: string): Promise<never> {
+        // Create and return a promise instance that is already rejected
+        const promise = new __TS__Promise<never>(() => {});
+        promise.state = __TS__PromiseState.Rejected;
+        promise.rejectionReason = reason;
+        return promise;
+    }
 
     constructor(private executor: (resolve: (data: T) => void, reject: (reason: string) => void) => void) {
         this.execute();
@@ -47,40 +64,51 @@ class __TS__Promise<T> implements Promise<T> {
     ): Promise<TResult1 | TResult2> {
         const { promise, resolve, reject } = __TS__PromiseDeferred<TResult1 | TResult2>();
 
+        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/then#return_value
+        function returnedPromiseHandler(f: FulfillCallback<T, TResult1> | RejectCallback<TResult2>) {
+            return value => {
+                try {
+                    handleCallbackData(f(value));
+                } catch (e) {
+                    // If a handler function throws an error, the promise returned by then gets rejected with the thrown error as its value
+                    reject(e);
+                }
+            }
+        }
         function handleCallbackData<TResult extends TResult1 | TResult2>(data: TResult | PromiseLike<TResult>) {
             if (__TS__IsPromiseLike<TResult>(data)) {
                 const nextpromise = data as __TS__Promise<TResult>;
                 if (nextpromise.state === __TS__PromiseState.Fulfilled) {
+                    // If a handler function returns an already fulfilled promise,
+                    // the promise returned by then gets fulfilled with that promise's value
                     resolve(nextpromise.value);
                 } else if (nextpromise.state === __TS__PromiseState.Rejected) {
-                    reject(nextpromise.value);
+                    // If a handler function returns an already rejected promise,
+                    // the promise returned by then gets fulfilled with that promise's value
+                    reject(nextpromise.rejectionReason);
                 } else {
-                    nextpromise.then(resolve, reject);
+                    // If a handler function returns another pending promise object, the resolution/rejection
+                    // of the promise returned by then will be subsequent to the resolution/rejection of
+                    // the promise returned by the handler.
+                    data.then(resolve, reject);
                 }
             } else {
+                // If a handler returns a value, the promise returned by then gets resolved with the returned value as its value
+                // If a handler doesn't return anything, the promise returned by then gets resolved with undefined
                 resolve(data);
             }
         }
 
         if (onfulfilled) {
-            if (this.fulfilledCallbacks.length === 0) {
-                this.fulfilledCallbacks.push(value => {
-                    handleCallbackData(onfulfilled(value));
-                });
-            } else {
-                this.fulfilledCallbacks.push(onfulfilled);
-            }
+            this.fulfilledCallbacks.push(
+                this.fulfilledCallbacks.length === 0 ? returnedPromiseHandler(onfulfilled) : onfulfilled
+            );
         }
         if (onrejected) {
-            if (this.rejectedCallbacks.length === 0) {
-                this.rejectedCallbacks.push(value => {
-                    handleCallbackData(onrejected(value));
-                });
-            } else {
-                this.rejectedCallbacks.push(onrejected);
-            }
+            this.rejectedCallbacks.push(
+                this.rejectedCallbacks.length === 0 ? returnedPromiseHandler(onrejected) : onrejected
+            );
         }
-
         return promise;
     }
     public catch<TResult = never>(onrejected?: (reason: any) => TResult | PromiseLike<TResult>): Promise<T | TResult> {
@@ -114,6 +142,8 @@ class __TS__Promise<T> implements Promise<T> {
     private reject(reason: string): void {
         if (this.state === __TS__PromiseState.Pending) {
             this.state = __TS__PromiseState.Rejected;
+            this.rejectionReason = reason;
+
             for (const callback of this.rejectedCallbacks) {
                 callback(reason);
             }

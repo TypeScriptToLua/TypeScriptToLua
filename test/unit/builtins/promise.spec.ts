@@ -12,11 +12,23 @@ const deferPromise = `function defer<T>() {
 }`;
 
 test("can create resolved promise", () => {
-    util.testExpression`Promise.resolve(42)`.expectNoExecutionError();
+    util.testFunction`
+        const { state, value } = Promise.resolve(42) as any;
+        return { state, value };
+    `.expectToEqual({
+        state: 1, // __TS__PromiseState.Fulfilled
+        value: 42,
+    });
 });
 
 test("can create rejected promise", () => {
-    util.testExpression`Promise.reject(42)`.expectNoExecutionError();
+    util.testFunction`
+        const { state, rejectionReason } = Promise.reject("test rejection") as any;
+        return { state, rejectionReason };
+    `.expectToEqual({
+        state: 2, // __TS__PromiseState.Rejected
+        rejectionReason: "test rejection",
+    });
 });
 
 test("promise can be resolved", () => {
@@ -293,7 +305,7 @@ test("promise then returns a resolved promise", () => {
         return result;
     `
         .setTsHeader(deferPromise)
-        .expectToEqual(["promise3: Hello!", "promise2: Hello!", "promise1: Hello!"]);
+        .expectToEqual(["promise resolved with: Hello!", "promise2 resolved with: promise 1 resolved: Hello!"]);
 });
 
 test("promise then returns a rejected promise", () => {
@@ -304,7 +316,7 @@ test("promise then returns a rejected promise", () => {
 
         const promise2 = promise.then(data => {
             result.push("promise resolved with: " + data);
-            return Promise.reject("reject!");
+            return Promise.reject("promise 1: reject!");
         });
 
         promise2.catch(reason => {
@@ -316,5 +328,126 @@ test("promise then returns a rejected promise", () => {
         return result;
     `
         .setTsHeader(deferPromise)
-        .expectToEqual(["promise3: Hello!", "promise2: Hello!", "promise1: Hello!"]);
+        .expectToEqual(["promise resolved with: Hello!", "promise2 rejected with: promise 1: reject!"]);
+});
+
+test("promise then returns a pending promise (resolves)", () => {
+    util.testFunction`
+        const { promise, resolve } = defer<string>();
+
+        const result = [];
+
+        let resolve2: any;
+
+        const promise2 = promise.then(data => {
+            result.push("promise resolved with: " + data);
+
+            const promise3 = new Promise((res) => {
+                resolve2 = res;
+            });
+
+            promise3.then(data2 => {
+                result.push("promise3 resolved with: " + data2);
+            });
+
+            return promise3;
+        });
+
+        promise2.then(data => {
+            result.push("promise2 resolved with: " + data);
+        });
+
+        // Resolve promise 1
+        resolve("Hello!");
+
+        // Resolve promise 2 and 3
+        resolve2("World!");
+        
+        return result;
+    `
+        .setTsHeader(deferPromise)
+        .expectToEqual(["promise resolved with: Hello!", "promise3 resolved with: World!", "promise2 resolved with: World!"]);
+});
+
+test("promise then returns a pending promise (rejects)", () => {
+    util.testFunction`
+        const { promise, resolve } = defer<string>();
+
+        const result = [];
+
+        let reject: any;
+
+        const promise2 = promise.then(data => {
+            result.push("promise resolved with: " + data);
+
+            const promise3 = new Promise((_, rej) => {
+                reject = rej;
+            });
+
+            promise3.catch(reason => {
+                result.push("promise3 rejected with: " + reason);
+            });
+
+            return promise3;
+        });
+
+        promise2.catch(reason => {
+            result.push("promise2 rejected with: " + reason);
+        });
+
+        // Resolve promise 1
+        resolve("Hello!");
+
+        // Reject promise 2 and 3
+        reject("World!");
+        
+        return result;
+    `
+        .setTsHeader(deferPromise)
+        .expectToEqual(["promise resolved with: Hello!", "promise3 rejected with: World!", "promise2 rejected with: World!"]);
+});
+
+test("promise then onFulfilled throws", () => {
+    util.testFunction`
+        const { promise, resolve } = defer<string>();
+
+        const result = []
+
+        const promise2 = promise.then(data => {
+            throw "fulfill exception!"
+        });
+
+        promise2.catch(reason => {
+            result.push("promise2 rejected with: " + reason);
+        });
+
+        resolve("Hello!");
+
+        return result;
+    `
+        .setTsHeader(deferPromise)
+        .expectToEqual(["promise2 rejected with: fulfill exception!"]);
+});
+
+test("promise then onRejected throws", () => {
+    util.testFunction`
+        const { promise, reject } = defer<string>();
+
+        const result = []
+
+        const promise2 = promise.then(
+            _ => {},
+            reason => { throw "fulfill exception from onReject!" }
+        );
+
+        promise2.catch(reason => {
+            result.push("promise2 rejected with: " + reason);
+        });
+
+        reject("Hello!");
+
+        return result;
+    `
+        .setTsHeader(deferPromise)
+        .expectToEqual(["promise2 rejected with: fulfill exception from onReject!"]);
 });

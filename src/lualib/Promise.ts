@@ -28,9 +28,9 @@ function __TS__IsPromiseLike<T>(thing: unknown): thing is PromiseLike<T> {
 }
 
 class __TS__Promise<T> implements Promise<T> {
-    private state = __TS__PromiseState.Pending;
-    private value?: T;
-    private rejectionReason?: string;
+    public state = __TS__PromiseState.Pending;
+    public value?: T;
+    public rejectionReason?: string;
 
     private fulfilledCallbacks: Array<FulfillCallback<T, unknown>> = [];
     private rejectedCallbacks: Array<RejectCallback<unknown>> = [];
@@ -54,8 +54,8 @@ class __TS__Promise<T> implements Promise<T> {
         return promise;
     }
 
-    constructor(private executor: (resolve: (data: T) => void, reject: (reason: string) => void) => void) {
-        this.execute();
+    constructor(executor: (resolve: (data: T) => void, reject: (reason: string) => void) => void) {
+        executor(this.resolve.bind(this), this.reject.bind(this));
     }
 
     public then<TResult1 = T, TResult2 = never>(
@@ -119,10 +119,6 @@ class __TS__Promise<T> implements Promise<T> {
             this.finallyCallbacks.push(onfinally);
         }
         return this;
-    }
-
-    private execute(): void {
-        this.executor(this.resolve.bind(this), this.reject.bind(this));
     }
 
     private resolve(data: T): void {

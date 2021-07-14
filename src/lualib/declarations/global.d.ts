@@ -29,4 +29,5 @@ declare function unpack<T>(list: T[], i?: number, j?: number): T[];
 declare function select<T>(index: number, ...args: T[]): T;
 declare function select<T>(index: "#", ...args: T[]): number;
 
+declare function pairs<TKey, TValue>(t: LuaTable<TKey, TValue>): LuaIterable<LuaMultiReturn<[TKey, TValue]>, Record<TKey, TValue>>;
 declare function ipairs<T>(t: Record<number, T>): LuaIterable<LuaMultiReturn<[number, T]>, Record<number, T>>;

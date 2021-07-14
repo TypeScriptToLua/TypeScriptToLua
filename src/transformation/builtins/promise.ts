@@ -26,6 +26,8 @@ export function transformPromiseConstructorCall(
 
     const expressionName = expression.name.text;
     switch (expressionName) {
+        case "all":
+            return transformLuaLibFunction(context, LuaLibFeature.PromiseAll, node, ...params);
         case "resolve":
             importLuaLibFeature(context, LuaLibFeature.Promise);
             return lua.createCallExpression(

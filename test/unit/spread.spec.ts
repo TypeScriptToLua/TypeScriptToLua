@@ -241,6 +241,30 @@ describe("vararg spread optimization", () => {
             .expectLuaToMatchSnapshot()
             .expectToMatchJsResult();
     });
+
+    test("curry with indirect type", () => {
+        util.testFunction`
+            function test<A extends any[]>(obj: {fn: (...args: A) => void}, ...args: A) {
+                const fn = obj.fn;
+                return fn(...args);
+            }
+            return test({fn: (arg: string) => arg}, "foobar");
+        `
+            .expectLuaToMatchSnapshot()
+            .expectToMatchJsResult();
+    });
+
+    test("function type declared inside scope", () => {
+        util.testFunction`
+            function test<A extends any[]>(...args: A) {
+                const fn: (...args: A) => A[0] = (...args) => args[0];
+                return fn(...args);
+            }
+            test("foobar");
+        `
+            .expectLuaToMatchSnapshot()
+            .expectToMatchJsResult();
+    });
 });
 
 describe("vararg spread de-optimization", () => {

@@ -81,6 +81,24 @@ end
 return ____exports"
 `;
 
+exports[`vararg spread optimization curry with indirect type 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local function test(self, obj, ...)
+        local fn = obj.fn
+        return fn(nil, ...)
+    end
+    return test(
+        nil,
+        {
+            fn = function(____, arg) return arg end
+        },
+        \\"foobar\\"
+    )
+end
+return ____exports"
+`;
+
 exports[`vararg spread optimization finally clause 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
@@ -101,6 +119,21 @@ function ____exports.__main(self)
         end
     end
     return test(nil, \\"a\\", \\"b\\", \\"c\\")
+end
+return ____exports"
+`;
+
+exports[`vararg spread optimization function type declared inside scope 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local function test(self, ...)
+        local function fn(____, ...)
+            local args = {...}
+            return args[1]
+        end
+        return fn(nil, ...)
+    end
+    test(nil, \\"foobar\\")
 end
 return ____exports"
 `;

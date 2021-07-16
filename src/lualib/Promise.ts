@@ -10,7 +10,7 @@ enum __TS__PromiseState {
 }
 
 type FulfillCallback<TData, TResult> = (value: TData) => TResult | PromiseLike<TResult>;
-type RejectCallback<TResult> = (reason: string) => TResult | PromiseLike<TResult>;
+type RejectCallback<TResult> = (reason: any) => TResult | PromiseLike<TResult>;
 
 function __TS__PromiseDeferred<T>() {
     let resolve: FulfillCallback<T, unknown>;
@@ -30,13 +30,13 @@ function __TS__IsPromiseLike<T>(thing: unknown): thing is PromiseLike<T> {
 class __TS__Promise<T> implements Promise<T> {
     public state = __TS__PromiseState.Pending;
     public value?: T;
-    public rejectionReason?: string;
+    public rejectionReason?: any;
 
     private fulfilledCallbacks: Array<FulfillCallback<T, unknown>> = [];
     private rejectedCallbacks: Array<RejectCallback<unknown>> = [];
     private finallyCallbacks: Array<() => void> = [];
 
-    public [Symbol.toStringTag]: string;
+    public [Symbol.toStringTag]: string; // Required to implement interface, no output Lua
 
     public static resolve<TData>(this: void, data: TData): Promise<TData> {
         // Create and return a promise instance that is already resolved
@@ -46,7 +46,7 @@ class __TS__Promise<T> implements Promise<T> {
         return promise;
     }
 
-    public static reject(this: void, reason: string): Promise<never> {
+    public static reject(this: void, reason: any): Promise<never> {
         // Create and return a promise instance that is already rejected
         const promise = new __TS__Promise<never>(() => {});
         promise.state = __TS__PromiseState.Rejected;
@@ -54,7 +54,7 @@ class __TS__Promise<T> implements Promise<T> {
         return promise;
     }
 
-    constructor(executor: (resolve: (data: T) => void, reject: (reason: string) => void) => void) {
+    constructor(executor: (resolve: (data: T) => void, reject: (reason: any) => void) => void) {
         executor(this.resolve.bind(this), this.reject.bind(this));
     }
 
@@ -135,7 +135,7 @@ class __TS__Promise<T> implements Promise<T> {
         }
     }
 
-    private reject(reason: string): void {
+    private reject(reason: any): void {
         if (this.state === __TS__PromiseState.Pending) {
             this.state = __TS__PromiseState.Rejected;
             this.rejectionReason = reason;

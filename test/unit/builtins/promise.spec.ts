@@ -530,7 +530,7 @@ describe("Promise.all", () => {
             .setTsHeader(promiseTestLib)
             .expectToEqual({
                 state: 1, // __TS__PromiseState.Fulfilled
-                value: [42, "already resolved!", "foo"]
+                value: [42, "already resolved!", "foo"],
             });
     });
 
@@ -543,13 +543,124 @@ describe("Promise.all", () => {
             .setTsHeader(promiseTestLib)
             .expectToEqual({
                 state: 2, // __TS__PromiseState.Rejected
-                rejectionReason: "already rejected!"
+                rejectionReason: "already rejected!",
             });
     });
 });
 
 describe("Promise.allSettled", () => {});
 
-describe("Promise.any", () => {});
+describe("Promise.any", () => {
+    test("resolves once first promise resolves", () => {
+        util.testFunction`
+            const { promise: promise1, resolve: resolve1 } = defer<string>();
+            const { promise: promise2, resolve: resolve2 } = defer<string>();
+            const { promise: promise3, resolve: resolve3 } = defer<string>();
+
+            const promise = Promise.any([promise1, promise2, promise3]);
+            promise.then(data => {
+                log(data);
+            });
+
+            resolve2("promise 2 result!");
+
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual(["promise 2 result!"]);
+    });
+
+    test("rejects once all promises reject", () => {
+        util.testFunction`
+            const { promise: promise1, reject: reject1 } = defer<string>();
+            const { promise: promise2, reject: reject2 } = defer<string>();
+            const { promise: promise3, reject: reject3 } = defer<string>();
+
+            const promise = Promise.any([promise1, promise2, promise3]);
+            promise.catch(reason => {
+                log(reason);
+            });
+
+            reject2("promise 2 rejected!");
+            reject3("promise 3 rejected!");
+            reject1("promise 1 rejected!");
+
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual([
+                {
+                    name: "AggregateError",
+                    message: "All Promises rejected",
+                    errors: ["promise 2 rejected!", "promise 3 rejected!", "promise 1 rejected!"],
+                },
+            ]);
+    });
+
+    test("handles already rejected promises", () => {
+        util.testFunction`
+            const { promise: promise1, reject: reject1 } = defer<string>();
+            const { promise: promise2, reject: reject2 } = defer<string>();
+
+            const promise = Promise.any([promise1, Promise.reject("already rejected!"), promise2]);
+            promise.catch(reason => {
+                log(reason);
+            });
+
+            reject2("promise 2 rejected!");
+            reject1("promise 1 rejected!");
+
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual([
+                {
+                    name: "AggregateError",
+                    message: "All Promises rejected",
+                    errors: ["already rejected!", "promise 2 rejected!", "promise 1 rejected!"],
+                },
+            ]);
+    });
+
+    test("rejects if iterable is empty", () => {
+        util.testFunction`
+            const { state, rejectionReason } = Promise.any([]) as any;
+            return { state, rejectionReason };
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual({
+                state: 2, // __TS__PromiseState.Rejected
+                rejectionReason: "No promises to resolve with .any()",
+            });
+    });
+
+    test("immediately resolves with literal", () => {
+        util.testFunction`
+            const { promise, resolve } = defer<string>();
+
+            const { state, value } = Promise.any([promise, "my literal"]) as any;
+            return { state, value };
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual({
+                state: 1, // __TS__PromiseState.Fulfilled
+                value: "my literal",
+            });
+    });
+
+    test("immediately resolves with resolved promise", () => {
+        util.testFunction`
+            const { promise, resolve } = defer<string>();
+
+            const { state, value } = Promise.any([promise, Promise.resolve("my resolved promise")]) as any;
+            return { state, value };
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual({
+                state: 1, // __TS__PromiseState.Fulfilled
+                value: "my resolved promise",
+            });
+    });
+});
 
 describe("Promise.race", () => {});

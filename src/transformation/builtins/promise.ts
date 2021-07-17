@@ -28,33 +28,27 @@ export function transformPromiseConstructorCall(
     switch (expressionName) {
         case "all":
             return transformLuaLibFunction(context, LuaLibFeature.PromiseAll, node, ...params);
+        case "allSettled":
+            return transformLuaLibFunction(context, LuaLibFeature.PromiseAllSettled, node, ...params);
         case "any":
             return transformLuaLibFunction(context, LuaLibFeature.PromiseAny, node, ...params);
         case "race":
             return transformLuaLibFunction(context, LuaLibFeature.PromiseRace, node, ...params);
         case "resolve":
             importLuaLibFeature(context, LuaLibFeature.Promise);
-            return lua.createCallExpression(
-                lua.createTableIndexExpression(
-                    lua.createIdentifier("__TS__Promise"),
-                    lua.createStringLiteral("resolve"),
-                    expression
-                ),
-                params,
-                node
-            );
+            return lua.createCallExpression(createStaticPromiseFunctionAccessor("resolve", expression), params, node);
         case "reject":
             importLuaLibFeature(context, LuaLibFeature.Promise);
-            return lua.createCallExpression(
-                lua.createTableIndexExpression(
-                    lua.createIdentifier("__TS__Promise"),
-                    lua.createStringLiteral("reject"),
-                    expression
-                ),
-                params,
-                node
-            );
+            return lua.createCallExpression(createStaticPromiseFunctionAccessor("reject", expression), params, node);
         default:
             context.diagnostics.push(unsupportedProperty(expression.name, "Promise", expressionName));
     }
+}
+
+function createStaticPromiseFunctionAccessor(functionName: string, node: ts.Node) {
+    return lua.createTableIndexExpression(
+        lua.createIdentifier("__TS__Promise"),
+        lua.createStringLiteral(functionName),
+        node
+    );
 }

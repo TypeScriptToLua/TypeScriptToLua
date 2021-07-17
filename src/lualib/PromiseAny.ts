@@ -1,6 +1,5 @@
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/any
-async function __TS__PromiseAny<T>(this: void, values: Array<T | PromiseLike<T>> | Iterable<T | PromiseLike<T>>): Promise<T> {
-
+async function __TS__PromiseAny<T>(this: void, values: Iterable<T | PromiseLike<T>>): Promise<T> {
     const rejections: string[] = [];
     const pending: Array<PromiseLike<T>> = [];
 
@@ -31,23 +30,25 @@ async function __TS__PromiseAny<T>(this: void, values: Array<T | PromiseLike<T>>
 
     return new Promise((resolve, reject) => {
         for (const promise of pending) {
-            promise.then(data => {
-                // If any pending promise resolves, resolve this promise with its data
-                resolve(data);
-            },
-            reason => {
-                // If a pending promise rejects, add its rejection to our rejection list
-                rejections.push(reason);
-                numResolved++;
-                if (numResolved === pending.length) {
-                    // If there are no more pending promises, reject with the list of rejections
-                    reject({
-                        name: "AggregateError",
-                        message: "All Promises rejected",
-                        errors: rejections
-                    })
+            promise.then(
+                data => {
+                    // If any pending promise resolves, resolve this promise with its data
+                    resolve(data);
+                },
+                reason => {
+                    // If a pending promise rejects, add its rejection to our rejection list
+                    rejections.push(reason);
+                    numResolved++;
+                    if (numResolved === pending.length) {
+                        // If there are no more pending promises, reject with the list of rejections
+                        reject({
+                            name: "AggregateError",
+                            message: "All Promises rejected",
+                            errors: rejections,
+                        });
+                    }
                 }
-            })
+            );
         }
-    })
+    });
 }

@@ -73,7 +73,7 @@ class __TS__Promise<T> implements Promise<T> {
                     // If a handler function throws an error, the promise returned by then gets rejected with the thrown error as its value
                     reject(e);
                 }
-            }
+            };
         }
         function handleCallbackData<TResult extends TResult1 | TResult2>(data: TResult | PromiseLike<TResult>) {
             if (__TS__IsPromiseLike<TResult>(data)) {

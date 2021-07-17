@@ -548,7 +548,154 @@ describe("Promise.all", () => {
     });
 });
 
-describe("Promise.allSettled", () => {});
+describe("Promise.allSettled", () => {
+    test("resolves once all arguments are resolved", () => {
+        util.testFunction`
+            const { promise: promise1, resolve: resolve1 } = defer<string>();
+            const { promise: promise2, resolve: resolve2 } = defer<string>();
+            const { promise: promise3, resolve: resolve3 } = defer<string>();
+
+            const promise = Promise.allSettled([promise1, promise2, promise3]);
+            promise.then(([result1, result2, result3]) => {
+                log(result1, result2, result3);
+            });
+
+            resolve3("promise 3 result!");
+            resolve1("promise 1 result!");
+            resolve2("promise 2 result!");
+
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual([
+                { status: "fulfilled", value: "promise 1 result!" },
+                { status: "fulfilled", value: "promise 2 result!" },
+                { status: "fulfilled", value: "promise 3 result!" },
+            ]);
+    });
+
+    test("resolves once all arguments are rejected", () => {
+        util.testFunction`
+            const { promise: promise1, reject: reject1 } = defer<string>();
+            const { promise: promise2, reject: reject2 } = defer<string>();
+            const { promise: promise3, reject: reject3 } = defer<string>();
+
+            const promise = Promise.allSettled([promise1, promise2, promise3]);
+            promise.then(([result1, result2, result3]) => {
+                log(result1, result2, result3);
+            });
+
+            reject2("promise 2 rejected!");
+            reject1("promise 1 rejected!");
+            reject3("promise 3 rejected!");
+
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual([
+                { status: "rejected", reason: "promise 1 rejected!" },
+                { status: "rejected", reason: "promise 2 rejected!" },
+                { status: "rejected", reason: "promise 3 rejected!" },
+            ]);
+    });
+
+    test("resolves once all arguments are rejected or resolved", () => {
+        util.testFunction`
+            const { promise: promise1, reject: reject1 } = defer<string>();
+            const { promise: promise2, resolve: resolve2 } = defer<string>();
+            const { promise: promise3, reject: reject3 } = defer<string>();
+
+            const promise = Promise.allSettled([promise1, promise2, promise3]);
+            promise.then(([result1, result2, result3]) => {
+                log(result1, result2, result3);
+            });
+
+            resolve2("promise 2 resolved!");
+            reject1("promise 1 rejected!");
+            reject3("promise 3 rejected!");
+
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual([
+                { status: "rejected", reason: "promise 1 rejected!" },
+                { status: "fulfilled", value: "promise 2 resolved!" },
+                { status: "rejected", reason: "promise 3 rejected!" },
+            ]);
+    });
+
+    test("handles already resolved promises", () => {
+        util.testFunction`
+            const { promise, resolve } = defer<string>();
+
+            const returnedPromise = Promise.allSettled([Promise.resolve("already resolved"), promise]);
+            returnedPromise.then(([result1, result2]) => {
+                log(result1, result2);
+            });
+
+            resolve("promise resolved!");
+
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual([
+                { status: "fulfilled", value: "already resolved" },
+                { status: "fulfilled", value: "promise resolved!" },
+            ]);
+    });
+
+    test("handles already rejected promises", () => {
+        util.testFunction`
+            const { promise, resolve } = defer<string>();
+
+            const returnedPromise = Promise.allSettled([Promise.reject("already rejected"), promise]);
+            returnedPromise.then(([result1, result2]) => {
+                log(result1, result2);
+            });
+
+            resolve("promise resolved!");
+
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual([
+                { status: "rejected", reason: "already rejected" },
+                { status: "fulfilled", value: "promise resolved!" },
+            ]);
+    });
+
+    test("handles literal arguments", () => {
+        util.testFunction`
+            const { promise, resolve } = defer<string>();
+
+            const returnedPromise = Promise.allSettled(["my literal", promise]);
+            returnedPromise.then(([result1, result2]) => {
+                log(result1, result2);
+            });
+
+            resolve("promise resolved!");
+
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual([
+                { status: "fulfilled", value: "my literal" },
+                { status: "fulfilled", value: "promise resolved!" },
+            ]);
+    });
+
+    test("returns resolved promise for empty argument list", () => {
+        util.testFunction`
+            const { state, value } = Promise.allSettled([]) as any;
+            return { state, value };
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual({
+                state: 1, // __TS__PromiseState.Fulfilled
+                value: [],
+            });
+    });
+});
 
 describe("Promise.any", () => {
     test("resolves once first promise resolves", () => {
@@ -752,9 +899,9 @@ describe("Promise.race", () => {
         const { state } = Promise.race([]) as any;
         return { state };
     `
-        .setTsHeader(promiseTestLib)
-        .expectToEqual({
-            state: 0, // __TS__PromiseState.Pending
-        });
-    })
+            .setTsHeader(promiseTestLib)
+            .expectToEqual({
+                state: 0, // __TS__PromiseState.Pending
+            });
+    });
 });

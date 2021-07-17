@@ -104,6 +104,8 @@ describe("command line", () => {
             ["noHeader", "true", { noHeader: true }],
             ["sourceMapTraceback", "false", { sourceMapTraceback: false }],
             ["sourceMapTraceback", "true", { sourceMapTraceback: true }],
+            ["tstlVerbose", "true", { tstlVerbose: true }],
+            ["tstlVerbose", "false", { tstlVerbose: false }],
 
             ["buildMode", "default", { buildMode: tstl.BuildMode.Default }],
             ["buildMode", "library", { buildMode: tstl.BuildMode.Library }],

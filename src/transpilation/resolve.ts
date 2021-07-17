@@ -5,9 +5,9 @@ import * as fs from "fs";
 import { EmitHost, ProcessedFile } from "./utils";
 import { SourceNode } from "source-map";
 import { getEmitPathRelativeToOutDir, getProjectRoot, getSourceDir } from "./transpiler";
-import { formatPathToLuaPath, trimExtension } from "../utils";
+import { formatPathToLuaPath, normalizeSlashes, trimExtension } from "../utils";
 import { couldNotReadDependency, couldNotResolveRequire } from "./diagnostics";
-import { BuildMode } from "../CompilerOptions";
+import { BuildMode, CompilerOptions } from "../CompilerOptions";
 
 const resolver = resolve.ResolverFactory.createResolver({
     extensions: [".lua"],
@@ -24,9 +24,14 @@ interface ResolutionResult {
 export function resolveDependencies(program: ts.Program, files: ProcessedFile[], emitHost: EmitHost): ResolutionResult {
     const outFiles: ProcessedFile[] = [...files];
     const diagnostics: ts.Diagnostic[] = [];
+    const options = program.getCompilerOptions() as CompilerOptions;
 
     // Resolve dependencies for all processed files
     for (const file of files) {
+        if (options.tstlVerbose) {
+            console.log(`Resolving dependencies for ${normalizeSlashes(file.fileName)}`);
+        }
+
         const resolutionResult = resolveFileDependencies(file, program, emitHost);
         outFiles.push(...resolutionResult.resolvedFiles);
         diagnostics.push(...resolutionResult.diagnostics);
@@ -38,6 +43,7 @@ export function resolveDependencies(program: ts.Program, files: ProcessedFile[],
 function resolveFileDependencies(file: ProcessedFile, program: ts.Program, emitHost: EmitHost): ResolutionResult {
     const dependencies: ProcessedFile[] = [];
     const diagnostics: ts.Diagnostic[] = [];
+    const options = program.getCompilerOptions() as CompilerOptions;
 
     for (const required of findRequiredPaths(file.code)) {
         // Do no resolve lualib
@@ -57,6 +63,10 @@ function resolveFileDependencies(file: ProcessedFile, program: ts.Program, emitH
         const fileDir = path.dirname(file.fileName);
         const resolvedDependency = resolveDependency(fileDir, required, program, emitHost);
         if (resolvedDependency) {
+            if (options.tstlVerbose) {
+                console.log(`Resolved ${required} to ${normalizeSlashes(resolvedDependency)}`);
+            }
+
             // Figure out resolved require path and dependency output path
             const resolvedRequire = getEmitPathRelativeToOutDir(resolvedDependency, program);
 
@@ -100,6 +110,11 @@ function resolveDependency(
     program: ts.Program,
     emitHost: EmitHost
 ): string | undefined {
+    const options = program.getCompilerOptions() as CompilerOptions;
+    if (options.tstlVerbose) {
+        console.log(`Resolving "${dependency}" from ${normalizeSlashes(fileDirectory)}`);
+    }
+
     // Check if file is a file in the project
     const resolvedPath = path.join(fileDirectory, dependency);
 

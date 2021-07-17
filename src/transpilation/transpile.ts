@@ -27,6 +27,10 @@ export function getProgramTranspileResult(
 ): TranspileResult {
     const options = program.getCompilerOptions() as CompilerOptions;
 
+    if (options.tstlVerbose) {
+        console.log("Parsing project settings");
+    }
+
     const diagnostics = validateOptions(options);
     let transpiledFiles: ProcessedFile[] = [];
 
@@ -57,13 +61,26 @@ export function getProgramTranspileResult(
     }
 
     const plugins = getPlugins(program, diagnostics, customPlugins);
+
+    if (options.tstlVerbose) {
+        console.log(`Successfully loaded ${plugins.length} plugins`);
+    }
+
     const visitorMap = createVisitorMap(plugins.map(p => p.visitors).filter(isNonNull));
     const printer = createPrinter(plugins.map(p => p.printer).filter(isNonNull));
     const processSourceFile = (sourceFile: ts.SourceFile) => {
+        if (options.tstlVerbose) {
+            console.log(`Transforming ${sourceFile.fileName}`);
+        }
+
         const { file, diagnostics: transformDiagnostics } = transformSourceFile(program, sourceFile, visitorMap);
 
         diagnostics.push(...transformDiagnostics);
         if (!options.noEmit && !options.emitDeclarationOnly) {
+            if (options.tstlVerbose) {
+                console.log(`Printing ${sourceFile.fileName}`);
+            }
+
             const printResult = printer(program, emitHost, sourceFile.fileName, file);
             transpiledFiles.push({
                 sourceFiles: [sourceFile],

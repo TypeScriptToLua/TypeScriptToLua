@@ -92,8 +92,10 @@ export function popScope(context: TransformationContext): Scope {
     return scope;
 }
 
-function isDeclaredInScope(symbol: ts.Symbol, scopeNode: ts.Node) {
-    return symbol?.declarations?.some(d => findFirstNodeAbove(d, (n): n is ts.Node => n === scopeNode));
+function isHoistableFunctionDeclaredInScope(symbol: ts.Symbol, scopeNode: ts.Node) {
+    return symbol?.declarations?.some(
+        d => ts.isFunctionDeclaration(d) && findFirstNodeAbove(d, (n): n is ts.Node => n === scopeNode)
+    );
 }
 
 // Checks for references to local functions which haven't been defined yet,
@@ -107,7 +109,7 @@ export function hasReferencedUndefinedLocalFunction(context: TransformationConte
         if (
             !scope.functionDefinitions?.has(symbolId) &&
             type.getCallSignatures().length > 0 &&
-            isDeclaredInScope(type.symbol, scope.node)
+            isHoistableFunctionDeclaredInScope(type.symbol, scope.node)
         ) {
             return true;
         }

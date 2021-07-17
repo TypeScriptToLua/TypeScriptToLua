@@ -9,19 +9,24 @@ async function __TS__PromiseAll<T>(this: void, values: Iterable<T | PromiseLike<
     for (const value of values) {
         if (value instanceof __TS__Promise) {
             if (value.state === __TS__PromiseState.Fulfilled) {
+                // If value is a resolved promise, add its value to our results array
                 results[i] = value.value;
             } else if (value.state === __TS__PromiseState.Rejected) {
+                // If value is a rejected promise, return a rejected promise with the rejection reason
                 return Promise.reject(value.rejectionReason);
             } else {
+                // If value is a pending promise, add it to the list of pending promises
                 numToResolve++;
                 toResolve.set(i, value);
             }
         } else {
+            // If value is not a promise, add it to the results array
             results[i] = value as T;
         }
         i++;
     }
 
+    // If there are no remaining pending promises, return a resolved promise with the results
     if (numToResolve === 0) {
         return Promise.resolve(results);
     }
@@ -30,10 +35,11 @@ async function __TS__PromiseAll<T>(this: void, values: Iterable<T | PromiseLike<
         for (const [index, promise] of pairs(toResolve)) {
             promise.then(
                 data => {
-                    // When resolved, store result and if there is nothing left to resolve, resolve the returned promise
+                    // When resolved, store value in results array
                     results[index] = data;
                     numToResolve--;
                     if (numToResolve === 0) {
+                        // If there are no more promises to resolve, resolve with our filled results  array
                         resolve(results);
                     }
                 },

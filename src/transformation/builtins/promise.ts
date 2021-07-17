@@ -30,6 +30,8 @@ export function transformPromiseConstructorCall(
             return transformLuaLibFunction(context, LuaLibFeature.PromiseAll, node, ...params);
         case "any":
             return transformLuaLibFunction(context, LuaLibFeature.PromiseAny, node, ...params);
+        case "race":
+            return transformLuaLibFunction(context, LuaLibFeature.PromiseRace, node, ...params);
         case "resolve":
             importLuaLibFeature(context, LuaLibFeature.Promise);
             return lua.createCallExpression(

@@ -663,4 +663,98 @@ describe("Promise.any", () => {
     });
 });
 
-describe("Promise.race", () => {});
+describe("Promise.race", () => {
+    test("resolves once first promise resolves", () => {
+        util.testFunction`
+            const { promise: promise1, resolve: resolve1 } = defer<string>();
+            const { promise: promise2, resolve: resolve2 } = defer<string>();
+            const { promise: promise3, resolve: resolve3 } = defer<string>();
+
+            const promise = Promise.race([promise1, promise2, promise3]);
+            promise.then(data => {
+                log(data);
+            });
+
+            resolve2("promise 2 result!");
+
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual(["promise 2 result!"]);
+    });
+
+    test("rejects once first promise rejects", () => {
+        util.testFunction`
+            const { promise: promise1, resolve: resolve1 } = defer<string>();
+            const { promise: promise2, reject: reject2 } = defer<string>();
+            const { promise: promise3, resolve: resolve3 } = defer<string>();
+
+            const promise = Promise.race([promise1, promise2, promise3]);
+            promise.catch(reason => {
+                log(reason);
+            });
+
+            reject2("promise 2 rejected!");
+
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual(["promise 2 rejected!"]);
+    });
+
+    test("returns resolved promise if arguments contain resolved promise", () => {
+        util.testFunction`
+            const { promise: promise1, resolve: resolve1 } = defer<string>();
+            const { promise: promise2, resolve: resolve2 } = defer<string>();
+
+            const { state, value } = Promise.race([promise1, Promise.resolve("already resolved!"), promise2]) as any;
+            return { state, value };
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual({
+                state: 1, // __TS__PromiseState.Fulfilled
+                value: "already resolved!",
+            });
+    });
+
+    test("returns resolved promise if arguments contain literal", () => {
+        util.testFunction`
+            const { promise: promise1, resolve: resolve1 } = defer<string>();
+            const { promise: promise2, resolve: resolve2 } = defer<string>();
+
+            const { state, value } = Promise.race([promise1, "my literal", promise2]) as any;
+            return { state, value };
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual({
+                state: 1, // __TS__PromiseState.Fulfilled
+                value: "my literal",
+            });
+    });
+
+    test("returns rejected promise if arguments contain rejected promise", () => {
+        util.testFunction`
+            const { promise: promise1, resolve: resolve1 } = defer<string>();
+            const { promise: promise2, resolve: resolve2 } = defer<string>();
+
+            const { state, rejectionReason } = Promise.race([promise1, Promise.reject("already rejected!"), promise2]) as any;
+            return { state, rejectionReason };
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual({
+                state: 2, // __TS__PromiseState.Rejected
+                rejectionReason: "already rejected!",
+            });
+    });
+
+    test("returns forever pending promise if argument array is empty", () => {
+        util.testFunction`
+        const { state } = Promise.race([]) as any;
+        return { state };
+    `
+        .setTsHeader(promiseTestLib)
+        .expectToEqual({
+            state: 0, // __TS__PromiseState.Pending
+        });
+    })
+});

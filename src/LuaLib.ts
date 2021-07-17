@@ -62,6 +62,7 @@ export enum LuaLibFeature {
     Promise = "Promise",
     PromiseAll = "PromiseAll",
     PromiseAny = "PromiseAny",
+    PromiseRace = "PromiseRace",
     Set = "Set",
     SetDescriptor = "SetDescriptor",
     WeakMap = "WeakMap",

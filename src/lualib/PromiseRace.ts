@@ -1,5 +1,5 @@
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/race
-async function __TS__PromiseRace<T>(this: void, values: Array<T | PromiseLike<T>>): Promise<T> {
+async function __TS__PromiseRace<T>(this: void, values: Iterable<T | PromiseLike<T>>): Promise<T> {
     const pending: Array<PromiseLike<T>> = [];
 
     for (const value of values) {

@@ -439,6 +439,59 @@ test("promise then onRejected throws", () => {
         .expectToEqual(["promise2 rejected with: fulfill exception from onReject!"]);
 });
 
+test("example: asynchronous web request", () => {
+    const testHarness = `
+        interface UserData { name: string, age: number}
+        const requests = new Map<number, (userData: UserData) => void>();
+        function getUserData(id: number, callback: (userData: UserData) => void) {
+            requests.set(id, callback);
+        }
+        function emulateRequestReturn(id: number, data: UserData) {
+            requests.get(id)!(data);
+        }
+    `;
+
+    util.testFunction`
+        // Wrap function getUserData(id: number, callback: (userData: UserData) => void) into a Promise
+        async function getUserDataAsync(id: number): Promise<UserData> {
+            return new Promise(resolve => {
+                getUserData(id, resolve);
+            });
+        }
+
+        const user1DataPromise = getUserDataAsync(1);
+        const user2DataPromise = getUserDataAsync(2);
+
+        user1DataPromise.then(() => log("received data for user 1"));
+        user2DataPromise.then(() => log("received data for user 2"));
+
+        const allDataPromise = Promise.all([user1DataPromise, user2DataPromise]);
+
+        allDataPromise.then(([user1data, user2data]) => {
+            log("all requests completed", user1data, user2data);
+        });
+
+        emulateRequestReturn(2, { name: "bar", age: 42 });
+        emulateRequestReturn(1, { name: "foo", age: 35 });
+
+        return allLogs;
+    `
+        .setTsHeader(testHarness + promiseTestLib)
+        .expectToEqual([
+            "received data for user 2",
+            "received data for user 1",
+            "all requests completed",
+            {
+                name: "foo",
+                age: 35,
+            },
+            {
+                name: "bar",
+                age: 42,
+            },
+        ]);
+});
+
 describe("Promise.all", () => {
     test("resolves once all arguments are resolved", () => {
         util.testFunction`
@@ -521,7 +574,6 @@ describe("Promise.all", () => {
             .expectToEqual([42, "promise 1 result!", "foo"]);
     });
 
-    // NOTE: deviation from spec!
     test("returns already-resolved promise if no pending promises in arguments", () => {
         util.testFunction`
             const { state, value } = Promise.all([42, Promise.resolve("already resolved!"), "foo"]) as any;
@@ -534,7 +586,6 @@ describe("Promise.all", () => {
             });
     });
 
-    // NOTE: deviation from spec!
     test("returns already-rejected promise if already rejected promise in arguments", () => {
         util.testFunction`
             const { state, rejectionReason } = Promise.all([42, Promise.reject("already rejected!")]) as any;

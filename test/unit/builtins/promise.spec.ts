@@ -439,6 +439,56 @@ test("promise then onRejected throws", () => {
         .expectToEqual(["promise2 rejected with: fulfill exception from onReject!"]);
 });
 
+test("then on resolved promise immediately calls callback", () => {
+    util.testFunction`
+        Promise.resolve(42).then(data => { log(data); });
+
+        return allLogs;
+    `
+        .setTsHeader(promiseTestLib)
+        .expectToEqual([42]);
+});
+
+test("then on rejected promise immediately calls callback", () => {
+    util.testFunction`
+        Promise.reject("already rejected").then(data => { log("resolved", data); }, reason => { log("rejected", reason); });
+
+        return allLogs;
+    `
+        .setTsHeader(promiseTestLib)
+        .expectToEqual(["rejected", "already rejected"]);
+});
+
+test("catch on rejected promise immediately calls callback", () => {
+    util.testFunction`
+        Promise.reject("already rejected").catch(reason => { log(reason); });
+
+        return allLogs;
+    `
+        .setTsHeader(promiseTestLib)
+        .expectToEqual(["already rejected"]);
+});
+
+test("finally on resolved promise immediately calls callback", () => {
+    util.testFunction`
+        Promise.resolve(42).finally(() => { log("finally"); });
+
+        return allLogs;
+    `
+        .setTsHeader(promiseTestLib)
+        .expectToEqual(["finally"]);
+});
+
+test("finally on rejected promise immediately calls callback", () => {
+    util.testFunction`
+        Promise.reject("already rejected").finally(() => { log("finally"); });
+
+        return allLogs;
+    `
+        .setTsHeader(promiseTestLib)
+        .expectToEqual(["finally"]);
+});
+
 test("example: asynchronous web request", () => {
     const testHarness = `
         interface UserData { name: string, age: number}

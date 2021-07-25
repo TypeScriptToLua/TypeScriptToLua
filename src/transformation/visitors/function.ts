@@ -13,6 +13,7 @@ import {
 } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { peekScope, performHoisting, popScope, pushScope, Scope, ScopeType } from "../utils/scope";
+import { isAsyncFunction, wrapInAsyncAwaiter } from "./async-await";
 import { transformIdentifier } from "./identifier";
 import { transformExpressionBodyToReturnStatement } from "./return";
 import { transformBindingPattern } from "./variable-declaration";
@@ -196,7 +197,7 @@ export function transformFunctionToExpression(
         node
     );
     const functionExpression = lua.createFunctionExpression(
-        lua.createBlock(transformedBody),
+        lua.createBlock(isAsyncFunction(node) ? wrapInAsyncAwaiter(context, transformedBody) : transformedBody),
         paramNames,
         dotsLiteral,
         flags,

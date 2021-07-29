@@ -3,7 +3,6 @@ import { JsxEmit } from "typescript";
 import * as lua from "../../../LuaAST";
 import { FunctionVisitor, TransformationContext, Visitors } from "../../context";
 import { transformJsxAttributes } from "../literal";
-import { flattenSpreadExpressions } from "../call";
 import { unsupportedJsxConfiguration } from "../../utils/diagnostics";
 import { XHTMLEntities } from "./xhtml";
 import { AnnotationKind, getFileAnnotations } from "../../utils/annotations";
@@ -172,7 +171,7 @@ function transformJsxChildren(
 ): lua.Expression[] | undefined {
     if (!children) return undefined;
 
-    const childrenExpressions = children
+    return children
         .map(child => {
             if (ts.isJsxText(child)) {
                 return processJsxText(child);
@@ -182,9 +181,8 @@ function transformJsxChildren(
             }
             return child;
         })
-        .filter(child => child !== undefined) as ts.Expression[];
-
-    return flattenSpreadExpressions(context, childrenExpressions);
+        .filter(child => child !== undefined)
+        .map(child => context.transformExpression(child!));
 }
 
 function createJsxFactoryCall(

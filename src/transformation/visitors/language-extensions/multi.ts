@@ -90,7 +90,7 @@ export function shouldMultiReturnCallBeWrapped(context: TransformationContext, n
 
 export function findMultiAssignmentViolations(
     context: TransformationContext,
-    node: ts.ObjectLiteralExpression
+    node: ts.ObjectLiteralExpressionBase<ts.ObjectLiteralElement>
 ): ts.Node[] {
     const result: ts.Node[] = [];
 

@@ -40,6 +40,7 @@ import { transformTypeOfExpression } from "./typeof";
 import { typescriptVisitors } from "./typescript";
 import { transformPostfixUnaryExpression, transformPrefixUnaryExpression } from "./unary-expression";
 import { transformVariableStatement } from "./variable-declaration";
+import { jsxVisitors } from "./jsx/jsx";
 
 const transformEmptyStatement: FunctionVisitor<ts.EmptyStatement> = () => undefined;
 const transformParenthesizedExpression: FunctionVisitor<ts.ParenthesizedExpression> = (node, context) =>
@@ -48,6 +49,7 @@ const transformParenthesizedExpression: FunctionVisitor<ts.ParenthesizedExpressi
 export const standardVisitors: Visitors = {
     ...literalVisitors,
     ...typescriptVisitors,
+    ...jsxVisitors,
     [ts.SyntaxKind.ArrowFunction]: transformFunctionLikeDeclaration,
     [ts.SyntaxKind.BinaryExpression]: transformBinaryExpression,
     [ts.SyntaxKind.Block]: transformBlock,

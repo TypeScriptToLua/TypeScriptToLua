@@ -258,27 +258,36 @@ describe("jsx", () => {
             .expectLuaToMatchSnapshot();
     });
 
+    // language=TypeScript
+    const customJsxLib = `export namespace MyLib {
+        export function myCreate(
+            this: void,
+            type: any,
+            props: any,
+            ...children: any[]
+        ) {
+            return { type: typeof type, props, children, myThing: true };
+        }
+
+        export function MyFragment() {
+        }
+    }
+    `;
+
     test("custom JSX factory", () => {
         testJsx`
             return <a><b>c</b></a>
         `
             .setTsHeader('import { MyLib } from "./myJsx";')
             .setOptions({ jsxFactory: "MyLib.myCreate" })
-            .addExtraFile(
-                "myJsx.ts",
-                `
-                export namespace MyLib {
-                    export function myCreate(
-                        this: void,
-                        type: any,
-                        props: any,
-                        ...children: any[]
-                    ) {
-                        return { type, props, children, myThing: true };
-                    }
-                }
-            `
-            )
+            .addExtraFile("myJsx.ts", customJsxLib)
+            .expectToMatchJsResult();
+        testJsx`
+            return <a><b>c</b></a>
+        `
+            .setTsHeader('import { MyLib } from "./myJsx";const myCreate2 = MyLib.myCreate;')
+            .setOptions({ jsxFactory: "myCreate2" })
+            .addExtraFile("myJsx.ts", customJsxLib)
             .expectToMatchJsResult();
     });
     test("custom fragment factory", () => {
@@ -287,22 +296,48 @@ describe("jsx", () => {
         `
             .setTsHeader('import { MyLib } from "./myJsx";')
             .setOptions({ jsxFactory: "MyLib.myCreate", jsxFragmentFactory: "MyLib.MyFragment" })
-            .addExtraFile(
-                "myJsx.ts",
-                `
-                 export namespace MyLib {
-                    export function myCreate(
-                        this: void,
-                        type: any,
-                        props: any,
-                        ...children: any[]
-                    ) {
-                        return { type: typeof type, props, children, myThing: true };
-                    }
-                    export function MyFragment() {}
-                }
-            `
+            .addExtraFile("myJsx.ts", customJsxLib)
+            .expectToMatchJsResult();
+        testJsx`
+            return <><b>c</b></>
+        `
+            .setTsHeader('import { MyLib } from "./myJsx";function MyFragment2(){};')
+            .setOptions({ jsxFactory: "MyLib.myCreate", jsxFragmentFactory: "MyFragment2" })
+            .addExtraFile("myJsx.ts", customJsxLib)
+            .expectToMatchJsResult();
+    });
+    test("custom JSX pragma", () => {
+        testJsx`
+            return <a><b>c</b></a>
+        `
+            .setTsHeader('/** @jsx MyLib.myCreate */\nimport { MyLib } from "./myJsx";')
+            .addExtraFile("myJsx.ts", customJsxLib)
+            .expectToMatchJsResult();
+        testJsx`
+            return <a><b>c</b></a>
+        `
+            .setTsHeader('/** @jsx myCreate2 */import { MyLib } from "./myJsx";const myCreate2 = MyLib.myCreate;')
+            .addExtraFile("myJsx.ts", customJsxLib)
+            .expectToMatchJsResult();
+    });
+    test("custom fragment pragma", () => {
+        testJsx`
+            return <><b>c</b></>
+        `
+            .setTsHeader(
+                '/** @jsx MyLib.myCreate */\n/** @jsxFrag MyLib.MyFragment */\nimport { MyLib } from "./myJsx";'
             )
+            .addExtraFile("myJsx.ts", customJsxLib)
+            .expectToMatchJsResult();
+        testJsx`
+            return <><b>c</b></>
+        `
+            .setTsHeader(
+                "/** @jsx MyLib.myCreate */\n/** @jsxFrag MyFragment2 */\n" +
+                    'import { MyLib } from "./myJsx";function MyFragment2(){};'
+            )
+            .setOptions({ jsxFactory: "MyLib.myCreate", jsxFragmentFactory: "MyFragment" })
+            .addExtraFile("myJsx.ts", customJsxLib)
             .expectToMatchJsResult();
     });
 

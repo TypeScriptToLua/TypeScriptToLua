@@ -6,6 +6,7 @@ import { transformJsxAttributes } from "../literal";
 import { flattenSpreadExpressions } from "../call";
 import { unsupportedJsxConfiguration } from "../../utils/diagnostics";
 import { XHTMLEntities } from "./xhtml";
+import { AnnotationKind, getFileAnnotations } from "../../utils/annotations";
 
 function checkValidJsxConfig(node: ts.Node, context: TransformationContext) {
     if (context.options.jsx !== JsxEmit.React) {
@@ -14,8 +15,14 @@ function checkValidJsxConfig(node: ts.Node, context: TransformationContext) {
 }
 
 // used for jsxFactory and jsxFragmentFactory options
-function getExpressionFromOption(option: string | undefined, defaultValue: string): lua.Expression {
-    const [first, second] = (option ?? defaultValue).split(".");
+function getExpressionFromOption(
+    node: ts.Node,
+    fileAnnotation: AnnotationKind,
+    option: string | undefined,
+    defaultValue: string
+): lua.Expression {
+    const annotation = getFileAnnotations(node.getSourceFile()).get(fileAnnotation);
+    const [first, second] = (annotation?.args[0] ?? option ?? defaultValue).split(".");
     return second === undefined
         ? lua.createIdentifier(first)
         : lua.createTableIndexExpression(lua.createIdentifier(first), lua.createStringLiteral(second));
@@ -189,7 +196,12 @@ function createJsxFactoryCall(
 ): lua.Expression {
     const transformedChildren = transformJsxChildren(tsChildren, context);
 
-    const jsxFactory = getExpressionFromOption(context.options.jsxFactory, "React.createElement");
+    const jsxFactory = getExpressionFromOption(
+        tsOriginal,
+        AnnotationKind.Jsx,
+        context.options.jsxFactory,
+        "React.createElement"
+    );
 
     const args = [tagName];
     if (props) {
@@ -226,7 +238,12 @@ const transformSelfClosingJsxElement: FunctionVisitor<ts.JsxSelfClosingElement> 
 };
 const transformJsxFragment: FunctionVisitor<ts.JsxFragment> = (node, context) => {
     checkValidJsxConfig(node, context);
-    const tagName = getExpressionFromOption(context.options.jsxFragmentFactory, "React.Fragment");
+    const tagName = getExpressionFromOption(
+        node,
+        AnnotationKind.JsxFrag,
+        context.options.jsxFragmentFactory,
+        "React.Fragment"
+    );
     return createJsxFactoryCall(tagName, undefined, node.children, node, context);
 };
 

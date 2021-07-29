@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-const entities: { [name: string]: string } = {
+export const XHTMLEntities: { [name: string]: string } = {
     quot: "\u0022",
     amp: "&",
     apos: "\u0027",
@@ -254,4 +254,3 @@ const entities: { [name: string]: string } = {
     hearts: "\u2665",
     diams: "\u2666",
 };
-export const XHTMLEntities = entities;

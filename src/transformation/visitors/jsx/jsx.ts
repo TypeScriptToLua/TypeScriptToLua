@@ -1,30 +1,32 @@
 import * as ts from "typescript";
-import { JsxEmit } from "typescript";
 import * as lua from "../../../LuaAST";
 import { FunctionVisitor, TransformationContext, Visitors } from "../../context";
 import { transformJsxAttributes } from "../literal";
-import { unsupportedJsxConfiguration } from "../../utils/diagnostics";
 import { XHTMLEntities } from "./xhtml";
 import { AnnotationKind, getFileAnnotations } from "../../utils/annotations";
 
-function checkValidJsxConfig(node: ts.Node, context: TransformationContext) {
-    if (context.options.jsx !== JsxEmit.React) {
-        context.diagnostics.push(unsupportedJsxConfiguration(node));
-    }
+function findAnnotationByType(node: ts.Node, fileAnnotation: AnnotationKind): string | undefined {
+    const annotation = getFileAnnotations(node.getSourceFile()).get(fileAnnotation);
+    return annotation?.args[0];
 }
 
-// used for jsxFactory and jsxFragmentFactory options
-function getExpressionFromOption(
-    node: ts.Node,
-    fileAnnotation: AnnotationKind,
-    option: string | undefined,
-    defaultValue: string
-): lua.Expression {
-    const annotation = getFileAnnotations(node.getSourceFile()).get(fileAnnotation);
-    const [first, second] = (annotation?.args[0] ?? option ?? defaultValue).split(".");
+function getExpressionFromOption(option: string): lua.Expression {
+    const [first, second] = option.split(".");
     return second === undefined
         ? lua.createIdentifier(first)
         : lua.createTableIndexExpression(lua.createIdentifier(first), lua.createStringLiteral(second));
+}
+
+function getJsxFactory(node: ts.Node, context: TransformationContext): lua.Expression {
+    const option =
+        findAnnotationByType(node, AnnotationKind.Jsx) ?? context.options.jsxFactory ?? "React.createElement";
+    return getExpressionFromOption(option);
+}
+
+function getJsxFragmentName(node: ts.Node, context: TransformationContext): lua.Expression {
+    const option =
+        findAnnotationByType(node, AnnotationKind.JsxFrag) ?? context.options.jsxFragmentFactory ?? "React.Fragment";
+    return getExpressionFromOption(option);
 }
 
 /* Implementations of jsx text processing modified from sucrase (https://github.com/alangpierce/sucrase). */
@@ -38,8 +40,7 @@ const DECIMAL_NUMBER = /^\d+$/;
  * before the close-tag. Empty lines are completely removed, and spaces are
  * added between lines after that.
  *
- * We use JSON.stringify to introduce escape characters as necessary, and trim
- * the start and end of each line and remove blank lines.
+ * We trim the start and end of each line and remove blank lines.
  */
 function formatJSXTextLiteral(text: string): string {
     let result = "";
@@ -85,7 +86,7 @@ function formatJSXTextLiteral(text: string): string {
  * Use the same implementation as convertAttribute from
  * babel-helper-builder-react-jsx.
  */
-// no multi-line flattening of prop strings in typescript.
+// changes from sucrase: no multi-line flattening of prop strings in typescript.
 export function formatJSXStringValueLiteral(text: string): string {
     let result = "";
     for (let i = 0; i < text.length; i++) {
@@ -193,13 +194,7 @@ function createJsxFactoryCall(
     context: TransformationContext
 ): lua.Expression {
     const transformedChildren = transformJsxChildren(tsChildren, context);
-
-    const jsxFactory = getExpressionFromOption(
-        tsOriginal,
-        AnnotationKind.Jsx,
-        context.options.jsxFactory,
-        "React.createElement"
-    );
+    const jsxFactory = getJsxFactory(tsOriginal, context);
 
     const args = [tagName];
     if (props) {
@@ -226,22 +221,12 @@ function transformJsxOpeningLikeElement(
     return createJsxFactoryCall(tagName, props, children, node, context);
 }
 
-const transformJsxElement: FunctionVisitor<ts.JsxElement> = (node, context) => {
-    checkValidJsxConfig(node, context);
-    return transformJsxOpeningLikeElement(node.openingElement, node.children, context);
-};
-const transformSelfClosingJsxElement: FunctionVisitor<ts.JsxSelfClosingElement> = (node, context) => {
-    checkValidJsxConfig(node, context);
-    return transformJsxOpeningLikeElement(node, undefined, context);
-};
+const transformJsxElement: FunctionVisitor<ts.JsxElement> = (node, context) =>
+    transformJsxOpeningLikeElement(node.openingElement, node.children, context);
+const transformSelfClosingJsxElement: FunctionVisitor<ts.JsxSelfClosingElement> = (node, context) =>
+    transformJsxOpeningLikeElement(node, undefined, context);
 const transformJsxFragment: FunctionVisitor<ts.JsxFragment> = (node, context) => {
-    checkValidJsxConfig(node, context);
-    const tagName = getExpressionFromOption(
-        node,
-        AnnotationKind.JsxFrag,
-        context.options.jsxFragmentFactory,
-        "React.Fragment"
-    );
+    const tagName = getJsxFragmentName(node, context);
     return createJsxFactoryCall(tagName, undefined, node.children, node, context);
 };
 

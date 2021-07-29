@@ -1,4 +1,5 @@
 import * as ts from "typescript";
+import { JsxEmit } from "typescript";
 import * as diagnosticFactories from "./transpilation/diagnostics";
 
 type OmitIndexSignature<T> = {
@@ -72,6 +73,10 @@ export function validateOptions(options: CompilerOptions): ts.Diagnostic[] {
 
     if (options.luaBundle && options.buildMode === BuildMode.Library) {
         diagnostics.push(diagnosticFactories.cannotBundleLibrary());
+    }
+
+    if (options.jsx && options.jsx !== JsxEmit.React) {
+        diagnostics.push(diagnosticFactories.unsupportedJsxEmit());
     }
 
     return diagnostics;

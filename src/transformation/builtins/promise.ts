@@ -3,17 +3,16 @@ import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { unsupportedProperty } from "../utils/diagnostics";
 import { importLuaLibFeature, LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
+import { isStandardLibraryType } from "../utils/typescript";
 import { PropertyCallExpression, transformArguments } from "../visitors/call";
 
-export function transformNewPromise(
-    context: TransformationContext,
-    node: ts.NewExpression,
-    args: lua.Expression[]
-): lua.Expression {
-    importLuaLibFeature(context, LuaLibFeature.Promise);
+export function isPromiseClass(context: TransformationContext, node: ts.Identifier) {
+    const type = context.checker.getTypeAtLocation(node);
+    return isStandardLibraryType(context, type, undefined) && node.text === "Promise";
+}
 
-    const name = lua.createIdentifier("__TS__Promise", node.expression);
-    return transformLuaLibFunction(context, LuaLibFeature.New, node, name, ...args);
+export function createPromiseIdentifier(original: ts.Node) {
+    return lua.createIdentifier("__TS__Promise", original);
 }
 
 export function transformPromiseConstructorCall(

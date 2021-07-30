@@ -1,11 +1,9 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import { transformNewPromise } from "../../builtins/promise";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
 import { annotationInvalidArgumentCount, annotationRemoved } from "../../utils/diagnostics";
 import { importLuaLibFeature, LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
-import { isStandardLibraryType } from "../../utils/typescript";
 import { transformArguments } from "../call";
 import { isTableNewCall } from "../language-extensions/table";
 
@@ -68,10 +66,6 @@ export const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, 
         : [lua.createBooleanLiteral(true)];
 
     checkForLuaLibType(context, type);
-
-    if (isStandardLibraryType(context, type, "Promise")) {
-        return transformNewPromise(context, node, params);
-    }
 
     const name = context.transformExpression(node.expression);
 

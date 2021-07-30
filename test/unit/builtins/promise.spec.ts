@@ -542,6 +542,10 @@ test("example: asynchronous web request", () => {
         ]);
 });
 
+test("promise is instanceof promise", () => {
+    util.testExpression`Promise.resolve(4) instanceof Promise`.expectToMatchJsResult();
+});
+
 describe("Promise.all", () => {
     test("resolves once all arguments are resolved", () => {
         util.testFunction`

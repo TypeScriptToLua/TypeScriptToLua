@@ -253,9 +253,7 @@ describe("jsx", () => {
                 <> <a>2</a></>
                 <b/>
             </div>
-        `
-            .expectToMatchJsResult()
-            .expectLuaToMatchSnapshot();
+        `.expectToMatchJsResult();
     });
 
     // language=TypeScript

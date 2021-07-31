@@ -37,7 +37,11 @@ export function resolveDependencies(program: ts.Program, files: ProcessedFile[],
         diagnostics.push(...resolutionResult.diagnostics);
     }
 
-    return { resolvedFiles: outFiles, diagnostics };
+    return { resolvedFiles: deduplicateResolvedFiles(outFiles), diagnostics };
+}
+
+function deduplicateResolvedFiles(files: ProcessedFile[]): ProcessedFile[] {
+    return [...new Map(files.map(f => [f.fileName, f])).values()];
 }
 
 function resolveFileDependencies(file: ProcessedFile, program: ts.Program, emitHost: EmitHost): ResolutionResult {

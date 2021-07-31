@@ -275,3 +275,28 @@ describe("module resolution with tsx", () => {
             });
     });
 });
+
+describe("dependency with complicated inner structure", () => {
+    const projectPath = path.resolve(__dirname, "module-resolution", "project-with-complicated-dependency");
+
+    // Test fix for https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1055
+    test("bundle should not contain duplicate files", () => {
+        const mainFile = path.join(projectPath, "main.ts");
+        const { transpiledFiles } = util.testProject(path.join(projectPath, "tsconfig.json"))
+            .setMainFileName(path.join(projectPath, "main.ts"))
+            .setOptions({ luaBundle: "bundle.lua", luaBundleEntry: mainFile })
+            .expectToEqual({
+                otherFileResult: "someFunc from otherfile.lua",
+                otherFileUtil: "util",
+                utilResult: "util"
+            })
+            .getLuaResult();
+
+        expect(transpiledFiles).toHaveLength(1);
+        const lua = transpiledFiles[0].lua!;
+        // util is used in 2 places, but should only occur once in the bundle
+        const utilModuleOccurrences = (lua.match(/\["lua_modules\.dependency1\.util"\]/g) ?? []).length;
+        expect(utilModuleOccurrences).toBe(1);
+    });
+
+});

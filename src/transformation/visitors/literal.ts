@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { assertNever } from "../../utils";
 import { FunctionVisitor, TransformationContext, Visitors } from "../context";
-import { unsupportedAccessorInObjectLiteral, invalidMultiFunctionUse } from "../utils/diagnostics";
+import { invalidMultiFunctionUse, unsupportedAccessorInObjectLiteral } from "../utils/diagnostics";
 import { createExportedIdentifier, getSymbolExportScope } from "../utils/export";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { createSafeName, hasUnsafeIdentifierName, hasUnsafeSymbolName } from "../utils/safe-names";
@@ -11,6 +11,7 @@ import { isArrayType } from "../utils/typescript";
 import { transformFunctionLikeDeclaration } from "./function";
 import { flattenSpreadExpressions } from "./call";
 import { findMultiAssignmentViolations } from "./language-extensions/multi";
+import { formatJSXStringValueLiteral } from "./jsx/jsx";
 
 // TODO: Move to object-literal.ts?
 export function transformPropertyName(context: TransformationContext, node: ts.PropertyName): lua.Expression {
@@ -62,78 +63,99 @@ const transformNumericLiteralExpression: FunctionVisitor<ts.NumericLiteral> = ex
     return lua.createNumericLiteral(Number(expression.text), expression);
 };
 
-const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpression> = (expression, context) => {
-    const violations = findMultiAssignmentViolations(context, expression);
-    if (violations.length > 0) {
-        context.diagnostics.push(...violations.map(e => invalidMultiFunctionUse(e)));
-        return lua.createNilLiteral(expression);
-    }
+const transformObjectLiteralExpressionOrJsxAttributes: FunctionVisitor<ts.ObjectLiteralExpression | ts.JsxAttributes> =
+    (expression, context) => {
+        const violations = findMultiAssignmentViolations(context, expression);
+        if (violations.length > 0) {
+            context.diagnostics.push(...violations.map(e => invalidMultiFunctionUse(e)));
+            return lua.createNilLiteral(expression);
+        }
 
-    let properties: lua.TableFieldExpression[] = [];
-    const tableExpressions: lua.Expression[] = [];
+        let properties: lua.TableFieldExpression[] = [];
+        const tableExpressions: lua.Expression[] = [];
 
-    for (const element of expression.properties) {
-        const name = element.name ? transformPropertyName(context, element.name) : undefined;
+        for (const element of expression.properties) {
+            const name = element.name ? transformPropertyName(context, element.name) : undefined;
 
-        if (ts.isPropertyAssignment(element)) {
-            const expression = context.transformExpression(element.initializer);
-            properties.push(lua.createTableFieldExpression(expression, name, element));
-        } else if (ts.isShorthandPropertyAssignment(element)) {
-            const valueSymbol = context.checker.getShorthandAssignmentValueSymbol(element);
-            if (valueSymbol) {
-                trackSymbolReference(context, valueSymbol, element.name);
+            if (ts.isPropertyAssignment(element)) {
+                const expression = context.transformExpression(element.initializer);
+                properties.push(lua.createTableFieldExpression(expression, name, element));
+            } else if (ts.isJsxAttribute(element)) {
+                const initializer = element.initializer;
+                let expression: lua.Expression;
+                if (initializer === undefined) {
+                    expression = lua.createBooleanLiteral(true);
+                } else if (ts.isStringLiteral(initializer)) {
+                    const text = formatJSXStringValueLiteral(initializer.text);
+                    expression = lua.createStringLiteral(text, initializer);
+                } else if (ts.isJsxExpression(initializer)) {
+                    expression = initializer.expression
+                        ? context.transformExpression(initializer.expression)
+                        : lua.createBooleanLiteral(true);
+                } else {
+                    assertNever(initializer);
+                }
+                properties.push(lua.createTableFieldExpression(expression, name, element));
+            } else if (ts.isShorthandPropertyAssignment(element)) {
+                const valueSymbol = context.checker.getShorthandAssignmentValueSymbol(element);
+                if (valueSymbol) {
+                    trackSymbolReference(context, valueSymbol, element.name);
+                }
+
+                const identifier = createShorthandIdentifier(context, valueSymbol, element.name);
+                properties.push(lua.createTableFieldExpression(identifier, name, element));
+            } else if (ts.isMethodDeclaration(element)) {
+                const expression = transformFunctionLikeDeclaration(element, context);
+                properties.push(lua.createTableFieldExpression(expression, name, element));
+            } else if (ts.isSpreadAssignment(element) || ts.isJsxSpreadAttribute(element)) {
+                // Create a table for preceding properties to preserve property order
+                // { x: 0, ...{ y: 2 }, y: 1, z: 2 } --> __TS__ObjectAssign({x = 0}, {y = 2}, {y = 1, z = 2})
+                if (properties.length > 0) {
+                    const tableExpression = lua.createTableExpression(properties, expression);
+                    tableExpressions.push(tableExpression);
+                    properties = [];
+                }
+
+                const type = context.checker.getTypeAtLocation(element.expression);
+                let tableExpression: lua.Expression;
+                if (isArrayType(context, type)) {
+                    tableExpression = transformLuaLibFunction(
+                        context,
+                        LuaLibFeature.ArrayToObject,
+                        element.expression,
+                        context.transformExpression(element.expression)
+                    );
+                } else {
+                    tableExpression = context.transformExpression(element.expression);
+                }
+
+                tableExpressions.push(tableExpression);
+            } else if (ts.isAccessor(element)) {
+                context.diagnostics.push(unsupportedAccessorInObjectLiteral(element));
+            } else {
+                assertNever(element);
             }
+        }
 
-            const identifier = createShorthandIdentifier(context, valueSymbol, element.name);
-            properties.push(lua.createTableFieldExpression(identifier, name, element));
-        } else if (ts.isMethodDeclaration(element)) {
-            const expression = transformFunctionLikeDeclaration(element, context);
-            properties.push(lua.createTableFieldExpression(expression, name, element));
-        } else if (ts.isSpreadAssignment(element)) {
-            // Create a table for preceding properties to preserve property order
-            // { x: 0, ...{ y: 2 }, y: 1, z: 2 } --> __TS__ObjectAssign({x = 0}, {y = 2}, {y = 1, z = 2})
+        if (tableExpressions.length === 0) {
+            return lua.createTableExpression(properties, expression);
+        } else {
             if (properties.length > 0) {
                 const tableExpression = lua.createTableExpression(properties, expression);
                 tableExpressions.push(tableExpression);
-                properties = [];
             }
 
-            const type = context.checker.getTypeAtLocation(element.expression);
-            let tableExpression: lua.Expression;
-            if (isArrayType(context, type)) {
-                tableExpression = transformLuaLibFunction(
-                    context,
-                    LuaLibFeature.ArrayToObject,
-                    element.expression,
-                    context.transformExpression(element.expression)
-                );
-            } else {
-                tableExpression = context.transformExpression(element.expression);
+            if (tableExpressions[0].kind !== lua.SyntaxKind.TableExpression) {
+                tableExpressions.unshift(lua.createTableExpression(undefined, expression));
             }
 
-            tableExpressions.push(tableExpression);
-        } else if (ts.isAccessor(element)) {
-            context.diagnostics.push(unsupportedAccessorInObjectLiteral(element));
-        } else {
-            assertNever(element);
+            return transformLuaLibFunction(context, LuaLibFeature.ObjectAssign, expression, ...tableExpressions);
         }
-    }
-
-    if (tableExpressions.length === 0) {
-        return lua.createTableExpression(properties, expression);
-    } else {
-        if (properties.length > 0) {
-            const tableExpression = lua.createTableExpression(properties, expression);
-            tableExpressions.push(tableExpression);
-        }
-
-        if (tableExpressions[0].kind !== lua.SyntaxKind.TableExpression) {
-            tableExpressions.unshift(lua.createTableExpression(undefined, expression));
-        }
-
-        return transformLuaLibFunction(context, LuaLibFeature.ObjectAssign, expression, ...tableExpressions);
-    }
-};
+    };
+const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpression> =
+    transformObjectLiteralExpressionOrJsxAttributes;
+export const transformJsxAttributes: FunctionVisitor<ts.JsxAttributes> =
+    transformObjectLiteralExpressionOrJsxAttributes;
 
 const transformArrayLiteralExpression: FunctionVisitor<ts.ArrayLiteralExpression> = (expression, context) => {
     const filteredElements = expression.elements.map(e =>

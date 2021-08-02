@@ -221,7 +221,7 @@ function resolveLuaPath(fromPath: string, dependency: string, emitHost: EmitHost
 }
 
 function walkUpFileTreeUntil(fromDirectory: string, predicate: (dir: string) => boolean) {
-    const currentDir = fromDirectory.split(path.sep);
+    const currentDir = path.normalize(fromDirectory).split(path.sep);
     while (currentDir.length > 0) {
         const dir = currentDir.join(path.sep);
         if (predicate(dir)) {

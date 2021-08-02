@@ -22,7 +22,6 @@ interface ResolutionResult {
 }
 
 class ResolutionContext {
-
     private resultsCache = new Map<string, ResolutionResult>();
 
     constructor(
@@ -32,8 +31,7 @@ class ResolutionContext {
     ) {}
 
     public resolve(file: ProcessedFile, required: string): ResolutionResult {
-        const fileDir = path.dirname(file.fileName);
-        const resolvedDependency = resolveDependency(fileDir, required, this.program, this.emitHost);
+        const resolvedDependency = resolveDependency(file, required, this.program, this.emitHost);
         if (resolvedDependency) {
             if (this.options.tstlVerbose) {
                 console.log(`Resolved ${required} to ${normalizeSlashes(resolvedDependency)}`);
@@ -151,12 +149,14 @@ function resolveFileDependencies(file: ProcessedFile, context: ResolutionContext
 }
 
 function resolveDependency(
-    fileDirectory: string,
+    requiringFile: ProcessedFile,
     dependency: string,
     program: ts.Program,
     emitHost: EmitHost
 ): string | undefined {
     const options = program.getCompilerOptions() as CompilerOptions;
+
+    const fileDirectory = path.dirname(requiringFile.fileName);
     if (options.tstlVerbose) {
         console.log(`Resolving "${dependency}" from ${normalizeSlashes(fileDirectory)}`);
     }
@@ -179,9 +179,11 @@ function resolveDependency(
     }
 
     // Check if this is a sibling of a required lua file
-    const luaFilePath = path.resolve(fileDirectory, dependency + ".lua");
-    if (emitHost.fileExists(luaFilePath)) {
-        return luaFilePath;
+    if (requiringFile.fileName.endsWith(".lua")) {
+        const luaFilePath = resolveLuaPath(fileDirectory, dependency, emitHost);
+        if (luaFilePath) {
+            return luaFilePath;
+        }
     }
 
     // Not a TS file in our project sources, use resolver to check if we can find dependency
@@ -194,6 +196,39 @@ function resolveDependency(
         // resolveSync errors if it fails to resolve
     }
 
+    return undefined;
+}
+
+function resolveLuaPath(fromPath: string, dependency: string, emitHost: EmitHost) {
+    const splitDependency = dependency.split(".");
+    if (splitDependency.length === 1) {
+        // If dependency has just one part (the file), look for a lua file with that name
+        const fileDirectory = walkUpFileTreeUntil(fromPath, dir =>
+            emitHost.fileExists(path.join(dir, dependency) + ".lua")
+        );
+        if (fileDirectory) {
+            return path.join(fileDirectory, dependency) + ".lua";
+        }
+    } else {
+        // If dependency has multiple parts, look for the first directory of the require path, which must be in the lua root
+        const luaRoot = walkUpFileTreeUntil(fromPath, dir =>
+            emitHost.directoryExists(path.join(dir, splitDependency[0]))
+        );
+        if (luaRoot) {
+            return path.join(luaRoot, dependency.replace(".", path.sep)) + ".lua";
+        }
+    }
+}
+
+function walkUpFileTreeUntil(fromDirectory: string, predicate: (dir: string) => boolean) {
+    const currentDir = fromDirectory.split(path.sep);
+    while (currentDir.length > 0) {
+        const dir = currentDir.join(path.sep);
+        if (predicate(dir)) {
+            return dir;
+        }
+        currentDir.pop();
+    }
     return undefined;
 }
 

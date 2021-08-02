@@ -278,18 +278,23 @@ describe("module resolution with tsx", () => {
 
 describe("dependency with complicated inner structure", () => {
     const projectPath = path.resolve(__dirname, "module-resolution", "project-with-complicated-dependency");
+    const tsConfigPath = path.join(projectPath, "tsconfig.json");
+    const mainFilePath = path.join(projectPath, "main.ts");
+
+    const expectedResult = {
+        otherFileResult: "someFunc from otherfile.lua",
+        otherFileUtil: "util",
+        utilResult: "util",
+    };
 
     // Test fix for https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1055
     test("bundle should not contain duplicate files", () => {
         const mainFile = path.join(projectPath, "main.ts");
-        const { transpiledFiles } = util.testProject(path.join(projectPath, "tsconfig.json"))
-            .setMainFileName(path.join(projectPath, "main.ts"))
+        const { transpiledFiles } = util
+            .testProject(tsConfigPath)
+            .setMainFileName(mainFilePath)
             .setOptions({ luaBundle: "bundle.lua", luaBundleEntry: mainFile })
-            .expectToEqual({
-                otherFileResult: "someFunc from otherfile.lua",
-                otherFileUtil: "util",
-                utilResult: "util"
-            })
+            .expectToEqual(expectedResult)
             .getLuaResult();
 
         expect(transpiledFiles).toHaveLength(1);
@@ -299,4 +304,8 @@ describe("dependency with complicated inner structure", () => {
         expect(utilModuleOccurrences).toBe(1);
     });
 
+    // Test fix for https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1054
+    test("should be able to resolve dependency files in subdirectories", () => {
+        util.testProject(tsConfigPath).setMainFileName(mainFilePath).expectToEqual(expectedResult);
+    });
 });

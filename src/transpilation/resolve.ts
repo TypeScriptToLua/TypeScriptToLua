@@ -21,10 +21,88 @@ interface ResolutionResult {
     diagnostics: ts.Diagnostic[];
 }
 
+class ResolutionContext {
+    private resultsCache = new Map<string, ResolutionResult>();
+
+    constructor(
+        public readonly program: ts.Program,
+        public readonly options: CompilerOptions,
+        private readonly emitHost: EmitHost
+    ) {}
+
+    public resolve(file: ProcessedFile, required: string): ResolutionResult {
+        const resolvedDependency = resolveDependency(file, required, this.program, this.emitHost);
+        if (resolvedDependency) {
+            if (this.options.tstlVerbose) {
+                console.log(`Resolved ${required} to ${normalizeSlashes(resolvedDependency)}`);
+            }
+
+            // Figure out resolved require path and dependency output path
+            const resolvedRequire = getEmitPathRelativeToOutDir(resolvedDependency, this.program);
+
+            if (shouldRewriteRequires(resolvedDependency, this.program)) {
+                replaceRequireInCode(file, required, resolvedRequire);
+                replaceRequireInSourceMap(file, required, resolvedRequire);
+            }
+
+            // Check cache to prevent resolving nested dependencies double to break dependency loops
+            if (this.resultsCache.has(resolvedDependency)) {
+                if (this.options.tstlVerbose) {
+                    console.log(`Resolution cache hit for ${normalizeSlashes(resolvedDependency)}`);
+                }
+                return this.resultsCache.get(resolvedDependency)!;
+            }
+
+            // If dependency is not part of project, add dependency to output and resolve its dependencies recursively
+            if (shouldIncludeDependency(resolvedDependency, this.program)) {
+                // If dependency resolved successfully, read its content
+                const dependencyContent = this.emitHost.readFile(resolvedDependency);
+                if (dependencyContent === undefined) {
+                    return { resolvedFiles: [], diagnostics: [couldNotReadDependency(resolvedDependency)] };
+                }
+
+                const dependency = {
+                    fileName: resolvedDependency,
+                    code: dependencyContent,
+                };
+                const nestedDependencies = resolveFileDependencies(dependency, this);
+
+                // Cache result and return
+                const result = {
+                    resolvedFiles: [dependency, ...nestedDependencies.resolvedFiles],
+                    diagnostics: [...nestedDependencies.diagnostics],
+                };
+                this.resultsCache.set(resolvedDependency, result);
+                return result;
+            } else {
+                const result = {
+                    resolvedFiles: [],
+                    diagnostics: [],
+                };
+                this.resultsCache.set(resolvedDependency, result);
+                return result;
+            }
+        } else {
+            const fallbackRequire = fallbackResolve(required, getSourceDir(this.program), path.dirname(file.fileName));
+            replaceRequireInCode(file, required, fallbackRequire);
+            replaceRequireInSourceMap(file, required, fallbackRequire);
+
+            return {
+                resolvedFiles: [],
+                diagnostics: [
+                    couldNotResolveRequire(required, path.relative(getProjectRoot(this.program), file.fileName)),
+                ],
+            };
+        }
+    }
+}
+
 export function resolveDependencies(program: ts.Program, files: ProcessedFile[], emitHost: EmitHost): ResolutionResult {
     const outFiles: ProcessedFile[] = [...files];
     const diagnostics: ts.Diagnostic[] = [];
     const options = program.getCompilerOptions() as CompilerOptions;
+
+    const resolutionContext = new ResolutionContext(program, options, emitHost);
 
     // Resolve dependencies for all processed files
     for (const file of files) {
@@ -32,18 +110,21 @@ export function resolveDependencies(program: ts.Program, files: ProcessedFile[],
             console.log(`Resolving dependencies for ${normalizeSlashes(file.fileName)}`);
         }
 
-        const resolutionResult = resolveFileDependencies(file, program, emitHost);
+        const resolutionResult = resolveFileDependencies(file, resolutionContext);
         outFiles.push(...resolutionResult.resolvedFiles);
         diagnostics.push(...resolutionResult.diagnostics);
     }
 
-    return { resolvedFiles: outFiles, diagnostics };
+    return { resolvedFiles: deduplicateResolvedFiles(outFiles), diagnostics };
 }
 
-function resolveFileDependencies(file: ProcessedFile, program: ts.Program, emitHost: EmitHost): ResolutionResult {
+function deduplicateResolvedFiles(files: ProcessedFile[]): ProcessedFile[] {
+    return [...new Map(files.map(f => [f.fileName, f])).values()];
+}
+
+function resolveFileDependencies(file: ProcessedFile, context: ResolutionContext): ResolutionResult {
     const dependencies: ProcessedFile[] = [];
     const diagnostics: ts.Diagnostic[] = [];
-    const options = program.getCompilerOptions() as CompilerOptions;
 
     for (const required of findRequiredPaths(file.code)) {
         // Do no resolve lualib
@@ -60,57 +141,22 @@ function resolveFileDependencies(file: ProcessedFile, program: ts.Program, emitH
         }
 
         // Try to resolve the import starting from the directory `file` is in
-        const fileDir = path.dirname(file.fileName);
-        const resolvedDependency = resolveDependency(fileDir, required, program, emitHost);
-        if (resolvedDependency) {
-            if (options.tstlVerbose) {
-                console.log(`Resolved ${required} to ${normalizeSlashes(resolvedDependency)}`);
-            }
-
-            // Figure out resolved require path and dependency output path
-            const resolvedRequire = getEmitPathRelativeToOutDir(resolvedDependency, program);
-
-            if (shouldRewriteRequires(resolvedDependency, program)) {
-                replaceRequireInCode(file, required, resolvedRequire);
-                replaceRequireInSourceMap(file, required, resolvedRequire);
-            }
-
-            // If dependency is not part of project, add dependency to output and resolve its dependencies recursively
-            if (shouldIncludeDependency(resolvedDependency, program)) {
-                // If dependency resolved successfully, read its content
-                const dependencyContent = emitHost.readFile(resolvedDependency);
-                if (dependencyContent === undefined) {
-                    diagnostics.push(couldNotReadDependency(resolvedDependency));
-                    continue;
-                }
-
-                const dependency = {
-                    fileName: resolvedDependency,
-                    code: dependencyContent,
-                };
-                const nestedDependencies = resolveFileDependencies(dependency, program, emitHost);
-                dependencies.push(dependency, ...nestedDependencies.resolvedFiles);
-                diagnostics.push(...nestedDependencies.diagnostics);
-            }
-        } else {
-            // Could not resolve dependency, add a diagnostic and make some fallback path
-            diagnostics.push(couldNotResolveRequire(required, path.relative(getProjectRoot(program), file.fileName)));
-
-            const fallbackRequire = fallbackResolve(required, getSourceDir(program), fileDir);
-            replaceRequireInCode(file, required, fallbackRequire);
-            replaceRequireInSourceMap(file, required, fallbackRequire);
-        }
+        const resolvedDependency = context.resolve(file, required);
+        dependencies.push(...resolvedDependency.resolvedFiles);
+        diagnostics.push(...resolvedDependency.diagnostics);
     }
     return { resolvedFiles: dependencies, diagnostics };
 }
 
 function resolveDependency(
-    fileDirectory: string,
+    requiringFile: ProcessedFile,
     dependency: string,
     program: ts.Program,
     emitHost: EmitHost
 ): string | undefined {
     const options = program.getCompilerOptions() as CompilerOptions;
+
+    const fileDirectory = path.dirname(requiringFile.fileName);
     if (options.tstlVerbose) {
         console.log(`Resolving "${dependency}" from ${normalizeSlashes(fileDirectory)}`);
     }
@@ -132,10 +178,24 @@ function resolveDependency(
         }
     }
 
+    // Check if this is a lua file in the project sources
+    const possibleLuaProjectFiles = [
+        resolvedPath + ".lua", // lua file in sources
+        path.join(resolvedPath, "index.lua"), // lua index file in sources
+    ];
+
+    for (const possibleFile of possibleLuaProjectFiles) {
+        if (emitHost.fileExists(possibleFile)) {
+            return possibleFile;
+        }
+    }
+
     // Check if this is a sibling of a required lua file
-    const luaFilePath = path.resolve(fileDirectory, dependency + ".lua");
-    if (emitHost.fileExists(luaFilePath)) {
-        return luaFilePath;
+    if (requiringFile.fileName.endsWith(".lua")) {
+        const luaFilePath = resolveLuaPath(fileDirectory, dependency, emitHost);
+        if (luaFilePath) {
+            return luaFilePath;
+        }
     }
 
     // Not a TS file in our project sources, use resolver to check if we can find dependency
@@ -148,6 +208,39 @@ function resolveDependency(
         // resolveSync errors if it fails to resolve
     }
 
+    return undefined;
+}
+
+function resolveLuaPath(fromPath: string, dependency: string, emitHost: EmitHost) {
+    const splitDependency = dependency.split(".");
+    if (splitDependency.length === 1) {
+        // If dependency has just one part (the file), look for a lua file with that name
+        const fileDirectory = walkUpFileTreeUntil(fromPath, dir =>
+            emitHost.fileExists(path.join(dir, dependency) + ".lua")
+        );
+        if (fileDirectory) {
+            return path.join(fileDirectory, dependency) + ".lua";
+        }
+    } else {
+        // If dependency has multiple parts, look for the first directory of the require path, which must be in the lua root
+        const luaRoot = walkUpFileTreeUntil(fromPath, dir =>
+            emitHost.directoryExists(path.join(dir, splitDependency[0]))
+        );
+        if (luaRoot) {
+            return path.join(luaRoot, dependency.replace(".", path.sep)) + ".lua";
+        }
+    }
+}
+
+function walkUpFileTreeUntil(fromDirectory: string, predicate: (dir: string) => boolean) {
+    const currentDir = path.normalize(fromDirectory).split(path.sep);
+    while (currentDir.length > 0) {
+        const dir = currentDir.join(path.sep);
+        if (predicate(dir)) {
+            return dir;
+        }
+        currentDir.pop();
+    }
     return undefined;
 }
 

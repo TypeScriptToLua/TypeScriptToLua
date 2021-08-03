@@ -170,6 +170,8 @@ function resolveDependency(
         path.join(resolvedPath, "index.ts"), // Index ts file,
         resolvedPath + ".tsx", // tsx file
         path.join(resolvedPath, "index.tsx"), // tsx index
+        resolvedPath + ".lua", // lua file in sources
+        path.join(resolvedPath, "index.lua") // lua index file in sources
     ];
 
     for (const possibleFile of possibleProjectFiles) {

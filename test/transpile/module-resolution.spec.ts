@@ -284,6 +284,7 @@ describe("dependency with complicated inner structure", () => {
     const expectedResult = {
         otherFileResult: "someFunc from otherfile.lua",
         otherFileUtil: "util",
+        subsubresult: "result from subsub dir",
         utilResult: "util",
     };
 

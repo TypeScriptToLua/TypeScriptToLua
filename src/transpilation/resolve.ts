@@ -227,7 +227,7 @@ function resolveLuaPath(fromPath: string, dependency: string, emitHost: EmitHost
             emitHost.directoryExists(path.join(dir, splitDependency[0]))
         );
         if (luaRoot) {
-            return path.join(luaRoot, dependency.replace(".", path.sep)) + ".lua";
+            return path.join(luaRoot, dependency.replace(/\./g, path.sep)) + ".lua";
         }
     }
 }

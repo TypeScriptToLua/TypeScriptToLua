@@ -315,27 +315,38 @@ test("module resolution should not try to resolve @noResolution annotation", () 
     util.testModule`
         import * as json from "json";
         const test = json.decode("{}");
-    `.addExtraFile("json.d.ts", `
-        /** @noResolution */
-        declare module "json" {
-            function encode(this: void, data: unknown): string;
-            function decode(this: void, data: string): unknown;
-        }
-    `).expectToHaveNoDiagnostics();
+    `
+        .addExtraFile(
+            "json.d.ts",
+            `
+                /** @noResolution */
+                declare module "json" {
+                    function encode(this: void, data: unknown): string;
+                    function decode(this: void, data: string): unknown;
+                }
+            `
+        )
+        .expectToHaveNoDiagnostics();
 });
 
 test("module resolution should not rewrite @NoResolution requires in library mode", () => {
     const { transpiledFiles } = util.testModule`
         import * as json from "json";
         const test = json.decode("{}");
-    `.addExtraFile("json.d.ts", `
-        /** @noResolution */
-        declare module "json" {
-            function encode(this: void, data: unknown): string;
-            function decode(this: void, data: string): unknown;
-        }
-    `).setOptions({ buildMode: BuildMode.Library }).getLuaResult();
+    `
+        .addExtraFile(
+            "json.d.ts",
+            `
+                /** @noResolution */
+                declare module "json" {
+                    function encode(this: void, data: unknown): string;
+                    function decode(this: void, data: string): unknown;
+                }
+            `
+        )
+        .setOptions({ buildMode: BuildMode.Library })
+        .getLuaResult();
 
     expect(transpiledFiles).toHaveLength(1);
-    expect(transpiledFiles[0].lua).toContain("require(\"@NoResolution:");
+    expect(transpiledFiles[0].lua).toContain('require("@NoResolution:');
 });

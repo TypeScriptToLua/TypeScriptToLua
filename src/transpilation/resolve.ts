@@ -274,11 +274,11 @@ function isBuildModeLibrary(program: ts.Program) {
 function findRequiredPaths(code: string): string[] {
     // Find all require("<path>") paths in a lua code string
     const paths: string[] = [];
-    const pattern = /require\("(.+)"\)/g;
+    const pattern = /(^|\s|;|=)require\("(.+)"\)/g;
     // eslint-disable-next-line @typescript-eslint/ban-types
     let match: RegExpExecArray | null;
     while ((match = pattern.exec(code))) {
-        paths.push(match[1]);
+        paths.push(match[2]);
     }
 
     return paths;
@@ -286,7 +286,14 @@ function findRequiredPaths(code: string): string[] {
 
 function replaceRequireInCode(file: ProcessedFile, originalRequire: string, newRequire: string): void {
     const requirePath = formatPathToLuaPath(newRequire.replace(".lua", ""));
-    file.code = file.code.replace(`require("${originalRequire}")`, `require("${requirePath}")`);
+
+    // Escape special characters to prevent the regex from breaking...
+    const escapedRequire = originalRequire.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
+
+    file.code = file.code.replace(
+        new RegExp(`(^|\\s|;|=)require\\("${escapedRequire}"\\)`),
+        `$1require("${requirePath}")`
+    );
 }
 
 function replaceRequireInSourceMap(file: ProcessedFile, originalRequire: string, newRequire: string): void {

@@ -329,6 +329,7 @@ test("module resolution should not try to resolve @noResolution annotation", () 
         .expectToHaveNoDiagnostics();
 });
 
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1062
 test("module resolution should not rewrite @NoResolution requires in library mode", () => {
     const { transpiledFiles } = util.testModule`
         import * as json from "json";
@@ -351,6 +352,40 @@ test("module resolution should not rewrite @NoResolution requires in library mod
     expect(transpiledFiles[0].lua).toContain('require("@NoResolution:');
 });
 
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1050
+test("module resolution should not try to resolve resolve-like functions", () => {
+    util.testModule`
+        function custom_require(this: void, value: string) {
+            return value;
+        }
+
+        namespace ns {
+            export function require(this: void, value: string) {
+                return value;
+            }
+        }
+
+        class MyClass {
+            require(value: string) {
+                return value;
+            }
+        }
+        const inst = new MyClass();
+
+        export const result = [
+            custom_require("value 1"),
+            ns.require("value 2"),
+            inst.require("value 3")
+        ];
+
+    `
+        .expectToHaveNoDiagnostics()
+        .expectToEqual({
+            result: ["value 1", "value 2", "value 3"],
+        });
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1050
 test("module resolution uses baseURL to resolve imported files", () => {
     util.testModule`
         import { foo } from "dep1";

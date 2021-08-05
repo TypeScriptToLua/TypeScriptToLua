@@ -167,7 +167,7 @@ function resolveDependency(
     }
 
     // Check if file is a file in the project
-    const resolvedPath = path.join(fileDirectory, dependency);
+    const resolvedPath = path.join(options.baseUrl ?? fileDirectory, dependency);
 
     const possibleProjectFiles = [
         resolvedPath, // JSON files need their extension as part of the import path, caught by this branch,

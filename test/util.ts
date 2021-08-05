@@ -178,8 +178,14 @@ export abstract class TestBuilder {
     @memoize
     public getProgram(): ts.Program {
         this.hasProgram = true;
+
+        // Exclude lua files from TS program, but keep them in extraFiles so module resolution can find them
+        const nonLuaExtraFiles = Object.fromEntries(
+            Object.entries(this.extraFiles).filter(([fileName]) => !fileName.endsWith(".lua"))
+        );
+
         return tstl.createVirtualProgram(
-            { ...this.extraFiles, [normalizeSlashes(this.mainFileName)]: this.getTsCode() },
+            { ...nonLuaExtraFiles, [normalizeSlashes(this.mainFileName)]: this.getTsCode() },
             this.options
         );
     }

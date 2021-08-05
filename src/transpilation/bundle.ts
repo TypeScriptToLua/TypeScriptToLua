@@ -18,11 +18,11 @@ local ____moduleCache = {}
 local ____originalRequire = require
 local function require(file)
     if ____moduleCache[file] then
-        return ____moduleCache[file]
+        return ____moduleCache[file].value
     end
     if ____modules[file] then
-        ____moduleCache[file] = ____modules[file]()
-        return ____moduleCache[file]
+        ____moduleCache[file] = { value = ____modules[file]() }
+        return ____moduleCache[file].value
     else
         if ____originalRequire then
             return ____originalRequire(file)

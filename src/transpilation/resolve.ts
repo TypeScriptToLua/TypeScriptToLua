@@ -134,9 +134,14 @@ function resolveFileDependencies(file: ProcessedFile, context: ResolutionContext
 
         // Do not resolve noResolution paths
         if (required.startsWith("@NoResolution:")) {
-            const path = required.replace("@NoResolution:", "");
-            replaceRequireInCode(file, required, path);
-            replaceRequireInSourceMap(file, required, path);
+            // Remove @NoResolution prefix if not building in library mode
+            if (!isBuildModeLibrary(context.program)) {
+                const path = required.replace("@NoResolution:", "");
+                replaceRequireInCode(file, required, path);
+                replaceRequireInSourceMap(file, required, path);
+            }
+
+            // Skip
             continue;
         }
 
@@ -227,7 +232,7 @@ function resolveLuaPath(fromPath: string, dependency: string, emitHost: EmitHost
             emitHost.directoryExists(path.join(dir, splitDependency[0]))
         );
         if (luaRoot) {
-            return path.join(luaRoot, dependency.replace(".", path.sep)) + ".lua";
+            return path.join(luaRoot, dependency.replace(/\./g, path.sep)) + ".lua";
         }
     }
 }

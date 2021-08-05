@@ -109,6 +109,29 @@ test("cyclic imports", () => {
         .expectToEqual(new util.ExecutionError("stack overflow"));
 });
 
+test("does not evaluate files multiple times", () => {
+    util.testBundle`
+        import "./countingfile";
+        import "./otherfile";
+
+        export const count = _count;
+    `
+        .addExtraFile(
+            "otherfile.ts",
+            `
+                import "./countingfile";
+            `
+        )
+        .addExtraFile(
+            "countingfile.ts",
+            `
+                declare var _count: number | undefined;
+                _count = (_count ?? 0) + 1;
+            `
+        )
+        .expectToEqual({ count: 1 });
+});
+
 test("no entry point", () => {
     util.testBundle``
         .setOptions({ luaBundleEntry: undefined })

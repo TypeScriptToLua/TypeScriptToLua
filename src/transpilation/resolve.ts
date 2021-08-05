@@ -286,7 +286,10 @@ function findRequiredPaths(code: string): string[] {
 
 function replaceRequireInCode(file: ProcessedFile, originalRequire: string, newRequire: string): void {
     const requirePath = formatPathToLuaPath(newRequire.replace(".lua", ""));
-    file.code = file.code.replace(new RegExp(`(^|\\s|;|=)require\\("${originalRequire}"\\)`), `$1require("${requirePath}")`);
+    file.code = file.code.replace(
+        new RegExp(`(^|\\s|;|=)require\\("${originalRequire}"\\)`),
+        `$1require("${requirePath}")`
+    );
 }
 
 function replaceRequireInSourceMap(file: ProcessedFile, originalRequire: string, newRequire: string): void {

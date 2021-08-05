@@ -286,8 +286,12 @@ function findRequiredPaths(code: string): string[] {
 
 function replaceRequireInCode(file: ProcessedFile, originalRequire: string, newRequire: string): void {
     const requirePath = formatPathToLuaPath(newRequire.replace(".lua", ""));
+
+    // Escape special characters to prevent the regex from breaking...
+    const escapedRequire = originalRequire.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
+
     file.code = file.code.replace(
-        new RegExp(`(^|\\s|;|=)require\\("${originalRequire}"\\)`),
+        new RegExp(`(^|\\s|;|=)require\\("${escapedRequire}"\\)`),
         `$1require("${requirePath}")`
     );
 }

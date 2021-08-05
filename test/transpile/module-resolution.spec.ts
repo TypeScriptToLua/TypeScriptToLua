@@ -350,3 +350,43 @@ test("module resolution should not rewrite @NoResolution requires in library mod
     expect(transpiledFiles).toHaveLength(1);
     expect(transpiledFiles[0].lua).toContain('require("@NoResolution:');
 });
+
+test("module resolution uses baseURL to resolve imported files", () => {
+    util.testModule`
+        import { foo } from "dep1";
+        import { bar } from "dep2";
+        import { baz } from "luadep";
+
+        export const fooResult = foo();
+        export const barResult = bar();
+    `
+        .addExtraFile(
+            "myproject/mydeps/dep1.ts",
+            `
+                export function foo() { return "foo"; }
+            `
+        )
+        .addExtraFile(
+            "myproject/mydeps/dep2.ts",
+            `
+                export function bar() { return "bar"; }
+            `
+        )
+        .addExtraFile(
+            "myproject/mydeps/luadep.d.ts",
+            `
+                export function baz(): string;
+            `
+        )
+        .addExtraFile(
+            "myproject/mydeps/luadep.lua",
+            `
+                return { baz = function() return "baz" end }
+            `
+        )
+        .setOptions({ baseUrl: "./myproject/mydeps" })
+        .expectToEqual({
+            fooResult: "foo",
+            barResult: "bar",
+        });
+});

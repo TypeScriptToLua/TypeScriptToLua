@@ -193,11 +193,12 @@ export abstract class TestBuilder {
     private getEmitHost(): EmitHost {
         return {
             fileExists: (path: string) => normalizeSlashes(path) in this.extraFiles,
-            directoryExists: (path: string) => Object.keys(this.extraFiles).some(f => f.startsWith(normalizeSlashes(path))),
+            directoryExists: (path: string) =>
+                Object.keys(this.extraFiles).some(f => f.startsWith(normalizeSlashes(path))),
             getCurrentDirectory: () => ".",
             readFile: (path: string) => this.extraFiles[normalizeSlashes(path)] ?? ts.sys.readFile(path),
-            writeFile() {}
-        }
+            writeFile() {},
+        };
     }
 
     @memoize

@@ -129,6 +129,7 @@ function resolveFileDependencies(file: ProcessedFile, context: ResolutionContext
     for (const required of findRequiredPaths(file.code)) {
         // Do no resolve lualib
         if (required === "lualib_bundle") {
+            dependencies.push({ fileName: "lualib_bundle", code: "" });
             continue;
         }
 

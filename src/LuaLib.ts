@@ -110,7 +110,6 @@ const luaLibDependencies: Partial<Record<LuaLibFeature, LuaLibFeature[]>> = {
     ParseFloat: [LuaLibFeature.StringAccess],
     ParseInt: [LuaLibFeature.StringSubstr, LuaLibFeature.StringSubstring],
     SetDescriptor: [LuaLibFeature.CloneDescriptor],
-    StringReplace: [LuaLibFeature.Unpack],
     StringSplit: [LuaLibFeature.StringSubstring, LuaLibFeature.StringAccess],
     SymbolRegistry: [LuaLibFeature.Symbol],
     Map: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol, LuaLibFeature.Class],

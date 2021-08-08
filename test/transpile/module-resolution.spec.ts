@@ -394,6 +394,7 @@ test("module resolution uses baseURL to resolve imported files", () => {
 
         export const fooResult = foo();
         export const barResult = bar();
+        export const bazResult = baz();
     `
         .addExtraFile(
             "myproject/mydeps/dep1.ts",
@@ -423,5 +424,34 @@ test("module resolution uses baseURL to resolve imported files", () => {
         .expectToEqual({
             fooResult: "foo",
             barResult: "bar",
+            bazResult: "baz",
+        });
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1071
+test("includes lualib_bundle when external lua requests it", () => {
+    util.testModule`
+        export { foo } from "./lualibuser";
+    `
+        .addExtraFile(
+            "lualibuser.d.ts",
+            `
+                export const foo: string[];
+            `
+        )
+        .addExtraFile(
+            "lualibuser.lua",
+            `
+                require("lualib_bundle")
+
+                local result = {}
+                __TS__ArrayPush(result, "foo")
+                __TS__ArrayPush(result, "bar")
+
+                return { foo = result }
+            `
+        )
+        .expectToEqual({
+            foo: ["foo", "bar"],
         });
 });

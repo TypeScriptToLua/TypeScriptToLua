@@ -9,7 +9,7 @@ import * as ts from "typescript";
 import * as vm from "vm";
 import * as tstl from "../src";
 import { createEmitOutputCollector } from "../src/transpilation/output-collector";
-import { getEmitOutDir, transpileProject } from "../src";
+import { EmitHost, getEmitOutDir, transpileProject } from "../src";
 import { formatPathToLuaPath, normalizeSlashes } from "../src/utils";
 
 const jsonLib = fs.readFileSync(path.join(__dirname, "json.lua"), "utf8");
@@ -190,11 +190,22 @@ export abstract class TestBuilder {
         );
     }
 
+    private getEmitHost(): EmitHost {
+        return {
+            fileExists: (path: string) => normalizeSlashes(path) in this.extraFiles,
+            directoryExists: (path: string) =>
+                Object.keys(this.extraFiles).some(f => f.startsWith(normalizeSlashes(path))),
+            getCurrentDirectory: () => ".",
+            readFile: (path: string) => this.extraFiles[normalizeSlashes(path)] ?? ts.sys.readFile(path),
+            writeFile() {},
+        };
+    }
+
     @memoize
     public getLuaResult(): tstl.TranspileVirtualProjectResult {
         const program = this.getProgram();
         const collector = createEmitOutputCollector();
-        const { diagnostics: transpileDiagnostics } = new tstl.Transpiler().emit({
+        const { diagnostics: transpileDiagnostics } = new tstl.Transpiler({ emitHost: this.getEmitHost() }).emit({
             program,
             customTransformers: this.customTransformers,
             writeFile: collector.writeFile,

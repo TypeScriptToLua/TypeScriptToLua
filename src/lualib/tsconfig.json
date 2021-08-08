@@ -3,7 +3,7 @@
         "outDir": "../../dist/lualib",
         "target": "esnext",
         "lib": ["esnext"],
-        "types": ["../../language-extensions"],
+        "types": ["../../language-extensions", "lua-types/5.4"],
         "skipLibCheck": true,
 
         "noUnusedLocals": true,

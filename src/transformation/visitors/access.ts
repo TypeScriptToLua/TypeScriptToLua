@@ -48,9 +48,14 @@ export const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessE
             context.diagnostics.push(invalidMultiReturnAccess(node));
         }
 
-        const selectIdentifier = lua.createIdentifier("select");
-        const selectCall = lua.createCallExpression(selectIdentifier, [accessExpression, table]);
-        return selectCall;
+        // When selecting the first element, we can shortcut
+        if (ts.isNumericLiteral(node.argumentExpression) && node.argumentExpression.text === "0") {
+            return table;
+        } else {
+            const selectIdentifier = lua.createIdentifier("select");
+            const selectCall = lua.createCallExpression(selectIdentifier, [accessExpression, table]);
+            return selectCall;
+        }
     }
 
     if (ts.isOptionalChain(node)) {

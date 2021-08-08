@@ -175,7 +175,7 @@ export function transformBindingVariableDeclaration(
 
     if (initializer) {
         if (isMultiReturnCall(context, initializer)) {
-            // Don't unpack @tupleReturn or LuaMultiReturn functions
+            // Don't unpack LuaMultiReturn functions
             statements.push(
                 ...createLocalOrExportedOrGlobalDeclaration(
                     context,

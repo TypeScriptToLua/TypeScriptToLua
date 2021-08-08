@@ -6,7 +6,7 @@ function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap: { [li
 
     if (globalThis.__TS__originalTraceback === undefined) {
         globalThis.__TS__originalTraceback = debug.traceback;
-        debug.traceback = (thread, message, level) => {
+        debug.traceback = ((thread, message, level) => {
             let trace: string;
             if (thread === undefined && message === undefined && level === undefined) {
                 trace = globalThis.__TS__originalTraceback();
@@ -27,6 +27,6 @@ function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap: { [li
             });
 
             return result;
-        };
+        }) as typeof debug.traceback;
     }
 }

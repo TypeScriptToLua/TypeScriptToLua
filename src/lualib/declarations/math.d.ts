@@ -1,7 +1,6 @@
 /** @noSelf */
 declare namespace math {
-    /** @tupleReturn */
-    function modf(x: number): [number, number];
+    function modf(x: number): LuaMultiReturn<[number, number]>;
 
     function atan(x: number): number;
     // eslint-disable-next-line @typescript-eslint/unified-signatures

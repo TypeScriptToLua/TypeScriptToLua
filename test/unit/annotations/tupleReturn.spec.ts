@@ -1,3 +1,4 @@
+import { annotationDeprecated } from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
 const expectNoUnpack: util.TapCallback = builder => expect(builder.getMainLuaCodeChunk()).not.toContain("unpack");
@@ -9,6 +10,7 @@ test("Tuple Return Access", () => {
         return tuple()[2];
     `
         .tap(expectNoUnpack)
+        .expectToHaveDiagnostics([annotationDeprecated.code])
         .expectToMatchJsResult();
 });
 
@@ -20,6 +22,7 @@ test("Tuple Return Destruct Declaration", () => {
         return b;
     `
         .tap(expectNoUnpack)
+        .expectToHaveDiagnostics([annotationDeprecated.code])
         .expectToMatchJsResult();
 });
 
@@ -32,6 +35,7 @@ test("Tuple Return Destruct Assignment", () => {
         return a - b;
     `
         .tap(expectNoUnpack)
+        .expectToHaveDiagnostics([annotationDeprecated.code])
         .expectToMatchJsResult();
 });
 
@@ -45,6 +49,7 @@ test("Tuple Static Method Return Destruct", () => {
         return b;
     `
         .tap(expectNoUnpack)
+        .expectToHaveDiagnostics([annotationDeprecated.code])
         .expectToMatchJsResult();
 });
 
@@ -58,6 +63,7 @@ test("Tuple Static Function Property Return Destruct", () => {
         return b;
     `
         .tap(expectNoUnpack)
+        .expectToHaveDiagnostics([annotationDeprecated.code])
         .expectToMatchJsResult();
 });
 
@@ -72,6 +78,7 @@ test("Tuple Non-Static Method Return Destruct", () => {
         return b;
     `
         .tap(expectNoUnpack)
+        .expectToHaveDiagnostics([annotationDeprecated.code])
         .expectToMatchJsResult();
 });
 
@@ -86,6 +93,7 @@ test("Tuple Non-Static Function Property Return Destruct", () => {
         return b;
     `
         .tap(expectNoUnpack)
+        .expectToHaveDiagnostics([annotationDeprecated.code])
         .expectToMatchJsResult();
 });
 
@@ -102,6 +110,7 @@ test("Tuple Interface Method Return Destruct", () => {
         return b;
     `
         .tap(expectNoUnpack)
+        .expectToHaveDiagnostics([annotationDeprecated.code])
         .expectToMatchJsResult();
 });
 
@@ -118,6 +127,7 @@ test("Tuple Interface Function Property Return Destruct", () => {
         return b;
     `
         .tap(expectNoUnpack)
+        .expectToHaveDiagnostics([annotationDeprecated.code])
         .expectToMatchJsResult();
 });
 
@@ -131,6 +141,7 @@ test("Tuple Object Literal Method Return Destruct", () => {
         return b;
     `
         .tap(expectNoUnpack)
+        .expectToHaveDiagnostics([annotationDeprecated.code])
         .expectToMatchJsResult();
 });
 
@@ -144,6 +155,7 @@ test("Tuple Object Literal Function Property Return Destruct", () => {
         return b;
     `
         .tap(expectNoUnpack)
+        .expectToHaveDiagnostics([annotationDeprecated.code])
         .expectToMatchJsResult();
 });
 
@@ -154,6 +166,7 @@ test("Tuple Return on Arrow Function", () => {
         return a + b;
     `
         .tap(expectNoUnpack)
+        .expectToHaveDiagnostics([annotationDeprecated.code])
         .expectToMatchJsResult();
 });
 
@@ -165,6 +178,7 @@ test("Tuple Return Inference", () => {
         return a + b;
     `
         .tap(expectNoUnpack)
+        .expectToHaveDiagnostics([annotationDeprecated.code])
         .expectToMatchJsResult();
 });
 
@@ -178,6 +192,7 @@ test("Tuple Return Inference as Argument", () => {
         return foo(s => [s, "bar"]);
     `
         .tap(expectNoUnpack)
+        .expectToHaveDiagnostics([annotationDeprecated.code])
         .expectToMatchJsResult();
 });
 
@@ -191,6 +206,7 @@ test("Tuple Return Inference as Elipsis Argument", () => {
         return foo(0, s => [s, "bar"]);
     `
         .tap(expectNoUnpack)
+        .expectToHaveDiagnostics([annotationDeprecated.code])
         .expectToMatchJsResult();
 });
 
@@ -204,6 +220,7 @@ test("Tuple Return Inference as Elipsis Tuple Argument", () => {
         return foo(0, 0, s => [s, "bar"]);
     `
         .tap(expectNoUnpack)
+        .expectToHaveDiagnostics([annotationDeprecated.code])
         .expectToMatchJsResult();
 });
 
@@ -218,6 +235,7 @@ test("Tuple Return in Spread", () => {
         return bar(...foo());
     `
         .tap(expectNoUnpack)
+        .expectToHaveDiagnostics([annotationDeprecated.code])
         .expectToMatchJsResult();
 });
 
@@ -229,6 +247,7 @@ test("Tuple Return on Type Alias", () => {
         return a + b;
     `
         .tap(expectNoUnpack)
+        .expectToHaveDiagnostics([annotationDeprecated.code])
         .expectToMatchJsResult();
 });
 
@@ -240,6 +259,7 @@ test("Tuple Return on Interface", () => {
         return a + b;
     `
         .tap(expectNoUnpack)
+        .expectToHaveDiagnostics([annotationDeprecated.code])
         .expectToMatchJsResult();
 });
 
@@ -253,6 +273,7 @@ test("Tuple Return on Interface Signature", () => {
         return a + b;
     `
         .tap(expectNoUnpack)
+        .expectToHaveDiagnostics([annotationDeprecated.code])
         .expectToMatchJsResult();
 });
 
@@ -272,6 +293,7 @@ test("Tuple Return on Overload", () => {
         return a + b + c
     `
         .tap(expectNoUnpack)
+        .expectToHaveDiagnostics([annotationDeprecated.code])
         .expectToMatchJsResult();
 });
 
@@ -293,6 +315,7 @@ test("Tuple Return on Interface Overload", () => {
         return a + b + c
     `
         .tap(expectNoUnpack)
+        .expectToHaveDiagnostics([annotationDeprecated.code])
         .expectToMatchJsResult();
 });
 
@@ -316,6 +339,7 @@ test("Tuple Return on Interface Method Overload", () => {
         return a + b + c;
     `
         .tap(expectNoUnpack)
+        .expectToHaveDiagnostics([annotationDeprecated.code])
         .expectToMatchJsResult();
 });
 
@@ -342,6 +366,7 @@ test("Tuple Return vs Non-Tuple Return Overload", () => {
     `
         .setTsHeader(tsHeader)
         .setLuaHeader(luaHeader)
+        .expectToHaveDiagnostics([annotationDeprecated.code])
         .expectToEqual("7foobar");
 });
 
@@ -353,7 +378,9 @@ test("TupleReturn assignment", () => {
         }
         let [a, b] = abc();
         return { a, b };
-    `.expectToMatchJsResult();
+    `
+        .expectToHaveDiagnostics([annotationDeprecated.code])
+        .expectToMatchJsResult();
 });
 
 test("TupleReturn Single assignment", () => {
@@ -365,7 +392,9 @@ test("TupleReturn Single assignment", () => {
         let a = abc();
         a = abc();
         return a;
-    `.expectToMatchJsResult();
+    `
+        .expectToHaveDiagnostics([annotationDeprecated.code, annotationDeprecated.code])
+        .expectToMatchJsResult();
 });
 
 test("TupleReturn interface assignment", () => {
@@ -410,7 +439,9 @@ test("TupleReturn functional", () => {
         function abc(): [number, string] { return [3, "a"]; }
         const [a, b] = abc();
         return b + a;
-    `.expectToMatchJsResult();
+    `
+        .expectToHaveDiagnostics([annotationDeprecated.code])
+        .expectToMatchJsResult();
 });
 
 test("TupleReturn single", () => {
@@ -419,7 +450,9 @@ test("TupleReturn single", () => {
         function abc(): [number, string] { return [3, "a"]; }
         const res = abc();
         return res.length
-    `.expectToMatchJsResult();
+    `
+        .expectToHaveDiagnostics([annotationDeprecated.code])
+        .expectToMatchJsResult();
 });
 
 test("TupleReturn in expression", () => {
@@ -427,5 +460,7 @@ test("TupleReturn in expression", () => {
         /** @tupleReturn */
         function abc(): [number, string] { return [3, "a"]; }
         return abc()[1] + abc()[0];
-    `.expectToMatchJsResult();
+    `
+        .expectToHaveDiagnostics([annotationDeprecated.code, annotationDeprecated.code])
+        .expectToMatchJsResult();
 });

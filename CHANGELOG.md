@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.42.0
+
+- **[Breaking]** The `/** @tupleReturn */` is now deprecated, and will be removed next release. If you are still using it, please upgrade to the [LuaMultiReturn language extension](https://typescripttolua.github.io/docs/advanced/language-extensions#luamultireturn-type).
+- Added support for TSX, see [documentation](https://typescripttolua.github.io/docs/tsx) for more information.
+- Added support for the `baseUrl` configuration key for module resolution.
+
+A large list of bugfixes:
+
+- Fixed an exception causing tstl to exit when trying to assign to an optional chain.
+- Fixed resolved files appearing duplicated in lua bundles.
+- Fixed a problem resolving external Lua files in nested directories.
+- Fixed `@noResolution` in library packages losing their NoResolution tag, causing attempts to resolve them for package users.
+- Fixed a bug in the bundling code causing modules not to be cached if they return nil (which happens if they are not a module)
+- Fixed module resolution trying to incorrectly resolve and rewrite things like `myObject.require()` or `my_custom_require()`.
+- Fixed lualib bundle not being included in the output if external packages use it, but the client code does not.
+
 ## 0.41.0
 
 - Added support for [optional chaining](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html) `a?.b`, `a?.[b]` and `a?.()`.

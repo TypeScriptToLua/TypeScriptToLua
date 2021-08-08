@@ -63,9 +63,12 @@ export function transformBinaryOperation(
     if (operator === ts.SyntaxKind.PlusToken && ts.isBinaryExpression(node)) {
         const typeLeft = context.checker.getTypeAtLocation(node.left);
         const typeRight = context.checker.getTypeAtLocation(node.right);
-        if (isStringType(context, typeLeft) || isStringType(context, typeRight)) {
-            left = wrapInToStringForConcat(left);
-            right = wrapInToStringForConcat(right);
+
+        const isLeftString = isStringType(context, typeLeft);
+        const isRightString = isStringType(context, typeRight);
+        if (isLeftString || isRightString) {
+            left = isLeftString ? left : wrapInToStringForConcat(left);
+            right = isRightString ? right : wrapInToStringForConcat(right);
             luaOperator = lua.SyntaxKind.ConcatOperator;
         }
     }

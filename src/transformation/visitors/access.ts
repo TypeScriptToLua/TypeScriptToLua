@@ -8,7 +8,7 @@ import { addToNumericExpression } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isArrayType, isNumberType, isStringType } from "../utils/typescript";
 import { tryGetConstEnumValue } from "./enum";
-import { returnsMultiType } from "./language-extensions/multi";
+import { isMultiReturnCall, returnsMultiType } from "./language-extensions/multi";
 
 export function transformElementAccessArgument(
     context: TransformationContext,
@@ -42,15 +42,20 @@ export const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessE
 
     const accessExpression = transformElementAccessArgument(context, node);
 
-    if (ts.isCallExpression(node.expression) && returnsMultiType(context, node.expression)) {
+    if (isMultiReturnCall(context, node.expression)) {
         const accessType = context.checker.getTypeAtLocation(node.argumentExpression);
         if (!isNumberType(context, accessType)) {
             context.diagnostics.push(invalidMultiReturnAccess(node));
         }
 
-        const selectIdentifier = lua.createIdentifier("select");
-        const selectCall = lua.createCallExpression(selectIdentifier, [accessExpression, table]);
-        return selectCall;
+        // When selecting the first element, we can shortcut
+        if (ts.isNumericLiteral(node.argumentExpression) && node.argumentExpression.text === "0") {
+            return table;
+        } else {
+            const selectIdentifier = lua.createIdentifier("select");
+            const selectCall = lua.createCallExpression(selectIdentifier, [accessExpression, table]);
+            return selectCall;
+        }
     }
 
     if (ts.isOptionalChain(node)) {

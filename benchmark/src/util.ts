@@ -30,16 +30,21 @@ export function readFile(path: string): string {
 }
 
 export function readAll(file: LuaFile): string {
-    const content = file.read(_VERSION === "Lua 5.3" ? "a" : ("*a" as any)) as [string | undefined];
+    const content = file.read(_VERSION === "Lua 5.3" ? "a" : ("*a" as any));
 
-    if (content[0]) {
-        return content[0];
+    if (content) {
+        return content as string;
     }
     throw Error(`Can't readAll for file ${file}`);
 }
 
 export function readDir(dir: string): string[] {
-    const findHandle = io.popen(isWindows ? `dir /A-D /B ${dir}` : `find '${dir}' -maxdepth 1 -type f`);
+    const [findHandle] = io.popen(isWindows ? `dir /A-D /B ${dir}` : `find '${dir}' -maxdepth 1 -type f`);
+
+    if (!findHandle) {
+        throw new Error(`Failed to read dir ${dir}`);
+    }
+
     const findResult = readAll(findHandle);
 
     if (!findHandle.close()) {

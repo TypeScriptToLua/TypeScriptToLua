@@ -1,11 +1,5 @@
-import * as path from "path";
 import * as util from "../../util";
-import * as tstl from "../../../src";
 import { invalidVarargUse } from "../../../src/transformation/utils/diagnostics";
-
-const varargProjectOptions: tstl.CompilerOptions = {
-    types: [path.resolve(__dirname, "../../../language-extensions")],
-};
 
 test.each([
     'const result = [...$vararg].join("")',
@@ -17,7 +11,7 @@ test.each([
         ${statement}
         export { result };
     `
-        .setOptions(varargProjectOptions)
+        .withLanguageExtensions()
         .setLuaFactory(code => `return (function(...) ${code} end)("A", "B", "C", "D")`)
         .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toMatch("unpack"))
         .expectToEqual({ result: "ABCD" });
@@ -33,6 +27,6 @@ test.each([
     util.testModule`
         ${statement}
     `
-        .setOptions(varargProjectOptions)
+        .withLanguageExtensions()
         .expectDiagnosticsToMatchSnapshot([invalidVarargUse.code]);
 });

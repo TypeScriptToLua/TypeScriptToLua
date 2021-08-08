@@ -147,6 +147,15 @@ export abstract class TestBuilder {
         return this;
     }
 
+    public withLanguageExtensions(): this {
+        this.setOptions({ types: [path.resolve(__dirname, "..", "language-extensions")] });
+        // Polyfill lualib for JS
+        this.setJsHeader(`
+            function $multi(...args) { return args; }
+        `);
+        return this;
+    }
+
     protected mainFileName = "main.ts";
     public setMainFileName(mainFileName: string): this {
         expect(this.hasProgram).toBe(false);

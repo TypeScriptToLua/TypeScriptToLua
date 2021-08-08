@@ -1,40 +1,36 @@
-/** @tupleReturn */
-function __TS__IteratorGeneratorStep(this: GeneratorIterator): [true, any] | [] {
+function __TS__IteratorGeneratorStep(this: GeneratorIterator): LuaMultiReturn<[true, any] | []> {
     const co = this.____coroutine;
 
     const [status, value] = coroutine.resume(co);
     if (!status) throw value;
 
-    if (coroutine.status(co) === "dead") return [];
-    return [true, value];
+    if (coroutine.status(co) === "dead") return $multi();
+    return $multi(true, value);
 }
 
-/** @tupleReturn */
-function __TS__IteratorIteratorStep<T>(this: Iterator<T>): [true, T] | [] {
+function __TS__IteratorIteratorStep<T>(this: Iterator<T>): LuaMultiReturn<[true, T] | []> {
     const result = this.next();
-    if (result.done) return [];
-    return [true, result.value];
+    if (result.done) return $multi();
+    return $multi(true, result.value);
 }
 
-/** @tupleReturn */
-function __TS__IteratorStringStep(this: string, index: number): [number, string] | [] {
+function __TS__IteratorStringStep(this: string, index: number): LuaMultiReturn<[number, string] | []> {
     index += 1;
-    if (index > this.length) return [];
-    return [index, string.sub(this, index, index)];
+    if (index > this.length) return $multi();
+    return $multi(index, string.sub(this, index, index));
 }
 
-/** @tupleReturn */
 function __TS__Iterator<T>(
     this: void,
     iterable: string | GeneratorIterator | Iterable<T> | readonly T[]
-): [(...args: any[]) => [any, any] | [], ...any[]] | LuaIterable<LuaMultiReturn<[number, T]>> {
+): LuaMultiReturn<[(...args: any[]) => [any, any] | [], ...any[]]> | LuaIterable<LuaMultiReturn<[number, T]>> {
     if (typeof iterable === "string") {
-        return [__TS__IteratorStringStep, iterable, 0];
+        return $multi(__TS__IteratorStringStep, iterable, 0);
     } else if ("____coroutine" in iterable) {
-        return [__TS__IteratorGeneratorStep, iterable];
+        return $multi(__TS__IteratorGeneratorStep, iterable);
     } else if (iterable[Symbol.iterator]) {
         const iterator = iterable[Symbol.iterator]();
-        return [__TS__IteratorIteratorStep, iterator];
+        return $multi(__TS__IteratorIteratorStep, iterator);
     } else {
         return ipairs(iterable as readonly T[]);
     }

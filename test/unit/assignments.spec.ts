@@ -94,16 +94,17 @@ test.each([
     "[x[1], x[0]] = tr()",
     "x = [y[1], y[0]]",
     "[x[0], x[1]] = [y[1], y[0]]",
-])("Tuple assignment expressions (%p)", expression => {
+])("multi return assignment expressions (%p)", expression => {
     util.testFunction`
         let x: [string, string] = ["x0", "x1"];
         let y: [string, string] = ["y0", "y1"];
         function t(): [string, string] { return ["t0", "t1"] };
-        /** @tupleReturn */
-        function tr(): [string, string] { return ["tr0", "tr1"] };
+        function tr(): LuaMultiReturn<[string, string]> { return $multi("tr0", "tr1"); };
         const r = ${expression};
         return \`\${r[0]},\${r[1]}\`
-    `.expectToMatchJsResult();
+    `
+        .withLanguageExtensions()
+        .expectToMatchJsResult();
 });
 
 test.each([

@@ -1,4 +1,3 @@
-import * as path from "path";
 import * as tstl from "../../src";
 import * as util from "../util";
 import { formatCode } from "../util";
@@ -23,15 +22,16 @@ describe.each(["function call", "array literal"] as const)("in %s", kind => {
         util.testExpression(factory(expression)).expectToMatchJsResult();
     });
 
-    test.each(arrayLiteralCases)("of tuple return call (%p)", expression => {
+    test.each(arrayLiteralCases)("of multi return call (%p)", expression => {
         util.testFunction`
-            /** @tupleReturn */
             function tuple(...args: any[]) {
-                return args;
+                return $multi(...args);
             }
 
             return ${factory(`...tuple(${expression})`)};
-        `.expectToMatchJsResult();
+        `
+            .withLanguageExtensions()
+            .expectToMatchJsResult();
     });
 
     test("of multiple string literals", () => {
@@ -226,7 +226,7 @@ describe("vararg spread optimization", () => {
             }
             return test("a" ,"b", "c");
         `
-            .setOptions({ types: [path.resolve(__dirname, "../../language-extensions")] })
+            .withLanguageExtensions()
             .expectLuaToMatchSnapshot()
             .expectToEqual("b");
     });

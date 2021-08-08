@@ -1,4 +1,4 @@
-function __TS__Spread<T>(this: void, iterable: string | Iterable<T>): T[] {
+function __TS__Spread<T>(this: void, iterable: string | Iterable<T>): LuaMultiReturn<T[]> {
     const arr = [];
     if (typeof iterable === "string") {
         // eslint-disable-next-line @typescript-eslint/prefer-for-of
@@ -10,5 +10,5 @@ function __TS__Spread<T>(this: void, iterable: string | Iterable<T>): T[] {
             arr[arr.length] = item;
         }
     }
-    return __TS__Unpack(arr);
+    return $multi(...arr);
 }

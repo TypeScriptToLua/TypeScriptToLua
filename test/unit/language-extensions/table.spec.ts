@@ -1,15 +1,9 @@
-import * as path from "path";
 import * as util from "../../util";
-import * as tstl from "../../../src";
 import {
     invalidTableDeleteExpression,
     invalidTableExtensionUse,
     invalidTableSetExpression,
 } from "../../../src/transformation/utils/diagnostics";
-
-const tableProjectOptions: tstl.CompilerOptions = {
-    types: [path.resolve(__dirname, "../../../language-extensions")],
-};
 
 describe("LuaTableGet & LuaTableSet extensions", () => {
     test("stand-alone function", () => {
@@ -21,7 +15,7 @@ describe("LuaTableGet & LuaTableSet extensions", () => {
             const result = getTable(tbl, "foo");
             export { result }
         `
-            .setOptions(tableProjectOptions)
+            .withLanguageExtensions()
             .setReturnExport("result")
             .expectToEqual(3);
     });
@@ -37,7 +31,7 @@ describe("LuaTableGet & LuaTableSet extensions", () => {
             const result = Table.get(tbl, "foo");
             export { result }
         `
-            .setOptions(tableProjectOptions)
+            .withLanguageExtensions()
             .setReturnExport("result")
             .expectToEqual(3);
     });
@@ -53,7 +47,7 @@ describe("LuaTableGet & LuaTableSet extensions", () => {
             const result = tbl.get("foo");
             export { result }
         `
-            .setOptions(tableProjectOptions)
+            .withLanguageExtensions()
             .setReturnExport("result")
             .expectToEqual(3);
     });
@@ -69,7 +63,7 @@ describe("LuaTableGet & LuaTableSet extensions", () => {
             declare const getTable: LuaTableGet<{}, string, number>;
             ${statement}
         `
-            .setOptions(tableProjectOptions)
+            .withLanguageExtensions()
             .expectDiagnosticsToMatchSnapshot([invalidTableExtensionUse.code]);
     });
 
@@ -83,7 +77,7 @@ describe("LuaTableGet & LuaTableSet extensions", () => {
             declare const setTable: LuaTableSet<{}, string, number>;
             ${expression}
         `
-            .setOptions(tableProjectOptions)
+            .withLanguageExtensions()
             .expectDiagnosticsToMatchSnapshot([invalidTableSetExpression.code]);
     });
 });
@@ -97,7 +91,7 @@ describe("LuaTableHas extension", () => {
             export const hasFoo = tableHas(table, "foo");
             export const hasBaz = tableHas(table, "baz");
         `
-            .setOptions(tableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual({ hasFoo: true, hasBaz: false });
     });
 
@@ -108,7 +102,7 @@ describe("LuaTableHas extension", () => {
 
             export const result = \`table has foo: \${tableHas(table, "foo")}\`;
         `
-            .setOptions(tableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual({ result: "table has foo: true" });
     });
 
@@ -122,7 +116,7 @@ describe("LuaTableHas extension", () => {
             export const hasFoo = Table.tableHas(table, "foo");
             export const hasBaz = Table.tableHas(table, "baz");
         `
-            .setOptions(tableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual({ hasFoo: true, hasBaz: false });
     });
 
@@ -138,7 +132,7 @@ describe("LuaTableHas extension", () => {
             export const hasFoo = table.has("foo");
             export const hasBaz = table.has("baz");
         `
-            .setOptions(tableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual({ hasFoo: true, hasBaz: false });
     });
 
@@ -158,7 +152,7 @@ describe("LuaTableHas extension", () => {
 
             export const numCalls = count;
         `
-            .setOptions(tableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual({ numCalls: 1 });
     });
 
@@ -173,7 +167,7 @@ describe("LuaTableHas extension", () => {
             declare const tableHas: LuaTableHas<{}, string>;
             ${statement}
         `
-            .setOptions(tableProjectOptions)
+            .withLanguageExtensions()
             .expectDiagnosticsToMatchSnapshot([invalidTableExtensionUse.code]);
     });
 });
@@ -186,7 +180,7 @@ describe("LuaTableDelete extension", () => {
             export const table = { foo: "bar", baz: "baz" };
             tableDelete(table, "foo");
         `
-            .setOptions(tableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual({ table: { baz: "baz" } });
     });
 
@@ -199,7 +193,7 @@ describe("LuaTableDelete extension", () => {
             export const table = { foo: "bar", baz: "baz" };
             Table.tableDelete(table, "foo");
         `
-            .setOptions(tableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual({ table: { baz: "baz" } });
     });
 
@@ -214,7 +208,7 @@ describe("LuaTableDelete extension", () => {
             table.set("bar", 12);
             table.delete("foo");
         `
-            .setOptions(tableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual({ table: { bar: 12 } });
     });
 
@@ -228,7 +222,7 @@ describe("LuaTableDelete extension", () => {
             declare const tableDelete: LuaTableDelete<{}, string>;
             ${expression}
         `
-            .setOptions(tableProjectOptions)
+            .withLanguageExtensions()
             .expectDiagnosticsToMatchSnapshot([invalidTableDeleteExpression.code]);
     });
 });
@@ -240,7 +234,7 @@ describe("LuaTable extension interface", () => {
             tbl.set("foo", 3);
             return tbl.get("foo");
         `
-            .setOptions(tableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(3);
     });
 
@@ -250,7 +244,7 @@ describe("LuaTable extension interface", () => {
             tbl.set("foo", 3);
             return tbl.get("foo");
         `
-            .setOptions(tableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(3);
     });
 
@@ -263,7 +257,7 @@ describe("LuaTable extension interface", () => {
             }
             return fill(new LuaTable()).get("foo");
         `
-            .setOptions(tableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(3);
     });
 
@@ -271,7 +265,8 @@ describe("LuaTable extension interface", () => {
         "LuaTable in strict mode does not accept key type that could be nil (%p)",
         keyType => {
             util.testExpression`new LuaTable<${keyType}, unknown>()`
-                .setOptions({ ...tableProjectOptions, strict: true })
+                .withLanguageExtensions()
+                .setOptions({ strict: true })
                 .expectToHaveDiagnostics()
                 .expectDiagnosticsToMatchSnapshot();
         }
@@ -285,7 +280,7 @@ describe("LuaTable extension interface", () => {
             tbl.set(key, 3);
             return tbl.get(key);
         `
-            .setOptions(tableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(3);
     });
 
@@ -296,7 +291,7 @@ describe("LuaTable extension interface", () => {
             tbl.set(3, "bar");
             return tbl.length();
         `
-            .setOptions(tableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(1);
     });
 
@@ -306,7 +301,7 @@ describe("LuaTable extension interface", () => {
             tbl.set(3, "foo");
             return [tbl.has(1), tbl.has(3)];
         `
-            .setOptions(tableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual([false, true]);
     });
 
@@ -320,14 +315,14 @@ describe("LuaTable extension interface", () => {
             tbl.delete("foo");
             return tbl;
         `
-            .setOptions(tableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual({ baz: 5 });
     });
 
     test.each(['new LuaTable().get("foo");', 'new LuaTable().set("foo", "bar");'])(
         "table immediate access (%p)",
         statement => {
-            util.testFunction(statement).setOptions(tableProjectOptions).expectToHaveNoDiagnostics();
+            util.testFunction(statement).withLanguageExtensions().expectToHaveNoDiagnostics();
         }
     );
 });

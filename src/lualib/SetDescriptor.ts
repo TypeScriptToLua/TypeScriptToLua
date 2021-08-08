@@ -6,7 +6,7 @@ function ____descriptorIndex(this: any, key: string): void {
 
     let metatable = getmetatable(this);
     while (metatable) {
-        const rawResult = rawget(metatable, key);
+        const rawResult = rawget(metatable, key as any);
         if (rawResult !== undefined) {
             return rawResult;
         }

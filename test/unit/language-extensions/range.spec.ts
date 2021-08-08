@@ -1,11 +1,5 @@
-import * as path from "path";
 import * as util from "../../util";
-import * as tstl from "../../../src";
 import { invalidRangeControlVariable, invalidRangeUse } from "../../../src/transformation/utils/diagnostics";
-
-const rangeProjectOptions: tstl.CompilerOptions = {
-    types: [path.resolve(__dirname, "../../../language-extensions")],
-};
 
 test("$range basic use", () => {
     util.testFunction`
@@ -15,7 +9,7 @@ test("$range basic use", () => {
         }
         return result;
     `
-        .setOptions(rangeProjectOptions)
+        .withLanguageExtensions()
         .expectToEqual([1, 2, 3, 4, 5]);
 });
 
@@ -27,7 +21,7 @@ test("$range basic use with step", () => {
         }
         return result;
     `
-        .setOptions(rangeProjectOptions)
+        .withLanguageExtensions()
         .expectToEqual([1, 3, 5, 7, 9]);
 });
 
@@ -39,7 +33,7 @@ test("$range basic use reverse", () => {
         }
         return result;
     `
-        .setOptions(rangeProjectOptions)
+        .withLanguageExtensions()
         .expectToEqual([5, 4, 3, 2, 1]);
 });
 
@@ -48,7 +42,7 @@ test("$range invalid control variable", () => {
         let i: number;
         for (i of $range(1, 5)) {}
     `
-        .setOptions(rangeProjectOptions)
+        .withLanguageExtensions()
         .expectDiagnosticsToMatchSnapshot([invalidRangeControlVariable.code]);
 });
 
@@ -63,6 +57,6 @@ test.each([
     util.testFunction`
         ${statement}
     `
-        .setOptions(rangeProjectOptions)
+        .withLanguageExtensions()
         .expectDiagnosticsToMatchSnapshot([invalidRangeUse.code]);
 });

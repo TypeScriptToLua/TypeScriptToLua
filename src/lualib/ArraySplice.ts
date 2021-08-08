@@ -1,10 +1,10 @@
 // https://www.ecma-international.org/ecma-262/9.0/index.html#sec-array.prototype.splice
-function __TS__ArraySplice<T>(this: void, list: T[], ...args: unknown[]): T[] {
+function __TS__ArraySplice<T>(this: void, list: T[], ...args: T[]): T[] {
     const len = list.length;
 
     const actualArgumentCount = select("#", ...args);
-    const start = select(1, ...args) as number;
-    const deleteCount = select(2, ...args) as number;
+    const start = select(1, ...args)[0] as unknown as number;
+    const deleteCount = select(2, ...args)[0] as unknown as number;
 
     let actualStart: number;
 
@@ -67,7 +67,7 @@ function __TS__ArraySplice<T>(this: void, list: T[], ...args: unknown[]): T[] {
 
     let j = actualStart;
     for (const i of $range(3, actualArgumentCount)) {
-        list[j] = select(i, ...args) as T;
+        list[j] = select(i, ...args)[0];
         j++;
     }
 

@@ -62,7 +62,7 @@
         "javascript-stringify": "^2.0.1",
         "jest": "^26.0.1",
         "jest-circus": "^25.1.0",
-        "lua-types": "^2.8.0",
+        "lua-types": "2.10.1",
         "lua-wasm-bindings": "^0.2.2",
         "prettier": "^2.3.2",
         "ts-jest": "^26.3.0",

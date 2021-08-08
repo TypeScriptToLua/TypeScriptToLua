@@ -2,7 +2,6 @@ import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { cast } from "../../../utils";
 import { TransformationContext } from "../../context";
-import { isTupleReturnCall } from "../../utils/annotations";
 import { validateAssignment } from "../../utils/assignment-validation";
 import { createExportedIdentifier, getDependenciesOfSymbol, isSymbolExported } from "../../utils/export";
 import { createUnpackCall, wrapInTable } from "../../utils/lua-ast";
@@ -83,7 +82,7 @@ function transformDestructuredAssignmentExpression(
     const rootIdentifier = lua.createAnonymousIdentifier(expression.left);
 
     let right = context.transformExpression(expression.right);
-    if (isTupleReturnCall(context, expression.right) || isMultiReturnCall(context, expression.right)) {
+    if (isMultiReturnCall(context, expression.right)) {
         right = wrapInTable(right);
     }
 
@@ -204,12 +203,11 @@ export function transformAssignmentStatement(
     if (isDestructuringAssignment(expression)) {
         if (canBeTransformedToLuaAssignmentStatement(context, expression)) {
             const rightType = context.checker.getTypeAtLocation(expression.right);
-            let right = context.transformExpression(expression.right);
+            let right: lua.Expression | lua.Expression[] = context.transformExpression(expression.right);
 
-            if (
-                !(isTupleReturnCall(context, expression.right) || isMultiReturnCall(context, expression.right)) &&
-                isArrayType(context, rightType)
-            ) {
+            if (ts.isArrayLiteralExpression(expression.right)) {
+                right = expression.right.elements.map(e => context.transformExpression(e));
+            } else if (!isMultiReturnCall(context, expression.right) && isArrayType(context, rightType)) {
                 right = createUnpackCall(context, right, expression.right);
             }
 
@@ -219,7 +217,7 @@ export function transformAssignmentStatement(
         }
 
         let right = context.transformExpression(expression.right);
-        if (isTupleReturnCall(context, expression.right) || isMultiReturnCall(context, expression.right)) {
+        if (isMultiReturnCall(context, expression.right)) {
             right = wrapInTable(right);
         }
 

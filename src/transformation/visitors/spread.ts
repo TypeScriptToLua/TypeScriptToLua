@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { AnnotationKind, isTupleReturnCall, isVarargType } from "../utils/annotations";
+import { AnnotationKind, isVarargType } from "../utils/annotations";
 import { createUnpackCall } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import {
@@ -12,7 +12,7 @@ import {
     ScopeType,
 } from "../utils/scope";
 import { isArrayType } from "../utils/typescript";
-import { returnsMultiType } from "./language-extensions/multi";
+import { isMultiReturnCall } from "./language-extensions/multi";
 import { annotationRemoved } from "../utils/diagnostics";
 import { isGlobalVarargConstant } from "./language-extensions/vararg";
 
@@ -69,8 +69,7 @@ export const transformSpreadElement: FunctionVisitor<ts.SpreadElement> = (node, 
     }
 
     const innerExpression = context.transformExpression(node.expression);
-    if (isTupleReturnCall(context, node.expression)) return innerExpression;
-    if (ts.isCallExpression(node.expression) && returnsMultiType(context, node.expression)) return innerExpression;
+    if (isMultiReturnCall(context, node.expression)) return innerExpression;
 
     const type = context.checker.getTypeAtLocation(node.expression);
     if (isArrayType(context, type)) {

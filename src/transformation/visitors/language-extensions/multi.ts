@@ -4,9 +4,14 @@ import { TransformationContext } from "../../context";
 import { findFirstNodeAbove } from "../../utils/typescript";
 import { isIterableExpression } from "./iterable";
 import { invalidMultiFunctionUse } from "../../utils/diagnostics";
+import { isTupleReturnCall } from "../../utils/annotations";
 
 export function isMultiReturnType(type: ts.Type): boolean {
     return extensions.isExtensionType(type, extensions.ExtensionKind.MultiType);
+}
+
+export function canBeMultiReturnType(type: ts.Type): boolean {
+    return isMultiReturnType(type) || (type.isUnion() && type.types.some(canBeMultiReturnType));
 }
 
 export function isMultiFunctionCall(context: TransformationContext, expression: ts.CallExpression): boolean {
@@ -20,7 +25,10 @@ export function returnsMultiType(context: TransformationContext, node: ts.CallEx
 }
 
 export function isMultiReturnCall(context: TransformationContext, expression: ts.Expression) {
-    return ts.isCallExpression(expression) && returnsMultiType(context, expression);
+    return (
+        (ts.isCallExpression(expression) && returnsMultiType(context, expression)) ||
+        isTupleReturnCall(context, expression)
+    );
 }
 
 export function isMultiFunctionNode(context: TransformationContext, node: ts.Node): boolean {
@@ -39,7 +47,7 @@ export function isInMultiReturnFunction(context: TransformationContext, node: ts
 }
 
 export function shouldMultiReturnCallBeWrapped(context: TransformationContext, node: ts.CallExpression) {
-    if (!returnsMultiType(context, node)) {
+    if (!returnsMultiType(context, node) && !isTupleReturnCall(context, node)) {
         return false;
     }
 

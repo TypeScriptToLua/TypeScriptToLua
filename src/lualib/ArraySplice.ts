@@ -67,7 +67,7 @@ function __TS__ArraySplice<T>(this: void, list: T[], ...args: T[]): T[] {
 
     let j = actualStart;
     for (const i of $range(3, actualArgumentCount)) {
-        list[j] = select(i, ...args)[0] as T;
+        list[j] = select(i, ...args)[0];
         j++;
     }
 

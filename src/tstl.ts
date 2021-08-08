@@ -111,7 +111,7 @@ function performCompilation(
 
     diagnostics.forEach(reportDiagnostic);
     const exitCode =
-        diagnostics.length === 0
+        diagnostics.filter(d => d.category === ts.DiagnosticCategory.Error).length === 0
             ? ts.ExitStatus.Success
             : emitSkipped
             ? ts.ExitStatus.DiagnosticsPresent_OutputsSkipped

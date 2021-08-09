@@ -3,7 +3,7 @@
 ## 0.42.0
 
 - **[Breaking]** The `/** @tupleReturn */` is now deprecated, and will be removed next release. If you are still using it, please upgrade to the [LuaMultiReturn language extension](https://typescripttolua.github.io/docs/advanced/language-extensions#luamultireturn-type).
-- Added support for TSX, see [documentation](https://typescripttolua.github.io/docs/tsx) for more information.
+- Added support for JSX, see [documentation](https://typescripttolua.github.io/docs/jsx) for more information.
 - Added support for the `baseUrl` configuration key for module resolution.
 
 A large list of bugfixes:

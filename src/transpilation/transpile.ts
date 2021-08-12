@@ -103,7 +103,7 @@ export function getProgramTranspileResult(
     options.noEmit = false;
 
     const writeFile: ts.WriteFileCallback = (fileName, ...rest) => {
-        if (!fileName.endsWith(".js") && !fileName.endsWith(".js.map")) {
+        if (!fileName.endsWith(".js") && !fileName.endsWith(".js.map") && !fileName.endsWith(".json")) {
             writeFileResult(fileName, ...rest);
         }
     };

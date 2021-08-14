@@ -183,6 +183,32 @@ test("async function returning value is same as non-async function returning pro
     });
 });
 
+test("correctly handles awaited functions rejecting", () => {
+    util.testFunction`
+        const { promise: promise1, reject } = defer<string>();
+        const { promise: promise2 } = defer<string>();
+
+        promise1.then(data => log("resolving promise1", data), reason => log("rejecting promise1", reason));
+        promise2.then(data => log("resolving promise2", data));
+
+        async function abc() {
+            const result1 = await promise1;
+            const result2 = await promise2;
+            return [result1, result2];
+        }
+
+        const awaitingPromise = abc();
+        awaitingPromise.catch(reason => log("awaiting promise was rejected because:", reason));
+
+        reject("test reject");
+
+        return allLogs;
+
+    `
+        .setTsHeader(promiseTestLib)
+        .expectToEqual(["rejecting promise1", "test reject", "awaiting promise was rejected because:", "test reject"]);
+});
+
 test("can call async function at top-level", () => {
     util.testModule`
         export let aStarted = false;

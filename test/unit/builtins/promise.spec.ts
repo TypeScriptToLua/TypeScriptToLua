@@ -40,6 +40,16 @@ test("can create rejected promise", () => {
     });
 });
 
+test("promise constructor executor throwing rejects promise", () => {
+    util.testFunction`
+        const { state, rejectionReason } = new Promise(() => { throw "executor exception"; }) as any;
+        return { state, rejectionReason };
+    `.expectToEqual({
+        state: 2, // __TS__PromiseState.Rejected
+        rejectionReason: "executor exception",
+    });
+});
+
 test("promise can be resolved", () => {
     util.testFunction`
         const { promise, resolve } = defer<string>();

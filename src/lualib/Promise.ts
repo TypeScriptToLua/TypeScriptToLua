@@ -57,21 +57,26 @@ class __TS__Promise<T> implements Promise<T> {
     }
 
     constructor(executor: (resolve: (data: T) => void, reject: (reason: any) => void) => void) {
-        executor(this.resolve.bind(this), this.reject.bind(this));
+        try {
+            executor(this.resolve.bind(this), this.reject.bind(this));
+        } catch (e) {
+            // When a promise executor throws, the promise should be rejected with the thrown object as reason
+            this.reject(e);
+        }
     }
 
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/then
     public then<TResult1 = T, TResult2 = never>(
-        onfulfilled?: FulfillCallback<T, TResult1>,
-        onrejected?: RejectCallback<TResult2>
+        onFulfilled?: FulfillCallback<T, TResult1>,
+        onRejected?: RejectCallback<TResult2>
     ): Promise<TResult1 | TResult2> {
         const { promise, resolve, reject } = __TS__PromiseDeferred<TResult1 | TResult2>();
 
-        if (onfulfilled) {
+        if (onFulfilled) {
             const internalCallback =
                 this.fulfilledCallbacks.length === 0
-                    ? this.createPromiseResolvingCallback(onfulfilled, resolve, reject)
-                    : onfulfilled;
+                    ? this.createPromiseResolvingCallback(onFulfilled, resolve, reject)
+                    : onFulfilled;
             this.fulfilledCallbacks.push(internalCallback);
 
             if (this.state === __TS__PromiseState.Fulfilled) {
@@ -80,11 +85,11 @@ class __TS__Promise<T> implements Promise<T> {
             }
         }
 
-        if (onrejected) {
+        if (onRejected) {
             const internalCallback =
                 this.rejectedCallbacks.length === 0
-                    ? this.createPromiseResolvingCallback(onrejected, resolve, reject)
-                    : onrejected;
+                    ? this.createPromiseResolvingCallback(onRejected, resolve, reject)
+                    : onRejected;
             this.rejectedCallbacks.push(internalCallback);
 
             if (this.state === __TS__PromiseState.Rejected) {
@@ -95,17 +100,17 @@ class __TS__Promise<T> implements Promise<T> {
         return promise;
     }
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/catch
-    public catch<TResult = never>(onrejected?: (reason: any) => TResult | PromiseLike<TResult>): Promise<T | TResult> {
-        return this.then(undefined, onrejected);
+    public catch<TResult = never>(onRejected?: (reason: any) => TResult | PromiseLike<TResult>): Promise<T | TResult> {
+        return this.then(undefined, onRejected);
     }
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/finally
-    public finally(onfinally?: () => void): Promise<T> {
-        if (onfinally) {
-            this.finallyCallbacks.push(onfinally);
+    public finally(onFinally?: () => void): Promise<T> {
+        if (onFinally) {
+            this.finallyCallbacks.push(onFinally);
 
             if (this.state !== __TS__PromiseState.Pending) {
                 // If promise already resolved or rejected, immediately fire finally callback
-                onfinally();
+                onFinally();
             }
         }
         return this;

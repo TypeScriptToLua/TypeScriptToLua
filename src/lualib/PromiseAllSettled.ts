@@ -1,7 +1,7 @@
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/allSettled
 async function __TS__PromiseAllSettled<T>(
     this: void,
-    values: Iterable<T>
+    iterable: Iterable<T>
 ): Promise<Array<PromiseSettledResult<T extends PromiseLike<infer U> ? U : T>>> {
     const results: Array<PromiseSettledResult<T extends PromiseLike<infer U> ? U : T>> = [];
 
@@ -9,22 +9,22 @@ async function __TS__PromiseAllSettled<T>(
     let numToResolve = 0;
 
     let i = 0;
-    for (const value of values) {
-        if (value instanceof __TS__Promise) {
-            if (value.state === __TS__PromiseState.Fulfilled) {
+    for (const item of iterable) {
+        if (item instanceof __TS__Promise) {
+            if (item.state === __TS__PromiseState.Fulfilled) {
                 // If value is a resolved promise, add a fulfilled PromiseSettledResult
-                results[i] = { status: "fulfilled", value: value.value };
-            } else if (value.state === __TS__PromiseState.Rejected) {
+                results[i] = { status: "fulfilled", value: item.value };
+            } else if (item.state === __TS__PromiseState.Rejected) {
                 // If value is a rejected promise, add a rejected PromiseSettledResult
-                results[i] = { status: "rejected", reason: value.rejectionReason };
+                results[i] = { status: "rejected", reason: item.rejectionReason };
             } else {
                 // If value is a pending promise, add it to the list of pending promises
                 numToResolve++;
-                toResolve.set(i, value);
+                toResolve.set(i, item);
             }
         } else {
             // If value is not a promise, add it to the results as fulfilled PromiseSettledResult
-            results[i] = { status: "fulfilled", value: value as any };
+            results[i] = { status: "fulfilled", value: item as any };
         }
         i++;
     }

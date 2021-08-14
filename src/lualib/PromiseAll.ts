@@ -1,27 +1,27 @@
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all
-async function __TS__PromiseAll<T>(this: void, values: Iterable<T | PromiseLike<T>>): Promise<T[]> {
+async function __TS__PromiseAll<T>(this: void, iterable: Iterable<T | PromiseLike<T>>): Promise<T[]> {
     const results: T[] = [];
 
     const toResolve = new LuaTable<number, PromiseLike<T>>();
     let numToResolve = 0;
 
     let i = 0;
-    for (const value of values) {
-        if (value instanceof __TS__Promise) {
-            if (value.state === __TS__PromiseState.Fulfilled) {
+    for (const item of iterable) {
+        if (item instanceof __TS__Promise) {
+            if (item.state === __TS__PromiseState.Fulfilled) {
                 // If value is a resolved promise, add its value to our results array
-                results[i] = value.value;
-            } else if (value.state === __TS__PromiseState.Rejected) {
+                results[i] = item.value;
+            } else if (item.state === __TS__PromiseState.Rejected) {
                 // If value is a rejected promise, return a rejected promise with the rejection reason
-                return Promise.reject(value.rejectionReason);
+                return Promise.reject(item.rejectionReason);
             } else {
                 // If value is a pending promise, add it to the list of pending promises
                 numToResolve++;
-                toResolve.set(i, value);
+                toResolve.set(i, item);
             }
         } else {
             // If value is not a promise, add it to the results array
-            results[i] = value as T;
+            results[i] = item as T;
         }
         i++;
     }

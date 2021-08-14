@@ -1,15 +1,9 @@
-import * as path from "path";
 import * as util from "../../util";
-import * as tstl from "../../../src";
 import {
     invalidMultiFunctionUse,
     invalidMultiReturnAccess,
     invalidMultiFunctionReturnType,
 } from "../../../src/transformation/utils/diagnostics";
-
-const multiProjectOptions: tstl.CompilerOptions = {
-    types: [path.resolve(__dirname, "../../../language-extensions")],
-};
 
 test("multi example use case", () => {
     util.testModule`
@@ -20,7 +14,7 @@ test("multi example use case", () => {
         const [a, b] = multiReturn();
         export { a, b };
     `
-        .setOptions(multiProjectOptions)
+        .withLanguageExtensions()
         .expectToEqual({ a: "foo", b: 5 });
 });
 
@@ -34,7 +28,7 @@ test("Destructuring assignment of LuaMultiReturn", () => {
         const [a, ...b] = multiReturn();
         export {a, b};
     `
-        .setOptions(multiProjectOptions)
+        .withLanguageExtensions()
         .expectToEqual({ a: 1, b: [2, 3] });
 });
 
@@ -47,7 +41,7 @@ test("Destructuring assignment of LuaMultiReturn returning nil", () => {
         const [a, ...b] = multiReturn();
         export {a, b};
     `
-        .setOptions(multiProjectOptions)
+        .withLanguageExtensions()
         .expectToEqual({ a: undefined, b: [] });
 });
 
@@ -59,7 +53,7 @@ test.each<[string, any]>([
     util.testFunction`
         return ${expression};
     `
-        .setOptions(multiProjectOptions)
+        .withLanguageExtensions()
         .expectToEqual(result);
 });
 
@@ -88,7 +82,7 @@ test.each<[string, any]>(createCasesThatCall("$multi"))("invalid direct $multi f
         ${statement}
         export { a };
     `
-        .setOptions(multiProjectOptions)
+        .withLanguageExtensions()
         .setReturnExport("a")
         .expectDiagnosticsToMatchSnapshot([invalidMultiFunctionUse.code]);
 });
@@ -101,7 +95,7 @@ test.each<[string, any]>(createCasesThatCall("multi"))(
             ${statement}
             export { a };
         `
-            .setOptions(multiProjectOptions)
+            .withLanguageExtensions()
             .setReturnExport("a")
             .expectToEqual(result);
     }
@@ -119,7 +113,7 @@ test.each<[string, number[]]>([
     util.testModule`
         ${statement}
     `
-        .setOptions(multiProjectOptions)
+        .withLanguageExtensions()
         .expectDiagnosticsToMatchSnapshot(diagnostics);
 });
 
@@ -131,7 +125,7 @@ test("function to spread multi type result from multi type function", () => {
         }
         return m();
     `
-        .setOptions(multiProjectOptions)
+        .withLanguageExtensions()
         .expectToEqual(true);
 });
 
@@ -142,7 +136,7 @@ test("$multi call with destructuring assignment side effects", () => {
         export { a };
         [a] = multi(1);
     `
-        .setOptions(multiProjectOptions)
+        .withLanguageExtensions()
         .setReturnExport("a")
         .expectToEqual(1);
 });
@@ -153,7 +147,7 @@ test("allow $multi call in ArrowFunction body", () => {
         const [result] = call();
         return result;
     `
-        .setOptions(multiProjectOptions)
+        .withLanguageExtensions()
         .expectToEqual(1);
 });
 
@@ -164,7 +158,7 @@ test("forward $multi call", () => {
         const [resultA, resultB] = call();
         return [resultA, resultB];
     `
-        .setOptions(multiProjectOptions)
+        .withLanguageExtensions()
         .expectToEqual([1, 2]);
 });
 
@@ -175,7 +169,7 @@ test("forward $multi call indirect", () => {
         const [resultA, resultB] = call();
         return [resultA, resultB];
     `
-        .setOptions(multiProjectOptions)
+        .withLanguageExtensions()
         .expectToEqual([1, 2]);
 });
 
@@ -186,7 +180,7 @@ test("forward $multi call in ArrowFunction body", () => {
         const [resultA, resultB] = call();
         return [resultA, resultB];
     `
-        .setOptions(multiProjectOptions)
+        .withLanguageExtensions()
         .expectToEqual([1, 2]);
 });
 
@@ -196,7 +190,7 @@ test.each(["0", "i"])("allow LuaMultiReturn numeric access (%s)", expression => 
         const i = 0;
         return multi(1)[${expression}];
     `
-        .setOptions(multiProjectOptions)
+        .withLanguageExtensions()
         .expectToEqual(1);
 });
 
@@ -205,7 +199,7 @@ test.each(["multi()['forEach']", "multi().forEach"])("disallow LuaMultiReturn no
         ${multiFunction}
         return ${expression};
     `
-        .setOptions(multiProjectOptions)
+        .withLanguageExtensions()
         .expectDiagnosticsToMatchSnapshot([invalidMultiReturnAccess.code]);
 });
 
@@ -215,7 +209,7 @@ test("invalid $multi implicit cast", () => {
             return $multi("foo", 42);
         }
     `
-        .setOptions(multiProjectOptions)
+        .withLanguageExtensions()
         .expectDiagnosticsToMatchSnapshot([invalidMultiFunctionReturnType.code]);
 });
 
@@ -236,7 +230,7 @@ test.each([
         const [x, y] = multiOverload(${flag});
         return y;
     `
-        .setOptions(multiProjectOptions)
+        .withLanguageExtensions()
         .expectToEqual(result);
 });
 
@@ -251,7 +245,7 @@ test("return $multi from try", () => {
         const [_, a] = multiTest();
         return a;
     `
-        .setOptions(multiProjectOptions)
+        .withLanguageExtensions()
         .expectToEqual(2);
 });
 
@@ -267,7 +261,7 @@ test("return $multi from catch", () => {
         const [_, a] = multiTest();
         return a;
     `
-        .setOptions(multiProjectOptions)
+        .withLanguageExtensions()
         .expectToEqual(2);
 });
 
@@ -283,7 +277,7 @@ test("return LuaMultiReturn from try", () => {
         const [_, a] = multiTest();
         return a;
     `
-        .setOptions(multiProjectOptions)
+        .withLanguageExtensions()
         .expectToEqual(2);
 });
 
@@ -300,6 +294,6 @@ test("return LuaMultiReturn from catch", () => {
         const [_, a] = multiTest();
         return a;
     `
-        .setOptions(multiProjectOptions)
+        .withLanguageExtensions()
         .expectToEqual(2);
 });

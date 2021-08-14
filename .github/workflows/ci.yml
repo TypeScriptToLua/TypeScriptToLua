@@ -39,80 +39,80 @@ jobs:
       - if: matrix.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v1
 
-  benchmark:
-    name: Benchmark
-    runs-on: ubuntu-latest
-    steps:
-      - name: Lua Install
-        run: sudo apt-get install lua5.3 luajit
-      - name: Glow Install
-        run: brew install glow
-      # Checkout master & commit
-      - name: Checkout master
-        uses: actions/checkout@v2
-        with:
-          ref: master
-          path: master
-      - name: Checkout commit
-        uses: actions/checkout@v2
-        with:
-          path: commit
-      - name: Use Node.js 12.13.1
-        uses: actions/setup-node@v1
-        with:
-          node-version: 12.13.1
-      # NPM
-      - name: NPM master
-        run: npm ci && npm run build
-        working-directory: master
-      - name: NPM commit
-        run: npm ci && npm run build
-        working-directory: commit
-      # Benchmark directory setup
-      - name: Ensure benchmark data dir exists
-        run: mkdir -p ./benchmark/data
-        working-directory: commit
-      - name: Copy commit benchmark to master
-        run: rm -rf ./master/benchmark && cp -rf ./commit/benchmark ./master/benchmark
-      # Run master benchmark first and output to commit benchmark data
-      - name: Build benchmark Lua 5.3 master
-        run: node ../../commit/dist/tstl.js -p tsconfig.53.json
-        working-directory: master/benchmark
-      - name: Run benchmark Lua 5.3 master
-        id: benchmark-lua-master
-        run: lua5.3 -- run.lua ../../../commit/benchmark/data/benchmark_master_53.json
-        working-directory: master/benchmark/dist
-      - name: Build benchmark LuaJIT master
-        run: node ../../commit/dist/tstl.js -p tsconfig.jit.json
-        working-directory: master/benchmark
-      - name: Run benchmark LuaJIT master
-        id: benchmark-jit-master
-        run: luajit -- run.lua ../../../commit/benchmark/data/benchmark_master_jit.json
-        working-directory: master/benchmark/dist
-      # Run commit benchmark and compare with master
-      - name: Build benchmark Lua 5.3 commit
-        run: node ../../commit/dist/tstl.js -p tsconfig.53.json
-        working-directory: commit/benchmark
-      - name: Run benchmark Lua 5.3 commit
-        id: benchmark-lua-commit
-        run: lua5.3 -- run.lua ../data/benchmark_master_vs_commit_53.json ../data/benchmark_master_53.json
-        working-directory: commit/benchmark/dist
-      - name: Build benchmark LuaJIT commit
-        run: node ../../commit/dist/tstl.js -p tsconfig.jit.json
-        working-directory: commit/benchmark
-      - name: Run benchmark LuaJIT commit
-        id: benchmark-jit-commit
-        run: luajit -- run.lua ../data/benchmark_master_vs_commit_jit.json ../data/benchmark_master_jit.json
-        working-directory: commit/benchmark/dist
-      - name: Combine benchmark results
-        id: script-combine-results
-        uses: actions/github-script@v3
-        with:
-          benchmark-result-path-lua: commit/benchmark/data/benchmark_master_vs_commit_53.json
-          benchmark-result-path-jit: commit/benchmark/data/benchmark_master_vs_commit_jit.json
-          result-encoding: string
-          script: |
-            const createBenchmarkCheck = require(`${process.env.GITHUB_WORKSPACE}/commit/.github/scripts/create_benchmark_check.js`);
-            return createBenchmarkCheck({ github, context, core });
-      - name: Benchmark results
-        run: echo "${{steps.script-combine-results.outputs.result}}" | glow -s dark -w 120 -
+  # benchmark:
+  #   name: Benchmark
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Lua Install
+  #       run: sudo apt-get install lua5.3 luajit
+  #     - name: Glow Install
+  #       run: brew install glow
+  #     # Checkout master & commit
+  #     - name: Checkout master
+  #       uses: actions/checkout@v2
+  #       with:
+  #         ref: master
+  #         path: master
+  #     - name: Checkout commit
+  #       uses: actions/checkout@v2
+  #       with:
+  #         path: commit
+  #     - name: Use Node.js 12.13.1
+  #       uses: actions/setup-node@v1
+  #       with:
+  #         node-version: 12.13.1
+  #     # NPM
+  #     - name: NPM master
+  #       run: npm ci && npm run build
+  #       working-directory: master
+  #     - name: NPM commit
+  #       run: npm ci && npm run build
+  #       working-directory: commit
+  #     # Benchmark directory setup
+  #     - name: Ensure benchmark data dir exists
+  #       run: mkdir -p ./benchmark/data
+  #       working-directory: commit
+  #     - name: Copy commit benchmark to master
+  #       run: rm -rf ./master/benchmark && cp -rf ./commit/benchmark ./master/benchmark
+  #     # Run master benchmark first and output to commit benchmark data
+  #     - name: Build benchmark Lua 5.3 master
+  #       run: node ../../commit/dist/tstl.js -p tsconfig.53.json
+  #       working-directory: master/benchmark
+  #     - name: Run benchmark Lua 5.3 master
+  #       id: benchmark-lua-master
+  #       run: lua5.3 -- run.lua ../../../commit/benchmark/data/benchmark_master_53.json
+  #       working-directory: master/benchmark/dist
+  #     - name: Build benchmark LuaJIT master
+  #       run: node ../../commit/dist/tstl.js -p tsconfig.jit.json
+  #       working-directory: master/benchmark
+  #     - name: Run benchmark LuaJIT master
+  #       id: benchmark-jit-master
+  #       run: luajit -- run.lua ../../../commit/benchmark/data/benchmark_master_jit.json
+  #       working-directory: master/benchmark/dist
+  #     # Run commit benchmark and compare with master
+  #     - name: Build benchmark Lua 5.3 commit
+  #       run: node ../../commit/dist/tstl.js -p tsconfig.53.json
+  #       working-directory: commit/benchmark
+  #     - name: Run benchmark Lua 5.3 commit
+  #       id: benchmark-lua-commit
+  #       run: lua5.3 -- run.lua ../data/benchmark_master_vs_commit_53.json ../data/benchmark_master_53.json
+  #       working-directory: commit/benchmark/dist
+  #     - name: Build benchmark LuaJIT commit
+  #       run: node ../../commit/dist/tstl.js -p tsconfig.jit.json
+  #       working-directory: commit/benchmark
+  #     - name: Run benchmark LuaJIT commit
+  #       id: benchmark-jit-commit
+  #       run: luajit -- run.lua ../data/benchmark_master_vs_commit_jit.json ../data/benchmark_master_jit.json
+  #       working-directory: commit/benchmark/dist
+  #     - name: Combine benchmark results
+  #       id: script-combine-results
+  #       uses: actions/github-script@v3
+  #       with:
+  #         benchmark-result-path-lua: commit/benchmark/data/benchmark_master_vs_commit_53.json
+  #         benchmark-result-path-jit: commit/benchmark/data/benchmark_master_vs_commit_jit.json
+  #         result-encoding: string
+  #         script: |
+  #           const createBenchmarkCheck = require(`${process.env.GITHUB_WORKSPACE}/commit/.github/scripts/create_benchmark_check.js`);
+  #           return createBenchmarkCheck({ github, context, core });
+  #     - name: Benchmark results
+  #       run: echo "${{steps.script-combine-results.outputs.result}}" | glow -s dark -w 120 -

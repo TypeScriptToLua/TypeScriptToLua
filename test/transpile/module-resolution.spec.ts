@@ -2,7 +2,7 @@ import * as path from "path";
 import * as tstl from "../../src";
 import * as util from "../util";
 import * as ts from "typescript";
-import { transpileProject } from "../../src";
+import { BuildMode, transpileProject } from "../../src";
 
 describe("basic module resolution", () => {
     const projectPath = path.resolve(__dirname, "module-resolution", "project-with-node-modules");
@@ -274,4 +274,184 @@ describe("module resolution with tsx", () => {
                 indexResult: "hello from dir/index.tsx",
             });
     });
+});
+
+describe("dependency with complicated inner structure", () => {
+    const projectPath = path.resolve(__dirname, "module-resolution", "project-with-complicated-dependency");
+    const tsConfigPath = path.join(projectPath, "tsconfig.json");
+    const mainFilePath = path.join(projectPath, "main.ts");
+
+    const expectedResult = {
+        otherFileResult: "someFunc from otherfile.lua",
+        otherFileUtil: "util",
+        subsubresult: "result from subsub dir",
+        utilResult: "util",
+    };
+
+    // Test fix for https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1055
+    test("bundle should not contain duplicate files", () => {
+        const mainFile = path.join(projectPath, "main.ts");
+        const { transpiledFiles } = util
+            .testProject(tsConfigPath)
+            .setMainFileName(mainFilePath)
+            .setOptions({ luaBundle: "bundle.lua", luaBundleEntry: mainFile })
+            .expectToEqual(expectedResult)
+            .getLuaResult();
+
+        expect(transpiledFiles).toHaveLength(1);
+        const lua = transpiledFiles[0].lua!;
+        // util is used in 2 places, but should only occur once in the bundle
+        const utilModuleOccurrences = (lua.match(/\["lua_modules\.dependency1\.util"\]/g) ?? []).length;
+        expect(utilModuleOccurrences).toBe(1);
+    });
+
+    // Test fix for https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1054
+    test("should be able to resolve dependency files in subdirectories", () => {
+        util.testProject(tsConfigPath).setMainFileName(mainFilePath).expectToEqual(expectedResult);
+    });
+});
+
+test("module resolution should not try to resolve @noResolution annotation", () => {
+    util.testModule`
+        import * as json from "json";
+        const test = json.decode("{}");
+    `
+        .addExtraFile(
+            "json.d.ts",
+            `
+                /** @noResolution */
+                declare module "json" {
+                    function encode(this: void, data: unknown): string;
+                    function decode(this: void, data: string): unknown;
+                }
+            `
+        )
+        .expectToHaveNoDiagnostics();
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1062
+test("module resolution should not rewrite @NoResolution requires in library mode", () => {
+    const { transpiledFiles } = util.testModule`
+        import * as json from "json";
+        const test = json.decode("{}");
+    `
+        .addExtraFile(
+            "json.d.ts",
+            `
+                /** @noResolution */
+                declare module "json" {
+                    function encode(this: void, data: unknown): string;
+                    function decode(this: void, data: string): unknown;
+                }
+            `
+        )
+        .setOptions({ buildMode: BuildMode.Library })
+        .getLuaResult();
+
+    expect(transpiledFiles).toHaveLength(1);
+    expect(transpiledFiles[0].lua).toContain('require("@NoResolution:');
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1050
+test("module resolution should not try to resolve resolve-like functions", () => {
+    util.testModule`
+        function custom_require(this: void, value: string) {
+            return value;
+        }
+
+        namespace ns {
+            export function require(this: void, value: string) {
+                return value;
+            }
+        }
+
+        class MyClass {
+            require(value: string) {
+                return value;
+            }
+        }
+        const inst = new MyClass();
+
+        export const result = [
+            custom_require("value 1"),
+            ns.require("value 2"),
+            inst.require("value 3")
+        ];
+
+    `
+        .expectToHaveNoDiagnostics()
+        .expectToEqual({
+            result: ["value 1", "value 2", "value 3"],
+        });
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1050
+test("module resolution uses baseURL to resolve imported files", () => {
+    util.testModule`
+        import { foo } from "dep1";
+        import { bar } from "dep2";
+        import { baz } from "luadep";
+
+        export const fooResult = foo();
+        export const barResult = bar();
+        export const bazResult = baz();
+    `
+        .addExtraFile(
+            "myproject/mydeps/dep1.ts",
+            `
+                export function foo() { return "foo"; }
+            `
+        )
+        .addExtraFile(
+            "myproject/mydeps/dep2.ts",
+            `
+                export function bar() { return "bar"; }
+            `
+        )
+        .addExtraFile(
+            "myproject/mydeps/luadep.d.ts",
+            `
+                export function baz(): string;
+            `
+        )
+        .addExtraFile(
+            "myproject/mydeps/luadep.lua",
+            `
+                return { baz = function() return "baz" end }
+            `
+        )
+        .setOptions({ baseUrl: "./myproject/mydeps" })
+        .expectToEqual({
+            fooResult: "foo",
+            barResult: "bar",
+            bazResult: "baz",
+        });
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1071
+test("includes lualib_bundle when external lua requests it", () => {
+    util.testModule`
+        export { foo } from "./lualibuser";
+    `
+        .addExtraFile(
+            "lualibuser.d.ts",
+            `
+                export const foo: string[];
+            `
+        )
+        .addExtraFile(
+            "lualibuser.lua",
+            `
+                require("lualib_bundle")
+
+                local result = {}
+                __TS__ArrayPush(result, "foo")
+                __TS__ArrayPush(result, "bar")
+
+                return { foo = result }
+            `
+        )
+        .expectToEqual({
+            foo: ["foo", "bar"],
+        });
 });

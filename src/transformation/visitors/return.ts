@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { isInTupleReturnFunction, isTupleReturnCall } from "../utils/annotations";
+import { isInTupleReturnFunction } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
 import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
 import { ScopeType, walkScopesUp } from "../utils/scope";
@@ -13,6 +13,8 @@ import {
     isMultiFunctionCall,
     isMultiReturnType,
     isInMultiReturnFunction,
+    isMultiReturnCall,
+    canBeMultiReturnType,
 } from "./language-extensions/multi";
 import { invalidMultiFunctionReturnType } from "../utils/diagnostics";
 
@@ -28,7 +30,7 @@ function transformExpressionsInReturn(
         if (isMultiFunctionCall(context, node)) {
             // Don't allow $multi to be implicitly cast to something other than LuaMultiReturn
             const type = context.checker.getContextualType(node);
-            if (type && !isMultiReturnType(type)) {
+            if (type && !canBeMultiReturnType(type)) {
                 context.diagnostics.push(invalidMultiFunctionReturnType(node));
             }
 
@@ -58,7 +60,7 @@ function transformExpressionsInReturn(
     if (ts.isArrayLiteralExpression(node)) {
         // If return expression is an array literal, leave out brackets.
         results = node.elements.map(e => context.transformExpression(e));
-    } else if (!isTupleReturnCall(context, node) && isArrayType(context, expressionType)) {
+    } else if (!isMultiReturnCall(context, node) && isArrayType(context, expressionType)) {
         // If return expression is an array-type and not another TupleReturn call, unpack it
         results = [createUnpackCall(context, context.transformExpression(node), node)];
     } else {

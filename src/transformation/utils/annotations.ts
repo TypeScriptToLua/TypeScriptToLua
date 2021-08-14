@@ -1,5 +1,6 @@
 import * as ts from "typescript";
 import { TransformationContext } from "../context";
+import { annotationDeprecated } from "./diagnostics";
 import { findFirstNodeAbove, inferAssignedType } from "./typescript";
 
 export enum AnnotationKind {
@@ -17,6 +18,8 @@ export enum AnnotationKind {
     NoSelfInFile = "noSelfInFile",
     Vararg = "vararg",
     ForRange = "forRange",
+    Jsx = "jsx",
+    JsxFrag = "jsxFrag",
 }
 
 export interface Annotation {
@@ -115,6 +118,7 @@ export function isTupleReturnCall(context: TransformationContext, node: ts.Node)
     const signature = context.checker.getResolvedSignature(node);
     if (signature) {
         if (getSignatureAnnotations(context, signature).has(AnnotationKind.TupleReturn)) {
+            context.diagnostics.push(annotationDeprecated(node, AnnotationKind.TupleReturn));
             return true;
         }
 
@@ -130,7 +134,13 @@ export function isTupleReturnCall(context: TransformationContext, node: ts.Node)
     }
 
     const type = context.checker.getTypeAtLocation(node.expression);
-    return getTypeAnnotations(type).has(AnnotationKind.TupleReturn);
+    const result = getTypeAnnotations(type).has(AnnotationKind.TupleReturn);
+
+    if (result) {
+        context.diagnostics.push(annotationDeprecated(node, AnnotationKind.TupleReturn));
+    }
+
+    return result;
 }
 
 export function isInTupleReturnFunction(context: TransformationContext, node: ts.Node): boolean {

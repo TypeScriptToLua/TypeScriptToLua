@@ -1,3 +1,4 @@
+import { notAllowedOptionalAssignment } from "../../src/transformation/utils/diagnostics";
 import * as util from "../util";
 
 test.each(["null", "undefined", '{ foo: "foo" }'])("optional chaining (%p)", value => {
@@ -95,6 +96,15 @@ test("no side effects", () => {
         const result = getFoo()?.foo ?? getBar()?.bar;
         return { result, barCalls };
     `.expectToMatchJsResult();
+});
+
+// Test for https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1044
+test("does not crash when incorrectly used in assignment (#1044)", () => {
+    const { diagnostics } = util.testFunction`
+        foo?.bar = "foo";
+    `.getLuaResult();
+
+    expect(diagnostics.find(d => d.code === notAllowedOptionalAssignment.code)).toBeDefined();
 });
 
 describe("optional chaining function calls", () => {

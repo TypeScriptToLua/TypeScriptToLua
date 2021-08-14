@@ -2,7 +2,6 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { assert, assertNever } from "../../utils";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { isTupleReturnCall } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
 import { unsupportedVarDeclaration } from "../utils/diagnostics";
 import { addExportToIdentifier } from "../utils/export";
@@ -159,7 +158,7 @@ export function transformBindingVariableDeclaration(
             table = lua.createAnonymousIdentifier();
             if (initializer) {
                 let expression = context.transformExpression(initializer);
-                if (isTupleReturnCall(context, initializer) || isMultiReturnCall(context, initializer)) {
+                if (isMultiReturnCall(context, initializer)) {
                     expression = wrapInTable(expression);
                 }
                 statements.push(lua.createVariableDeclarationStatement(table, expression));
@@ -175,8 +174,8 @@ export function transformBindingVariableDeclaration(
             : lua.createAnonymousIdentifier();
 
     if (initializer) {
-        if (isTupleReturnCall(context, initializer) || isMultiReturnCall(context, initializer)) {
-            // Don't unpack @tupleReturn or LuaMultiReturn functions
+        if (isMultiReturnCall(context, initializer)) {
+            // Don't unpack LuaMultiReturn functions
             statements.push(
                 ...createLocalOrExportedOrGlobalDeclaration(
                     context,

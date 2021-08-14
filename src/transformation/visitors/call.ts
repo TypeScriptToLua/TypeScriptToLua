@@ -2,15 +2,15 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { transformBuiltinCallExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { AnnotationKind, getTypeAnnotations, isInTupleReturnFunction, isTupleReturnCall } from "../utils/annotations";
+import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
 import { ContextType, getDeclarationContextType } from "../utils/function-context";
 import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isValidLuaIdentifier } from "../utils/safe-names";
-import { isExpressionWithEvaluationEffect, isInDestructingAssignment } from "../utils/typescript";
+import { isExpressionWithEvaluationEffect } from "../utils/typescript";
 import { transformElementAccessArgument } from "./access";
-import { shouldMultiReturnCallBeWrapped } from "./language-extensions/multi";
+import { isMultiReturnCall, shouldMultiReturnCallBeWrapped } from "./language-extensions/multi";
 import { isOperatorMapping, transformOperatorMappingExpression } from "./language-extensions/operators";
 import {
     isTableDeleteCall,
@@ -241,14 +241,7 @@ function transformElementCall(
 }
 
 export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node, context) => {
-    const isTupleReturn = isTupleReturnCall(context, node);
-    const isTupleReturnForward =
-        node.parent && ts.isReturnStatement(node.parent) && isInTupleReturnFunction(context, node);
-    const isInSpread = node.parent && ts.isSpreadElement(node.parent);
-    const returnValueIsUsed = node.parent && !ts.isExpressionStatement(node.parent);
-    const wrapTupleReturn =
-        isTupleReturn && !isTupleReturnForward && !isInDestructingAssignment(node) && !isInSpread && returnValueIsUsed;
-    const wrapResultInTable = wrapTupleReturn || shouldMultiReturnCallBeWrapped(context, node);
+    const wrapResultInTable = isMultiReturnCall(context, node) && shouldMultiReturnCallBeWrapped(context, node);
     const wrapResultInOptional = ts.isOptionalChain(node);
 
     const builtinResult = transformBuiltinCallExpression(context, node);

@@ -53,3 +53,5 @@ export const cannotBundleLibrary = createDiagnosticFactory(
     () =>
         'Cannot bundle probjects with"buildmode": "library". Projects including the library can still bundle (which will include external library files).'
 );
+
+export const unsupportedJsxEmit = createDiagnosticFactory(() => 'JSX is only supported with "react" jsx option.');

@@ -1,11 +1,5 @@
-import * as path from "path";
 import * as util from "../../util";
-import * as tstl from "../../../src";
 import { invalidMultiIterableWithoutDestructuring } from "../../../src/transformation/utils/diagnostics";
-
-const iterableProjectOptions: tstl.CompilerOptions = {
-    types: [path.resolve(__dirname, "../../../language-extensions")],
-};
 
 describe("simple LuaIterable", () => {
     const testIterable = `
@@ -26,7 +20,7 @@ describe("simple LuaIterable", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -39,7 +33,7 @@ describe("simple LuaIterable", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -53,7 +47,7 @@ describe("simple LuaIterable", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -67,7 +61,7 @@ describe("simple LuaIterable", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -81,7 +75,7 @@ describe("simple LuaIterable", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -95,7 +89,7 @@ describe("simple LuaIterable", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -113,7 +107,7 @@ describe("simple LuaIterable", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 });
@@ -136,7 +130,7 @@ describe("LuaIterable using state", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -149,7 +143,7 @@ describe("LuaIterable using state", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -163,7 +157,7 @@ describe("LuaIterable using state", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -177,7 +171,7 @@ describe("LuaIterable using state", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -191,7 +185,7 @@ describe("LuaIterable using state", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -205,7 +199,7 @@ describe("LuaIterable using state", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -223,7 +217,7 @@ describe("LuaIterable using state", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 });
@@ -251,7 +245,7 @@ describe("LuaIterable with array value type", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -265,7 +259,7 @@ describe("LuaIterable with array value type", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -279,7 +273,7 @@ describe("LuaIterable with array value type", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -293,7 +287,7 @@ describe("LuaIterable with array value type", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -307,7 +301,7 @@ describe("LuaIterable with array value type", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -325,7 +319,7 @@ describe("LuaIterable with array value type", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 });
@@ -358,7 +352,7 @@ describe("LuaIterable with LuaMultiReturn value type", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -372,7 +366,7 @@ describe("LuaIterable with LuaMultiReturn value type", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -386,7 +380,7 @@ describe("LuaIterable with LuaMultiReturn value type", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -400,7 +394,7 @@ describe("LuaIterable with LuaMultiReturn value type", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -414,7 +408,7 @@ describe("LuaIterable with LuaMultiReturn value type", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -432,7 +426,7 @@ describe("LuaIterable with LuaMultiReturn value type", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -443,7 +437,7 @@ describe("LuaIterable with LuaMultiReturn value type", () => {
             ${testIterable}
             ${statement}
         `
-                .setOptions(iterableProjectOptions)
+                .withLanguageExtensions()
                 .expectDiagnosticsToMatchSnapshot([invalidMultiIterableWithoutDestructuring.code]);
         }
     );
@@ -472,7 +466,7 @@ describe("LuaIterable property", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -486,7 +480,7 @@ describe("LuaIterable property", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -500,7 +494,7 @@ describe("LuaIterable property", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -514,7 +508,7 @@ describe("LuaIterable property", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -528,7 +522,7 @@ describe("LuaIterable property", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 
@@ -546,7 +540,7 @@ describe("LuaIterable property", () => {
             }
             return results;
         `
-            .setOptions(iterableProjectOptions)
+            .withLanguageExtensions()
             .expectToEqual(testResults);
     });
 });

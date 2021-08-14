@@ -77,18 +77,17 @@ test("return nil from try", () => {
     `.expectToMatchJsResult();
 });
 
-test("tuple return from try", () => {
+test("multi return from try", () => {
     const testBuilder = util.testFunction`
-        /** @tupleReturn */
         function foobar() {
             try {
-                return ["foo", "bar"];
+                return $multi("foo", "bar");
             } catch {
             }
         }
         const [foo, bar] = foobar();
         return foo + bar;
-    `;
+    `.withLanguageExtensions();
     expect(testBuilder.getMainLuaCodeChunk()).not.toMatch("unpack(foobar");
     testBuilder.expectToMatchJsResult();
 });
@@ -122,19 +121,18 @@ test("return nil from catch", () => {
     `.expectToMatchJsResult();
 });
 
-test("tuple return from catch", () => {
+test("multi return from catch", () => {
     const testBuilder = util.testFunction`
-        /** @tupleReturn */
-        function foobar(): [string, string] {
+        function foobar(): LuaMultiReturn<[string, string]> {
             try {
                 throw "foobar";
             } catch (e) {
-                return [e.toString(), " catch"];
+                return $multi(e.toString(), " catch");
             }
         }
         const [foo, bar] = foobar();
         return foo + bar;
-    `;
+    `.withLanguageExtensions();
     expect(testBuilder.getMainLuaCodeChunk()).not.toMatch("unpack(foobar");
     testBuilder.expectToMatchJsResult();
 });
@@ -210,47 +208,49 @@ test("return from catch->finally", () => {
     `.expectToMatchJsResult();
 });
 
-test("tuple return from try->finally", () => {
+test("multi return from try->finally", () => {
     util.testFunction`
         let x = "unevaluated";
         function evaluate(arg: string) {
             x = "evaluated";
             return arg;
         }
-        /** @tupleReturn */
         function foobar() {
             try {
-                return [evaluate("foo"), "bar"];
+                return $multi(evaluate("foo"), "bar");
             } catch {
             } finally {
-                return ["final", "ly"];
+                return $multi("final", "ly");
             }
         }
         const [foo, bar] = foobar();
         return foo + bar + " " + x;
-    `.expectToMatchJsResult();
+    `
+        .withLanguageExtensions()
+        .expectToMatchJsResult();
 });
 
-test("tuple return from catch->finally", () => {
+test("multi return from catch->finally", () => {
     util.testFunction`
         let x = "unevaluated";
         function evaluate(arg: string) {
             x = "evaluated";
             return arg;
         }
-        /** @tupleReturn */
         function foobar() {
             try {
                 throw "foo";
             } catch (e) {
-                return [evaluate(e), "bar"];
+                return $multi(evaluate(e), "bar");
             } finally {
-                return ["final", "ly"];
+                return $multi("final", "ly");
             }
         }
         const [foo, bar] = foobar();
         return foo + bar + " " + x;
-    `.expectToMatchJsResult();
+    `
+        .withLanguageExtensions()
+        .expectToMatchJsResult();
 });
 
 test("return from nested finally", () => {

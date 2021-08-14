@@ -4,10 +4,10 @@ function __TS__ParseInt(this: void, numberString: string, base?: number): number
     // Check which base to use if none specified
     if (base === undefined) {
         base = 10;
-        const hexMatch = string.match(numberString, "^%s*-?0[xX]");
+        const [hexMatch] = string.match(numberString, "^%s*-?0[xX]");
         if (hexMatch) {
             base = 16;
-            numberString = string.match(hexMatch, "-")
+            numberString = string.match(hexMatch, "-")[0]
                 ? "-" + numberString.substr(hexMatch.length)
                 : numberString.substr(hexMatch.length);
         }
@@ -26,7 +26,7 @@ function __TS__ParseInt(this: void, numberString: string, base?: number): number
     const pattern = `^%s*(-?[${allowedDigits}]*)`;
 
     // Try to parse with Lua tonumber
-    const number = tonumber(string.match(numberString, pattern), base);
+    const number = tonumber(string.match(numberString, pattern)[0], base);
 
     if (number === undefined) {
         return NaN;

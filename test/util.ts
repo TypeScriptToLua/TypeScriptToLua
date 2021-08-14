@@ -9,7 +9,7 @@ import * as ts from "typescript";
 import * as vm from "vm";
 import * as tstl from "../src";
 import { createEmitOutputCollector } from "../src/transpilation/output-collector";
-import { getEmitOutDir, transpileProject } from "../src";
+import { EmitHost, getEmitOutDir, transpileProject } from "../src";
 import { formatPathToLuaPath, normalizeSlashes } from "../src/utils";
 
 const jsonLib = fs.readFileSync(path.join(__dirname, "json.lua"), "utf8");
@@ -147,6 +147,15 @@ export abstract class TestBuilder {
         return this;
     }
 
+    public withLanguageExtensions(): this {
+        this.setOptions({ types: [path.resolve(__dirname, "..", "language-extensions")] });
+        // Polyfill lualib for JS
+        this.setJsHeader(`
+            function $multi(...args) { return args; }
+        `);
+        return this;
+    }
+
     protected mainFileName = "main.ts";
     public setMainFileName(mainFileName: string): this {
         expect(this.hasProgram).toBe(false);
@@ -178,17 +187,34 @@ export abstract class TestBuilder {
     @memoize
     public getProgram(): ts.Program {
         this.hasProgram = true;
+
+        // Exclude lua files from TS program, but keep them in extraFiles so module resolution can find them
+        const nonLuaExtraFiles = Object.fromEntries(
+            Object.entries(this.extraFiles).filter(([fileName]) => !fileName.endsWith(".lua"))
+        );
+
         return tstl.createVirtualProgram(
-            { ...this.extraFiles, [normalizeSlashes(this.mainFileName)]: this.getTsCode() },
+            { ...nonLuaExtraFiles, [normalizeSlashes(this.mainFileName)]: this.getTsCode() },
             this.options
         );
+    }
+
+    private getEmitHost(): EmitHost {
+        return {
+            fileExists: (path: string) => normalizeSlashes(path) in this.extraFiles,
+            directoryExists: (path: string) =>
+                Object.keys(this.extraFiles).some(f => f.startsWith(normalizeSlashes(path))),
+            getCurrentDirectory: () => ".",
+            readFile: (path: string) => this.extraFiles[normalizeSlashes(path)] ?? ts.sys.readFile(path),
+            writeFile() {},
+        };
     }
 
     @memoize
     public getLuaResult(): tstl.TranspileVirtualProjectResult {
         const program = this.getProgram();
         const collector = createEmitOutputCollector();
-        const { diagnostics: transpileDiagnostics } = new tstl.Transpiler().emit({
+        const { diagnostics: transpileDiagnostics } = new tstl.Transpiler({ emitHost: this.getEmitHost() }).emit({
             program,
             customTransformers: this.customTransformers,
             writeFile: collector.writeFile,

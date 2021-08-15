@@ -63,3 +63,36 @@ test.each(['{x: "foobar"}.x', '{x: "foobar"}["x"]', '{x: () => "foobar"}.x()', '
         util.testExpression(expression).expectToMatchJsResult();
     }
 );
+
+test("noSelf in object literal functions", () => {
+    // language=TypeScript
+    util.testFunction`
+        const foo: Record<string, (this: void, arg: string) => string> = {
+            method(a) {
+                return a;
+            },
+            func: function(a) {
+                return a;
+            },
+            arrow: (a) => {
+                return a;
+            }
+        };
+        return [foo.method("a") ?? "nil", foo.func("b") ?? "nil", foo.arrow("c") ?? "nil"]
+    `.expectToMatchJsResult();
+    // language=TypeScript
+    util.testFunction`
+        const foo: Record<string, /** @noSelf */(arg: string) => string> = {
+            method(a) {
+                return a;
+            },
+            func: function(a) {
+                return a;
+            },
+            arrow: (a) => {
+                return a;
+            }
+        };
+        return [foo.method("a") ?? "nil", foo.func("b") ?? "nil", foo.arrow("c") ?? "nil"]
+    `.expectToMatchJsResult();
+});

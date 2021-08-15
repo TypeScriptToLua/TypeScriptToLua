@@ -113,17 +113,21 @@ function getSignatureDeclarations(
 ): ts.SignatureDeclaration[] {
     return signatures.flatMap(signature => {
         const signatureDeclaration = signature.getDeclaration();
-        if (
+        let inferredType: ts.Type | undefined;
+        if (ts.isMethodDeclaration(signatureDeclaration) && !getExplicitThisParameter(signatureDeclaration)) {
+            inferredType = context.checker.getContextualTypeForObjectLiteralElement(signatureDeclaration);
+        } else if (
             (ts.isFunctionExpression(signatureDeclaration) || ts.isArrowFunction(signatureDeclaration)) &&
             !getExplicitThisParameter(signatureDeclaration)
         ) {
             // Infer type of function expressions/arrow functions
-            const inferredType = inferAssignedType(context, signatureDeclaration);
-            if (inferredType) {
-                const inferredSignatures = getAllCallSignatures(inferredType);
-                if (inferredSignatures.length > 0) {
-                    return inferredSignatures.map(s => s.getDeclaration());
-                }
+            inferredType = inferAssignedType(context, signatureDeclaration);
+        }
+
+        if (inferredType) {
+            const inferredSignatures = getAllCallSignatures(inferredType);
+            if (inferredSignatures.length > 0) {
+                return inferredSignatures.map(s => s.getDeclaration());
             }
         }
 

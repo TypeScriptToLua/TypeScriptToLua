@@ -26,5 +26,6 @@ declare module "typescript" {
 
     interface TypeChecker {
         getElementTypeOfArrayType(type: Type): Type | undefined;
+        getContextualTypeForObjectLiteralElement(element: ObjectLiteralElementLike): Type | undefined;
     }
 }

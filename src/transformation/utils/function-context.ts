@@ -114,7 +114,11 @@ function getSignatureDeclarations(
     return signatures.flatMap(signature => {
         const signatureDeclaration = signature.getDeclaration();
         let inferredType: ts.Type | undefined;
-        if (ts.isMethodDeclaration(signatureDeclaration) && !getExplicitThisParameter(signatureDeclaration)) {
+        if (
+            ts.isMethodDeclaration(signatureDeclaration) &&
+            ts.isObjectLiteralExpression(signatureDeclaration.parent) &&
+            !getExplicitThisParameter(signatureDeclaration)
+        ) {
             inferredType = context.checker.getContextualTypeForObjectLiteralElement(signatureDeclaration);
         } else if (
             (ts.isFunctionExpression(signatureDeclaration) || ts.isArrowFunction(signatureDeclaration)) &&

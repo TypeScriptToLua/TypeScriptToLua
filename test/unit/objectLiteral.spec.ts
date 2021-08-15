@@ -64,35 +64,65 @@ test.each(['{x: "foobar"}.x', '{x: "foobar"}["x"]', '{x: () => "foobar"}.x()', '
     }
 );
 
-test("noSelf in object literal functions", () => {
-    // language=TypeScript
-    util.testFunction`
-        const foo: Record<string, (this: void, arg: string) => string> = {
-            method(a) {
-                return a;
-            },
-            func: function(a) {
-                return a;
-            },
-            arrow: (a) => {
-                return a;
+describe("noSelf in functions", () => {
+    test("Explicit this: void parameter", () => {
+        // language=TypeScript
+        util.testFunction`
+            const obj: Record<string, (this: void, arg: string) => string> = {
+                method(a) {
+                    return a;
+                },
+                func: function(a) {
+                    return a;
+                },
+                arrow: (a) => {
+                    return a;
+                }
+            };
+            return [obj.method("a") ?? "nil", obj.func("b") ?? "nil", obj.arrow("c") ?? "nil"];
+        `.expectToMatchJsResult();
+    });
+
+    test("No self annotation", () => {
+        // language=TypeScript
+        util.testFunction`
+            const obj: Record<string, /** @noSelf */(arg: string) => string> = {
+                method(a) {
+                    return a;
+                },
+                func: function(a) {
+                    return a;
+                },
+                arrow: (a) => {
+                    return a;
+                }
+            };
+            return [obj.method("a") ?? "nil", obj.func("b") ?? "nil", obj.arrow("c") ?? "nil"];
+        `.expectToMatchJsResult();
+    });
+
+    test("individual function types", () => {
+        // language=TypeScript
+        util.testFunction`
+            interface FunctionContainer {
+                method: (this: void, a: string) => string
+                func: (this: void, a: string) => string
+                arrow: (this: void, a: string) => string
             }
-        };
-        return [foo.method("a") ?? "nil", foo.func("b") ?? "nil", foo.arrow("c") ?? "nil"]
-    `.expectToMatchJsResult();
-    // language=TypeScript
-    util.testFunction`
-        const foo: Record<string, /** @noSelf */(arg: string) => string> = {
-            method(a) {
-                return a;
-            },
-            func: function(a) {
-                return a;
-            },
-            arrow: (a) => {
-                return a;
+
+            const obj: FunctionContainer = {
+                method(a) {
+                    return a
+                },
+                func: function(a) {
+                    return a
+                },
+                arrow: (a) => {
+                    return a
+                }
             }
-        };
-        return [foo.method("a") ?? "nil", foo.func("b") ?? "nil", foo.arrow("c") ?? "nil"]
-    `.expectToMatchJsResult();
+
+            return [obj.method("a") ?? "nil", obj.func("b") ?? "nil", obj.arrow("c") ?? "nil"];
+        `.expectToMatchJsResult();
+    });
 });

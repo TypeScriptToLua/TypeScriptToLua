@@ -272,6 +272,15 @@ test("sourceMapTraceback saves sourcemap in _G", () => {
     }
 });
 
+test("sourceMapTraceback gives traceback", () => {
+    const builder = util.testFunction`
+        return (debug.traceback as (this: void)=>string)();
+    `.setOptions({ sourceMapTraceback: true, luaLibImport: tstl.LuaLibImportKind.Inline });
+
+    const traceback = builder.getLuaExecutionResult();
+    expect(traceback).toEqual(expect.any(String));
+});
+
 test("Inline sourcemaps", () => {
     const code = `
         function abc() {

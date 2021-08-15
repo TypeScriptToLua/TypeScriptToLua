@@ -1,5 +1,6 @@
 // TODO: In the future, change this to __TS__RegisterFileInfo and provide tstl interface to
 // get some metadata about transpilation.
+declare function __TS__originalTraceback(this: void, thread?: LuaThread, message?: string, level?: number);
 function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap: { [line: number]: number }): void {
     globalThis.__TS__sourcemap = globalThis.__TS__sourcemap || {};
     globalThis.__TS__sourcemap[fileName] = sourceMap;

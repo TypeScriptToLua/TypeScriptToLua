@@ -60,6 +60,14 @@ test("luaiterator removed", () => {
     `.expectDiagnosticsToMatchSnapshot([annotationRemoved.code]);
 });
 
+test("tuplereturn removed", () => {
+    util.testFunction`
+        /** @tupleReturn */
+        function tuple(): [number, number, number] { return [3, 5, 1]; }
+        return tuple()[2];
+    `.expectDiagnosticsToMatchSnapshot([annotationRemoved.code]);
+});
+
 const tableLibClass = `
 /** @luaTable */
 declare class Table<K extends {} = {}, V = any> {

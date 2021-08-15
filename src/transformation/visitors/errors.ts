@@ -1,7 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor } from "../context";
-import { isInTupleReturnFunction } from "../utils/annotations";
 import { createUnpackCall } from "../utils/lua-ast";
 import { findScope, ScopeType } from "../utils/scope";
 import { transformScopeBlock } from "./block";
@@ -89,7 +88,7 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
             returnValues.push(lua.createBooleanLiteral(true));
         }
 
-        if (isInTupleReturnFunction(context, statement) || isInMultiReturnFunction(context, statement)) {
+        if (isInMultiReturnFunction(context, statement)) {
             returnValues.push(createUnpackCall(context, lua.cloneIdentifier(returnValueIdentifier)));
         } else {
             returnValues.push(lua.cloneIdentifier(returnValueIdentifier));

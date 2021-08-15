@@ -98,6 +98,19 @@ __TS__ClassExtends(ClassB, ClassA)"
 
 exports[`pureAbstract removed: diagnostics 1`] = `"main.ts(4,22): error TSTL: '@pureAbstract' has been removed and will no longer have any effect.See https://typescripttolua.github.io/docs/advanced/compiler-annotations#pureabstract for more information."`;
 
+exports[`tuplereturn removed: code 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local function tuple(self)
+        return {3, 5, 1}
+    end
+    return tuple(nil)[3]
+end
+return ____exports"
+`;
+
+exports[`tuplereturn removed: diagnostics 1`] = `"main.ts(4,16): error TSTL: '@tupleReturn' has been removed and will no longer have any effect.See https://typescripttolua.github.io/docs/advanced/compiler-annotations#tuplereturn for more information."`;
+
 exports[`vararg removed: code 1`] = `
 "function foo(self, ...)
 end

@@ -2,6 +2,8 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { assert } from "../../utils";
 import { FunctionVisitor, TransformationContext } from "../context";
+import { AnnotationKind, getNodeAnnotations } from "../utils/annotations";
+import { annotationRemoved } from "../utils/diagnostics";
 import { createDefaultExportStringLiteral, hasDefaultExportModifier } from "../utils/export";
 import { ContextType, getFunctionContextType } from "../utils/function-context";
 import {
@@ -220,6 +222,10 @@ export function transformFunctionLikeDeclaration(
         return lua.createNilLiteral();
     }
 
+    if (getNodeAnnotations(node).has(AnnotationKind.TupleReturn)) {
+        context.diagnostics.push(annotationRemoved(node, AnnotationKind.TupleReturn));
+    }
+
     const [functionExpression, functionScope] = transformFunctionToExpression(context, node);
 
     // Handle named function expressions which reference themselves
@@ -250,6 +256,10 @@ export function transformFunctionLikeDeclaration(
 }
 
 export const transformFunctionDeclaration: FunctionVisitor<ts.FunctionDeclaration> = (node, context) => {
+    if (getNodeAnnotations(node).has(AnnotationKind.TupleReturn)) {
+        context.diagnostics.push(annotationRemoved(node, AnnotationKind.TupleReturn));
+    }
+
     // Don't transform functions without body (overload declarations)
     if (node.body === undefined) {
         return undefined;

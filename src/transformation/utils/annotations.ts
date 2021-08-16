@@ -1,6 +1,5 @@
 import * as ts from "typescript";
 import { TransformationContext } from "../context";
-import { annotationRemoved } from "./diagnostics";
 
 export enum AnnotationKind {
     Extension = "extension",
@@ -117,7 +116,6 @@ export function isTupleReturnCall(context: TransformationContext, node: ts.Node)
     const signature = context.checker.getResolvedSignature(node);
     if (signature) {
         if (getSignatureAnnotations(context, signature).has(AnnotationKind.TupleReturn)) {
-            context.diagnostics.push(annotationRemoved(node, AnnotationKind.TupleReturn));
             return true;
         }
 
@@ -133,13 +131,7 @@ export function isTupleReturnCall(context: TransformationContext, node: ts.Node)
     }
 
     const type = context.checker.getTypeAtLocation(node.expression);
-    const result = getTypeAnnotations(type).has(AnnotationKind.TupleReturn);
-
-    if (result) {
-        context.diagnostics.push(annotationRemoved(node, AnnotationKind.TupleReturn));
-    }
-
-    return result;
+    return getTypeAnnotations(type).has(AnnotationKind.TupleReturn);
 }
 
 export function isLuaIteratorType(context: TransformationContext, node: ts.Node): boolean {

@@ -65,6 +65,19 @@ test("tuplereturn removed", () => {
         /** @tupleReturn */
         function tuple(): [number, number, number] { return [3, 5, 1]; }
         return tuple()[2];
+    `.expectDiagnosticsToMatchSnapshot([annotationRemoved.code, annotationRemoved.code]); // One annotation on the function, one on the call
+});
+
+test("tuplereturn removed on function declaration", () => {
+    util.testFunction`
+        /** @tupleReturn */
+        function tuple(): [number, number, number] { return [3, 5, 1]; }
+    `.expectDiagnosticsToMatchSnapshot([annotationRemoved.code]);
+});
+
+test("tuplereturn lambda", () => {
+    util.testFunction`
+        const f = /** @tupleReturn */ () => [3, 4];
     `.expectDiagnosticsToMatchSnapshot([annotationRemoved.code]);
 });
 

@@ -188,6 +188,7 @@ function resolveDependency(
     const possibleLuaProjectFiles = [
         resolvedPath + ".lua", // lua file in sources
         path.join(resolvedPath, "index.lua"), // lua index file in sources
+        path.join(resolvedPath, "init.lua"), // lua looks for <require>/init.lua if it cannot find <require>.lua
     ];
 
     for (const possibleFile of possibleLuaProjectFiles) {

@@ -286,6 +286,7 @@ describe("dependency with complicated inner structure", () => {
         otherFileUtil: "util",
         subsubresult: "result from subsub dir",
         utilResult: "util",
+        subdirwithInitResult: "a",
     };
 
     // Test fix for https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1055

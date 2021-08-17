@@ -469,6 +469,60 @@ test("then on rejected promise immediately calls callback", () => {
         .expectToEqual(["rejected", "already rejected"]);
 });
 
+test("second then throws", () => {
+    util.testFunction`
+        const { promise, resolve } = defer<string>();
+
+        promise.then(data => {
+            // nothing
+            log("then1", data)
+        });
+
+        promise.then(data => {
+            log("then2", data)
+            throw "test throw";
+        }).catch(err => {
+            // caught
+            log("rejected: ", err)
+        });
+
+        resolve("mydata");
+
+        return allLogs;
+    `
+        .setTsHeader(promiseTestLib)
+        .expectToEqual(["then1", "mydata", "then2", "mydata", "rejected: ", "test throw"]);
+});
+
+test("chained then throws", () => {
+    util.testFunction`
+        const { promise, resolve } = defer<string>();
+
+        promise.then(data => {
+            // nothing
+            log("then1", data)
+        }).then(data => {
+            log("then2", data)
+            throw "test throw";
+        }).catch(err => {
+            // caught
+            log("rejected: ", err)
+        });
+
+        resolve("mydata");
+
+        return allLogs;
+    `
+        .setTsHeader(promiseTestLib)
+        .expectToEqual([
+            "then1",
+            "mydata",
+            "then2", // Does not have data because first then returned undefined
+            "rejected: ",
+            "test throw",
+        ]);
+});
+
 test("catch on rejected promise immediately calls callback", () => {
     util.testFunction`
         Promise.reject("already rejected").catch(reason => { log(reason); });

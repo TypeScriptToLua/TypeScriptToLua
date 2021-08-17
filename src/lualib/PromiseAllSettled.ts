@@ -1,5 +1,6 @@
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/allSettled
-async function __TS__PromiseAllSettled<T>(
+// eslint-disable-next-line @typescript-eslint/promise-function-async
+function __TS__PromiseAllSettled<T>(
     this: void,
     iterable: Iterable<T>
 ): Promise<Array<PromiseSettledResult<T extends PromiseLike<infer U> ? U : T>>> {

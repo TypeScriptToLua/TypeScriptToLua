@@ -513,7 +513,7 @@ test("example: asynchronous web request", () => {
 
     util.testFunction`
         // Wrap function getUserData(id: number, callback: (userData: UserData) => void) into a Promise
-        async function getUserDataAsync(id: number): Promise<UserData> {
+        function getUserDataAsync(id: number): Promise<UserData> {
             return new Promise(resolve => {
                 getUserData(id, resolve);
             });

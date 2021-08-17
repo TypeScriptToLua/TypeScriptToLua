@@ -499,6 +499,36 @@ test("finally on rejected promise immediately calls callback", () => {
         .expectToEqual(["finally"]);
 });
 
+test("direct chaining", () => {
+    util.testFunction`
+        const { promise, resolve } = defer<string>();
+
+        promise
+            .then(data => {
+                log("resolving then1", data);
+                return "then 1 data";
+            }).then(data => {
+                log("resolving then2", data);
+                throw "test throw";
+            }).catch(reason => {
+                log("handling catch", reason);
+            });
+
+        resolve("test data");
+
+        return allLogs;
+    `
+        .setTsHeader(promiseTestLib)
+        .expectToEqual([
+            "resolving then1",
+            "test data",
+            "resolving then2",
+            "then 1 data",
+            "handling catch",
+            "test throw",
+        ]);
+});
+
 test("example: asynchronous web request", () => {
     const testHarness = `
         interface UserData { name: string, age: number}

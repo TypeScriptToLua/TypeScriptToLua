@@ -73,23 +73,20 @@ class __TS__Promise<T> implements Promise<T> {
         const { promise, resolve, reject } = __TS__PromiseDeferred<TResult1 | TResult2>();
 
         if (onFulfilled) {
-            const internalCallback =
-                this.fulfilledCallbacks.length === 0
-                    ? this.createPromiseResolvingCallback(onFulfilled, resolve, reject)
-                    : onFulfilled;
+            const internalCallback = this.createPromiseResolvingCallback(onFulfilled, resolve, reject);
             this.fulfilledCallbacks.push(internalCallback);
 
             if (this.state === __TS__PromiseState.Fulfilled) {
                 // If promise already resolved, immediately call callback
                 internalCallback(this.value);
             }
+        } else {
+            // We always want to resolve our child promise if this promise is resolved, even if we have no handler
+            this.fulfilledCallbacks.push(() => resolve(undefined));
         }
 
         if (onRejected) {
-            const internalCallback =
-                this.rejectedCallbacks.length === 0
-                    ? this.createPromiseResolvingCallback(onRejected, resolve, reject)
-                    : onRejected;
+            const internalCallback = this.createPromiseResolvingCallback(onRejected, resolve, reject);
             this.rejectedCallbacks.push(internalCallback);
 
             if (this.state === __TS__PromiseState.Rejected) {
@@ -97,6 +94,7 @@ class __TS__Promise<T> implements Promise<T> {
                 internalCallback(this.rejectionReason);
             }
         }
+
         return promise;
     }
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/catch

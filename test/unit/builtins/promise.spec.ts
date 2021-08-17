@@ -529,6 +529,75 @@ test("direct chaining", () => {
         ]);
 });
 
+describe("finally behaves same as then/catch", () => {
+    const thenCatchPromise = `
+        const { promise, resolve, reject } = defer<string>();
+        promise
+            .then(data => {
+                log("do something", data);
+                log("final code");
+            })
+            .catch(reason => {
+                log("handling error", data);
+                log("final code");
+            });
+    `;
+
+    const finallyPromise = `
+        const { promise, resolve, reject } = defer<string>();
+        promise
+            .then(data => {
+                log("do something", data);
+            })
+            .catch(reason => {
+                log("handling error", reason);
+            })
+            .finally(() => {
+                log("final code");
+            });
+    `;
+
+    test("when resolving", () => {
+        const thenResult = util.testFunction`
+            ${thenCatchPromise}
+            resolve("test data");
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .getLuaExecutionResult();
+
+        const finallyResult = util.testFunction`
+            ${finallyPromise}
+            resolve("test data");
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .getLuaExecutionResult();
+
+        expect(finallyResult).toEqual(thenResult);
+    });
+
+    test("when rejecting", () => {
+        const thenResult = util.testFunction`
+            ${thenCatchPromise}
+            reject("test rejection reason");
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .getLuaExecutionResult();
+
+        const finallyResult = util.testFunction`
+            ${finallyPromise}
+            reject("test rejection reason");
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .getLuaExecutionResult();
+
+        expect(finallyResult).toEqual(thenResult);
+    });
+});
+
 test("example: asynchronous web request", () => {
     const testHarness = `
         interface UserData { name: string, age: number}

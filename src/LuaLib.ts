@@ -102,6 +102,7 @@ const luaLibDependencies: Partial<Record<LuaLibFeature, LuaLibFeature[]>> = {
     ArrayConcat: [LuaLibFeature.ArrayIsArray],
     ArrayFlat: [LuaLibFeature.ArrayConcat, LuaLibFeature.ArrayIsArray],
     ArrayFlatMap: [LuaLibFeature.ArrayConcat, LuaLibFeature.ArrayIsArray],
+    Await: [LuaLibFeature.InstanceOf, LuaLibFeature.New],
     Decorate: [LuaLibFeature.ObjectGetOwnPropertyDescriptor, LuaLibFeature.SetDescriptor, LuaLibFeature.ObjectAssign],
     DelegatedYield: [LuaLibFeature.StringAccess],
     Delete: [LuaLibFeature.ObjectGetOwnPropertyDescriptors],

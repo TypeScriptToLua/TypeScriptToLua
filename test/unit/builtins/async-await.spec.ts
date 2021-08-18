@@ -67,12 +67,36 @@ test("can await pending promise", () => {
         .expectToEqual(["resolving original promise", "resolved data", "resolving awaiting promise", "resolved data"]);
 });
 
-test("can return non-promise from async function", () => {
+test("can await non-promise values", () => {
     util.testFunction`
+        async function foo() {
+            return await "foo";
+        }
+
+        async function bar() {
+            return await { foo: await foo(), bar: "bar" };
+        }
+
+        async function baz() {
+            return (await bar()).foo + (await bar()).bar;
+        }
+
+        const { state, value } = baz() as any;
+        return { state, value };
+    `.expectToEqual({
+        state: 1, // __TS__PromiseState.Fulfilled
+        value: "foobar",
+    });
+});
+
+test.each(["async function abc() {", "const abc = async () => {"])(
+    "can return non-promise from async function (%p)",
+    functionHeader => {
+        util.testFunction`
         const { promise, resolve } = defer<string>();
         promise.then(data => log("resolving original promise", data));
 
-        async function abc() {
+        ${functionHeader}
             await promise;
             return "abc return data"
         }
@@ -85,17 +109,20 @@ test("can return non-promise from async function", () => {
         return allLogs;
 
     `
-        .setTsHeader(promiseTestLib)
-        .expectToEqual([
-            "resolving original promise",
-            "resolved data",
-            "resolving awaiting promise",
-            "abc return data",
-        ]);
-});
+            .setTsHeader(promiseTestLib)
+            .expectToEqual([
+                "resolving original promise",
+                "resolved data",
+                "resolving awaiting promise",
+                "abc return data",
+            ]);
+    }
+);
 
-test("can have multiple awaits in async function", () => {
-    util.testFunction`
+test.each(["async function abc() {", "const abc = async () => {"])(
+    "can have multiple awaits in async function (%p)",
+    functionHeader => {
+        util.testFunction`
         const { promise: promise1, resolve: resolve1 } = defer<string>();
         const { promise: promise2, resolve: resolve2 } = defer<string>();
         const { promise: promise3, resolve: resolve3 } = defer<string>();
@@ -103,7 +130,7 @@ test("can have multiple awaits in async function", () => {
         promise2.then(data => log("resolving promise2", data));
         promise3.then(data => log("resolving promise3", data));
 
-        async function abc() {
+        ${functionHeader}
             const result1 = await promise1;
             const result2 = await promise2;
             const result3 = await promise3;
@@ -120,17 +147,31 @@ test("can have multiple awaits in async function", () => {
         return allLogs;
 
     `
-        .setTsHeader(promiseTestLib)
-        .expectToEqual([
-            "resolving promise1",
-            "data1",
-            "resolving promise2",
-            "data2",
-            "resolving promise3",
-            "data3",
-            "resolving awaiting promise",
-            ["data1", "data2", "data3"],
-        ]);
+            .setTsHeader(promiseTestLib)
+            .expectToEqual([
+                "resolving promise1",
+                "data1",
+                "resolving promise2",
+                "data2",
+                "resolving promise3",
+                "data3",
+                "resolving awaiting promise",
+                ["data1", "data2", "data3"],
+            ]);
+    }
+);
+
+test("can make async lambdas with expression body", () => {
+    util.testFunction`
+        const foo = async () => "foo";
+        const bar = async () => await foo();
+
+        const { state, value } = bar() as any;
+        return { state, value };
+    `.expectToEqual({
+        state: 1, // __TS__PromiseState.Fulfilled
+        value: "foo",
+    });
 });
 
 test("can await async function from async function", () => {
@@ -223,6 +264,52 @@ test("can call async function at top-level", () => {
         .expectToEqual({
             aStarted: true,
         });
+});
+
+test("async function throws error", () => {
+    util.testFunction`
+        async function a() {
+            throw "test throw";
+        }
+
+        const { state, rejectionReason } = a() as any;
+        return { state, rejectionReason };
+    `.expectToEqual({
+        state: 2, // __TS__PromiseState.Rejected
+        rejectionReason: "test throw",
+    });
+});
+
+test("async lambda throws error", () => {
+    util.testFunction`
+        const a = async () => {
+            throw "test throw";
+        }
+
+        const { state, rejectionReason } = a() as any;
+        return { state, rejectionReason };
+    `.expectToEqual({
+        state: 2, // __TS__PromiseState.Rejected
+        rejectionReason: "test throw",
+    });
+});
+
+test("async function throws object", () => {
+    util.testFunction`
+        async function a() {
+            throw new Error("test throw");
+        }
+
+        const { state, rejectionReason } = a() as any;
+        return { state, rejectionReason };
+    `.expectToEqual({
+        state: 2, // __TS__PromiseState.Rejected
+        rejectionReason: {
+            message: "test throw",
+            name: "Error",
+            stack: expect.stringContaining("stack traceback"),
+        },
+    });
 });
 
 test.each([

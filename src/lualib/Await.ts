@@ -25,8 +25,12 @@ function __TS__AsyncAwaiter(this: void, generator: (this: void) => void) {
         }
         function fulfilled(value) {
             try {
-                const [_, result] = coroutine.resume(asyncCoroutine, value);
-                step(result);
+                const [success, resultOrError] = coroutine.resume(asyncCoroutine, value);
+                if (success) {
+                    step(resultOrError);
+                } else {
+                    reject(resultOrError);
+                }
             } catch (e) {
                 reject(e);
             }
@@ -38,8 +42,12 @@ function __TS__AsyncAwaiter(this: void, generator: (this: void) => void) {
                 adopt(result).then(fulfilled, reason => reject(reason));
             }
         }
-        const [_, result] = coroutine.resume(asyncCoroutine);
-        step(result);
+        const [success, resultOrError] = coroutine.resume(asyncCoroutine);
+        if (success) {
+            step(resultOrError);
+        } else {
+            reject(resultOrError);
+        }
     });
 }
 

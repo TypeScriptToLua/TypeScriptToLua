@@ -1,6 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { transformBuiltinIdentifierExpression } from "../builtins";
+import { createPromiseIdentifier, isPromiseClass } from "../builtins/promise";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { AnnotationKind, isForRangeType } from "../utils/annotations";
 import {
@@ -12,6 +13,7 @@ import {
     annotationRemoved,
 } from "../utils/diagnostics";
 import { createExportedIdentifier, getSymbolExportScope } from "../utils/export";
+import { importLuaLibFeature, LuaLibFeature } from "../utils/lualib";
 import { createSafeName, hasUnsafeIdentifierName } from "../utils/safe-names";
 import { getIdentifierSymbolId } from "../utils/symbols";
 import { isMultiFunctionNode } from "./language-extensions/multi";
@@ -46,6 +48,11 @@ export function transformIdentifier(context: TransformationContext, identifier: 
 
     if (isForRangeType(context, identifier)) {
         context.diagnostics.push(annotationRemoved(identifier, AnnotationKind.ForRange));
+    }
+
+    if (isPromiseClass(context, identifier)) {
+        importLuaLibFeature(context, LuaLibFeature.Promise);
+        return createPromiseIdentifier(identifier);
     }
 
     const text = hasUnsafeIdentifierName(context, identifier) ? createSafeName(identifier.text) : identifier.text;

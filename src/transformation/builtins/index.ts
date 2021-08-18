@@ -22,6 +22,7 @@ import { transformGlobalCall } from "./global";
 import { transformMathCall, transformMathProperty } from "./math";
 import { transformNumberConstructorCall, transformNumberPrototypeCall } from "./number";
 import { transformObjectConstructorCall, transformObjectPrototypeCall } from "./object";
+import { transformPromiseConstructorCall } from "./promise";
 import { transformStringConstructorCall, transformStringProperty, transformStringPrototypeCall } from "./string";
 import { transformSymbolConstructorCall } from "./symbol";
 
@@ -93,6 +94,8 @@ export function transformBuiltinCallExpression(
                 return transformSymbolConstructorCall(context, node);
             case "NumberConstructor":
                 return transformNumberConstructorCall(context, node);
+            case "PromiseConstructor":
+                return transformPromiseConstructorCall(context, node);
         }
     }
 

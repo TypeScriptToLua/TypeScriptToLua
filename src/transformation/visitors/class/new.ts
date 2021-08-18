@@ -60,13 +60,14 @@ export const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, 
         return lua.createTableExpression(undefined, node);
     }
 
-    const name = context.transformExpression(node.expression);
     const signature = context.checker.getResolvedSignature(node);
     const params = node.arguments
         ? transformArguments(context, node.arguments, signature)
         : [lua.createBooleanLiteral(true)];
 
     checkForLuaLibType(context, type);
+
+    const name = context.transformExpression(node.expression);
 
     const customConstructorAnnotation = annotations.get(AnnotationKind.CustomConstructor);
     if (customConstructorAnnotation) {

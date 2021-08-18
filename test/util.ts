@@ -292,9 +292,11 @@ export abstract class TestBuilder {
 
     // Actions
 
-    public debug(): this {
+    public debug(includeLualib = false): this {
         const transpiledFiles = this.getLuaResult().transpiledFiles;
-        const luaCode = transpiledFiles.map(f => `[${f.outPath}]:\n${f.lua?.replace(/^/gm, "  ")}`);
+        const luaCode = transpiledFiles
+            .filter(f => includeLualib || f.outPath !== "lualib_bundle.lua")
+            .map(f => `[${f.outPath}]:\n${f.lua?.replace(/^/gm, "  ")}`);
         const value = prettyFormat(this.getLuaExecutionResult()).replace(/^/gm, "  ");
         console.log(`Lua Code:\n${luaCode.join("\n")}\n\nValue:\n${value}`);
         return this;

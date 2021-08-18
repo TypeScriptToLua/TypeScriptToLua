@@ -25,24 +25,21 @@ function __TS__AsyncAwaiter(this: void, generator: (this: void) => void) {
         }
         function fulfilled(value) {
             try {
-                const [running, result] = coroutine.resume(asyncCoroutine, value);
-                step(running, result);
+                const [_, result] = coroutine.resume(asyncCoroutine, value);
+                step(result);
             } catch (e) {
                 reject(e);
             }
         }
-        let lastData: unknown;
-        function step(running: boolean, result: unknown) {
-            if (!running) {
-                resolve(lastData);
+        function step(result: unknown) {
+            if (coroutine.status(asyncCoroutine) === "dead") {
+                resolve(result);
             } else {
-                // Not possible to determine if a running === true will be the last one, once it's false the data to return is lost, so save it.
-                lastData = result;
                 adopt(result).then(fulfilled, reason => reject(reason));
             }
         }
-        const [running, result] = coroutine.resume(asyncCoroutine);
-        step(running, result);
+        const [_, result] = coroutine.resume(asyncCoroutine);
+        step(result);
     });
 }
 

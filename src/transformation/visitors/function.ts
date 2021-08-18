@@ -196,8 +196,11 @@ export function transformFunctionToExpression(
         spreadIdentifier,
         node
     );
+
+    const possiblyAsyncBody = isAsyncFunction(node) ? wrapInAsyncAwaiter(context, transformedBody) : transformedBody;
+
     const functionExpression = lua.createFunctionExpression(
-        lua.createBlock(isAsyncFunction(node) ? wrapInAsyncAwaiter(context, transformedBody) : transformedBody),
+        lua.createBlock(possiblyAsyncBody),
         paramNames,
         dotsLiteral,
         flags,

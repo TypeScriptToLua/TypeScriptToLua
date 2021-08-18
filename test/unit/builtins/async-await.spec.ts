@@ -225,10 +225,17 @@ test("can call async function at top-level", () => {
         });
 });
 
-test.each(["await a();", "const b = await a();", "export const b = await a();"])(
-    "cannot await at top-level (%p)",
-    awaitUsage => {
-        util.testModule`
+test.each([
+    "await a();",
+    "const b = await a();",
+    "export const b = await a();",
+    "declare function foo(n: number): number; foo(await a());",
+    "declare function foo(n: number): number; const b = foo(await a());",
+    "const b = [await a()];",
+    "const b = [4, await a()];",
+    "const b = true ? 4 : await a();",
+])("cannot await at top-level (%p)", awaitUsage => {
+    util.testModule`
         async function a() {
             return 42;
         }
@@ -236,7 +243,6 @@ test.each(["await a();", "const b = await a();", "export const b = await a();"])
         ${awaitUsage}
         export {} // Required to make TS happy, cannot await without import/exports
     `
-            .setOptions({ module: ModuleKind.ESNext, target: ScriptTarget.ES2017 })
-            .expectToHaveDiagnostics([notAllowedTopLevelAwait.code]);
-    }
-);
+        .setOptions({ module: ModuleKind.ESNext, target: ScriptTarget.ES2017 })
+        .expectToHaveDiagnostics([notAllowedTopLevelAwait.code]);
+});

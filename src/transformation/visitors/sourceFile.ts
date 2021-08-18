@@ -6,7 +6,7 @@ import { notAllowedTopLevelAwait } from "../utils/diagnostics";
 import { createExportsIdentifier } from "../utils/lua-ast";
 import { getUsedLuaLibFeatures } from "../utils/lualib";
 import { performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
-import { hasExportEquals } from "../utils/typescript";
+import { hasExportEquals, traverseWithoutCrossingFunction } from "../utils/typescript";
 
 export const transformSourceFileNode: FunctionVisitor<ts.SourceFile> = (node, context) => {
     let statements: lua.Statement[] = [];
@@ -52,11 +52,12 @@ export const transformSourceFileNode: FunctionVisitor<ts.SourceFile> = (node, co
 };
 
 function isTopLevelAwait(statement: ts.Statement) {
-    return (
-        (ts.isExpressionStatement(statement) && ts.isAwaitExpression(statement.expression)) ||
-        (ts.isVariableStatement(statement) &&
-            statement.declarationList.declarations.some(
-                declaration => declaration.initializer && ts.isAwaitExpression(declaration.initializer)
-            ))
-    );
+    // Check if expression contains an await child, without going into function declarations
+    let containsAwait = false;
+    traverseWithoutCrossingFunction(statement, node => {
+        if (ts.isAwaitExpression(node)) {
+            containsAwait = true;
+        }
+    });
+    return containsAwait;
 }

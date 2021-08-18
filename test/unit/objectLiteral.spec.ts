@@ -63,3 +63,66 @@ test.each(['{x: "foobar"}.x', '{x: "foobar"}["x"]', '{x: () => "foobar"}.x()', '
         util.testExpression(expression).expectToMatchJsResult();
     }
 );
+
+describe("noSelf in functions", () => {
+    test("Explicit this: void parameter", () => {
+        // language=TypeScript
+        util.testFunction`
+            const obj: Record<string, (this: void, arg: string) => string> = {
+                method(a) {
+                    return a;
+                },
+                func: function(a) {
+                    return a;
+                },
+                arrow: (a) => {
+                    return a;
+                }
+            };
+            return [obj.method("a") ?? "nil", obj.func("b") ?? "nil", obj.arrow("c") ?? "nil"];
+        `.expectToMatchJsResult();
+    });
+
+    test("No self annotation", () => {
+        // language=TypeScript
+        util.testFunction`
+            const obj: Record<string, /** @noSelf */(arg: string) => string> = {
+                method(a) {
+                    return a;
+                },
+                func: function(a) {
+                    return a;
+                },
+                arrow: (a) => {
+                    return a;
+                }
+            };
+            return [obj.method("a") ?? "nil", obj.func("b") ?? "nil", obj.arrow("c") ?? "nil"];
+        `.expectToMatchJsResult();
+    });
+
+    test("individual function types", () => {
+        // language=TypeScript
+        util.testFunction`
+            interface FunctionContainer {
+                method: (this: void, a: string) => string
+                func: (this: void, a: string) => string
+                arrow: (this: void, a: string) => string
+            }
+
+            const obj: FunctionContainer = {
+                method(a) {
+                    return a
+                },
+                func: function(a) {
+                    return a
+                },
+                arrow: (a) => {
+                    return a
+                }
+            }
+
+            return [obj.method("a") ?? "nil", obj.func("b") ?? "nil", obj.arrow("c") ?? "nil"];
+        `.expectToMatchJsResult();
+    });
+});

@@ -115,7 +115,10 @@ export function transformFunctionBody(
 ): [lua.Statement[], Scope] {
     const scope = pushScope(context, ScopeType.Function);
     scope.node = node;
-    const bodyStatements = transformFunctionBodyContent(context, body);
+    let bodyStatements = transformFunctionBodyContent(context, body);
+    if (node && isAsyncFunction(node)) {
+        bodyStatements = wrapInAsyncAwaiter(context, bodyStatements);
+    }
     const headerStatements = transformFunctionBodyHeader(context, scope, parameters, spreadIdentifier);
     popScope(context);
     return [[...headerStatements, ...bodyStatements], scope];
@@ -197,10 +200,8 @@ export function transformFunctionToExpression(
         node
     );
 
-    const possiblyAsyncBody = isAsyncFunction(node) ? wrapInAsyncAwaiter(context, transformedBody) : transformedBody;
-
     const functionExpression = lua.createFunctionExpression(
-        lua.createBlock(possiblyAsyncBody),
+        lua.createBlock(transformedBody),
         paramNames,
         dotsLiteral,
         flags,

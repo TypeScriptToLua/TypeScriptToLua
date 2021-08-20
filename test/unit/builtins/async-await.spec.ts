@@ -333,3 +333,39 @@ test.each([
         .setOptions({ module: ModuleKind.ESNext, target: ScriptTarget.ES2017 })
         .expectToHaveDiagnostics([awaitMustBeInAsyncFunction.code]);
 });
+
+test("async function can access varargs", () => {
+    util.testFunction`
+        const { promise, resolve } = defer<string>();
+
+        async function a(...args: string[]) {
+            log(await promise);
+            log(args[1]);
+        }
+
+        const awaitingPromise = a("A", "B", "C");
+        resolve("resolved");
+
+        return allLogs;
+    `
+        .setTsHeader(promiseTestLib)
+        .expectToEqual(["resolved", "B"]);
+});
+
+test("async function can forward varargs", () => {
+    util.testFunction`
+        const { promise, resolve } = defer<string>();
+
+        async function a(...args: string[]) {
+            log(await promise);
+            log(...args);
+        }
+
+        const awaitingPromise = a("A", "B", "C");
+        resolve("resolved");
+
+        return allLogs;
+    `
+        .setTsHeader(promiseTestLib)
+        .expectToEqual(["resolved", "A", "B", "C"]);
+});

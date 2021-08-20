@@ -782,12 +782,12 @@ test("methods accessed via this index pass correct context", () => {
 });
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/959
-test("methods in parentheses pass correct context", () => {
+test.each(['(this["bar"])', '((((this["bar"]))))'])("methods in parentheses pass correct context %s", callPath => {
     util.testModule`
         class Example {
             baz = 3;
             foo() {
-                (this["bar"])()
+                ${callPath}()
             }
 
             bar() {

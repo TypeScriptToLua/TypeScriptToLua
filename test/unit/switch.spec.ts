@@ -262,32 +262,30 @@ test.each([0, 1, 2, 3])("switchWithBracketsBreakInInternalLoop (%p)", inp => {
 });
 
 test("switch uses elseif", () => {
-    test("array", () => {
-        util.testFunction`
-            let result: number = -1;
+    util.testFunction`
+        let result: number = -1;
 
-            switch (2 as number) {
-                case 0: {
-                    result = 200;
-                    break;
-                }
-
-                case 1: {
-                    result = 100;
-                    break;
-                }
-
-                case 2: {
-                    result = 1;
-                    break;
-                }
+        switch (2 as number) {
+            case 0: {
+                result = 200;
+                break;
             }
 
-            return result;
-        `
-            .expectLuaToMatchSnapshot()
-            .expectToMatchJsResult();
-    });
+            case 1: {
+                result = 100;
+                break;
+            }
+
+            case 2: {
+                result = 1;
+                break;
+            }
+        }
+
+        return result;
+    `
+        .expectLuaToMatchSnapshot()
+        .expectToMatchJsResult();
 });
 
 test("switch not allowed in 5.1", () => {

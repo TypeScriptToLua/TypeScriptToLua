@@ -37,6 +37,11 @@ export function isOptimizedVarArgSpread(context: TransformationContext, symbol: 
         return false;
     }
 
+    // Scope cannot be an async function
+    if (scope.node.modifiers?.some(m => m.kind === ts.SyntaxKind.AsyncKeyword)) {
+        return false;
+    }
+
     // Identifier must be a vararg in the local function scope's parameters
     const isSpreadParameter = (p: ts.ParameterDeclaration) =>
         p.dotDotDotToken && ts.isIdentifier(p.name) && context.checker.getSymbolAtLocation(p.name) === symbol;

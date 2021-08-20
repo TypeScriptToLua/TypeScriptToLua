@@ -1,6 +1,18 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`array 1`] = `
+exports[`switch not allowed in 5.1: code 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local ____switch3 = \\"abc\\"
+    goto ____switch3_end
+    ::____switch3_end::
+end
+return ____exports"
+`;
+
+exports[`switch not allowed in 5.1: diagnostics 1`] = `"main.ts(2,9): error TSTL: Switch statements is/are not supported for target Lua 5.1."`;
+
+exports[`switch uses elseif 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
     local result = -1
@@ -39,15 +51,3 @@ function ____exports.__main(self)
 end
 return ____exports"
 `;
-
-exports[`switch not allowed in 5.1: code 1`] = `
-"local ____exports = {}
-function ____exports.__main(self)
-    local ____switch3 = \\"abc\\"
-    goto ____switch3_end
-    ::____switch3_end::
-end
-return ____exports"
-`;
-
-exports[`switch not allowed in 5.1: diagnostics 1`] = `"main.ts(2,9): error TSTL: Switch statements is/are not supported for target Lua 5.1."`;

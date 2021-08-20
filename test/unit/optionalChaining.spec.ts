@@ -144,8 +144,8 @@ describe("optional chaining function calls", () => {
             const objWithMethods: typeWithOptional = {};
             const objWithMethods2: typeWithOptional = { a: { b: { c: () => 4 } } };
 
-            return { 
-                expectNil: objWithMethods.a?.b.c(), 
+            return {
+                expectNil: objWithMethods.a?.b.c(),
                 expectFour: objWithMethods2.a?.b.c()
             };
         `.expectToMatchJsResult();
@@ -166,5 +166,13 @@ describe("optional chaining function calls", () => {
 
             return [obj.a?.().b.c?.() ?? "nil", obj2.a?.().b.c?.() ?? "nil", obj3.a?.().b.c?.() ?? "nil"];
         `.expectToMatchJsResult();
+    });
+
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1085
+    test("incorrect type, method is not a function", () => {
+        util.testFunction`
+            const obj: any = {};
+            obj?.foo();
+        `.expectToEqual(new util.ExecutionError("foo is not a function"));
     });
 });

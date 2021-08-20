@@ -161,6 +161,7 @@ export function transformContextualCallExpression(
                 node,
                 table,
                 lua.createStringLiteral(left.name.text, left.name),
+                lua.createBooleanLiteral(node.questionDotToken !== undefined), // Require method is present if no ?.() call
                 ...transformArguments(context, args, signature)
             );
         } else {
@@ -331,7 +332,7 @@ function wrapIfRequired(
     shouldWrapInTable: boolean,
     shouldWrapOptional: boolean,
     call: lua.CallExpression | lua.MethodCallExpression,
-    node: ts.Node
+    node: ts.CallExpression
 ): lua.Expression {
     const wrappedOptional = shouldWrapOptional ? wrapOptionalCall(context, call, node) : call;
     return shouldWrapInTable ? wrapInTable(wrappedOptional) : wrappedOptional;
@@ -340,7 +341,7 @@ function wrapIfRequired(
 function wrapOptionalCall(
     context: TransformationContext,
     call: lua.CallExpression | lua.MethodCallExpression,
-    node: ts.Node
+    node: ts.CallExpression
 ): lua.CallExpression {
     if (lua.isMethodCallExpression(call)) {
         return transformLuaLibFunction(
@@ -349,6 +350,7 @@ function wrapOptionalCall(
             node,
             call.prefixExpression,
             lua.createStringLiteral(call.name.text),
+            lua.createBooleanLiteral(node.questionDotToken !== undefined), // Require method is present if no ?.() call
             ...call.params
         );
     } else {

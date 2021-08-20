@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.0
+
+- **[Breaking]** `/* @tupleReturn */` has been removed and will no longer have any effect. You will get an error if you try ot use it or if you use declarations that use it.
+- Added support for the `Promise` class.
+- Added support for `async` and `await` using coroutines.
+- Module resolution now also correctly resolves `<directory>/init.lua` files for `require("<directory>")`.
+- Fixed an error not being thrown when trying to call a method in an optional chain that does not exist. (If the method itself is not optional)
+- Fixed a bug where parentheses could break the context parameter being resolved for a method.
+- Fixed a bug where context parameters in object literal methods were not inferred correctly.
+- Fixed a bug with sourceMapTraceback.
+- Fixed TS emitting empty JSON files if you use JSON source files.
+
 ## 0.42.0
 
 - **[Breaking]** The `/** @tupleReturn */` is now deprecated, and will be removed next release. If you are still using it, please upgrade to the [LuaMultiReturn language extension](https://typescripttolua.github.io/docs/advanced/language-extensions#luamultireturn-type).

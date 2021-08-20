@@ -1,5 +1,5 @@
 import { ModuleKind, ScriptTarget } from "typescript";
-import { notAllowedTopLevelAwait } from "../../../src/transformation/utils/diagnostics";
+import { awaitMustBeInAsyncFunction } from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
 const promiseTestLib = `
@@ -331,5 +331,5 @@ test.each([
         export {} // Required to make TS happy, cannot await without import/exports
     `
         .setOptions({ module: ModuleKind.ESNext, target: ScriptTarget.ES2017 })
-        .expectToHaveDiagnostics([notAllowedTopLevelAwait.code]);
+        .expectToHaveDiagnostics([awaitMustBeInAsyncFunction.code]);
 });

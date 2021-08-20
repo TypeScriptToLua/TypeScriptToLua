@@ -2,11 +2,10 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { assert } from "../../utils";
 import { FunctionVisitor } from "../context";
-import { notAllowedTopLevelAwait } from "../utils/diagnostics";
 import { createExportsIdentifier } from "../utils/lua-ast";
 import { getUsedLuaLibFeatures } from "../utils/lualib";
 import { performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
-import { hasExportEquals, traverseWithoutCrossingFunction } from "../utils/typescript";
+import { hasExportEquals } from "../utils/typescript";
 
 export const transformSourceFileNode: FunctionVisitor<ts.SourceFile> = (node, context) => {
     let statements: lua.Statement[] = [];
@@ -24,11 +23,6 @@ export const transformSourceFileNode: FunctionVisitor<ts.SourceFile> = (node, co
         }
     } else {
         pushScope(context, ScopeType.File);
-
-        // await cannot be used outside of async functions due to it using yield which needs to be inside a coroutine
-        for (const topLevelAwait of node.statements.filter(isTopLevelAwait)) {
-            context.diagnostics.push(notAllowedTopLevelAwait(topLevelAwait));
-        }
 
         statements = performHoisting(context, context.transformStatements(node.statements));
         popScope(context);
@@ -50,14 +44,3 @@ export const transformSourceFileNode: FunctionVisitor<ts.SourceFile> = (node, co
     const trivia = node.getFullText().match(/^#!.*\r?\n/)?.[0] ?? "";
     return lua.createFile(statements, getUsedLuaLibFeatures(context), trivia, node);
 };
-
-function isTopLevelAwait(statement: ts.Statement) {
-    // Check if expression contains an await child, without going into function declarations
-    let containsAwait = false;
-    traverseWithoutCrossingFunction(statement, node => {
-        if (ts.isAwaitExpression(node)) {
-            containsAwait = true;
-        }
-    });
-    return containsAwait;
-}

@@ -24,15 +24,11 @@ function __TS__AsyncAwaiter(this: void, generator: (this: void) => void) {
             return value instanceof __TS__Promise ? value : Promise.resolve(value);
         }
         function fulfilled(value) {
-            try {
-                const [success, resultOrError] = coroutine.resume(asyncCoroutine, value);
-                if (success) {
-                    step(resultOrError);
-                } else {
-                    reject(resultOrError);
-                }
-            } catch (e) {
-                reject(e);
+            const [success, resultOrError] = coroutine.resume(asyncCoroutine, value);
+            if (success) {
+                step(resultOrError);
+            } else {
+                reject(resultOrError);
             }
         }
         function step(result: unknown) {

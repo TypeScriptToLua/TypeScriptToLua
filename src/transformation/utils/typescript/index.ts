@@ -92,19 +92,3 @@ export function getFunctionTypeForCall(context: TransformationContext, node: ts.
     }
     return context.checker.getTypeFromTypeNode(typeDeclaration.type);
 }
-
-// https://github.com/microsoft/TypeScript/blob/663b19fe4a7c4d4ddaa61aedadd28da06acd27b6/src/services/documentHighlights.ts#L435
-// Do not cross function/class/interface/module/type boundaries.
-export function traverseWithoutCrossingFunction(node: ts.Node, cb: (node: ts.Node) => void) {
-    cb(node);
-    if (
-        !ts.isFunctionLike(node) &&
-        !ts.isClassLike(node) &&
-        !ts.isInterfaceDeclaration(node) &&
-        !ts.isModuleDeclaration(node) &&
-        !ts.isTypeAliasDeclaration(node) &&
-        !ts.isTypeNode(node)
-    ) {
-        ts.forEachChild(node, child => traverseWithoutCrossingFunction(child, cb));
-    }
-}

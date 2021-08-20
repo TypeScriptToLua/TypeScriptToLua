@@ -23,6 +23,7 @@ export const transformSourceFileNode: FunctionVisitor<ts.SourceFile> = (node, co
         }
     } else {
         pushScope(context, ScopeType.File);
+
         statements = performHoisting(context, context.transformStatements(node.statements));
         popScope(context);
 

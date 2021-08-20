@@ -147,3 +147,7 @@ export const annotationDeprecated = createWarningDiagnosticFactory(
 export const notAllowedOptionalAssignment = createErrorDiagnosticFactory(
     "The left-hand side of an assignment expression may not be an optional property access."
 );
+
+export const awaitMustBeInAsyncFunction = createErrorDiagnosticFactory(
+    "Await can only be used inside async functions."
+);

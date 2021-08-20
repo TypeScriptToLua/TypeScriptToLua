@@ -1,7 +1,5 @@
 import * as ts from "typescript";
 import { TransformationContext } from "../context";
-import { annotationDeprecated } from "./diagnostics";
-import { findFirstNodeAbove, inferAssignedType } from "./typescript";
 
 export enum AnnotationKind {
     Extension = "extension",
@@ -118,7 +116,6 @@ export function isTupleReturnCall(context: TransformationContext, node: ts.Node)
     const signature = context.checker.getResolvedSignature(node);
     if (signature) {
         if (getSignatureAnnotations(context, signature).has(AnnotationKind.TupleReturn)) {
-            context.diagnostics.push(annotationDeprecated(node, AnnotationKind.TupleReturn));
             return true;
         }
 
@@ -134,44 +131,7 @@ export function isTupleReturnCall(context: TransformationContext, node: ts.Node)
     }
 
     const type = context.checker.getTypeAtLocation(node.expression);
-    const result = getTypeAnnotations(type).has(AnnotationKind.TupleReturn);
-
-    if (result) {
-        context.diagnostics.push(annotationDeprecated(node, AnnotationKind.TupleReturn));
-    }
-
-    return result;
-}
-
-export function isInTupleReturnFunction(context: TransformationContext, node: ts.Node): boolean {
-    const declaration = findFirstNodeAbove(node, ts.isFunctionLike);
-    if (!declaration) {
-        return false;
-    }
-
-    let functionType: ts.Type | undefined;
-    if (ts.isFunctionExpression(declaration) || ts.isArrowFunction(declaration)) {
-        functionType = inferAssignedType(context, declaration);
-    } else if (ts.isMethodDeclaration(declaration) && ts.isObjectLiteralExpression(declaration.parent)) {
-        // Manually lookup type for object literal properties declared with method syntax
-        const interfaceType = inferAssignedType(context, declaration.parent);
-        const propertySymbol = interfaceType.getProperty(declaration.name.getText());
-        if (propertySymbol) {
-            functionType = context.checker.getTypeOfSymbolAtLocation(propertySymbol, declaration);
-        }
-    }
-
-    if (functionType === undefined) {
-        functionType = context.checker.getTypeAtLocation(declaration);
-    }
-
-    // Check all overloads for directive
-    const signatures = functionType.getCallSignatures();
-    if (signatures?.some(s => getSignatureAnnotations(context, s).has(AnnotationKind.TupleReturn))) {
-        return true;
-    }
-
-    return getTypeAnnotations(functionType).has(AnnotationKind.TupleReturn);
+    return getTypeAnnotations(type).has(AnnotationKind.TupleReturn);
 }
 
 export function isLuaIteratorType(context: TransformationContext, node: ts.Node): boolean {

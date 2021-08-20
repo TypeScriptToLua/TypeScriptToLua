@@ -60,6 +60,27 @@ test("luaiterator removed", () => {
     `.expectDiagnosticsToMatchSnapshot([annotationRemoved.code]);
 });
 
+test("tuplereturn removed", () => {
+    util.testFunction`
+        /** @tupleReturn */
+        function tuple(): [number, number, number] { return [3, 5, 1]; }
+        return tuple()[2];
+    `.expectDiagnosticsToMatchSnapshot([annotationRemoved.code, annotationRemoved.code]); // One annotation on the function, one on the call
+});
+
+test("tuplereturn removed on function declaration", () => {
+    util.testFunction`
+        /** @tupleReturn */
+        function tuple(): [number, number, number] { return [3, 5, 1]; }
+    `.expectDiagnosticsToMatchSnapshot([annotationRemoved.code]);
+});
+
+test("tuplereturn lambda", () => {
+    util.testFunction`
+        const f = /** @tupleReturn */ () => [3, 4];
+    `.expectDiagnosticsToMatchSnapshot([annotationRemoved.code]);
+});
+
 const tableLibClass = `
 /** @luaTable */
 declare class Table<K extends {} = {}, V = any> {

@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { transformBuiltinCallExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
+import { AnnotationKind, getTypeAnnotations, isTupleReturnCall } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
 import { ContextType, getDeclarationContextType } from "../utils/function-context";
 import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
@@ -248,6 +248,10 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     const builtinResult = transformBuiltinCallExpression(context, node);
     if (builtinResult) {
         return wrapResultInTable ? wrapInTable(builtinResult) : builtinResult;
+    }
+
+    if (isTupleReturnCall(context, node)) {
+        context.diagnostics.push(annotationRemoved(node, AnnotationKind.TupleReturn));
     }
 
     if (isOperatorMapping(context, node)) {

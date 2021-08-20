@@ -1,11 +1,9 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { isInTupleReturnFunction } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
 import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
 import { ScopeType, walkScopesUp } from "../utils/scope";
-import { isArrayType } from "../utils/typescript";
 import { transformArguments } from "./call";
 import {
     returnsMultiType,
@@ -13,7 +11,6 @@ import {
     isMultiFunctionCall,
     isMultiReturnType,
     isInMultiReturnFunction,
-    isMultiReturnCall,
     canBeMultiReturnType,
 } from "./language-extensions/multi";
 import { invalidMultiFunctionReturnType } from "../utils/diagnostics";
@@ -50,29 +47,7 @@ function transformExpressionsInReturn(
         return [createUnpackCall(context, context.transformExpression(node), node)];
     }
 
-    if (!isInTupleReturnFunction(context, node)) {
-        return [context.transformExpression(node)];
-    }
-
-    let results: lua.Expression[];
-
-    // Parent function is a TupleReturn function
-    if (ts.isArrayLiteralExpression(node)) {
-        // If return expression is an array literal, leave out brackets.
-        results = node.elements.map(e => context.transformExpression(e));
-    } else if (!isMultiReturnCall(context, node) && isArrayType(context, expressionType)) {
-        // If return expression is an array-type and not another TupleReturn call, unpack it
-        results = [createUnpackCall(context, context.transformExpression(node), node)];
-    } else {
-        results = [context.transformExpression(node)];
-    }
-
-    // Wrap tupleReturn results when returning inside try/catch
-    if (insideTryCatch) {
-        results = [wrapInTable(...results)];
-    }
-
-    return results;
+    return [context.transformExpression(node)];
 }
 
 export function transformExpressionBodyToReturnStatement(

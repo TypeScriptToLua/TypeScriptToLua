@@ -761,3 +761,41 @@ test("constructor class name available with constructor", () => {
         .setReturnExport("className")
         .expectToEqual("MyClass");
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/959
+test("methods accessed via this index pass correct context", () => {
+    util.testModule`
+        class Example {
+            baz = 3;
+            foo() {
+                this["bar"]()
+            }
+
+            bar() {
+                return this.baz;
+            }
+        }
+
+        const inst = new Example();
+        export const result = inst.foo();
+    `.expectToMatchJsResult();
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/959
+test.each(['(this["bar"])', '((((this["bar"]))))'])("methods in parentheses pass correct context %s", callPath => {
+    util.testModule`
+        class Example {
+            baz = 3;
+            foo() {
+                ${callPath}()
+            }
+
+            bar() {
+                return this.baz;
+            }
+        }
+
+        const inst = new Example();
+        export const result = inst.foo();
+    `.expectToMatchJsResult();
+});

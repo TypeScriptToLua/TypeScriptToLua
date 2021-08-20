@@ -36,6 +36,7 @@ export function getTransformers(
 
             ...(transformersFromOptions.after ?? []),
             ...(customTransformers.after ?? []),
+            stripParenthesisExpressionsTransformer,
             luaTransformer,
         ],
     };
@@ -51,6 +52,30 @@ export const noImplicitSelfTransformer: ts.TransformerFactory<ts.SourceFile | ts
     return ts.isBundle(node)
         ? ts.factory.updateBundle(node, node.sourceFiles.map(transformSourceFile))
         : transformSourceFile(node);
+};
+
+export const stripParenthesisExpressionsTransformer: ts.TransformerFactory<ts.SourceFile> = context => sourceFile => {
+    // Remove parenthesis expressions before transforming to Lua, so transpiler is not hindered by extra ParenthesizedExpression nodes
+    function unwrapParentheses(node: ts.Expression) {
+        while (ts.isParenthesizedExpression(node)) {
+            node = node.expression;
+        }
+        return node;
+    }
+    function visit(node: ts.Node): ts.Node {
+        // For now only call expressions strip their expressions of parentheses, there could be more cases where this is required
+        if (ts.isCallExpression(node)) {
+            return ts.factory.updateCallExpression(
+                node,
+                unwrapParentheses(node.expression),
+                node.typeArguments,
+                node.arguments
+            );
+        }
+
+        return ts.visitEachChild(node, visit, context);
+    }
+    return ts.visitNode(sourceFile, visit);
 };
 
 function loadTransformersFromOptions(program: ts.Program, diagnostics: ts.Diagnostic[]): ts.CustomTransformers {

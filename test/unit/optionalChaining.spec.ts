@@ -168,6 +168,7 @@ describe("optional chaining function calls", () => {
         `.expectToMatchJsResult();
     });
 
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1085
     test("incorrect type, method is not a function", () => {
         util.testFunction`
             const obj: any = {};

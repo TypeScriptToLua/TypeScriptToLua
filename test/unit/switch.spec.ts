@@ -1,5 +1,3 @@
-import * as tstl from "../../src";
-import { unsupportedForTarget } from "../../src/transformation/utils/diagnostics";
 import * as util from "../util";
 
 test.each([0, 1, 2, 3])("switch (%p)", inp => {
@@ -286,14 +284,6 @@ test("switch uses elseif", () => {
     `
         .expectLuaToMatchSnapshot()
         .expectToMatchJsResult();
-});
-
-test("switch not allowed in 5.1", () => {
-    util.testFunction`
-        switch ("abc") {}
-    `
-        .setOptions({ luaTarget: tstl.LuaTarget.Lua51 })
-        .expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]);
 });
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/967

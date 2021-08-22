@@ -311,6 +311,17 @@ test("switch default case not last - second", () => {
     `.expectToMatchJsResult();
 });
 
+test("switch default case only", () => {
+    util.testFunction`
+        let out = 0;
+        switch (4 as number) {
+            default:
+                out = 1
+        }
+        return out;
+    `.expectToMatchJsResult();
+});
+
 test("switch fallthrough enters default", () => {
     util.testFunction`
         const out = [];

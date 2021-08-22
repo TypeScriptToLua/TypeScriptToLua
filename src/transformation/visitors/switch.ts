@@ -49,14 +49,25 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
             );
     }
 
-    // Starting from the back, concatenating ifs into one big if/elseif statement
+    let statements: lua.Statement[] = [];
+
+    // Default will either be the only statement, or the else in the if chain
     const defaultIndex = statement.caseBlock.clauses.findIndex(c => ts.isDefaultClause(c));
-    const concatenatedIf = statement.caseBlock.clauses.reduceRight<lua.IfStatement | lua.Block | undefined>(
-        (previousCondition, clause, index) => {
-            if (ts.isDefaultClause(clause)) {
-                // Skip default clause here (needs to be included to ensure index lines up with index later)
-                return previousCondition;
-            }
+    const defaultBody = defaultIndex >= 0 ? caseBody[defaultIndex] : undefined;
+    if (defaultBody && statement.caseBlock.clauses.length === 1) {
+        statements.push(lua.createDoStatement(defaultBody));
+    } else {
+        let concatenatedIf: lua.IfStatement | undefined = undefined;
+        let previousCondition: lua.IfStatement | lua.Block | undefined = defaultBody
+            ? lua.createBlock(defaultBody)
+            : undefined;
+
+        // Starting from the back, concatenating ifs into one big if/elseif/[else] statement
+        for (let i = statement.caseBlock.clauses.length - 1; i >= 0; i--) {
+            const clause = statement.caseBlock.clauses[i];
+
+            // Skip default clause to keep index aligned, handle in else block
+            if (ts.isDefaultClause(clause)) continue;
 
             // If the clause condition holds, go to the correct label
             const condition = lua.createBinaryExpression(
@@ -65,15 +76,10 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
                 lua.SyntaxKind.EqualityOperator
             );
 
-            return lua.createIfStatement(condition, lua.createBlock(caseBody[index]), previousCondition);
-        },
-        defaultIndex >= 0 ? lua.createBlock(caseBody[defaultIndex]) : undefined
-    );
-
-    let statements: lua.Statement[] = [];
-
-    if (concatenatedIf) {
-        statements.push(concatenatedIf as unknown as lua.IfStatement);
+            concatenatedIf = lua.createIfStatement(condition, lua.createBlock(caseBody[i]), previousCondition);
+            previousCondition = concatenatedIf;
+        }
+        if (concatenatedIf) statements.push(concatenatedIf);
     }
 
     statements = performHoisting(context, statements);

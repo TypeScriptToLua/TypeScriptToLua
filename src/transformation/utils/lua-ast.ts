@@ -175,7 +175,7 @@ export function createLocalOrExportedOrGlobalDeclaration(
         const isTopLevelVariable = scope.type === ScopeType.File;
 
         if (context.isModule || !isTopLevelVariable) {
-            if (scope.type === ScopeType.Switch || (!isFunctionDeclaration && hasMultipleReferences(scope, lhs))) {
+            if (!isFunctionDeclaration && hasMultipleReferences(scope, lhs)) {
                 // Split declaration and assignment of identifiers that reference themselves in their declaration
                 declaration = lua.createVariableDeclarationStatement(lhs, undefined, tsOriginal);
                 if (rhs) {
@@ -185,15 +185,13 @@ export function createLocalOrExportedOrGlobalDeclaration(
                 declaration = lua.createVariableDeclarationStatement(lhs, rhs, tsOriginal);
             }
 
-            // Remember local variable declarations for hoisting later
-            if (!scope.variableDeclarations) {
-                scope.variableDeclarations = [];
-            }
+            if (!isFunctionDeclaration) {
+                // Remember local variable declarations for hoisting later
+                if (!scope.variableDeclarations) {
+                    scope.variableDeclarations = [];
+                }
 
-            scope.variableDeclarations.push(declaration);
-
-            if (scope.type === ScopeType.Switch) {
-                declaration = undefined;
+                scope.variableDeclarations.push(declaration);
             }
         } else if (rhs) {
             // global

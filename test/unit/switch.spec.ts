@@ -377,3 +377,25 @@ test("switch does not pollute parent scope", () => {
         return y;
     `.expectToMatchJsResult();
 });
+
+test("switch collapses empty case and minimizes conditions", () => {
+    util.testFunction`
+        const out = [];
+        switch (5 as number) {
+            case 0:
+            case 1:
+            case 2:
+                out.push("0,1,2");
+            case 3:
+                out.push("3");
+                break;
+            default:
+                out.push("default");
+            case 4:
+                out.push("4");
+        }
+        return out;
+    `
+        .expectLuaToMatchSnapshot()
+        .expectToMatchJsResult();
+});

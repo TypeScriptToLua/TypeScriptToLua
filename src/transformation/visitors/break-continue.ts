@@ -8,6 +8,7 @@ import { findScope, ScopeType } from "../utils/scope";
 export const transformBreakStatement: FunctionVisitor<ts.BreakStatement> = (breakStatement, context) => {
     const breakableScope = findScope(context, ScopeType.Loop | ScopeType.Switch);
     if (breakableScope?.type === ScopeType.Switch) {
+        // Break is handled by the switch statement (see transformSwitchStatement)
         return lua.createBreakStatement(breakStatement);
     } else {
         return lua.createBreakStatement(breakStatement);

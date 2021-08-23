@@ -1,5 +1,31 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`switch collapses empty case and minimizes conditions 1`] = `
+"require(\\"lualib_bundle\\");
+local ____exports = {}
+function ____exports.__main(self)
+    local out = {}
+    repeat
+        local ____switch3 = 5
+        if ((____switch3 == 0) or (____switch3 == 1)) or (____switch3 == 2) then
+            __TS__ArrayPush(out, \\"0,1,2\\")
+        end
+        if (((____switch3 == 0) or (____switch3 == 1)) or (____switch3 == 2)) or (____switch3 == 3) then
+            __TS__ArrayPush(out, \\"3\\")
+            break
+        end
+        if not (((((____switch3 == 0) or (____switch3 == 1)) or (____switch3 == 2)) or (____switch3 == 3)) or (____switch3 == 4)) then
+            __TS__ArrayPush(out, \\"default\\")
+        end
+        if (not (((((____switch3 == 0) or (____switch3 == 1)) or (____switch3 == 2)) or (____switch3 == 3)) or (____switch3 == 4))) or (____switch3 == 4) then
+            __TS__ArrayPush(out, \\"4\\")
+        end
+    until true
+    return out
+end
+return ____exports"
+`;
+
 exports[`switch uses elseif 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
@@ -11,12 +37,14 @@ function ____exports.__main(self)
                 result = 200
                 break
             end
-        elseif ____switch3 == 1 then
+        end
+        if (____switch3 == 0) or (____switch3 == 1) then
             do
                 result = 100
                 break
             end
-        elseif ____switch3 == 2 then
+        end
+        if ((____switch3 == 0) or (____switch3 == 1)) or (____switch3 == 2) then
             do
                 result = 1
                 break

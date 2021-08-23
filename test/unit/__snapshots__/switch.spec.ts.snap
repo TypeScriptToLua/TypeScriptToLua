@@ -7,17 +7,25 @@ function ____exports.__main(self)
     local out = {}
     repeat
         local ____switch3 = 5
-        if ((____switch3 == 0) or (____switch3 == 1)) or (____switch3 == 2) then
+        local ____cond3 = false
+        ____cond3 = ____cond3 or (((____switch3 == 0) or (____switch3 == 1)) or (____switch3 == 2))
+        if ____cond3 then
             __TS__ArrayPush(out, \\"0,1,2\\")
         end
-        if (((____switch3 == 0) or (____switch3 == 1)) or (____switch3 == 2)) or (____switch3 == 3) then
+        ____cond3 = ____cond3 or (____switch3 == 3)
+        if ____cond3 then
             __TS__ArrayPush(out, \\"3\\")
             break
         end
-        if not (((((____switch3 == 0) or (____switch3 == 1)) or (____switch3 == 2)) or (____switch3 == 3)) or (____switch3 == 4)) then
+        if ____cond3 then
             __TS__ArrayPush(out, \\"default\\")
         end
-        if (not (((((____switch3 == 0) or (____switch3 == 1)) or (____switch3 == 2)) or (____switch3 == 3)) or (____switch3 == 4))) or (____switch3 == 4) then
+        ____cond3 = ____cond3 or (____switch3 == 4)
+        if ____cond3 then
+            __TS__ArrayPush(out, \\"4\\")
+        end
+        if not ____cond3 then
+            __TS__ArrayPush(out, \\"default\\")
             __TS__ArrayPush(out, \\"4\\")
         end
     until true
@@ -32,19 +40,23 @@ function ____exports.__main(self)
     local result = -1
     repeat
         local ____switch3 = 2
-        if ____switch3 == 0 then
+        local ____cond3 = false
+        ____cond3 = ____cond3 or (____switch3 == 0)
+        if ____cond3 then
             do
                 result = 200
                 break
             end
         end
-        if (____switch3 == 0) or (____switch3 == 1) then
+        ____cond3 = ____cond3 or (____switch3 == 1)
+        if ____cond3 then
             do
                 result = 100
                 break
             end
         end
-        if ((____switch3 == 0) or (____switch3 == 1)) or (____switch3 == 2) then
+        ____cond3 = ____cond3 or (____switch3 == 2)
+        if ____cond3 then
             do
                 result = 1
                 break

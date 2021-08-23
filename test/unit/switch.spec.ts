@@ -399,3 +399,27 @@ test("switch collapses empty case and minimizes conditions", () => {
         .expectLuaToMatchSnapshot()
         .expectToMatchJsResult();
 });
+
+test("switch handles side-effects", () => {
+    util.testFunction`
+        const out = [];
+        
+        let y = 0;
+        function foo() {
+            return y++;
+        }
+
+        let x = 0;
+        switch (x) {
+            case foo():
+                out.push(1);
+            case foo():
+                out.push(2);
+            case foo():
+                out.push(3);
+        }
+
+        out.push(y);
+        return out;
+    `.expectToMatchJsResult();
+});

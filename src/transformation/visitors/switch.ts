@@ -25,7 +25,7 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
     const switchName = `____switch${scope.id}`;
     const switchVariable = lua.createIdentifier(switchName);
 
-    // Collect the case clause expressions and accounting for deterministic fallthrough
+    // Collect all the expressions into a single expression for use in the default clause
     let allExpressions: lua.BinaryExpression;
     statement.caseBlock.clauses.forEach(clause => {
         if (!ts.isDefaultClause(clause)) {
@@ -49,12 +49,18 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
 
     let statements: lua.Statement[] = [];
 
-    // Default will either be the only statement, or the else in the if chain
-    const defaultIndex = statement.caseBlock.clauses.findIndex(c => ts.isDefaultClause(c));
-    const defaultBody = defaultIndex >= 0 ? statement.caseBlock.clauses[defaultIndex].statements : undefined;
-    if (defaultBody && statement.caseBlock.clauses.length === 1) {
-        statements.push(lua.createDoStatement(context.transformStatements(defaultBody)));
+    // If the switch only has a default clause, wrap it in a single do.
+    // Otherwise, we need to generate a set of if statements to emulate the switch.
+    const clauses = statement.caseBlock.clauses;
+    if (clauses.length === 1 && ts.isDefaultClause(clauses[0])) {
+        const defaultClause = clauses[0].statements;
+        if (defaultClause.length) {
+            statements.push(lua.createDoStatement(context.transformStatements(defaultClause)));
+        }
     } else {
+        // Build up the condition for each if statement
+        // Fallthrough is handled by accepting the last condition as an additional or clause
+        // Default is the not of all known case expressions
         let previousClause: ts.CaseOrDefaultClause;
         let condition: lua.Expression;
         statement.caseBlock.clauses.forEach(clause => {
@@ -98,11 +104,14 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
         });
     }
 
+    // Hoist the variable, function, and import statements to the top of the switch
     statements = performHoisting(context, statements);
     popScope(context);
 
+    // Add the switch expression after hoisting
     const expression = context.transformExpression(statement.expression);
     statements.unshift(lua.createVariableDeclarationStatement(switchVariable, expression));
 
+    // Wrap the statements in a repeat until true statement to facilitate dynamic break/returns
     return lua.createRepeatStatement(lua.createBlock(statements), lua.createBooleanLiteral(true));
 };

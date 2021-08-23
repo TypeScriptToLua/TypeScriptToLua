@@ -360,3 +360,15 @@ test("switch fallthrough stops after default", () => {
         return out;
     `.expectToMatchJsResult();
 });
+
+test("switch does not pollute parent scope", () => {
+    util.testFunction`
+        let x: number = 0;
+        let y = 1;
+        switch (x) {
+            case 0:
+                let y = 2;
+        }
+        return y;
+    `.expectToMatchJsResult();
+});

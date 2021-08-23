@@ -41,10 +41,7 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
         caseBody[i] = statement.caseBlock.clauses
             .slice(i, end >= 0 ? end + i + 1 : undefined)
             .reduce<lua.Statement[]>(
-                (statements, clause) => [
-                    ...statements,
-                    lua.createDoStatement(context.transformStatements(clause.statements)),
-                ],
+                (statements, clause) => [...statements, ...context.transformStatements(clause.statements)],
                 []
             );
     }
@@ -88,5 +85,5 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
     const expression = context.transformExpression(statement.expression);
     statements.unshift(lua.createVariableDeclarationStatement(switchVariable, expression));
 
-    return statements;
+    return lua.createDoStatement(statements);
 };

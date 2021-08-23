@@ -4,22 +4,25 @@ exports[`switch uses elseif 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
     local result = -1
-    do
+    repeat
         local ____switch3 = 2
         if ____switch3 == 0 then
             do
                 result = 200
+                break
             end
         elseif ____switch3 == 1 then
             do
                 result = 100
+                break
             end
         elseif ____switch3 == 2 then
             do
                 result = 1
+                break
             end
         end
-    end
+    until true
     return result
 end
 return ____exports"

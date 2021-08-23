@@ -6,6 +6,7 @@ import { performHoisting, popScope, pushScope, ScopeType } from "../utils/scope"
 const containsBreakStatement = (statements: ts.Node[]): boolean => {
     for (const s of statements) {
         if (
+            ts.isIfStatement(s) ||
             ts.isSwitchStatement(s) ||
             ts.isWhileStatement(s) ||
             ts.isDoStatement(s) ||
@@ -85,5 +86,5 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
     const expression = context.transformExpression(statement.expression);
     statements.unshift(lua.createVariableDeclarationStatement(switchVariable, expression));
 
-    return lua.createDoStatement(statements);
+    return lua.createRepeatStatement(lua.createBlock(statements), lua.createBooleanLiteral(true));
 };

@@ -207,7 +207,7 @@ test.each([0, 1, 2, 3])("switchWithBrackets (%p)", inp => {
     `.expectToMatchJsResult();
 });
 
-test.each([0, 1, 2, 3])("switchWithBracketsBreakInConditional (%p)", inp => {
+test.each([0, 1, 2, 3, 4])("switchWithBracketsBreakInConditional (%p)", inp => {
     util.testFunction`
         let result: number = -1;
 
@@ -223,6 +223,11 @@ test.each([0, 1, 2, 3])("switchWithBracketsBreakInConditional (%p)", inp => {
             }
             case 2: {
                 result = 2;
+
+                if (result != 2) break;
+            }
+            case 3: {
+                result = 3;
                 break;
             }
         }

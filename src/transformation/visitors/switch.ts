@@ -27,32 +27,9 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
     const switchVariable = lua.createIdentifier(switchName);
     const conditionVariable = lua.createIdentifier(conditionName);
 
-    // Collect all the expressions into a single expression for use in the default clause
-    let allExpressions: lua.BinaryExpression;
-    statement.caseBlock.clauses.forEach(clause => {
-        if (!ts.isDefaultClause(clause)) {
-            allExpressions = allExpressions
-                ? lua.createBinaryExpression(
-                      allExpressions,
-                      lua.createBinaryExpression(
-                          switchVariable,
-                          context.transformExpression(clause.expression),
-                          lua.SyntaxKind.EqualityOperator
-                      ),
-                      lua.SyntaxKind.OrOperator
-                  )
-                : lua.createBinaryExpression(
-                      switchVariable,
-                      context.transformExpression(clause.expression),
-                      lua.SyntaxKind.EqualityOperator
-                  );
-        }
-    });
-
-    let statements: lua.Statement[] = [];
-
     // If the switch only has a default clause, wrap it in a single do.
     // Otherwise, we need to generate a set of if statements to emulate the switch.
+    let statements: lua.Statement[] = [];
     const clauses = statement.caseBlock.clauses;
     if (clauses.length === 1 && ts.isDefaultClause(clauses[0])) {
         const defaultClause = clauses[0].statements;

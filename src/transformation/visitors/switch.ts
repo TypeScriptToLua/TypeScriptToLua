@@ -39,8 +39,6 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
         }
     } else {
         // Build up the condition for each if statement
-        // Fallthrough is handled by accepting the last condition as an additional or clause
-        // Default is the not of all known case expressions
         let isInitialCondition = true;
         let condition: lua.Expression | undefined = undefined;
         for (let i = 0; i < statement.caseBlock.clauses.length; i++) {

@@ -7,8 +7,7 @@ function ____exports.__main(self)
     local out = {}
     repeat
         local ____switch3 = 5
-        local ____cond3 = false
-        ____cond3 = ____cond3 or (((____switch3 == 0) or (____switch3 == 1)) or (____switch3 == 2))
+        local ____cond3 = ((____switch3 == 0) or (____switch3 == 1)) or (____switch3 == 2)
         if ____cond3 then
             __TS__ArrayPush(out, \\"0,1,2\\")
         end
@@ -16,9 +15,6 @@ function ____exports.__main(self)
         if ____cond3 then
             __TS__ArrayPush(out, \\"3\\")
             break
-        end
-        if ____cond3 then
-            __TS__ArrayPush(out, \\"default\\")
         end
         ____cond3 = ____cond3 or (____switch3 == 4)
         if ____cond3 then
@@ -34,14 +30,177 @@ end
 return ____exports"
 `;
 
+exports[`switch handles side-effects (0) 1`] = `
+"require(\\"lualib_bundle\\");
+local ____exports = {}
+function ____exports.__main(self)
+    local out = {}
+    local y = 0
+    local function foo(self)
+        return (function()
+            local ____tmp = y
+            y = ____tmp + 1
+            return ____tmp
+        end)()
+    end
+    local x = 0
+    repeat
+        local ____switch5 = x
+        local ____cond5 = ____switch5 == foo(nil)
+        if ____cond5 then
+            __TS__ArrayPush(out, 1)
+        end
+        ____cond5 = ____cond5 or (____switch5 == foo(nil))
+        if ____cond5 then
+            __TS__ArrayPush(out, 2)
+        end
+        ____cond5 = ____cond5 or (____switch5 == foo(nil))
+        if ____cond5 then
+            __TS__ArrayPush(out, 3)
+        end
+        if ____cond5 then
+            __TS__ArrayPush(out, \\"default\\")
+        end
+        if not ____cond5 then
+            __TS__ArrayPush(out, \\"default\\")
+        end
+    until true
+    __TS__ArrayPush(out, y)
+    return out
+end
+return ____exports"
+`;
+
+exports[`switch handles side-effects (1) 1`] = `
+"require(\\"lualib_bundle\\");
+local ____exports = {}
+function ____exports.__main(self)
+    local out = {}
+    local y = 0
+    local function foo(self)
+        return (function()
+            local ____tmp = y
+            y = ____tmp + 1
+            return ____tmp
+        end)()
+    end
+    local x = 1
+    repeat
+        local ____switch5 = x
+        local ____cond5 = ____switch5 == foo(nil)
+        if ____cond5 then
+            __TS__ArrayPush(out, 1)
+        end
+        ____cond5 = ____cond5 or (____switch5 == foo(nil))
+        if ____cond5 then
+            __TS__ArrayPush(out, 2)
+        end
+        ____cond5 = ____cond5 or (____switch5 == foo(nil))
+        if ____cond5 then
+            __TS__ArrayPush(out, 3)
+        end
+        if ____cond5 then
+            __TS__ArrayPush(out, \\"default\\")
+        end
+        if not ____cond5 then
+            __TS__ArrayPush(out, \\"default\\")
+        end
+    until true
+    __TS__ArrayPush(out, y)
+    return out
+end
+return ____exports"
+`;
+
+exports[`switch handles side-effects (2) 1`] = `
+"require(\\"lualib_bundle\\");
+local ____exports = {}
+function ____exports.__main(self)
+    local out = {}
+    local y = 0
+    local function foo(self)
+        return (function()
+            local ____tmp = y
+            y = ____tmp + 1
+            return ____tmp
+        end)()
+    end
+    local x = 2
+    repeat
+        local ____switch5 = x
+        local ____cond5 = ____switch5 == foo(nil)
+        if ____cond5 then
+            __TS__ArrayPush(out, 1)
+        end
+        ____cond5 = ____cond5 or (____switch5 == foo(nil))
+        if ____cond5 then
+            __TS__ArrayPush(out, 2)
+        end
+        ____cond5 = ____cond5 or (____switch5 == foo(nil))
+        if ____cond5 then
+            __TS__ArrayPush(out, 3)
+        end
+        if ____cond5 then
+            __TS__ArrayPush(out, \\"default\\")
+        end
+        if not ____cond5 then
+            __TS__ArrayPush(out, \\"default\\")
+        end
+    until true
+    __TS__ArrayPush(out, y)
+    return out
+end
+return ____exports"
+`;
+
+exports[`switch handles side-effects (3) 1`] = `
+"require(\\"lualib_bundle\\");
+local ____exports = {}
+function ____exports.__main(self)
+    local out = {}
+    local y = 0
+    local function foo(self)
+        return (function()
+            local ____tmp = y
+            y = ____tmp + 1
+            return ____tmp
+        end)()
+    end
+    local x = 3
+    repeat
+        local ____switch5 = x
+        local ____cond5 = ____switch5 == foo(nil)
+        if ____cond5 then
+            __TS__ArrayPush(out, 1)
+        end
+        ____cond5 = ____cond5 or (____switch5 == foo(nil))
+        if ____cond5 then
+            __TS__ArrayPush(out, 2)
+        end
+        ____cond5 = ____cond5 or (____switch5 == foo(nil))
+        if ____cond5 then
+            __TS__ArrayPush(out, 3)
+        end
+        if ____cond5 then
+            __TS__ArrayPush(out, \\"default\\")
+        end
+        if not ____cond5 then
+            __TS__ArrayPush(out, \\"default\\")
+        end
+    until true
+    __TS__ArrayPush(out, y)
+    return out
+end
+return ____exports"
+`;
+
 exports[`switch uses elseif 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
     local result = -1
     repeat
         local ____switch3 = 2
-        local ____cond3 = false
-        ____cond3 = ____cond3 or (____switch3 == 0)
+        local ____cond3 = ____switch3 == 0
         if ____cond3 then
             do
                 result = 200

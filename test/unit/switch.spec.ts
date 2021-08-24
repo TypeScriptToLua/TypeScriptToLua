@@ -400,16 +400,16 @@ test("switch collapses empty case and minimizes conditions", () => {
         .expectToMatchJsResult();
 });
 
-test("switch handles side-effects", () => {
+test.each([0, 1, 2, 3])("switch handles side-effects (%p)", inp => {
     util.testFunction`
         const out = [];
-        
+
         let y = 0;
         function foo() {
             return y++;
         }
 
-        let x = 0;
+        let x = ${inp} as number;
         switch (x) {
             case foo():
                 out.push(1);
@@ -417,9 +417,13 @@ test("switch handles side-effects", () => {
                 out.push(2);
             case foo():
                 out.push(3);
+            default:
+                out.push("default");
         }
 
         out.push(y);
         return out;
-    `.expectToMatchJsResult();
+    `
+        .expectLuaToMatchSnapshot()
+        .expectToMatchJsResult();
 });

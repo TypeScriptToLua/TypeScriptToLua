@@ -264,7 +264,7 @@ test.each([0, 1, 2, 3])("switchWithBracketsBreakInInternalLoop (%p)", inp => {
     `.expectToMatchJsResult();
 });
 
-test("switch uses elseif", () => {
+test("switch executes only one", () => {
     util.testFunction`
         let result: number = -1;
 
@@ -286,9 +286,7 @@ test("switch uses elseif", () => {
         }
 
         return result;
-    `
-        .expectLuaToMatchSnapshot()
-        .expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/967
@@ -378,12 +376,35 @@ test("switch does not pollute parent scope", () => {
     `.expectToMatchJsResult();
 });
 
-test("switch collapses empty case and minimizes conditions", () => {
+test("switch produces optimal output", () => {
     util.testFunction`
         const out = [];
-        switch (5 as number) {
+        switch (0 as number) {
             case 0:
             case 1:
+            case 2:
+                out.push("0,1,2");
+            default:
+                out.push("default");
+            case 3:
+                out.push("3");
+        }
+
+        switch (2 as number) {
+            default:
+                out.push("default");
+            case 0:
+            case 1:
+                out.push("0,1");
+                break;
+        }
+
+        switch (5 as number) {
+            case 0:
+                out.push("0");
+            case 1:
+                out.push("1");
+                break;
             case 2:
                 out.push("0,1,2");
             case 3:
@@ -391,8 +412,6 @@ test("switch collapses empty case and minimizes conditions", () => {
                 break;
             default:
                 out.push("default");
-            case 4:
-                out.push("4");
         }
         return out;
     `
@@ -423,7 +442,5 @@ test.each([0, 1, 2, 3])("switch handles side-effects (%p)", inp => {
 
         out.push(y);
         return out;
-    `
-        .expectLuaToMatchSnapshot()
-        .expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });

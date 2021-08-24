@@ -1,5 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
+import { assert } from "../../utils";
 import { FunctionVisitor } from "../context";
 import { performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
 
@@ -40,64 +41,68 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
         // Build up the condition for each if statement
         // Fallthrough is handled by accepting the last condition as an additional or clause
         // Default is the not of all known case expressions
-        let previousClause: ts.CaseOrDefaultClause;
-        let condition: lua.Expression | undefined;
         let isInitialCondition = true;
-        statement.caseBlock.clauses.forEach(clause => {
-            if (!condition || (previousClause && containsBreakOrReturn([...previousClause.statements]))) {
-                if (ts.isDefaultClause(clause)) {
-                    condition = undefined;
+        let condition: lua.Expression | undefined = undefined;
+        for (let i = 0; i < statement.caseBlock.clauses.length; i++) {
+            const clause = statement.caseBlock.clauses[i];
+            const previousClause: ts.CaseOrDefaultClause | undefined = statement.caseBlock.clauses[i - 1];
+
+            // Skip redundant default clauses, will be handled in final default case
+            if (i === 0 && ts.isDefaultClause(clause)) continue;
+            if (ts.isDefaultClause(clause) && previousClause && containsBreakOrReturn([...previousClause.statements])) {
+                continue;
+            }
+
+            // Compute the condition for the if statement
+            if (!ts.isDefaultClause(clause)) {
+                if (condition) {
+                    // Coalesce skipped statements
+                    condition = lua.createBinaryExpression(
+                        condition,
+                        lua.createBinaryExpression(
+                            switchVariable,
+                            context.transformExpression(clause.expression),
+                            lua.SyntaxKind.EqualityOperator
+                        ),
+                        lua.SyntaxKind.OrOperator
+                    );
                 } else {
+                    // Next condition
                     condition = lua.createBinaryExpression(
                         switchVariable,
                         context.transformExpression(clause.expression),
                         lua.SyntaxKind.EqualityOperator
                     );
                 }
-            } else if (!ts.isDefaultClause(clause)) {
-                condition = lua.createBinaryExpression(
-                    condition,
-                    lua.createBinaryExpression(
-                        switchVariable,
-                        context.transformExpression(clause.expression),
-                        lua.SyntaxKind.EqualityOperator
-                    ),
-                    lua.SyntaxKind.OrOperator
+
+                // Skip empty clauses
+                if (clause.statements.length === 0) continue;
+
+                // Declare or assign condition variable
+                statements.push(
+                    isInitialCondition
+                        ? lua.createVariableDeclarationStatement(conditionVariable, condition)
+                        : lua.createAssignmentStatement(
+                              conditionVariable,
+                              lua.createBinaryExpression(conditionVariable, condition, lua.SyntaxKind.OrOperator)
+                          )
                 );
+                isInitialCondition = false;
+            } else {
+                assert(!isInitialCondition, "Default clause should never be the initial condition");
             }
 
-            if (clause.statements.length) {
-                if (!ts.isDefaultClause(clause) && condition) {
-                    statements.push(
-                        isInitialCondition
-                            ? lua.createVariableDeclarationStatement(conditionVariable, condition)
-                            : lua.createAssignmentStatement(
-                                  conditionVariable,
-                                  lua.createBinaryExpression(conditionVariable, condition, lua.SyntaxKind.OrOperator)
-                              )
-                    );
-                    isInitialCondition = false;
-                    condition = undefined;
-                }
+            // Push if statement for case
+            statements.push(
+                lua.createIfStatement(
+                    conditionVariable,
+                    lua.createBlock(context.transformStatements(clause.statements))
+                )
+            );
 
-                if (
-                    !(
-                        ts.isDefaultClause(clause) &&
-                        previousClause &&
-                        containsBreakOrReturn([...previousClause.statements])
-                    )
-                ) {
-                    statements.push(
-                        lua.createIfStatement(
-                            conditionVariable,
-                            lua.createBlock(context.transformStatements(clause.statements))
-                        )
-                    );
-                }
-            }
-
-            previousClause = clause;
-        });
+            // Clear condition for next clause
+            condition = undefined;
+        }
 
         // Amalgamate the default w/ fallthrough clauses and execute if nothing else executed above
         const start = clauses.findIndex(c => ts.isDefaultClause(c));

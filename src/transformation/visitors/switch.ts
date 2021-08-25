@@ -66,9 +66,9 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
         // Build up the condition for each if statement
         let isInitialCondition = true;
         let condition: lua.Expression | undefined = undefined;
-        for (let i = 0; i < statement.caseBlock.clauses.length; i++) {
-            const clause = statement.caseBlock.clauses[i];
-            const previousClause: ts.CaseOrDefaultClause | undefined = statement.caseBlock.clauses[i - 1];
+        for (let i = 0; i < clauses.length; i++) {
+            const clause = clauses[i];
+            const previousClause: ts.CaseOrDefaultClause | undefined = clauses[i - 1];
 
             // Skip redundant default clauses, will be handled in final default case
             if (i === 0 && ts.isDefaultClause(clause)) continue;
@@ -121,14 +121,15 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
         const start = clauses.findIndex(c => ts.isDefaultClause(c));
         if (start >= 0) {
             // Find the last clause that we can fallthrough to
-            const end = statement.caseBlock.clauses.findIndex(
+            const end = clauses.findIndex(
                 (clause, index) => index >= start && containsBreakOrReturn(clause.statements)
             );
 
             // Combine the default and all fallthrough statements
             const defaultStatements: lua.Statement[] = [];
-            const clauses = statement.caseBlock.clauses.slice(start, end >= 0 ? end + 1 : undefined);
-            clauses.forEach(c => defaultStatements.push(...context.transformStatements(c.statements)));
+            clauses
+                .slice(start, end >= 0 ? end + 1 : undefined)
+                .forEach(c => defaultStatements.push(...context.transformStatements(c.statements)));
 
             // Add the default clause if it has any statements
             if (defaultStatements.length) {

@@ -116,8 +116,8 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
             condition = undefined;
         }
 
-        // If no conditions above match, we need to create the final default case code-path
-        // As we only handle fallthrough into defaults in the previous if statement chain
+        // If no conditions above match, we need to create the final default case code-path,
+        // as we only handle fallthrough into defaults in the previous if statement chain
         const start = clauses.findIndex(c => ts.isDefaultClause(c));
         if (start >= 0) {
             // Find the last clause that we can fallthrough to

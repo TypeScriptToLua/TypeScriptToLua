@@ -1,5 +1,45 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`switch empty fallthrough to default (0) 1`] = `
+"require(\\"lualib_bundle\\");
+local ____exports = {}
+function ____exports.__main(self)
+    local out = {}
+    repeat
+        local ____switch3 = 0
+        local ____cond3 = ____switch3 == 1
+        if ____cond3 then
+            __TS__ArrayPush(out, \\"default\\")
+        end
+        if not ____cond3 then
+            __TS__ArrayPush(out, \\"default\\")
+        end
+    until true
+    return out
+end
+return ____exports"
+`;
+
+exports[`switch empty fallthrough to default (1) 1`] = `
+"require(\\"lualib_bundle\\");
+local ____exports = {}
+function ____exports.__main(self)
+    local out = {}
+    repeat
+        local ____switch3 = 1
+        local ____cond3 = ____switch3 == 1
+        if ____cond3 then
+            __TS__ArrayPush(out, \\"default\\")
+        end
+        if not ____cond3 then
+            __TS__ArrayPush(out, \\"default\\")
+        end
+    until true
+    return out
+end
+return ____exports"
+`;
+
 exports[`switch produces optimal output 1`] = `
 "require(\\"lualib_bundle\\");
 local ____exports = {}

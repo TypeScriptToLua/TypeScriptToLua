@@ -364,6 +364,21 @@ test("switch fallthrough stops after default", () => {
     `.expectToMatchJsResult();
 });
 
+test.each([0, 1])("switch empty fallthrough to default (%p)", inp => {
+    util.testFunction`
+        const out = [];
+        switch (${inp} as number) {
+            case 1:
+            default:
+                out.push("default");
+            
+        }
+        return out;
+    `
+        .expectLuaToMatchSnapshot()
+        .expectToMatchJsResult();
+});
+
 test("switch does not pollute parent scope", () => {
     util.testFunction`
         let x: number = 0;

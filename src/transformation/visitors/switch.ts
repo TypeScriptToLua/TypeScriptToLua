@@ -1,6 +1,5 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
-import { assert } from "../../utils";
 import { FunctionVisitor } from "../context";
 import { performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
 
@@ -86,8 +85,15 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
                           )
                 );
                 isInitialCondition = false;
-            } else {
-                assert(!isInitialCondition, "Default clause should never be the initial condition");
+            } else if (isInitialCondition) {
+                // If we have fallen through to the default here, we need to initialize the default condition
+                statements.push(
+                    lua.createVariableDeclarationStatement(
+                        conditionVariable,
+                        condition ?? lua.createBooleanLiteral(false)
+                    )
+                );
+                isInitialCondition = false;
             }
 
             // Push if statement for case
@@ -102,19 +108,25 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
             condition = undefined;
         }
 
-        // Amalgamate the default w/ fallthrough clauses and execute if nothing else executed above
+        // If no conditions above match, we need to create the final default case code-path
+        // As we only handle fallthrough into defaults in the previous if statement chain
         const start = clauses.findIndex(c => ts.isDefaultClause(c));
         if (start >= 0) {
-            const end = statement.caseBlock.clauses
-                .slice(start)
-                .findIndex(clause => containsBreakOrReturn([...clause.statements]));
-            const defaultStatements = statement.caseBlock.clauses
-                .slice(start, end >= 0 ? end + start + 1 : undefined)
-                .reduce<lua.Statement[]>(
-                    (statements, clause) => [...statements, ...context.transformStatements(clause.statements)],
-                    []
-                );
+            // Find the last clause that we can fallthrough to
+            const end = statement.caseBlock.clauses.findIndex(
+                (clause, index) => index >= start && containsBreakOrReturn([...clause.statements])
+            );
 
+            // Combine the default and all fallthrough statements
+            const defaultStatements: lua.Statement[] = [];
+            for (const { statements } of statement.caseBlock.clauses.slice(
+                start,
+                end >= 0 ? end + start + 1 : undefined
+            )) {
+                defaultStatements.push(...context.transformStatements(statements));
+            }
+
+            // Add the default clause if it has any statements
             if (defaultStatements.length) {
                 statements.push(
                     lua.createIfStatement(

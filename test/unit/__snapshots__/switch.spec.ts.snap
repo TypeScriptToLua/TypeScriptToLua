@@ -56,47 +56,57 @@ function ____exports.__main(self)
         end
         ____cond3 = ____cond3 or (____switch3 == 3)
         if ____cond3 then
-            __TS__ArrayPush(out, \\"3\\")
+            do
+                __TS__ArrayPush(out, \\"3\\")
+                break
+            end
+        end
+        ____cond3 = ____cond3 or (____switch3 == 4)
+        if ____cond3 then
+            __TS__ArrayPush(out, \\"4\\")
         end
         if not ____cond3 then
             __TS__ArrayPush(out, \\"default\\")
-            __TS__ArrayPush(out, \\"3\\")
+            do
+                __TS__ArrayPush(out, \\"3\\")
+                break
+            end
         end
     until true
     repeat
-        local ____switch4 = 2
-        local ____cond4 = (____switch4 == 0) or (____switch4 == 1)
-        if ____cond4 then
+        local ____switch6 = 2
+        local ____cond6 = (____switch6 == 0) or (____switch6 == 1)
+        if ____cond6 then
             __TS__ArrayPush(out, \\"0,1\\")
             break
         end
-        if not ____cond4 then
+        if not ____cond6 then
             __TS__ArrayPush(out, \\"default\\")
             __TS__ArrayPush(out, \\"0,1\\")
             break
         end
     until true
     repeat
-        local ____switch5 = 5
-        local ____cond5 = ____switch5 == 0
-        if ____cond5 then
+        local ____switch7 = 5
+        local ____cond7 = ____switch7 == 0
+        if ____cond7 then
             __TS__ArrayPush(out, \\"0\\")
         end
-        ____cond5 = ____cond5 or (____switch5 == 1)
-        if ____cond5 then
+        ____cond7 = ____cond7 or (____switch7 == 1)
+        if ____cond7 then
             __TS__ArrayPush(out, \\"1\\")
             break
         end
-        ____cond5 = ____cond5 or (____switch5 == 2)
-        if ____cond5 then
+        ____cond7 = ____cond7 or (____switch7 == 2)
+        if ____cond7 then
             __TS__ArrayPush(out, \\"0,1,2\\")
         end
-        ____cond5 = ____cond5 or (____switch5 == 3)
-        if ____cond5 then
+        ____cond7 = ____cond7 or (____switch7 == 3)
+        if ____cond7 then
             __TS__ArrayPush(out, \\"3\\")
             break
         end
-        if not ____cond5 then
+        if not ____cond7 then
             __TS__ArrayPush(out, \\"default\\")
         end
     until true

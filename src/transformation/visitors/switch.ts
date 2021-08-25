@@ -7,10 +7,9 @@ const containsBreakOrReturn = (statements: ts.Node[]): boolean => {
     for (const s of statements) {
         if (ts.isBreakStatement(s) || ts.isReturnStatement(s)) {
             return true;
-        } else if (!ts.isBlock(s)) {
-            // Can only ensure a break scoped in a block is deterministic
-            continue;
-        } else if (containsBreakOrReturn(s.getChildren())) {
+        } else if (ts.isBlock(s) && containsBreakOrReturn(s.getChildren())) {
+            return true;
+        } else if (s.kind === ts.SyntaxKind.SyntaxList && containsBreakOrReturn(s.getChildren())) {
             return true;
         }
     }
@@ -119,12 +118,8 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
 
             // Combine the default and all fallthrough statements
             const defaultStatements: lua.Statement[] = [];
-            for (const { statements } of statement.caseBlock.clauses.slice(
-                start,
-                end >= 0 ? end + start + 1 : undefined
-            )) {
-                defaultStatements.push(...context.transformStatements(statements));
-            }
+            const clauses = statement.caseBlock.clauses.slice(start, end >= 0 ? end + 1 : undefined);
+            clauses.forEach(c => defaultStatements.push(...context.transformStatements(c.statements)));
 
             // Add the default clause if it has any statements
             if (defaultStatements.length) {

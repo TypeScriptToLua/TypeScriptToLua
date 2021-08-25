@@ -401,8 +401,12 @@ test("switch produces optimal output", () => {
                 out.push("0,1,2");
             default:
                 out.push("default");
-            case 3:
+            case 3: {
                 out.push("3");
+                break;
+            }
+            case 4:
+                out.push("4");
         }
 
         switch (2 as number) {

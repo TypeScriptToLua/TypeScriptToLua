@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
-import { FunctionVisitor } from "../context";
+import { FunctionVisitor, TransformationContext } from "../context";
 import { performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
 
 const containsBreakOrReturn = (statements: ts.Node[]): boolean => {
@@ -15,6 +15,33 @@ const containsBreakOrReturn = (statements: ts.Node[]): boolean => {
     }
 
     return false;
+};
+
+const coalesceCondition = (
+    condition: lua.Expression | undefined,
+    switchVariable: lua.Identifier,
+    expression: ts.Expression,
+    context: TransformationContext
+): lua.Expression => {
+    // Coalesce skipped statements
+    if (condition) {
+        return lua.createBinaryExpression(
+            condition,
+            lua.createBinaryExpression(
+                switchVariable,
+                context.transformExpression(expression),
+                lua.SyntaxKind.EqualityOperator
+            ),
+            lua.SyntaxKind.OrOperator
+        );
+    }
+
+    // Next condition
+    return lua.createBinaryExpression(
+        switchVariable,
+        context.transformExpression(expression),
+        lua.SyntaxKind.EqualityOperator
+    );
 };
 
 export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (statement, context) => {
@@ -51,25 +78,7 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
 
             // Compute the condition for the if statement
             if (!ts.isDefaultClause(clause)) {
-                if (condition) {
-                    // Coalesce skipped statements
-                    condition = lua.createBinaryExpression(
-                        condition,
-                        lua.createBinaryExpression(
-                            switchVariable,
-                            context.transformExpression(clause.expression),
-                            lua.SyntaxKind.EqualityOperator
-                        ),
-                        lua.SyntaxKind.OrOperator
-                    );
-                } else {
-                    // Next condition
-                    condition = lua.createBinaryExpression(
-                        switchVariable,
-                        context.transformExpression(clause.expression),
-                        lua.SyntaxKind.EqualityOperator
-                    );
-                }
+                condition = coalesceCondition(condition, switchVariable, clause.expression, context);
 
                 // Skip empty clauses
                 if (clause.statements.length === 0) continue;

@@ -459,3 +459,31 @@ test.each([0, 1, 2, 3])("switch handles side-effects (%p)", inp => {
         return out;
     `.expectToMatchJsResult();
 });
+
+test.each([0, 1, 2, 3])("switch handles async side-effects (%p)", inp => {
+    util.testFunction`
+        (async () => {
+            const out = [];
+
+            let y = 0;
+            async function foo() {
+                return new Promise<number>((resolve) => y++ && resolve(0));
+            }
+
+            let x = ${inp} as number;
+            switch (x) {
+                case await foo():
+                    out.push(1);
+                case await foo():
+                    out.push(2);
+                case await foo():
+                    out.push(3);
+                default:
+                    out.push("default");
+            }
+
+            out.push(y);
+            return out;
+        })();
+    `.expectToMatchJsResult();
+});

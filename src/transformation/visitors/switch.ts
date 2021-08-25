@@ -3,8 +3,8 @@ import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
 
-const containsBreakOrReturn = (statements: ts.Node[]): boolean => {
-    for (const s of statements) {
+const containsBreakOrReturn = (nodes: Iterable<ts.Node>): boolean => {
+    for (const s of nodes) {
         if (ts.isBreakStatement(s) || ts.isReturnStatement(s)) {
             return true;
         } else if (ts.isBlock(s) && containsBreakOrReturn(s.getChildren())) {
@@ -72,7 +72,7 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
 
             // Skip redundant default clauses, will be handled in final default case
             if (i === 0 && ts.isDefaultClause(clause)) continue;
-            if (ts.isDefaultClause(clause) && previousClause && containsBreakOrReturn([...previousClause.statements])) {
+            if (ts.isDefaultClause(clause) && previousClause && containsBreakOrReturn(previousClause.statements)) {
                 continue;
             }
 
@@ -122,7 +122,7 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
         if (start >= 0) {
             // Find the last clause that we can fallthrough to
             const end = statement.caseBlock.clauses.findIndex(
-                (clause, index) => index >= start && containsBreakOrReturn([...clause.statements])
+                (clause, index) => index >= start && containsBreakOrReturn(clause.statements)
             );
 
             // Combine the default and all fallthrough statements

@@ -264,10 +264,9 @@ test.each([0, 1, 2, 3])("switchWithBracketsBreakInInternalLoop (%p)", inp => {
     `.expectToMatchJsResult();
 });
 
-test("switch executes only one", () => {
+test("switch executes only one clause", () => {
     util.testFunction`
         let result: number = -1;
-
         switch (2 as number) {
             case 0: {
                 result = 200;
@@ -284,7 +283,6 @@ test("switch executes only one", () => {
                 break;
             }
         }
-
         return result;
     `.expectToMatchJsResult();
 });
@@ -391,54 +389,7 @@ test("switch does not pollute parent scope", () => {
     `.expectToMatchJsResult();
 });
 
-test("switch produces optimal output", () => {
-    util.testFunction`
-        const out = [];
-        switch (0 as number) {
-            case 0:
-            case 1:
-            case 2:
-                out.push("0,1,2");
-            default:
-                out.push("default");
-            case 3: {
-                out.push("3");
-                break;
-            }
-            case 4:
-                out.push("4");
-        }
-
-        switch (2 as number) {
-            default:
-                out.push("default");
-            case 0:
-            case 1:
-                out.push("0,1");
-                break;
-        }
-
-        switch (5 as number) {
-            case 0:
-                out.push("0");
-            case 1:
-                out.push("1");
-                break;
-            case 2:
-                out.push("0,1,2");
-            case 3:
-                out.push("3");
-                break;
-            default:
-                out.push("default");
-        }
-        return out;
-    `
-        .expectLuaToMatchSnapshot()
-        .expectToMatchJsResult();
-});
-
-test.each([0, 1, 2, 3])("switch handles side-effects (%p)", inp => {
+test.each([0, 1, 2, 3, 4])("switch handles side-effects (%p)", inp => {
     util.testFunction`
         const out = [];
 
@@ -465,7 +416,7 @@ test.each([0, 1, 2, 3])("switch handles side-effects (%p)", inp => {
     `.expectToMatchJsResult();
 });
 
-test.each([0, 1, 2, 3])("switch handles async side-effects (%p)", inp => {
+test.each([0, 1, 2, 3, 4])("switch handles async side-effects (%p)", inp => {
     util.testFunction`
         (async () => {
             const out = [];
@@ -485,10 +436,41 @@ test.each([0, 1, 2, 3])("switch handles async side-effects (%p)", inp => {
                     out.push(3);
                 default:
                     out.push("default");
+                case await foo():
             }
 
             out.push(y);
             return out;
         })();
     `.expectToMatchJsResult();
+});
+
+const optimalOutput = (c: number) => util.testFunction`
+    let x: number = 0;
+    const out = [];
+    switch (${c} as number) {
+        case 0:
+        case 1:
+        case 2:
+            out.push("0,1,2");
+            break;
+        default:
+            x++;
+            out.push("default = " + x);
+        case 3: {
+            out.push("3");
+            break;
+        }
+        case 4:
+    }
+    out.push(x.toString());
+    return out;
+`;
+
+test("switch produces optimal output", () => {
+    optimalOutput(0).expectLuaToMatchSnapshot();
+});
+
+test.each([0, 1, 2, 3, 4, 5])("switch produces valid optimal output (%p)", inp => {
+    optimalOutput(inp).expectToMatchJsResult();
 });

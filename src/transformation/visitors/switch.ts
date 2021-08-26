@@ -93,24 +93,32 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
                           )
                 );
                 isInitialCondition = false;
-            } else if (isInitialCondition) {
-                // If we have fallen through to the default here, we need to initialize the default condition
-                statements.push(
-                    lua.createVariableDeclarationStatement(
-                        conditionVariable,
-                        condition ?? lua.createBooleanLiteral(false)
-                    )
-                );
-                isInitialCondition = false;
+            } else {
+                // If the default is not fallen into skip it and handle in the final default output instead
+                if (previousClause && containsBreakOrReturn(previousClause.statements)) {
+                    continue;
+                }
+
+                // If the default is proceeded by empty clauses and will be emitted we may need to initialize the condition
+                if (isInitialCondition) {
+                    statements.push(
+                        lua.createVariableDeclarationStatement(
+                            conditionVariable,
+                            condition ?? lua.createBooleanLiteral(false)
+                        )
+                    );
+                    isInitialCondition = false;
+                }
+            }
+
+            // Transform the clause and append the final break statement if necessary
+            const clauseStatements = context.transformStatements(clause.statements);
+            if (i === clauses.length - 1 && !containsBreakOrReturn(clause.statements)) {
+                clauseStatements.push(lua.createBreakStatement());
             }
 
             // Push if statement for case
-            statements.push(
-                lua.createIfStatement(
-                    conditionVariable,
-                    lua.createBlock(context.transformStatements(clause.statements))
-                )
-            );
+            statements.push(lua.createIfStatement(conditionVariable, lua.createBlock(clauseStatements)));
 
             // Clear condition for next clause
             condition = undefined;
@@ -132,13 +140,9 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
                 .forEach(c => defaultStatements.push(...context.transformStatements(c.statements)));
 
             // Add the default clause if it has any statements
+            // The switch will always break on the final clause and skip execution if valid to do so
             if (defaultStatements.length) {
-                statements.push(
-                    lua.createIfStatement(
-                        lua.createUnaryExpression(conditionVariable, lua.SyntaxKind.NotOperator),
-                        lua.createBlock(defaultStatements)
-                    )
-                );
+                statements.push(lua.createDoStatement(defaultStatements));
             }
         }
     }

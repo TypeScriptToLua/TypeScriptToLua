@@ -10,8 +10,9 @@ function ____exports.__main(self)
         local ____cond3 = ____switch3 == 1
         if ____cond3 then
             __TS__ArrayPush(out, \\"default\\")
+            break
         end
-        if not ____cond3 then
+        do
             __TS__ArrayPush(out, \\"default\\")
         end
     until true
@@ -30,8 +31,9 @@ function ____exports.__main(self)
         local ____cond3 = ____switch3 == 1
         if ____cond3 then
             __TS__ArrayPush(out, \\"default\\")
+            break
         end
-        if not ____cond3 then
+        do
             __TS__ArrayPush(out, \\"default\\")
         end
     until true
@@ -44,15 +46,14 @@ exports[`switch produces optimal output 1`] = `
 "require(\\"lualib_bundle\\");
 local ____exports = {}
 function ____exports.__main(self)
+    local x = 0
     local out = {}
     repeat
         local ____switch3 = 0
         local ____cond3 = ((____switch3 == 0) or (____switch3 == 1)) or (____switch3 == 2)
         if ____cond3 then
             __TS__ArrayPush(out, \\"0,1,2\\")
-        end
-        if ____cond3 then
-            __TS__ArrayPush(out, \\"default\\")
+            break
         end
         ____cond3 = ____cond3 or (____switch3 == 3)
         if ____cond3 then
@@ -63,53 +64,24 @@ function ____exports.__main(self)
         end
         ____cond3 = ____cond3 or (____switch3 == 4)
         if ____cond3 then
-            __TS__ArrayPush(out, \\"4\\")
+            break
         end
-        if not ____cond3 then
-            __TS__ArrayPush(out, \\"default\\")
+        do
+            x = x + 1
+            __TS__ArrayPush(
+                out,
+                \\"default = \\" .. tostring(x)
+            )
             do
                 __TS__ArrayPush(out, \\"3\\")
                 break
             end
         end
     until true
-    repeat
-        local ____switch6 = 2
-        local ____cond6 = (____switch6 == 0) or (____switch6 == 1)
-        if ____cond6 then
-            __TS__ArrayPush(out, \\"0,1\\")
-            break
-        end
-        if not ____cond6 then
-            __TS__ArrayPush(out, \\"default\\")
-            __TS__ArrayPush(out, \\"0,1\\")
-            break
-        end
-    until true
-    repeat
-        local ____switch7 = 5
-        local ____cond7 = ____switch7 == 0
-        if ____cond7 then
-            __TS__ArrayPush(out, \\"0\\")
-        end
-        ____cond7 = ____cond7 or (____switch7 == 1)
-        if ____cond7 then
-            __TS__ArrayPush(out, \\"1\\")
-            break
-        end
-        ____cond7 = ____cond7 or (____switch7 == 2)
-        if ____cond7 then
-            __TS__ArrayPush(out, \\"0,1,2\\")
-        end
-        ____cond7 = ____cond7 or (____switch7 == 3)
-        if ____cond7 then
-            __TS__ArrayPush(out, \\"3\\")
-            break
-        end
-        if not ____cond7 then
-            __TS__ArrayPush(out, \\"default\\")
-        end
-    until true
+    __TS__ArrayPush(
+        out,
+        tostring(x)
+    )
     return out
 end
 return ____exports"

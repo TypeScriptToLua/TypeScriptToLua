@@ -80,8 +80,8 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
             if (!ts.isDefaultClause(clause)) {
                 condition = coalesceCondition(condition, switchVariable, clause.expression, context);
 
-                // Skip empty clauses
-                if (clause.statements.length === 0) continue;
+                // Skip empty clauses unless final clause (i.e side-effects)
+                if (i !== clauses.length - 1 && clause.statements.length === 0) continue;
 
                 // Declare or assign condition variable
                 statements.push(

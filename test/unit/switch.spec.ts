@@ -457,6 +457,7 @@ test.each([0, 1, 2, 3])("switch handles side-effects (%p)", inp => {
                 out.push(3);
             default:
                 out.push("default");
+            case foo():
         }
 
         out.push(y);

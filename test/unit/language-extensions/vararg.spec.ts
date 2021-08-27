@@ -51,6 +51,5 @@ test("$vararg in bundle sub-module", () => {
         .addExtraFile("src/module.ts", 'export const result = [...$vararg].join("")')
         .setOptions({ rootDir: "src", luaBundle: "bundle.lua", luaBundleEntry: "src/main.ts" })
         .withLanguageExtensions()
-        .setLuaFactory(code => `return (function(...) ${code} end)()`)
         .expectToEqual({ result: "module" });
 });

@@ -81,7 +81,7 @@ function moduleSourceNode({ code, sourceMapNode }: ProcessedFile, modulePath: st
     const tableEntryHead = `[${modulePath}] = function() `;
     const tableEntryTail = " end,\n";
 
-    return joinSourceChunks([tableEntryHead, sourceMapNode ?? code, tableEntryTail]);
+    return joinSourceChunks([tableEntryHead, code, tableEntryTail]);
 }
 
 function createModuleTableNode(fileChunks: SourceChunk[]): SourceNode {

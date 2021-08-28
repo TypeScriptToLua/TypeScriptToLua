@@ -77,7 +77,7 @@ export function getBundleResult(program: ts.Program, files: ProcessedFile[]): [t
     ];
 }
 
-function moduleSourceNode({ code, sourceMapNode }: ProcessedFile, modulePath: string): SourceNode {
+function moduleSourceNode({ code }: ProcessedFile, modulePath: string): SourceNode {
     const tableEntryHead = `[${modulePath}] = function() `;
     const tableEntryTail = " end,\n";
 

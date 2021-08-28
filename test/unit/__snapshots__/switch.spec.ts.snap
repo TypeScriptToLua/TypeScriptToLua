@@ -8,10 +8,6 @@ function ____exports.__main(self)
     repeat
         local ____switch3 = 0
         local ____cond3 = ____switch3 == 1
-        if ____cond3 then
-            __TS__ArrayPush(out, \\"default\\")
-            break
-        end
         do
             __TS__ArrayPush(out, \\"default\\")
         end
@@ -29,10 +25,6 @@ function ____exports.__main(self)
     repeat
         local ____switch3 = 1
         local ____cond3 = ____switch3 == 1
-        if ____cond3 then
-            __TS__ArrayPush(out, \\"default\\")
-            break
-        end
         do
             __TS__ArrayPush(out, \\"default\\")
         end

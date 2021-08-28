@@ -94,11 +94,6 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
                 );
                 isInitialCondition = false;
             } else {
-                // If the default is not fallen into skip it and handle in the final default output instead
-                if (previousClause && containsBreakOrReturn(previousClause.statements)) {
-                    continue;
-                }
-
                 // If the default is proceeded by empty clauses and will be emitted we may need to initialize the condition
                 if (isInitialCondition) {
                     statements.push(
@@ -109,6 +104,9 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
                     );
                     isInitialCondition = false;
                 }
+
+                // Skip default clause if is the last clause, as it will fallthrough to the final default below
+                if (i === clauses.length - 1) continue;
             }
 
             // Transform the clause and append the final break statement if necessary

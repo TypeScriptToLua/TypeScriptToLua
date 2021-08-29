@@ -1,9 +1,10 @@
 import * as ts from "typescript";
 import { CompilerOptions, LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
-import { castArray } from "../../utils";
+import { assert, castArray } from "../../utils";
 import { unsupportedNodeKind } from "../utils/diagnostics";
 import { unwrapVisitorResult } from "../utils/lua-ast";
+import { fixInvalidLuaIdentifier, isValidLuaIdentifier } from "../utils/safe-names";
 import { ExpressionLikeNode, ObjectVisitor, StatementLikeNode, VisitorMap } from "./visitors";
 
 export interface AllAccessorDeclarations {
@@ -29,6 +30,7 @@ export class TransformationContext {
     public readonly diagnostics: ts.Diagnostic[] = [];
     public readonly checker: DiagnosticsProducingTypeChecker = this.program.getDiagnosticsProducingTypeChecker();
     public readonly resolver: EmitResolver;
+    public readonly precedingStatementsStack: lua.Statement[][] = [];
 
     public readonly options: CompilerOptions = this.program.getCompilerOptions();
     public readonly luaTarget = this.options.luaTarget ?? LuaTarget.Universal;
@@ -46,6 +48,7 @@ export class TransformationContext {
     }
 
     private currentNodeVisitors: Array<ObjectVisitor<ts.Node>> = [];
+    private nextTempId = 0;
 
     public transformNode(node: ts.Node): lua.Node[];
     /** @internal */
@@ -104,10 +107,55 @@ export class TransformationContext {
     }
 
     public transformStatements(node: StatementLikeNode | readonly StatementLikeNode[]): lua.Statement[] {
-        return castArray(node).flatMap(n => this.transformNode(n) as lua.Statement[]);
+        return castArray(node).flatMap(n => {
+            this.pushPrecedingStatements();
+            const statements = this.transformNode(n) as lua.Statement[];
+            statements.unshift(...this.popPrecedingStatements());
+            return statements;
+        });
     }
 
     public superTransformStatements(node: StatementLikeNode | readonly StatementLikeNode[]): lua.Statement[] {
         return castArray(node).flatMap(n => this.superTransformNode(n) as lua.Statement[]);
+    }
+
+    public pushPrecedingStatements() {
+        const precedingStatements: lua.Statement[] = [];
+        this.precedingStatementsStack.push(precedingStatements);
+        return precedingStatements;
+    }
+
+    public popPrecedingStatements() {
+        const precedingStatements = this.precedingStatementsStack.pop();
+        assert(precedingStatements);
+        return precedingStatements;
+    }
+
+    public addPrecedingStatements(statements: lua.Statement[], prepend = false) {
+        const precedingStatements = this.precedingStatementsStack[this.precedingStatementsStack.length - 1];
+        if (prepend) {
+            precedingStatements.unshift(...statements);
+        } else {
+            precedingStatements.push(...statements);
+        }
+    }
+
+    public createTempName(prefix = "") {
+        return `____${prefix}${this.nextTempId++}`;
+    }
+
+    public createTempNameFromExpression(expression: lua.Expression) {
+        let name: string | undefined;
+        if (lua.isStringLiteral(expression)) {
+            name = expression.value;
+        } else if (lua.isIdentifier(expression)) {
+            name = expression.text;
+        }
+        if (!name) {
+            name = "temp";
+        } else if (!isValidLuaIdentifier(name)) {
+            name = fixInvalidLuaIdentifier(name);
+        }
+        return `____${name}${this.nextTempId++}`;
     }
 }

@@ -142,7 +142,7 @@ export function transformCompoundAssignment(
         if (isSetterSkippingCompoundAssignmentOperator(operator)) {
             const statements = [
                 tmpDeclaration,
-                ...transformSetterSkippingCompoundAssignment(context, tmpIdentifier, operator, rhs),
+                ...transformSetterSkippingCompoundAssignment(tmpIdentifier, operator, right),
             ];
             return { statements, result: tmpIdentifier };
         }
@@ -165,7 +165,7 @@ export function transformCompoundAssignmentExpression(
     rhs: ts.Expression,
     operator: CompoundAssignmentToken,
     isPostfix: boolean
-): lua.CallExpression {
+): lua.Expression {
     return transformToImmediatelyInvokedFunctionExpression(
         context,
         () => transformCompoundAssignment(context, expression, lhs, rhs, operator, isPostfix),
@@ -199,7 +199,7 @@ export function transformCompoundAssignmentStatement(
         if (isSetterSkippingCompoundAssignmentOperator(operator)) {
             return [
                 objAndIndexDeclaration,
-                ...transformSetterSkippingCompoundAssignment(context, accessExpression, operator, rhs, node),
+                ...transformSetterSkippingCompoundAssignment(accessExpression, operator, right, node),
             ];
         }
 
@@ -208,8 +208,7 @@ export function transformCompoundAssignmentStatement(
         return [objAndIndexDeclaration, assignStatement];
     } else {
         if (isSetterSkippingCompoundAssignmentOperator(operator)) {
-            const luaLhs = context.transformExpression(lhs) as lua.AssignmentLeftHandSideExpression;
-            return transformSetterSkippingCompoundAssignment(context, luaLhs, operator, rhs, node);
+            return transformSetterSkippingCompoundAssignment(left, operator, right, node);
         }
 
         // Simple statements
@@ -237,10 +236,9 @@ function isSetterSkippingCompoundAssignmentOperator(
 }
 
 function transformSetterSkippingCompoundAssignment(
-    context: TransformationContext,
     lhs: lua.AssignmentLeftHandSideExpression,
     operator: SetterSkippingCompoundAssignmentOperator,
-    rhs: ts.Expression,
+    right: lua.Expression,
     node?: ts.Node
 ): lua.Statement[] {
     // These assignments have the form 'if x then y = z', figure out what condition x is first.
@@ -258,11 +256,6 @@ function transformSetterSkippingCompoundAssignment(
 
     // if condition then lhs = rhs end
     return [
-        lua.createIfStatement(
-            condition,
-            lua.createBlock([lua.createAssignmentStatement(lhs, context.transformExpression(rhs))]),
-            undefined,
-            node
-        ),
+        lua.createIfStatement(condition, lua.createBlock([lua.createAssignmentStatement(lhs, right)]), undefined, node),
     ];
 }

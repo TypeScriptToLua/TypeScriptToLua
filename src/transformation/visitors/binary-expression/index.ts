@@ -15,6 +15,7 @@ import {
 } from "./compound";
 import { assert } from "../../../utils";
 import { transformToImmediatelyInvokedFunctionExpression } from "../../utils/transform";
+// import { peekScope } from "../../utils/scope";
 
 type SimpleOperator =
     | ts.AdditiveOperatorOrHigher
@@ -76,6 +77,27 @@ export function transformBinaryOperation(
     return lua.createBinaryExpression(left, right, luaOperator, node);
 }
 
+function createShortCircuitBinaryExpression(
+    context: TransformationContext,
+    node: ts.BinaryExpression,
+    createCondition: (identifier: lua.Identifier) => lua.Expression
+) {
+    const lhs = context.transformExpression(node.left);
+    context.pushPrecedingStatements();
+    const rhs = context.transformExpression(node.right);
+    const rightPrecedingStatements = context.popPrecedingStatements();
+    if (rightPrecedingStatements.length > 0) {
+        const result = lua.createIdentifier(context.createTempNameFromExpression(lhs));
+        const assignmentStatement = lua.createVariableDeclarationStatement(result, lhs);
+        const ifStatement = lua.createIfStatement(
+            createCondition(lua.cloneIdentifier(result)),
+            lua.createBlock([...rightPrecedingStatements, lua.createAssignmentStatement(result, rhs)])
+        );
+        context.addPrecedingStatements([assignmentStatement, ifStatement]);
+        return result;
+    }
+}
+
 export const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (node, context) => {
     const operator = node.operatorToken.kind;
 
@@ -128,15 +150,42 @@ export const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (
             );
         }
 
-        default:
-            return transformBinaryOperation(
-                context,
-                context.transformExpression(node.left),
-                context.transformExpression(node.right),
-                operator,
-                node
+        case ts.SyntaxKind.QuestionQuestionToken: {
+            const expression = createShortCircuitBinaryExpression(context, node, i =>
+                lua.createBinaryExpression(i, lua.createNilLiteral(), lua.SyntaxKind.InequalityOperator)
             );
+            if (expression) {
+                return expression;
+            }
+            break;
+        }
+
+        case ts.SyntaxKind.BarBarToken: {
+            const expression = createShortCircuitBinaryExpression(context, node, i =>
+                lua.createUnaryExpression(i, lua.SyntaxKind.NotOperator)
+            );
+            if (expression) {
+                return expression;
+            }
+            break;
+        }
+
+        case ts.SyntaxKind.AmpersandAmpersandToken: {
+            const expression = createShortCircuitBinaryExpression(context, node, i => i);
+            if (expression) {
+                return expression;
+            }
+            break;
+        }
     }
+
+    return transformBinaryOperation(
+        context,
+        context.transformExpression(node.left),
+        context.transformExpression(node.right),
+        operator,
+        node
+    );
 };
 
 export function transformBinaryExpressionStatement(

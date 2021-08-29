@@ -14,9 +14,11 @@ export function transformToImmediatelyInvokedFunctionExpression(
     context: TransformationContext,
     transformFunction: () => ImmediatelyInvokedFunctionParameters,
     tsOriginal?: ts.Node
-): lua.CallExpression {
-    pushScope(context, ScopeType.Function);
-    const { statements, result } = transformFunction();
+): lua.Expression {
+    const scope = pushScope(context, ScopeType.Block);
+    let { statements, result } = transformFunction();
+    [statements, result] = createImmediatelyInvokedFunctionExpression(scope, castArray(statements), result, tsOriginal);
+    context.addPrecedingStatements(statements);
     popScope(context);
-    return createImmediatelyInvokedFunctionExpression(castArray(statements), result, tsOriginal);
+    return result;
 }

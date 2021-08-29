@@ -10,7 +10,10 @@ import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isValidLuaIdentifier } from "../utils/safe-names";
 import { isExpressionWithEvaluationEffect } from "../utils/typescript";
 import { transformElementAccessArgument } from "./access";
-import { isMultiReturnCall, shouldMultiReturnCallBeWrapped } from "./language-extensions/multi";
+import {
+    isMultiReturnCall,
+    /* isMultiReturnType, */ shouldMultiReturnCallBeWrapped,
+} from "./language-extensions/multi";
 import { isOperatorMapping, transformOperatorMappingExpression } from "./language-extensions/operators";
 import {
     isTableDeleteCall,
@@ -23,76 +26,77 @@ import {
     transformTableSetExpression,
 } from "./language-extensions/table";
 import { annotationRemoved, invalidTableDeleteExpression, invalidTableSetExpression } from "../utils/diagnostics";
-import {
-    ImmediatelyInvokedFunctionParameters,
-    transformToImmediatelyInvokedFunctionExpression,
-} from "../utils/transform";
+import { transformToImmediatelyInvokedFunctionExpression } from "../utils/transform";
+import { isOptimizedVarArgSpreadElement } from "./spread";
 
 export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
-
-function getExpressionsBeforeAndAfterFirstSpread(
-    expressions: readonly ts.Expression[]
-): [readonly ts.Expression[], readonly ts.Expression[]] {
-    // [a, b, ...c, d, ...e] --> [a, b] and [...c, d, ...e]
-    const index = expressions.findIndex(ts.isSpreadElement);
-    const hasSpreadElement = index !== -1;
-    const before = hasSpreadElement ? expressions.slice(0, index) : expressions;
-    const after = hasSpreadElement ? expressions.slice(index) : [];
-    return [before, after];
-}
-
-function transformSpreadableExpressionsIntoArrayConcatArguments(
-    context: TransformationContext,
-    expressions: readonly ts.Expression[] | ts.NodeArray<ts.Expression>
-): lua.Expression[] {
-    // [...array, a, b, ...tuple()] --> [ [...array], [a, b], [...tuple()] ]
-    // chunk non-spread arguments together so they don't concat
-    const chunks: ts.Expression[][] = [];
-    for (const [index, expression] of expressions.entries()) {
-        if (ts.isSpreadElement(expression)) {
-            chunks.push([expression]);
-            const next = expressions[index + 1];
-            if (next && !ts.isSpreadElement(next)) {
-                chunks.push([]);
-            }
-        } else {
-            let lastChunk = chunks[chunks.length - 1];
-            if (!lastChunk) {
-                lastChunk = [];
-                chunks.push(lastChunk);
-            }
-            lastChunk.push(expression);
-        }
-    }
-
-    return chunks.map(chunk => wrapInTable(...chunk.map(expression => context.transformExpression(expression))));
-}
 
 export function flattenSpreadExpressions(
     context: TransformationContext,
     expressions: readonly ts.Expression[]
 ): lua.Expression[] {
-    const [preSpreadExpressions, postSpreadExpressions] = getExpressionsBeforeAndAfterFirstSpread(expressions);
-    const transformedPreSpreadExpressions = preSpreadExpressions.map(a => context.transformExpression(a));
+    const transformedExpressions: lua.Expression[] = [];
+    const unwrapInConcat: boolean[] = [];
+    let lastExpressionWithPrecedingStatements = -1;
+    for (let i = 0; i < expressions.length; ++i) {
+        context.pushPrecedingStatements();
+        const transformedExpression = context.transformExpression(expressions[i]);
+        const precedingStatements = context.popPrecedingStatements();
 
-    // Nothing special required
-    if (postSpreadExpressions.length === 0) {
-        return transformedPreSpreadExpressions;
+        // If preceding statements were generated, walk back and cache previous values in temps
+        if (precedingStatements.length > 0) {
+            for (let j = lastExpressionWithPrecedingStatements + 1; j < i; ++j) {
+                let previousExpression = transformedExpressions[j];
+                if (!lua.isLiteral(previousExpression)) {
+                    const tempVar = lua.createIdentifier(context.createTempNameFromExpression(previousExpression));
+                    if (ts.isSpreadElement(expressions[j])) {
+                        previousExpression = wrapInTable(previousExpression);
+                        unwrapInConcat[j] = true;
+                    }
+                    context.addPrecedingStatements([
+                        lua.createVariableDeclarationStatement(tempVar, previousExpression),
+                    ]);
+                    transformedExpressions[j] = lua.cloneIdentifier(tempVar);
+                }
+            }
+            lastExpressionWithPrecedingStatements = i;
+
+            // Bubble up preceding statements
+            context.addPrecedingStatements(precedingStatements);
+        }
+
+        transformedExpressions.push(transformedExpression);
+        unwrapInConcat.push(false);
     }
 
-    // Only one spread element at the end? Will work as expected
-    if (postSpreadExpressions.length === 1) {
-        return [...transformedPreSpreadExpressions, context.transformExpression(postSpreadExpressions[0])];
-    }
-
-    // Use Array.concat and unpack the result of that as the last Expression
-    const concatArguments = transformSpreadableExpressionsIntoArrayConcatArguments(context, postSpreadExpressions);
-    const lastExpression = createUnpackCall(
-        context,
-        transformLuaLibFunction(context, LuaLibFeature.ArrayConcat, undefined, ...concatArguments)
+    // If there are spreads in the middle, use the array concat lib function
+    const firstSpreadIndex = expressions.findIndex(
+        e => ts.isSpreadElement(e) && !isOptimizedVarArgSpreadElement(context, e)
     );
+    if (firstSpreadIndex >= 0 && firstSpreadIndex < expressions.length - 1) {
+        const tbls: lua.Expression[] = [];
+        let tbl: lua.Expression[] = [];
+        for (let i = 0; i < expressions.length; ++i) {
+            let transformedExpression = transformedExpressions[i];
+            if (ts.isSpreadElement(expressions[i])) {
+                if (unwrapInConcat[i]) {
+                    transformedExpression = createUnpackCall(context, transformedExpression);
+                }
+                tbls.push(wrapInTable(...tbl, transformedExpression));
+                tbl = [];
+            } else {
+                tbl.push(transformedExpression);
+            }
+        }
+        if (tbl.length > 0) {
+            tbls.push(wrapInTable(...tbl));
+        }
+        return [
+            createUnpackCall(context, transformLuaLibFunction(context, LuaLibFeature.ArrayConcat, undefined, ...tbls)),
+        ];
+    }
 
-    return [...transformedPreSpreadExpressions, lastExpression];
+    return transformedExpressions;
 }
 
 export function transformArguments(
@@ -127,15 +131,20 @@ function transformElementAccessCall(
     left: ts.PropertyAccessExpression | ts.ElementAccessExpression,
     args: ts.Expression[] | ts.NodeArray<ts.Expression>,
     signature?: ts.Signature
-): ImmediatelyInvokedFunctionParameters {
-    const transformedArguments = transformArguments(context, args, signature, ts.factory.createIdentifier("____self"));
+): { statements: lua.Statement; result: lua.CallExpression } {
+    const selfIdentifier = lua.createIdentifier(context.createTempName("self"));
+    const transformedArguments = transformArguments(
+        context,
+        args,
+        signature,
+        ts.factory.createIdentifier(selfIdentifier.text)
+    );
 
     // Cache left-side if it has effects
     // (function() local ____self = context; return ____self[argument](parameters); end)()
     const argument = ts.isElementAccessExpression(left)
         ? transformElementAccessArgument(context, left)
         : lua.createStringLiteral(left.name.text);
-    const selfIdentifier = lua.createIdentifier("____self");
     const callContext = context.transformExpression(left.expression);
     const selfAssignment = lua.createVariableDeclarationStatement(selfIdentifier, callContext);
     const index = lua.createTableIndexExpression(selfIdentifier, argument);
@@ -174,11 +183,14 @@ export function transformContextualCallExpression(
         }
     } else if (ts.isElementAccessExpression(left) || ts.isPropertyAccessExpression(left)) {
         if (isExpressionWithEvaluationEffect(left.expression)) {
-            return transformToImmediatelyInvokedFunctionExpression(
+            const { statements: selfAssignment, result: callExpression } = transformElementAccessCall(
                 context,
-                () => transformElementAccessCall(context, left, args, signature),
-                node
+                left,
+                args,
+                signature
             );
+            context.addPrecedingStatements([selfAssignment]);
+            return callExpression;
         } else {
             const callContext = context.transformExpression(left.expression);
             const expression = context.transformExpression(left);

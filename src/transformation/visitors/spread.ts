@@ -61,6 +61,19 @@ export function isOptimizedVarArgSpread(context: TransformationContext, symbol: 
     return true;
 }
 
+export function isOptimizedVarArgSpreadElement(context: TransformationContext, spreadElement: ts.SpreadElement) {
+    if (!ts.isIdentifier(spreadElement.expression)) {
+        return false;
+    }
+
+    const symbol = context.checker.getSymbolAtLocation(spreadElement.expression);
+    if (!symbol || !isOptimizedVarArgSpread(context, symbol, spreadElement.expression)) {
+        return false;
+    }
+
+    return true;
+}
+
 // TODO: Currently it's also used as an array member
 export const transformSpreadElement: FunctionVisitor<ts.SpreadElement> = (node, context) => {
     if (ts.isIdentifier(node.expression)) {

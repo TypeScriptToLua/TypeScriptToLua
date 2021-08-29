@@ -53,8 +53,10 @@ function isRestParameterReferenced(identifier: lua.Identifier, scope: Scope): bo
 
 export function transformFunctionBodyContent(context: TransformationContext, body: ts.ConciseBody): lua.Statement[] {
     if (!ts.isBlock(body)) {
+        context.pushPrecedingStatements();
         const returnStatement = transformExpressionBodyToReturnStatement(context, body);
-        return [returnStatement];
+        const precedingStatements = context.popPrecedingStatements();
+        return [...precedingStatements, returnStatement];
     }
 
     const bodyStatements = performHoisting(context, context.transformStatements(body.statements));
@@ -249,10 +251,19 @@ export function transformFunctionLikeDeclaration(
                 // the function first to determine if it's self-referencing. Fortunately, this does not cause issues
                 // with var-arg optimization because the IIFE is just wrapping another function which will already push
                 // another scope.
-                return createImmediatelyInvokedFunctionExpression(
+                const scope = pushScope(context, ScopeType.Block);
+                let statements: lua.Statement[] = [
+                    lua.createVariableDeclarationStatement(nameIdentifier, functionExpression),
+                ];
+                let result: lua.Expression = lua.cloneIdentifier(nameIdentifier);
+                [statements, result] = createImmediatelyInvokedFunctionExpression(
+                    scope,
                     [lua.createVariableDeclarationStatement(nameIdentifier, functionExpression)],
                     lua.cloneIdentifier(nameIdentifier)
                 );
+                popScope(context);
+                context.addPrecedingStatements(statements);
+                return result;
             }
         }
     }

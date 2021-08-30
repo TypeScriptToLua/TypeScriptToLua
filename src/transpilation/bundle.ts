@@ -16,12 +16,13 @@ const requireOverride = `
 local ____modules = {}
 local ____moduleCache = {}
 local ____originalRequire = require
-local function require(file)
+local function require(file, ...)
     if ____moduleCache[file] then
         return ____moduleCache[file].value
     end
     if ____modules[file] then
-        ____moduleCache[file] = { value = ____modules[file]() }
+        local module = ____modules[file]
+        ____moduleCache[file] = { value = (select("#", ...) > 0) and module(...) or module(file) }
         return ____moduleCache[file].value
     else
         if ____originalRequire then
@@ -55,7 +56,7 @@ export function getBundleResult(program: ts.Program, files: ProcessedFile[]): [t
     const moduleTable = createModuleTableNode(moduleTableEntries);
 
     // return require("<entry module path>")
-    const entryPoint = `return require(${createModulePath(entryModule, program)})\n`;
+    const entryPoint = `return require(${createModulePath(entryModule, program)}, ...)\n`;
 
     const sourceChunks = [requireOverride, moduleTable, entryPoint];
 
@@ -78,7 +79,7 @@ export function getBundleResult(program: ts.Program, files: ProcessedFile[]): [t
 }
 
 function moduleSourceNode({ code, sourceMapNode }: ProcessedFile, modulePath: string): SourceNode {
-    const tableEntryHead = `[${modulePath}] = function() `;
+    const tableEntryHead = `[${modulePath}] = function(...) `;
     const tableEntryTail = " end,\n";
 
     return joinSourceChunks([tableEntryHead, sourceMapNode ?? code, tableEntryTail]);

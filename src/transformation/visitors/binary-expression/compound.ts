@@ -87,7 +87,9 @@ export function transformCompoundAssignment(
     isPostfix: boolean
 ): ImmediatelyInvokedFunctionParameters {
     const left = cast(context.transformExpression(lhs), lua.isAssignmentLeftHandSideExpression);
+    context.pushPrecedingStatements();
     const right = context.transformExpression(rhs);
+    const rightPrecedingStatements = context.popPrecedingStatements();
 
     const [objExpression, indexExpression] = parseAccessExpressionWithEvaluationEffects(context, lhs);
     if (objExpression && indexExpression) {
@@ -118,6 +120,7 @@ export function transformCompoundAssignment(
             assignStatement = lua.createAssignmentStatement(accessExpression, tmp);
         }
         // return ____tmp
+        context.addPrecedingStatements(rightPrecedingStatements);
         return { statements: [objAndIndexDeclaration, tmpDeclaration, assignStatement], result: tmp };
     } else if (isPostfix) {
         // Postfix expressions need to cache original value in temp
@@ -128,6 +131,7 @@ export function transformCompoundAssignment(
         const tmpDeclaration = lua.createVariableDeclarationStatement(tmpIdentifier, left);
         const operatorExpression = transformBinaryOperation(context, tmpIdentifier, right, operator, expression);
         const assignStatements = transformAssignment(context, lhs, operatorExpression);
+        context.addPrecedingStatements(rightPrecedingStatements);
         return { statements: [tmpDeclaration, ...assignStatements], result: tmpIdentifier };
     } else if (ts.isPropertyAccessExpression(lhs) || ts.isElementAccessExpression(lhs)) {
         // Simple property/element access expressions need to cache in temp to avoid double-evaluation
@@ -142,17 +146,19 @@ export function transformCompoundAssignment(
         if (isSetterSkippingCompoundAssignmentOperator(operator)) {
             const statements = [
                 tmpDeclaration,
-                ...transformSetterSkippingCompoundAssignment(tmpIdentifier, operator, right),
+                ...transformSetterSkippingCompoundAssignment(tmpIdentifier, operator, right, rightPrecedingStatements),
             ];
             return { statements, result: tmpIdentifier };
         }
 
+        context.addPrecedingStatements(rightPrecedingStatements);
         return { statements: [tmpDeclaration, ...assignStatements], result: tmpIdentifier };
     } else {
         // Simple expressions
         // ${left} = ${right}; return ${right}
         const operatorExpression = transformBinaryOperation(context, left, right, operator, expression);
         const statements = transformAssignment(context, lhs, operatorExpression);
+        context.addPrecedingStatements(rightPrecedingStatements);
         return { statements, result: left };
     }
 }
@@ -181,7 +187,9 @@ export function transformCompoundAssignmentStatement(
     operator: CompoundAssignmentToken
 ): lua.Statement[] {
     const left = cast(context.transformExpression(lhs), lua.isAssignmentLeftHandSideExpression);
+    context.pushPrecedingStatements();
     const right = context.transformExpression(rhs);
+    const rightPrecedingStatements = context.popPrecedingStatements();
 
     const [objExpression, indexExpression] = parseAccessExpressionWithEvaluationEffects(context, lhs);
     if (objExpression && indexExpression) {
@@ -199,21 +207,29 @@ export function transformCompoundAssignmentStatement(
         if (isSetterSkippingCompoundAssignmentOperator(operator)) {
             return [
                 objAndIndexDeclaration,
-                ...transformSetterSkippingCompoundAssignment(accessExpression, operator, right, node),
+                ...transformSetterSkippingCompoundAssignment(
+                    accessExpression,
+                    operator,
+                    right,
+                    rightPrecedingStatements,
+                    node
+                ),
             ];
         }
 
         const operatorExpression = transformBinaryOperation(context, accessExpression, right, operator, node);
         const assignStatement = lua.createAssignmentStatement(accessExpression, operatorExpression);
+        context.addPrecedingStatements(rightPrecedingStatements);
         return [objAndIndexDeclaration, assignStatement];
     } else {
         if (isSetterSkippingCompoundAssignmentOperator(operator)) {
-            return transformSetterSkippingCompoundAssignment(left, operator, right, node);
+            return transformSetterSkippingCompoundAssignment(left, operator, right, rightPrecedingStatements, node);
         }
 
         // Simple statements
         // ${left} = ${left} ${replacementOperator} ${right}
         const operatorExpression = transformBinaryOperation(context, left, right, operator, node);
+        context.addPrecedingStatements(rightPrecedingStatements);
         return transformAssignment(context, lhs, operatorExpression);
     }
 }
@@ -239,6 +255,7 @@ function transformSetterSkippingCompoundAssignment(
     lhs: lua.AssignmentLeftHandSideExpression,
     operator: SetterSkippingCompoundAssignmentOperator,
     right: lua.Expression,
+    rightPrecedingStatements: lua.Statement[],
     node?: ts.Node
 ): lua.Statement[] {
     // These assignments have the form 'if x then y = z', figure out what condition x is first.
@@ -248,7 +265,7 @@ function transformSetterSkippingCompoundAssignment(
         condition = lhs;
     } else if (operator === ts.SyntaxKind.BarBarToken) {
         condition = lua.createUnaryExpression(lhs, lua.SyntaxKind.NotOperator);
-    } else if (operator === ts.SyntaxKind.QuestionQuestionToken) {
+    } else if (isSetterSkippingCompoundAssignmentOperator(operator)) {
         condition = lua.createBinaryExpression(lhs, lua.createNilLiteral(), lua.SyntaxKind.EqualityOperator);
     } else {
         assertNever(operator);
@@ -256,6 +273,11 @@ function transformSetterSkippingCompoundAssignment(
 
     // if condition then lhs = rhs end
     return [
-        lua.createIfStatement(condition, lua.createBlock([lua.createAssignmentStatement(lhs, right)]), undefined, node),
+        lua.createIfStatement(
+            condition,
+            lua.createBlock([...rightPrecedingStatements, lua.createAssignmentStatement(lhs, right)]),
+            undefined,
+            node
+        ),
     ];
 }

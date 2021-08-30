@@ -152,7 +152,7 @@ export const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (
 
         case ts.SyntaxKind.QuestionQuestionToken: {
             const expression = createShortCircuitBinaryExpression(context, node, i =>
-                lua.createBinaryExpression(i, lua.createNilLiteral(), lua.SyntaxKind.InequalityOperator)
+                lua.createBinaryExpression(i, lua.createNilLiteral(), lua.SyntaxKind.EqualityOperator)
             );
             if (expression) {
                 return expression;

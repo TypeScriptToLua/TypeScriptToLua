@@ -186,8 +186,10 @@ export function createLocalOrExportedOrGlobalDeclaration(
             if (scope.type === ScopeType.Switch || (!isFunctionDeclaration && hasMultipleReferences(scope, lhs))) {
                 // Split declaration and assignment of identifiers that reference themselves in their declaration
                 declaration = lua.createVariableDeclarationStatement(lhs, undefined, tsOriginal);
-                context.addPrecedingStatements([declaration], true);
-                precededDeclaration = true;
+                if (scope.type !== ScopeType.Switch) {
+                    context.addPrecedingStatements([declaration], true);
+                    precededDeclaration = true;
+                }
                 if (rhs) {
                     assignment = lua.createAssignmentStatement(lhs, rhs, tsOriginal);
                 }

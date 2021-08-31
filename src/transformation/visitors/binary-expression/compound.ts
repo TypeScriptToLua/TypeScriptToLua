@@ -158,6 +158,14 @@ export function transformCompoundAssignment(
         // ${left} = ${right}; return ${right}
         const operatorExpression = transformBinaryOperation(context, left, right, operator, expression);
         const statements = transformAssignment(context, lhs, operatorExpression);
+
+        if (rightPrecedingStatements.length > 0 && isSetterSkippingCompoundAssignmentOperator(operator)) {
+            return {
+                statements: transformSetterSkippingCompoundAssignment(left, operator, right, rightPrecedingStatements),
+                result: left,
+            };
+        }
+
         context.addPrecedingStatements(rightPrecedingStatements);
         return { statements, result: left };
     }

@@ -102,11 +102,25 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
                             condition ?? lua.createBooleanLiteral(false)
                         )
                     );
+
+                    // Clear condition ot ensure it is not evaluated twice
+                    condition = undefined;
                     isInitialCondition = false;
                 }
 
-                // Skip default clause if is the last clause, as it will fallthrough to the final default below
-                if (i === clauses.length - 1) continue;
+                // Allow default to fallthrough to final default clause
+                if (i === clauses.length - 1) {
+                    // Evaluate the final condition that we may be skipping
+                    if (condition) {
+                        statements.push(
+                            lua.createAssignmentStatement(
+                                conditionVariable,
+                                lua.createBinaryExpression(conditionVariable, condition, lua.SyntaxKind.OrOperator)
+                            )
+                        );
+                    }
+                    continue;
+                }
             }
 
             // Transform the clause and append the final break statement if necessary

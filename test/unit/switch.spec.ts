@@ -416,6 +416,54 @@ test.each([0, 1, 2, 3, 4])("switch handles side-effects (%p)", inp => {
     `.expectToMatchJsResult();
 });
 
+test.each([1, 2])("switch handles side-effects with empty fallthrough (%p)", inp => {
+    util.testFunction`
+        const out = [];
+
+        let y = 0;
+        function foo() {
+            return y++;
+        }
+
+        let x = 0 as number;
+        switch (x) {
+            // empty fallthrough 1 or many times
+            ${new Array(inp).fill("case foo():").join("\n")}
+            default:
+                out.push("default");
+            
+        }
+
+        out.push(y);
+        return out;
+    `.expectToMatchJsResult();
+});
+
+test.each([1, 2])("switch handles side-effects with empty fallthrough (preceding clause) (%p)", inp => {
+    util.testFunction`
+        const out = [];
+
+        let y = 0;
+        function foo() {
+            return y++;
+        }
+
+        let x = 0 as number;
+        switch (x) {
+            case 1:
+                out.push(1);
+            // empty fallthrough 1 or many times
+            ${new Array(inp).fill("case foo():").join("\n")}
+            default:
+                out.push("default");
+            
+        }
+
+        out.push(y);
+        return out;
+    `.expectToMatchJsResult();
+});
+
 test.each([0, 1, 2, 3, 4])("switch handles async side-effects (%p)", inp => {
     util.testFunction`
         (async () => {

@@ -65,8 +65,6 @@ describe("bundle with source maps", () => {
         expect(result.myNumber).toEqual(3 * 4 * (5 + 6));
     });
 
-    // Verify exported module by executing
-    // Use an empty TS string because we already transpiled the TS project
     test("sourceMapTraceback saves correct sourcemap", () => {
         const code = {
             index: fs.readFileSync(path.join(projectDir, "index.ts"), "utf8"),

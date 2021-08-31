@@ -529,7 +529,7 @@ class AccessorTestBuilder extends TestBuilder {
     protected accessor = "";
 
     protected getLuaCodeWithWrapper(code: string) {
-        return `return (function()\n${code}\nend)()${this.accessor}`;
+        return `return (function(...)\n${code}\nend)()${this.accessor}`;
     }
 
     @memoize

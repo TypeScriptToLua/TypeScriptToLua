@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "target": "esnext",
+        "lib": ["esnext"],
+        "types": ["lua-types/5.3"],
+        "rootDir": "."
+    },
+    "tstl": {
+        "luaBundle": "bundle.lua",
+        "luaBundleEntry": "index.ts",
+        "sourceMapTraceback": true
+    },
+    "include": ["."]
+}

@@ -28,6 +28,15 @@ test.each([
     `.expectToMatchJsResult();
 });
 
+test.each([true, false])("ternary operator (%p)", condition => {
+    util.testFunction`
+        let a = 0, b = 0;
+        let condition: boolean = ${condition};
+        const c = condition ? a++ : b++;
+        return [a, b, c];
+    `.expectToMatchJsResult();
+});
+
 describe("execution order", () => {
     const sequenceTests = [
         "i++, i",
@@ -80,6 +89,62 @@ describe("execution order", () => {
             (Object.keys(result) as Array<number | string>).forEach(
                 key => { result[key.toString()] = literal[key]; }
             );
+            return result;
+        `.expectToMatchJsResult();
+    });
+
+    test("comma operator", () => {
+        util.testFunction`
+            let a = 0, b = 0, c = 0;
+            const d = (a++, b += a, c += b);
+            return [a, b, c, d];
+        `.expectToMatchJsResult();
+    });
+});
+
+describe("loop expressions", () => {
+    test("while loop", () => {
+        util.testFunction`
+            let i = 0, j = 0;
+            while (i++ < 5) {
+                ++j;
+                if (j >= 10) {
+                    break;
+                }
+            }
+            return i;
+        `.expectToMatchJsResult();
+    });
+
+    test("for loop", () => {
+        util.testFunction`
+            let i: number, j: number;
+            for (i = 0, j = 0; i++ < 5 && j < 10; ++j) {}
+            return i;
+        `.expectToMatchJsResult();
+    });
+
+    test("do while loop", () => {
+        util.testFunction`
+            let i = 0, j = 0;
+            do {
+                ++j;
+                if (j >= 10) {
+                    break;
+                }
+            } while (i++ < 5);
+            return i;
+        `.expectToMatchJsResult();
+    });
+
+    test("do while loop scoping", () => {
+        util.testFunction`
+            let x = 0;
+            let result = 0;
+            do {
+                let x = -10;
+                ++result;
+            } while (x++ >= 0 && result < 2);
             return result;
         `.expectToMatchJsResult();
     });

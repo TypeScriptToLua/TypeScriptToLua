@@ -149,3 +149,15 @@ describe("loop expressions", () => {
         `.expectToMatchJsResult();
     });
 });
+
+test("switch scoping", () => {
+    util.testFunction`
+        let i = 0;
+        let x = 0;
+        switch (x) {
+            case i++:
+                return i;
+            case i++:
+        }
+    `.expectToMatchJsResult();
+});

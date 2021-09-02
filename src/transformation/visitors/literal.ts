@@ -9,7 +9,7 @@ import { createSafeName, hasUnsafeIdentifierName, hasUnsafeSymbolName } from "..
 import { getSymbolIdOfSymbol, trackSymbolReference } from "../utils/symbols";
 import { isArrayType } from "../utils/typescript";
 import { transformFunctionLikeDeclaration } from "./function";
-import { flattenSpreadExpressions } from "./call";
+import { transformExpressionList } from "./expression-list";
 import { findMultiAssignmentViolations } from "./language-extensions/multi";
 import { formatJSXStringValueLiteral } from "./jsx/jsx";
 
@@ -200,7 +200,7 @@ const transformArrayLiteralExpression: FunctionVisitor<ts.ArrayLiteralExpression
     const filteredElements = expression.elements.map(e =>
         ts.isOmittedExpression(e) ? ts.factory.createIdentifier("undefined") : e
     );
-    const values = flattenSpreadExpressions(context, filteredElements).map(e => lua.createTableFieldExpression(e));
+    const values = transformExpressionList(context, filteredElements).map(e => lua.createTableFieldExpression(e));
 
     return lua.createTableExpression(values, expression);
 };

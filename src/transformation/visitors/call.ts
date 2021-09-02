@@ -5,7 +5,7 @@ import { FunctionVisitor, TransformationContext } from "../context";
 import { AnnotationKind, getTypeAnnotations, isTupleReturnCall } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
 import { ContextType, getDeclarationContextType } from "../utils/function-context";
-import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
+import { wrapInTable } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isValidLuaIdentifier } from "../utils/safe-names";
 import { isExpressionWithEvaluationEffect } from "../utils/typescript";
@@ -27,77 +27,9 @@ import {
 } from "./language-extensions/table";
 import { annotationRemoved, invalidTableDeleteExpression, invalidTableSetExpression } from "../utils/diagnostics";
 import { transformToImmediatelyInvokedFunctionExpression } from "../utils/transform";
-import { isOptimizedVarArgSpreadElement } from "./spread";
+import { transformExpressionList } from "./expression-list";
 
 export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
-
-export function flattenSpreadExpressions(
-    context: TransformationContext,
-    expressions: readonly ts.Expression[]
-): lua.Expression[] {
-    const transformedExpressions: lua.Expression[] = [];
-    const unwrapInConcat: boolean[] = [];
-    let lastExpressionWithPrecedingStatements = -1;
-    for (let i = 0; i < expressions.length; ++i) {
-        context.pushPrecedingStatements();
-        const transformedExpression = context.transformExpression(expressions[i]);
-        const precedingStatements = context.popPrecedingStatements();
-
-        // If preceding statements were generated, walk back and cache previous values in temps
-        if (precedingStatements.length > 0) {
-            for (let j = lastExpressionWithPrecedingStatements + 1; j < i; ++j) {
-                let previousExpression = transformedExpressions[j];
-                if (!lua.isLiteral(previousExpression)) {
-                    const tempVar = lua.createIdentifier(context.createTempNameFromExpression(previousExpression));
-                    if (ts.isSpreadElement(expressions[j])) {
-                        previousExpression = wrapInTable(previousExpression);
-                        unwrapInConcat[j] = true;
-                    }
-                    context.addPrecedingStatements([
-                        lua.createVariableDeclarationStatement(tempVar, previousExpression),
-                    ]);
-                    transformedExpressions[j] = lua.cloneIdentifier(tempVar);
-                }
-            }
-            lastExpressionWithPrecedingStatements = i;
-
-            // Bubble up preceding statements
-            context.addPrecedingStatements(precedingStatements);
-        }
-
-        transformedExpressions.push(transformedExpression);
-        unwrapInConcat.push(false);
-    }
-
-    // If there are spreads in the middle, use the array concat lib function
-    const firstSpreadIndex = expressions.findIndex(
-        e => ts.isSpreadElement(e) && !isOptimizedVarArgSpreadElement(context, e)
-    );
-    if (firstSpreadIndex >= 0 && firstSpreadIndex < expressions.length - 1) {
-        const tbls: lua.Expression[] = [];
-        let tbl: lua.Expression[] = [];
-        for (let i = 0; i < expressions.length; ++i) {
-            let transformedExpression = transformedExpressions[i];
-            if (ts.isSpreadElement(expressions[i])) {
-                if (unwrapInConcat[i]) {
-                    transformedExpression = createUnpackCall(context, transformedExpression);
-                }
-                tbls.push(wrapInTable(...tbl, transformedExpression));
-                tbl = [];
-            } else {
-                tbl.push(transformedExpression);
-            }
-        }
-        if (tbl.length > 0) {
-            tbls.push(wrapInTable(...tbl));
-        }
-        return [
-            createUnpackCall(context, transformLuaLibFunction(context, LuaLibFeature.ArrayConcat, undefined, ...tbls)),
-        ];
-    }
-
-    return transformedExpressions;
-}
 
 export function transformArguments(
     context: TransformationContext,
@@ -105,7 +37,7 @@ export function transformArguments(
     signature?: ts.Signature,
     callContext?: ts.Expression
 ): lua.Expression[] {
-    const parameters = flattenSpreadExpressions(context, params);
+    const parameters = transformExpressionList(context, params);
 
     // Add context as first param if present
     if (callContext) {

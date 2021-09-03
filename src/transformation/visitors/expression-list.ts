@@ -43,7 +43,7 @@ function processPrecedingStatements(
             continue;
         }
 
-        // Strip 'unpack' from spreads - it will be added back later in buildArrayConcatCall
+        // Strip 'unpack' from spreads to store in a temp - it will be added back in buildArrayConcatCall, if needed
         let expression = info.transformedExpression;
         if (info.isSpread) {
             assert(lua.isCallExpression(expression) && expression.params.length === 1);

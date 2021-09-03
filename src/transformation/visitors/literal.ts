@@ -144,12 +144,17 @@ const transformObjectLiteralExpressionOrJsxAttributes: FunctionVisitor<ts.Object
             for (let i = 0; i < properties.length; ++i) {
                 const property = properties[i];
 
+                // Bubble up preceding statements
                 const propertyPrecedingStatements = precedingStatements[i];
                 context.addPrecedingStatements(propertyPrecedingStatements);
 
+                // Ignore expressions after the last one the generated preceding statements
                 if (i >= lastPrecedingStatementsIndex) continue;
 
                 if (lua.isTableFieldExpression(property)) {
+                    // Skip fields whose values are:
+                    // - literal values that couldn't be affected by preceding statements
+                    // - temp identifiers which are results from preceding statements
                     if (
                         !lua.isLiteral(property.value) &&
                         !(propertyPrecedingStatements.length > 0 && lua.isIdentifier(property.value))

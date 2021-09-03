@@ -175,3 +175,30 @@ test("else if", () => {
         return i;
     `.expectToMatchJsResult();
 });
+
+test("template expression", () => {
+    util.testFunction`
+        let i = 0;
+        return \`\${i} - \${i++}\`
+    `.expectToMatchJsResult();
+});
+
+test("tagged template literal", () => {
+    util.testFunction`
+        function func(strings: TemplateStringsArray, ...expressions: any[]) {
+            return { strings: [...strings], raw: strings.raw, expressions };
+        }
+
+        let i = 0;
+        return func\`hello \${i} \${i++}\`;
+    `.expectToMatchJsResult();
+});
+
+test("compound access", () => {
+    util.testFunction`
+        let i = 0;
+        const a = [1, 2, 3];
+        a[i] = i++;
+        return a[0];
+    `.expectToMatchJsResult();
+});

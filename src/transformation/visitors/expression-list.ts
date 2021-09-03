@@ -16,27 +16,34 @@ function isPrecedingStatementTemp(info: ExpressionListInfo) {
     return info.precedingStatements.length > 0 && lua.isIdentifier(info.transformedExpression);
 }
 
-function cacheExpressionsInTemps(
+function processPrecedingStatements(
     context: TransformationContext,
     expressionInfo: ExpressionListInfo[],
     lastPrecedingStatementsIndex: number
 ) {
+    if (lastPrecedingStatementsIndex < 0) {
+        return;
+    }
+
     for (let i = 0; i < expressionInfo.length; ++i) {
         const info = expressionInfo[i];
 
         // Bubble up preceding statements
         context.addPrecedingStatements(info.precedingStatements);
 
-        // Only cache expressions in front of the last one that created preceding statements
-        if (i >= lastPrecedingStatementsIndex) continue;
+        // Cache expression in temp to maintain execution order, unless:
+        // - Expression is after the last one in the list which generated preceding statements
+        // - Expression is a literal that wouldn't be affected by preceding statements (includes optimized vararg '...')
+        // - Expression is a temp identifier which is a result of preceding statements
+        if (
+            i >= lastPrecedingStatementsIndex ||
+            lua.isLiteral(info.transformedExpression) ||
+            isPrecedingStatementTemp(info)
+        ) {
+            continue;
+        }
 
-        // Simple literals can't be affected by anything, so no need to cache them
-        if (lua.isLiteral(info.transformedExpression)) continue;
-
-        // If expression is just a temp result for other preceding statements, no need to cache
-        if (isPrecedingStatementTemp(info)) continue;
-
-        // Strip 'unpack' from spreads - we'll add it back later in buildArrayConcatCall
+        // Strip 'unpack' from spreads - it will be added back later in buildArrayConcatCall
         let expression = info.transformedExpression;
         if (info.isSpread) {
             assert(lua.isCallExpression(expression) && expression.params.length === 1);
@@ -45,7 +52,7 @@ function cacheExpressionsInTemps(
         }
 
         // Inject temp assignment in correct place in preceding statements
-        const tempVar = lua.createIdentifier(context.createTempNameFromExpression(info.transformedExpression));
+        const tempVar = context.createTempForLuaExpression(info.transformedExpression);
         context.addPrecedingStatements([lua.createVariableDeclarationStatement(tempVar, expression)]);
         info.transformedExpression = lua.cloneIdentifier(tempVar);
     }
@@ -58,7 +65,7 @@ function buildArrayConcatCall(context: TransformationContext, expressionInfo: Ex
         if (info.isSpread) {
             if (info.needsUnpack) {
                 if (tbl.length === 0) {
-                    tbls.push(info.transformedExpression);
+                    tbls.push(info.transformedExpression); // Optimize '{table.unpack(x)}' to just 'x'
                 } else {
                     tbls.push(wrapInTable(...tbl, createUnpackCall(context, info.transformedExpression)));
                 }
@@ -92,10 +99,8 @@ export function transformExpressionList(
     };
     const expressionInfo = expressions.map(transformListExpression);
 
-    // If there are preceding statements, cache expressions in temps to maintain execution order
-    if (lastPrecedingStatementsIndex >= 0) {
-        cacheExpressionsInTemps(context, expressionInfo, lastPrecedingStatementsIndex);
-    }
+    // Bubble up preceding statements, generating temps when needed to maintain execution order
+    processPrecedingStatements(context, expressionInfo, lastPrecedingStatementsIndex);
 
     // If there are spreads in the middle, use the array concat lib function
     const firstSpreadIndex = expressionInfo.findIndex(i => i.isSpread);

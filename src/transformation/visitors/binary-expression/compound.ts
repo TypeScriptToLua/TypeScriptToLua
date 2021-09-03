@@ -2,10 +2,6 @@ import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { cast, assertNever } from "../../../utils";
 import { TransformationContext } from "../../context";
-import {
-    ImmediatelyInvokedFunctionParameters,
-    transformToImmediatelyInvokedFunctionExpression,
-} from "../../utils/transform";
 import { isArrayType, isExpressionWithEvaluationEffect } from "../../utils/typescript";
 import { transformBinaryOperation } from "../binary-expression";
 import { transformAssignment } from "./assignments";
@@ -85,7 +81,7 @@ export function transformCompoundAssignment(
     rhs: ts.Expression,
     operator: CompoundAssignmentToken,
     isPostfix: boolean
-): ImmediatelyInvokedFunctionParameters {
+) {
     const left = cast(context.transformExpression(lhs), lua.isAssignmentLeftHandSideExpression);
     context.pushPrecedingStatements();
     const right = context.transformExpression(rhs);
@@ -95,15 +91,15 @@ export function transformCompoundAssignment(
     if (objExpression && indexExpression) {
         // Complex property/element accesses need to cache object/index expressions to avoid repeating side-effects
         // local __obj, __index = ${objExpression}, ${indexExpression};
-        const obj = lua.createIdentifier("____obj");
-        const index = lua.createIdentifier("____index");
+        const obj = context.createTempForExpression(objExpression);
+        const index = context.createTempForExpression(indexExpression);
         const objAndIndexDeclaration = lua.createVariableDeclarationStatement(
             [obj, index],
             [context.transformExpression(objExpression), context.transformExpression(indexExpression)]
         );
         const accessExpression = lua.createTableIndexExpression(obj, index);
 
-        const tmp = lua.createIdentifier("____tmp");
+        const tmp = context.createTempForLuaExpression(left);
         let tmpDeclaration: lua.VariableDeclarationStatement;
         let assignStatement: lua.AssignmentStatement;
         if (isPostfix) {
@@ -127,7 +123,7 @@ export function transformCompoundAssignment(
         // local ____tmp = ${left};
         // ${left} = ____tmp ${replacementOperator} ${right};
         // return ____tmp
-        const tmpIdentifier = lua.createIdentifier("____tmp");
+        const tmpIdentifier = context.createTempForLuaExpression(left);
         const tmpDeclaration = lua.createVariableDeclarationStatement(tmpIdentifier, left);
         const operatorExpression = transformBinaryOperation(context, tmpIdentifier, right, operator, expression);
         const assignStatements = transformAssignment(context, lhs, operatorExpression);
@@ -138,7 +134,7 @@ export function transformCompoundAssignment(
         // local ____tmp = ${left} ${replacementOperator} ${right};
         // ${left} = ____tmp;
         // return ____tmp
-        const tmpIdentifier = lua.createIdentifier("____tmp");
+        const tmpIdentifier = context.createTempForLuaExpression(left);
         const operatorExpression = transformBinaryOperation(context, left, right, operator, expression);
         const tmpDeclaration = lua.createVariableDeclarationStatement(tmpIdentifier, operatorExpression);
         const assignStatements = transformAssignment(context, lhs, tmpIdentifier);
@@ -180,11 +176,9 @@ export function transformCompoundAssignmentExpression(
     operator: CompoundAssignmentToken,
     isPostfix: boolean
 ): lua.Expression {
-    return transformToImmediatelyInvokedFunctionExpression(
-        context,
-        () => transformCompoundAssignment(context, expression, lhs, rhs, operator, isPostfix),
-        expression
-    );
+    const { statements, result } = transformCompoundAssignment(context, expression, lhs, rhs, operator, isPostfix);
+    context.addPrecedingStatements(Array.isArray(statements) ? statements : [statements]);
+    return result;
 }
 
 export function transformCompoundAssignmentStatement(

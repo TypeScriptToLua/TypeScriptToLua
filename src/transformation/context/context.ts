@@ -140,22 +140,33 @@ export class TransformationContext {
         }
     }
 
-    public createTempName(prefix = "") {
-        return `____${prefix}${this.nextTempId++}`;
+    public createTempName(prefix = "temp") {
+        return `____${prefix}_${this.nextTempId++}`;
     }
 
-    public createTempNameFromExpression(expression: lua.Expression) {
+    public createTempForLuaExpression(expression: lua.Expression) {
         let name: string | undefined;
         if (lua.isStringLiteral(expression)) {
             name = expression.value;
         } else if (lua.isIdentifier(expression)) {
             name = expression.text;
         }
-        if (!name) {
-            name = "temp";
-        } else if (!isValidLuaIdentifier(name)) {
+        if (name && !isValidLuaIdentifier(name)) {
             name = fixInvalidLuaIdentifier(name);
         }
-        return `____${name}${this.nextTempId++}`;
+        const identifier = lua.createIdentifier(this.createTempName(name));
+        lua.setNodePosition(identifier, lua.getOriginalPos(expression));
+        return identifier;
+    }
+
+    public createTempForExpression(expression: ts.Expression) {
+        let name: string | undefined;
+        if (ts.isStringLiteral(expression) || ts.isIdentifier(expression)) {
+            name = expression.text;
+            if (!isValidLuaIdentifier(name)) {
+                name = fixInvalidLuaIdentifier(name);
+            }
+        }
+        return lua.createIdentifier(this.createTempName(name), expression);
     }
 }

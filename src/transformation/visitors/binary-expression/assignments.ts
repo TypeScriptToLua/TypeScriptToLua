@@ -11,10 +11,6 @@ import { transformElementAccessArgument } from "../access";
 import { isArrayLength, transformDestructuringAssignment } from "./destructuring-assignments";
 import { isMultiReturnCall } from "../language-extensions/multi";
 import { popScope, pushScope, ScopeType } from "../../utils/scope";
-import {
-    ImmediatelyInvokedFunctionParameters,
-    transformToImmediatelyInvokedFunctionExpression,
-} from "../../utils/transform";
 import { notAllowedOptionalAssignment } from "../../utils/diagnostics";
 
 export function transformAssignmentLeftHandSideExpression(
@@ -78,8 +74,8 @@ export function transformAssignment(
 function transformDestructuredAssignmentExpression(
     context: TransformationContext,
     expression: ts.DestructuringAssignment
-): ImmediatelyInvokedFunctionParameters {
-    const rootIdentifier = lua.createAnonymousIdentifier(expression.left);
+) {
+    const rootIdentifier = context.createTempForExpression(expression.right);
 
     let right = context.transformExpression(expression.right);
     if (isMultiReturnCall(context, expression.right)) {
@@ -115,11 +111,9 @@ export function transformAssignmentExpression(
     }
 
     if (isDestructuringAssignment(expression)) {
-        return transformToImmediatelyInvokedFunctionExpression(
-            context,
-            () => transformDestructuredAssignmentExpression(context, expression),
-            expression
-        );
+        const { statements, result } = transformDestructuredAssignmentExpression(context, expression);
+        context.addPrecedingStatements(statements);
+        return result;
     }
 
     if (ts.isPropertyAccessExpression(expression.left) || ts.isElementAccessExpression(expression.left)) {
@@ -153,18 +147,12 @@ export function transformAssignmentExpression(
         popScope(context);
         return lua.createCallExpression(iife, args, expression);
     } else {
-        return transformToImmediatelyInvokedFunctionExpression(
-            context,
-            () => {
-                // Simple assignment
-                // (function() ${left} = ${right}; return ${left} end)()
-                const left = context.transformExpression(expression.left);
-                const right = context.transformExpression(expression.right);
-                const statements = transformAssignment(context, expression.left, right);
-                return { statements, result: left };
-            },
-            expression
-        );
+        // Simple assignment
+        // ${left} = ${right}; return ${left}
+        const left = context.transformExpression(expression.left);
+        const right = context.transformExpression(expression.right);
+        context.addPrecedingStatements(transformAssignment(context, expression.left, right));
+        return left;
     }
 }
 

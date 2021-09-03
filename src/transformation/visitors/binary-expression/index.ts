@@ -86,7 +86,7 @@ function createShortCircuitBinaryExpression(
     const rhs = context.transformExpression(node.right);
     const rightPrecedingStatements = context.popPrecedingStatements();
     if (rightPrecedingStatements.length > 0) {
-        const result = lua.createIdentifier(context.createTempNameFromExpression(lhs));
+        const result = context.createTempForLuaExpression(lhs);
         const assignmentStatement = lua.createVariableDeclarationStatement(result, lhs);
         const ifStatement = lua.createIfStatement(
             createCondition(lua.cloneIdentifier(result)),

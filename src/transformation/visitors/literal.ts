@@ -154,14 +154,14 @@ const transformObjectLiteralExpressionOrJsxAttributes: FunctionVisitor<ts.Object
                         !lua.isLiteral(property.value) &&
                         !(propertyPrecedingStatements.length > 0 && lua.isIdentifier(property.value))
                     ) {
-                        const tempVar = lua.createIdentifier(context.createTempNameFromExpression(property.value));
+                        const tempVar = context.createTempForLuaExpression(property.value);
                         context.addPrecedingStatements([
                             lua.createVariableDeclarationStatement(tempVar, property.value),
                         ]);
                         property.value = lua.cloneIdentifier(tempVar);
                     }
                 } else {
-                    const tempVar = lua.createIdentifier(context.createTempNameFromExpression(property));
+                    const tempVar = context.createTempForLuaExpression(property);
                     context.addPrecedingStatements([lua.createVariableDeclarationStatement(tempVar, property)]);
                     transformedProperties[i] = lua.cloneIdentifier(tempVar);
                 }

@@ -26,7 +26,6 @@ import {
     transformTableSetExpression,
 } from "./language-extensions/table";
 import { annotationRemoved, invalidTableDeleteExpression, invalidTableSetExpression } from "../utils/diagnostics";
-import { transformToImmediatelyInvokedFunctionExpression } from "../utils/transform";
 import { transformExpressionList } from "./expression-list";
 
 export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
@@ -204,11 +203,8 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
 
     if (isTableDeleteCall(context, node)) {
         context.diagnostics.push(invalidTableDeleteExpression(node));
-        return transformToImmediatelyInvokedFunctionExpression(
-            context,
-            () => ({ statements: transformTableDeleteExpression(context, node), result: lua.createNilLiteral() }),
-            node
-        );
+        context.addPrecedingStatements([transformTableDeleteExpression(context, node)]);
+        return lua.createNilLiteral();
     }
 
     if (isTableGetCall(context, node)) {
@@ -221,11 +217,8 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
 
     if (isTableSetCall(context, node)) {
         context.diagnostics.push(invalidTableSetExpression(node));
-        return transformToImmediatelyInvokedFunctionExpression(
-            context,
-            () => ({ statements: transformTableSetExpression(context, node), result: lua.createNilLiteral() }),
-            node
-        );
+        context.addPrecedingStatements([transformTableSetExpression(context, node)]);
+        return lua.createNilLiteral();
     }
 
     if (ts.isPropertyAccessExpression(node.expression)) {

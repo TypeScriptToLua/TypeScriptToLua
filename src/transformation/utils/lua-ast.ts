@@ -62,26 +62,6 @@ export function getNumberLiteralValue(expression?: lua.Expression) {
     return undefined;
 }
 
-// Prefer use of transformToImmediatelyInvokedFunctionExpression to maintain correct scope. If you use this directly,
-// ensure you push/pop a function scope appropriately to avoid incorrect vararg optimization.
-export function createImmediatelyInvokedFunctionExpression(
-    scope: Scope,
-    statements: lua.Statement[],
-    result: lua.Expression | lua.Expression[],
-    tsOriginal?: ts.Node
-): [lua.Statement[], lua.Expression] {
-    const resultName = `____result${scope.id}`;
-    const resultIdentifier = lua.createIdentifier(resultName, tsOriginal);
-    const body = [...statements, lua.createAssignmentStatement(resultIdentifier, result, tsOriginal)];
-    return [
-        [
-            lua.createVariableDeclarationStatement(lua.cloneIdentifier(resultIdentifier), undefined, tsOriginal),
-            lua.createDoStatement(body, tsOriginal),
-        ],
-        lua.cloneIdentifier(resultIdentifier),
-    ];
-}
-
 export function createUnpackCall(
     context: TransformationContext,
     expression: lua.Expression,

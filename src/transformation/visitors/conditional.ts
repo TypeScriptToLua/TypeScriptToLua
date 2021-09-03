@@ -80,8 +80,15 @@ export function transformIfStatement(statement: ts.IfStatement, context: Transfo
 
     if (statement.elseStatement) {
         if (ts.isIfStatement(statement.elseStatement)) {
+            context.pushPrecedingStatements();
             const elseStatement = transformIfStatement(statement.elseStatement, context);
-            return lua.createIfStatement(condition, ifBlock, elseStatement);
+            const precedingStatements = context.popPrecedingStatements();
+            if (precedingStatements.length > 0) {
+                const elseBlock = lua.createBlock([...precedingStatements, elseStatement]);
+                return lua.createIfStatement(condition, ifBlock, elseBlock);
+            } else {
+                return lua.createIfStatement(condition, ifBlock, elseStatement);
+            }
         } else {
             pushScope(context, ScopeType.Conditional);
             const elseStatements = performHoisting(

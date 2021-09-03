@@ -31,23 +31,28 @@ function transformProtectedConditionalExpression(
     context: TransformationContext,
     expression: ts.ConditionalExpression
 ): lua.Expression {
-    const tempVar = lua.createIdentifier(context.createTempName("temp"));
+    const tempVar = context.createTempForExpression(expression.condition);
 
     const condition = context.transformExpression(expression.condition);
 
     context.pushPrecedingStatements();
     const val1 = context.transformExpression(expression.whenTrue);
     const trueStatements = context.popPrecedingStatements();
-    trueStatements.push(lua.createAssignmentStatement(lua.cloneIdentifier(tempVar), val1));
+    trueStatements.push(lua.createAssignmentStatement(lua.cloneIdentifier(tempVar), val1, expression.whenTrue));
 
     context.pushPrecedingStatements();
     const val2 = context.transformExpression(expression.whenFalse);
     const falseStatements = context.popPrecedingStatements();
-    falseStatements.push(lua.createAssignmentStatement(lua.cloneIdentifier(tempVar), val2));
+    falseStatements.push(lua.createAssignmentStatement(lua.cloneIdentifier(tempVar), val2, expression.whenFalse));
 
-    context.addPrecedingStatements([lua.createVariableDeclarationStatement(tempVar)]);
+    context.addPrecedingStatements([lua.createVariableDeclarationStatement(tempVar, undefined, expression.condition)]);
     context.addPrecedingStatements([
-        lua.createIfStatement(condition, lua.createBlock(trueStatements), lua.createBlock(falseStatements), expression),
+        lua.createIfStatement(
+            condition,
+            lua.createBlock(trueStatements, expression.whenTrue),
+            lua.createBlock(falseStatements, expression.whenFalse),
+            expression
+        ),
     ]);
     return lua.cloneIdentifier(tempVar);
 }

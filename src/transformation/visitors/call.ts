@@ -10,10 +10,7 @@ import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isValidLuaIdentifier } from "../utils/safe-names";
 import { isExpressionWithEvaluationEffect } from "../utils/typescript";
 import { transformElementAccessArgument } from "./access";
-import {
-    isMultiReturnCall,
-    /* isMultiReturnType, */ shouldMultiReturnCallBeWrapped,
-} from "./language-extensions/multi";
+import { isMultiReturnCall, shouldMultiReturnCallBeWrapped } from "./language-extensions/multi";
 import { isOperatorMapping, transformOperatorMappingExpression } from "./language-extensions/operators";
 import {
     isTableDeleteCall,

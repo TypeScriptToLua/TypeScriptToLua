@@ -267,7 +267,7 @@ function transformSetterSkippingCompoundAssignment(
         condition = lhs;
     } else if (operator === ts.SyntaxKind.BarBarToken) {
         condition = lua.createUnaryExpression(lhs, lua.SyntaxKind.NotOperator);
-    } else if (isSetterSkippingCompoundAssignmentOperator(operator)) {
+    } else if (operator === ts.SyntaxKind.QuestionQuestionToken) {
         condition = lua.createBinaryExpression(lhs, lua.createNilLiteral(), lua.SyntaxKind.EqualityOperator);
     } else {
         assertNever(operator);
@@ -277,7 +277,7 @@ function transformSetterSkippingCompoundAssignment(
     return [
         lua.createIfStatement(
             condition,
-            lua.createBlock([...rightPrecedingStatements, lua.createAssignmentStatement(lhs, right)]),
+            lua.createBlock([...rightPrecedingStatements, lua.createAssignmentStatement(lhs, right, node)]),
             undefined,
             node
         ),

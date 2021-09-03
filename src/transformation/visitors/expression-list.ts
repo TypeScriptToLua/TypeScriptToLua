@@ -53,7 +53,9 @@ function processPrecedingStatements(
 
         // Inject temp assignment in correct place in preceding statements
         const tempVar = context.createTempForLuaExpression(info.transformedExpression);
-        context.addPrecedingStatements([lua.createVariableDeclarationStatement(tempVar, expression)]);
+        const tempDeclaration = lua.createVariableDeclarationStatement(tempVar, expression);
+        lua.setNodePosition(tempDeclaration, lua.getOriginalPos(expression));
+        context.addPrecedingStatements([tempDeclaration]);
         info.transformedExpression = lua.cloneIdentifier(tempVar);
     }
 }

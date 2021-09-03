@@ -76,6 +76,8 @@ export function invertCondition(expression: lua.Expression) {
     if (lua.isUnaryExpression(expression) && expression.operator === lua.SyntaxKind.NotOperator) {
         return expression.operand;
     } else {
-        return lua.createUnaryExpression(expression, lua.SyntaxKind.NotOperator);
+        const notExpression = lua.createUnaryExpression(expression, lua.SyntaxKind.NotOperator);
+        lua.setNodePosition(notExpression, lua.getOriginalPos(expression));
+        return notExpression;
     }
 }

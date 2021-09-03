@@ -87,10 +87,12 @@ function createShortCircuitBinaryExpression(
     const rightPrecedingStatements = context.popPrecedingStatements();
     if (rightPrecedingStatements.length > 0) {
         const result = context.createTempForLuaExpression(lhs);
-        const assignmentStatement = lua.createVariableDeclarationStatement(result, lhs);
+        const assignmentStatement = lua.createVariableDeclarationStatement(result, lhs, node.left);
         const ifStatement = lua.createIfStatement(
             createCondition(lua.cloneIdentifier(result)),
-            lua.createBlock([...rightPrecedingStatements, lua.createAssignmentStatement(result, rhs)])
+            lua.createBlock([...rightPrecedingStatements, lua.createAssignmentStatement(result, rhs)]),
+            undefined,
+            node.left
         );
         context.addPrecedingStatements([assignmentStatement, ifStatement]);
         return result;
@@ -151,13 +153,13 @@ export const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (
 
         case ts.SyntaxKind.QuestionQuestionToken: {
             return createShortCircuitBinaryExpression(context, node, operator, i =>
-                lua.createBinaryExpression(i, lua.createNilLiteral(), lua.SyntaxKind.EqualityOperator)
+                lua.createBinaryExpression(i, lua.createNilLiteral(), lua.SyntaxKind.EqualityOperator, node)
             );
         }
 
         case ts.SyntaxKind.BarBarToken: {
             return createShortCircuitBinaryExpression(context, node, operator, i =>
-                lua.createUnaryExpression(i, lua.SyntaxKind.NotOperator)
+                lua.createUnaryExpression(i, lua.SyntaxKind.NotOperator, node)
             );
         }
 

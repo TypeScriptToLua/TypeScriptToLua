@@ -13,7 +13,12 @@ export const transformWhileStatement: FunctionVisitor<ts.WhileStatement> = (stat
     // Change from 'while condition' to 'while true - if not condition then break'
     if (precedingStatements.length > 0) {
         precedingStatements.push(
-            lua.createIfStatement(invertCondition(condition), lua.createBlock([lua.createBreakStatement()]))
+            lua.createIfStatement(
+                invertCondition(condition),
+                lua.createBlock([lua.createBreakStatement()]),
+                undefined,
+                statement.expression
+            )
         );
         body.unshift(...precedingStatements);
         condition = lua.createBooleanLiteral(true);
@@ -31,7 +36,14 @@ export const transformDoStatement: FunctionVisitor<ts.DoStatement> = (statement,
 
     // Change from 'repeat until not condition' to 'repeat - if not condition break - until false'
     if (precedingStatements.length > 0) {
-        precedingStatements.push(lua.createIfStatement(condition, lua.createBlock([lua.createBreakStatement()])));
+        precedingStatements.push(
+            lua.createIfStatement(
+                condition,
+                lua.createBlock([lua.createBreakStatement()]),
+                undefined,
+                statement.expression
+            )
+        );
         condition = lua.createBooleanLiteral(false);
     }
 

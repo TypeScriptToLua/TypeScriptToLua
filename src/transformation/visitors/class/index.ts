@@ -66,7 +66,7 @@ function transformClassLikeDeclaration(
     } else if (classDeclaration.name !== undefined) {
         className = transformIdentifier(context, classDeclaration.name);
     } else {
-        className = lua.createIdentifier(context.createTempName("class"));
+        className = lua.createIdentifier(context.createTempName("class"), classDeclaration);
     }
 
     const annotations = getTypeAnnotations(context.checker.getTypeAtLocation(classDeclaration));

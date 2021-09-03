@@ -116,13 +116,16 @@ export class TransformationContext {
     }
 
     public superTransformStatements(node: StatementLikeNode | readonly StatementLikeNode[]): lua.Statement[] {
-        return castArray(node).flatMap(n => this.superTransformNode(n) as lua.Statement[]);
+        return castArray(node).flatMap(n => {
+            this.pushPrecedingStatements();
+            const statements = this.superTransformNode(n) as lua.Statement[];
+            statements.unshift(...this.popPrecedingStatements());
+            return statements;
+        });
     }
 
     public pushPrecedingStatements() {
-        const precedingStatements: lua.Statement[] = [];
-        this.precedingStatementsStack.push(precedingStatements);
-        return precedingStatements;
+        this.precedingStatementsStack.push([]);
     }
 
     public popPrecedingStatements() {

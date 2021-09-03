@@ -53,12 +53,15 @@ describe("execution order", () => {
         "i, ...[1, i++, 2], i++",
         "i, ...[1, i++, 2], i++, ...[3, i++, 4]",
         "i, ...a, i++, ...[1, i++, 2], i, i++, ...a",
+        "i, inc(), i++",
+        "i, ...[1, i++, inc(), 2], i++",
     ];
 
     test.each(sequenceTests)("array literal ([%p])", sequence => {
         util.testFunction`
             const a = [7, 8, 9];
             let i = 0;
+            function inc() { ++i; return i; }
             return [${sequence}];
         `.expectToMatchJsResult();
     });
@@ -67,6 +70,7 @@ describe("execution order", () => {
         util.testFunction`
             const a = [7, 8, 9];
             let i = 0;
+            function inc() { ++i; return i; }
             function foo(...args: unknown[]) { return args; }
             return foo(${sequence});
         `.expectToMatchJsResult();

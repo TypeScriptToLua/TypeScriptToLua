@@ -1,7 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
-// import { isOptimizedVarArgSpreadElement } from "./spread";
 import { assert } from "../../utils";
 import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
@@ -29,7 +28,7 @@ function cacheExpressionsInTemps(
         context.addPrecedingStatements(info.precedingStatements);
 
         // Only cache expressions in front of the last one that created preceding statements
-        if (i > lastPrecedingStatementsIndex) continue;
+        if (i >= lastPrecedingStatementsIndex) continue;
 
         // Simple literals can't be affected by anything, so no need to cache them
         if (lua.isLiteral(info.transformedExpression)) continue;

@@ -72,6 +72,7 @@ const transformObjectLiteralExpressionOrJsxAttributes: FunctionVisitor<ts.Object
         }
 
         const transformedProperties: lua.Expression[] = [];
+        const precedingStatements: lua.Statement[][] = [];
         let lastPrecedingStatementsIndex = -1;
 
         for (let i = 0; i < expression.properties.length; ++i) {
@@ -131,34 +132,40 @@ const transformObjectLiteralExpressionOrJsxAttributes: FunctionVisitor<ts.Object
                 assertNever(element);
             }
 
-            const precedingStatements = context.popPrecedingStatements();
-            if (precedingStatements.length === 0) {
-                continue;
+            const propertyPrecedingStatements = context.popPrecedingStatements();
+            precedingStatements.push(propertyPrecedingStatements);
+            if (propertyPrecedingStatements.length > 0) {
+                lastPrecedingStatementsIndex = i;
             }
+        }
 
-            // If preceding statements were generated, walk back and cache previous values in temps
-            for (let j = lastPrecedingStatementsIndex + 1; j < i; ++j) {
-                const previousProperty = transformedProperties[j];
-                if (lua.isTableFieldExpression(previousProperty)) {
-                    if (!lua.isLiteral(previousProperty.value)) {
-                        const tempVar = lua.createIdentifier(
-                            context.createTempNameFromExpression(previousProperty.value)
-                        );
+        // Expressions referenced before others that produced preceding statements need to be cached in temps
+        if (lastPrecedingStatementsIndex >= 0) {
+            for (let i = 0; i < transformedProperties.length; ++i) {
+                const property = transformedProperties[i];
+
+                const propertyPrecedingStatements = precedingStatements[i];
+                context.addPrecedingStatements(propertyPrecedingStatements);
+
+                if (i >= lastPrecedingStatementsIndex) continue;
+
+                if (lua.isTableFieldExpression(property)) {
+                    if (
+                        !lua.isLiteral(property.value) &&
+                        !(propertyPrecedingStatements.length > 0 && lua.isIdentifier(property.value))
+                    ) {
+                        const tempVar = lua.createIdentifier(context.createTempNameFromExpression(property.value));
                         context.addPrecedingStatements([
-                            lua.createVariableDeclarationStatement(tempVar, previousProperty.value),
+                            lua.createVariableDeclarationStatement(tempVar, property.value),
                         ]);
-                        previousProperty.value = lua.cloneIdentifier(tempVar);
+                        property.value = lua.cloneIdentifier(tempVar);
                     }
                 } else {
-                    const tempVar = lua.createIdentifier(context.createTempNameFromExpression(previousProperty));
-                    context.addPrecedingStatements([lua.createVariableDeclarationStatement(tempVar, previousProperty)]);
-                    transformedProperties[j] = lua.cloneIdentifier(tempVar);
+                    const tempVar = lua.createIdentifier(context.createTempNameFromExpression(property));
+                    context.addPrecedingStatements([lua.createVariableDeclarationStatement(tempVar, property)]);
+                    transformedProperties[i] = lua.cloneIdentifier(tempVar);
                 }
             }
-            lastPrecedingStatementsIndex = i;
-
-            // Bubble up preceding statements
-            context.addPrecedingStatements(precedingStatements);
         }
 
         // Sort into field expressions and tables to pass into __TS__ObjectAssign

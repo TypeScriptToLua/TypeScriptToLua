@@ -1,5 +1,3 @@
-import * as tstl from "../../src";
-import { unsupportedForTarget } from "../../src/transformation/utils/diagnostics";
 import * as util from "../util";
 
 test.each([0, 1, 2, 3])("switch (%p)", inp => {
@@ -209,7 +207,7 @@ test.each([0, 1, 2, 3])("switchWithBrackets (%p)", inp => {
     `.expectToMatchJsResult();
 });
 
-test.each([0, 1, 2, 3])("switchWithBracketsBreakInConditional (%p)", inp => {
+test.each([0, 1, 2, 3, 4])("switchWithBracketsBreakInConditional (%p)", inp => {
     util.testFunction`
         let result: number = -1;
 
@@ -225,6 +223,11 @@ test.each([0, 1, 2, 3])("switchWithBracketsBreakInConditional (%p)", inp => {
             }
             case 2: {
                 result = 2;
+
+                if (result != 2) break;
+            }
+            case 3: {
+                result = 3;
                 break;
             }
         }
@@ -261,10 +264,9 @@ test.each([0, 1, 2, 3])("switchWithBracketsBreakInInternalLoop (%p)", inp => {
     `.expectToMatchJsResult();
 });
 
-test("switch uses elseif", () => {
+test("switch executes only one clause", () => {
     util.testFunction`
         let result: number = -1;
-
         switch (2 as number) {
             case 0: {
                 result = 200;
@@ -281,19 +283,8 @@ test("switch uses elseif", () => {
                 break;
             }
         }
-
         return result;
-    `
-        .expectLuaToMatchSnapshot()
-        .expectToMatchJsResult();
-});
-
-test("switch not allowed in 5.1", () => {
-    util.testFunction`
-        switch ("abc") {}
-    `
-        .setOptions({ luaTarget: tstl.LuaTarget.Lua51 })
-        .expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]);
+    `.expectToMatchJsResult();
 });
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/967
@@ -318,6 +309,17 @@ test("switch default case not last - second", () => {
             case 3:
                 return "right";
         }
+    `.expectToMatchJsResult();
+});
+
+test("switch default case only", () => {
+    util.testFunction`
+        let out = 0;
+        switch (4 as number) {
+            default:
+                out = 1
+        }
+        return out;
     `.expectToMatchJsResult();
 });
 
@@ -358,4 +360,165 @@ test("switch fallthrough stops after default", () => {
         }
         return out;
     `.expectToMatchJsResult();
+});
+
+test.each([0, 1])("switch empty fallthrough to default (%p)", inp => {
+    util.testFunction`
+        const out = [];
+        switch (${inp} as number) {
+            case 1:
+            default:
+                out.push("default");
+            
+        }
+        return out;
+    `
+        .expectLuaToMatchSnapshot()
+        .expectToMatchJsResult();
+});
+
+test("switch does not pollute parent scope", () => {
+    util.testFunction`
+        let x: number = 0;
+        let y = 1;
+        switch (x) {
+            case 0:
+                let y = 2;
+        }
+        return y;
+    `.expectToMatchJsResult();
+});
+
+test.each([0, 1, 2, 3, 4])("switch handles side-effects (%p)", inp => {
+    util.testFunction`
+        const out = [];
+
+        let y = 0;
+        function foo() {
+            return y++;
+        }
+
+        let x = ${inp} as number;
+        switch (x) {
+            case foo():
+                out.push(1);
+            case foo():
+                out.push(2);
+            case foo():
+                out.push(3);
+            default:
+                out.push("default");
+            case foo():
+        }
+
+        out.push(y);
+        return out;
+    `.expectToMatchJsResult();
+});
+
+test.each([1, 2])("switch handles side-effects with empty fallthrough (%p)", inp => {
+    util.testFunction`
+        const out = [];
+
+        let y = 0;
+        function foo() {
+            return y++;
+        }
+
+        let x = 0 as number;
+        switch (x) {
+            // empty fallthrough 1 or many times
+            ${new Array(inp).fill("case foo():").join("\n")}
+            default:
+                out.push("default");
+            
+        }
+
+        out.push(y);
+        return out;
+    `.expectToMatchJsResult();
+});
+
+test.each([1, 2])("switch handles side-effects with empty fallthrough (preceding clause) (%p)", inp => {
+    util.testFunction`
+        const out = [];
+
+        let y = 0;
+        function foo() {
+            return y++;
+        }
+
+        let x = 0 as number;
+        switch (x) {
+            case 1:
+                out.push(1);
+            // empty fallthrough 1 or many times
+            ${new Array(inp).fill("case foo():").join("\n")}
+            default:
+                out.push("default");
+            
+        }
+
+        out.push(y);
+        return out;
+    `.expectToMatchJsResult();
+});
+
+test.each([0, 1, 2, 3, 4])("switch handles async side-effects (%p)", inp => {
+    util.testFunction`
+        (async () => {
+            const out = [];
+
+            let y = 0;
+            async function foo() {
+                return new Promise<number>((resolve) => y++ && resolve(0));
+            }
+
+            let x = ${inp} as number;
+            switch (x) {
+                case await foo():
+                    out.push(1);
+                case await foo():
+                    out.push(2);
+                case await foo():
+                    out.push(3);
+                default:
+                    out.push("default");
+                case await foo():
+            }
+
+            out.push(y);
+            return out;
+        })();
+    `.expectToMatchJsResult();
+});
+
+const optimalOutput = (c: number) => util.testFunction`
+    let x: number = 0;
+    const out = [];
+    switch (${c} as number) {
+        case 0:
+        case 1:
+        case 2:
+            out.push("0,1,2");
+            break;
+        default:
+            x++;
+            out.push("default = " + x);
+        case 3: {
+            out.push("3");
+            break;
+        }
+        case 4:
+    }
+    out.push(x.toString());
+    return out;
+`;
+
+test("switch produces optimal output", () => {
+    optimalOutput(0).expectLuaToMatchSnapshot();
+});
+
+test.each([0, 1, 2, 3, 4, 5])("switch produces valid optimal output (%p)", inp => {
+    optimalOutput(inp).expectToMatchJsResult();
 });

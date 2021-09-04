@@ -2,34 +2,22 @@ import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { cast, assertNever } from "../../../utils";
 import { TransformationContext } from "../../context";
-import { isArrayType, isExpressionWithEvaluationEffect } from "../../utils/typescript";
 import { transformBinaryOperation } from "../binary-expression";
 import { transformAssignment } from "./assignments";
 
-// If expression is property/element access with possible effects from being evaluated, returns separated object and index expressions.
-export function parseAccessExpressionWithEvaluationEffects(
-    context: TransformationContext,
-    node: ts.Expression
-): [ts.Expression, ts.Expression] | [] {
-    if (
-        ts.isElementAccessExpression(node) &&
-        (isExpressionWithEvaluationEffect(node.expression) || isExpressionWithEvaluationEffect(node.argumentExpression))
-    ) {
-        const type = context.checker.getTypeAtLocation(node.expression);
-        if (isArrayType(context, type)) {
-            // Offset arrays by one
-            const oneLit = ts.factory.createNumericLiteral("1");
-            const exp = ts.factory.createParenthesizedExpression(node.argumentExpression);
-            const addExp = ts.factory.createBinaryExpression(exp, ts.SyntaxKind.PlusToken, oneLit);
-            return [node.expression, addExp];
-        } else {
-            return [node.expression, node.argumentExpression];
-        }
-    } else if (ts.isPropertyAccessExpression(node) && isExpressionWithEvaluationEffect(node.expression)) {
-        return [node.expression, ts.factory.createStringLiteral(node.name.text)];
-    }
+function isLuaExpressionWithSideEffect(expression: lua.Expression) {
+    return !(lua.isLiteral(expression) || lua.isIdentifier(expression));
+}
 
-    return [];
+function shouldCacheTableIndexExpressions(
+    expression: lua.TableIndexExpression,
+    rightPrecedingStatements: lua.Statement[]
+) {
+    return (
+        isLuaExpressionWithSideEffect(expression.table) ||
+        isLuaExpressionWithSideEffect(expression.index) ||
+        rightPrecedingStatements.length > 0
+    );
 }
 
 // TODO: `as const` doesn't work on enum members
@@ -87,16 +75,13 @@ export function transformCompoundAssignment(
     const right = context.transformExpression(rhs);
     const rightPrecedingStatements = context.popPrecedingStatements();
 
-    const [objExpression, indexExpression] = parseAccessExpressionWithEvaluationEffects(context, lhs);
-    if (objExpression && indexExpression) {
+    if (lua.isTableIndexExpression(left) && shouldCacheTableIndexExpressions(left, rightPrecedingStatements)) {
         // Complex property/element accesses need to cache object/index expressions to avoid repeating side-effects
         // local __obj, __index = ${objExpression}, ${indexExpression};
-        const obj = context.createTempForNode(objExpression);
-        const index = context.createTempForNode(indexExpression);
-        const objAndIndexDeclaration = lua.createVariableDeclarationStatement(
-            [obj, index],
-            [context.transformExpression(objExpression), context.transformExpression(indexExpression)]
-        );
+        const obj = context.createTempForLuaExpression(left.table);
+        const index = context.createTempForLuaExpression(left.index);
+
+        const objAndIndexDeclaration = lua.createVariableDeclarationStatement([obj, index], [left.table, left.index]);
         const accessExpression = lua.createTableIndexExpression(obj, index);
 
         const tmp = context.createTempForLuaExpression(left);
@@ -116,8 +101,10 @@ export function transformCompoundAssignment(
             assignStatement = lua.createAssignmentStatement(accessExpression, tmp);
         }
         // return ____tmp
-        context.addPrecedingStatements(rightPrecedingStatements);
-        return { statements: [objAndIndexDeclaration, tmpDeclaration, assignStatement], result: tmp };
+        return {
+            statements: [objAndIndexDeclaration, ...rightPrecedingStatements, tmpDeclaration, assignStatement],
+            result: tmp,
+        };
     } else if (isPostfix) {
         // Postfix expressions need to cache original value in temp
         // local ____tmp = ${left};
@@ -126,8 +113,7 @@ export function transformCompoundAssignment(
         const tmpIdentifier = context.createTempForLuaExpression(left);
         const tmpDeclaration = lua.createVariableDeclarationStatement(tmpIdentifier, left);
         const operatorExpression = transformBinaryOperation(context, tmpIdentifier, right, operator, expression);
-        const assignStatements = transformAssignment(context, lhs, operatorExpression);
-        context.addPrecedingStatements(rightPrecedingStatements);
+        const assignStatements = transformAssignment(context, lhs, operatorExpression, rightPrecedingStatements);
         return { statements: [tmpDeclaration, ...assignStatements], result: tmpIdentifier };
     } else if (ts.isPropertyAccessExpression(lhs) || ts.isElementAccessExpression(lhs)) {
         // Simple property/element access expressions need to cache in temp to avoid double-evaluation
@@ -137,7 +123,6 @@ export function transformCompoundAssignment(
         const tmpIdentifier = context.createTempForLuaExpression(left);
         const operatorExpression = transformBinaryOperation(context, left, right, operator, expression);
         const tmpDeclaration = lua.createVariableDeclarationStatement(tmpIdentifier, operatorExpression);
-        const assignStatements = transformAssignment(context, lhs, tmpIdentifier);
 
         if (isSetterSkippingCompoundAssignmentOperator(operator)) {
             const statements = [
@@ -147,13 +132,13 @@ export function transformCompoundAssignment(
             return { statements, result: tmpIdentifier };
         }
 
-        context.addPrecedingStatements(rightPrecedingStatements);
+        const assignStatements = transformAssignment(context, lhs, tmpIdentifier, rightPrecedingStatements);
         return { statements: [tmpDeclaration, ...assignStatements], result: tmpIdentifier };
     } else {
         // Simple expressions
-        // ${left} = ${right}; return ${right}
+        // ${left} = ${left} ${operator} ${right}
         const operatorExpression = transformBinaryOperation(context, left, right, operator, expression);
-        const statements = transformAssignment(context, lhs, operatorExpression);
+        const statements = transformAssignment(context, lhs, operatorExpression, rightPrecedingStatements);
 
         if (rightPrecedingStatements.length > 0 && isSetterSkippingCompoundAssignmentOperator(operator)) {
             return {
@@ -162,7 +147,6 @@ export function transformCompoundAssignment(
             };
         }
 
-        context.addPrecedingStatements(rightPrecedingStatements);
         return { statements, result: left };
     }
 }
@@ -193,17 +177,14 @@ export function transformCompoundAssignmentStatement(
     const right = context.transformExpression(rhs);
     const rightPrecedingStatements = context.popPrecedingStatements();
 
-    const [objExpression, indexExpression] = parseAccessExpressionWithEvaluationEffects(context, lhs);
-    if (objExpression && indexExpression) {
+    if (lua.isTableIndexExpression(left) && shouldCacheTableIndexExpressions(left, rightPrecedingStatements)) {
         // Complex property/element accesses need to cache object/index expressions to avoid repeating side-effects
         // local __obj, __index = ${objExpression}, ${indexExpression};
         // ____obj[____index] = ____obj[____index] ${replacementOperator} ${right};
-        const obj = lua.createIdentifier("____obj");
-        const index = lua.createIdentifier("____index");
-        const objAndIndexDeclaration = lua.createVariableDeclarationStatement(
-            [obj, index],
-            [context.transformExpression(objExpression), context.transformExpression(indexExpression)]
-        );
+        const obj = context.createTempForLuaExpression(left.table);
+        const index = context.createTempForLuaExpression(left.index);
+
+        const objAndIndexDeclaration = lua.createVariableDeclarationStatement([obj, index], [left.table, left.index]);
         const accessExpression = lua.createTableIndexExpression(obj, index);
 
         if (isSetterSkippingCompoundAssignmentOperator(operator)) {
@@ -221,8 +202,7 @@ export function transformCompoundAssignmentStatement(
 
         const operatorExpression = transformBinaryOperation(context, accessExpression, right, operator, node);
         const assignStatement = lua.createAssignmentStatement(accessExpression, operatorExpression);
-        context.addPrecedingStatements(rightPrecedingStatements);
-        return [objAndIndexDeclaration, assignStatement];
+        return [objAndIndexDeclaration, ...rightPrecedingStatements, assignStatement];
     } else {
         if (isSetterSkippingCompoundAssignmentOperator(operator)) {
             return transformSetterSkippingCompoundAssignment(left, operator, right, rightPrecedingStatements, node);
@@ -230,9 +210,9 @@ export function transformCompoundAssignmentStatement(
 
         // Simple statements
         // ${left} = ${left} ${replacementOperator} ${right}
+
         const operatorExpression = transformBinaryOperation(context, left, right, operator, node);
-        context.addPrecedingStatements(rightPrecedingStatements);
-        return transformAssignment(context, lhs, operatorExpression);
+        return transformAssignment(context, lhs, operatorExpression, rightPrecedingStatements);
     }
 }
 

@@ -148,6 +148,64 @@ describe("execution order", () => {
         `.expectToMatchJsResult();
     });
 
+    test("indirect index assignment statement", () => {
+        util.testFunction`
+            let i = 1;
+            const a = [9, 8, 7];
+            function foo(x: number) { i += x; return a; }
+            foo(i)[i] = i++;
+            return a;
+        `.expectToMatchJsResult();
+    });
+
+    test("indirect index assignment expression", () => {
+        util.testFunction`
+            let i = 1;
+            const a = [9, 8, 7];
+            function foo(x: number) { i += x; return a; }
+            const x = foo(i)[i] = i++;
+            return a;
+        `.expectToMatchJsResult();
+    });
+
+    test("compound index assignment statement", () => {
+        util.testFunction`
+            let i = 0;
+            const a = [9, 8, 7];
+            a[i] += i++;
+            return a;
+        `.expectToMatchJsResult();
+    });
+
+    test("compound index assignment expression", () => {
+        util.testFunction`
+            let i = 0;
+            const a = [9, 8, 7];
+            const x = a[i] += i++;
+            return a;
+        `.expectToMatchJsResult();
+    });
+
+    test("compound indirect index assignment statement", () => {
+        util.testFunction`
+            let i = 1;
+            const a = [9, 8, 7];
+            function foo(x: number) { i += x; return a; }
+            foo(i)[i] += i++;
+            return a;
+        `.expectToMatchJsResult();
+    });
+
+    test("compound indirect index assignment expression", () => {
+        util.testFunction`
+            let i = 1;
+            const a = [9, 8, 7];
+            function foo(x: number) { i += x; return a; }
+            const x = foo(i)[i] += i++;
+            return a;
+        `.expectToMatchJsResult();
+    });
+
     test("destructuring assignment statement", () => {
         util.testFunction`
             let i = 0;
@@ -162,6 +220,26 @@ describe("execution order", () => {
             let i = 0;
             const a = [9, 8, 7];
             const x = [a[i++], a[i]] = [i++, i];
+            return a;
+        `.expectToMatchJsResult();
+    });
+
+    test("call statement", () => {
+        util.testFunction`
+            let i = 1;
+            const a = [9, 8, 7, 6, 5, 4, 3, 2, 1];
+            function foo(x: number) { i += x; return ((y: number) => { i += y; return a; }); }
+            foo(i++)(i++)[i] = 0;
+            return a;
+        `.expectToMatchJsResult();
+    });
+
+    test("call expression", () => {
+        util.testFunction`
+            let i = 1;
+            const a = [9, 8, 7, 6, 5, 4, 3, 2, 1];
+            function foo(x: number) { i += x; return ((y: number) => { i += y; return a; }); }
+            const x = foo(i++)(i++)[i] = 0;
             return a;
         `.expectToMatchJsResult();
     });

@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import { assert, cast } from "../../../utils";
+import { cast } from "../../../utils";
 import { TransformationContext } from "../../context";
 import { validateAssignment } from "../../utils/assignment-validation";
 import { createExportedIdentifier, getDependenciesOfSymbol, isSymbolExported } from "../../utils/export";
@@ -24,11 +24,38 @@ export function transformAssignmentLeftHandSideExpression(
         : cast(left, lua.isAssignmentLeftHandSideExpression);
 }
 
+function transformAssignmentLeftHandSideExpressionWithRightPrecedingStatements(
+    context: TransformationContext,
+    expression: ts.Expression
+) {
+    // Cache index expression in a temp so it can be evaluated before right's preceding statements
+    if (ts.isElementAccessExpression(expression) && !ts.isLiteralExpression(expression.argumentExpression)) {
+        let table = context.transformExpression(expression.expression);
+
+        // If table is complex, it could reference things from the index expression and needs to be cached as well
+        if (!ts.isIdentifier(expression.expression)) {
+            const tableTemp = context.createTempForNode(expression.expression);
+            context.addPrecedingStatements([
+                lua.createVariableDeclarationStatement(tableTemp, table, expression.expression),
+            ]);
+            table = lua.cloneIdentifier(tableTemp);
+        }
+
+        const indexNode = expression.argumentExpression;
+        const indexTemp = context.createTempForNode(indexNode);
+        const index = transformElementAccessArgument(context, expression);
+        context.addPrecedingStatements([lua.createVariableDeclarationStatement(indexTemp, index, indexNode)]);
+        return lua.createTableIndexExpression(table, lua.cloneIdentifier(indexTemp), expression);
+    }
+    return transformAssignmentLeftHandSideExpression(context, expression);
+}
+
 export function transformAssignment(
     context: TransformationContext,
     // TODO: Change type to ts.LeftHandSideExpression?
     lhs: ts.Expression,
     right: lua.Expression,
+    rightPrecedingStatements?: lua.Statement[],
     parent?: ts.Expression
 ): lua.Statement[] {
     if (ts.isOptionalChain(lhs)) {
@@ -56,11 +83,15 @@ export function transformAssignment(
 
     const dependentSymbols = symbol ? getDependenciesOfSymbol(context, symbol) : [];
 
-    const left = transformAssignmentLeftHandSideExpression(context, lhs);
+    const left =
+        rightPrecedingStatements && rightPrecedingStatements.length > 0
+            ? transformAssignmentLeftHandSideExpressionWithRightPrecedingStatements(context, lhs)
+            : transformAssignmentLeftHandSideExpression(context, lhs);
 
     const rootAssignment = lua.createAssignmentStatement(left, right, lhs.parent);
 
     return [
+        ...(rightPrecedingStatements ?? []),
         rootAssignment,
         ...dependentSymbols.map(symbol => {
             const [left] = rootAssignment.left;
@@ -121,35 +152,13 @@ export function transformAssignmentExpression(
         const right = context.transformExpression(expression.right);
         const precedingStatements = context.popPrecedingStatements();
 
-        let left: lua.Expression | undefined;
-        if (precedingStatements.length > 0) {
-            let indexNode: ts.Node;
-            let index: lua.Expression;
-            if (ts.isElementAccessExpression(expression.left)) {
-                indexNode = expression.left.argumentExpression;
-                index = transformElementAccessArgument(context, expression.left);
-            } else {
-                indexNode = expression.left.name;
-                index = lua.createStringLiteral(expression.left.name.text);
-            }
-            if (!lua.isLiteral(index)) {
-                const indexTemp = context.createTempForNode(indexNode);
-                context.addPrecedingStatements([lua.createVariableDeclarationStatement(indexTemp, index, indexNode)]);
-                left = lua.createTableIndexExpression(
-                    context.transformExpression(expression.left.expression),
-                    lua.cloneIdentifier(indexTemp),
-                    expression.left
-                );
-            }
-            context.addPrecedingStatements(precedingStatements);
-        }
-
-        if (!left) {
-            left = context.transformExpression(expression.left);
-        }
-        assert(lua.isAssignmentLeftHandSideExpression(left));
+        const left =
+            precedingStatements.length > 0
+                ? transformAssignmentLeftHandSideExpressionWithRightPrecedingStatements(context, expression.left)
+                : transformAssignmentLeftHandSideExpression(context, expression.left);
 
         context.addPrecedingStatements([
+            ...precedingStatements,
             lua.createVariableDeclarationStatement(tempVar, right, expression.right),
             lua.createAssignmentStatement(left, lua.cloneIdentifier(tempVar, expression.left)),
         ]);
@@ -223,6 +232,9 @@ export function transformAssignmentStatement(
             ...transformDestructuringAssignment(context, expression, rootIdentifier),
         ];
     } else {
-        return transformAssignment(context, expression.left, context.transformExpression(expression.right));
+        context.pushPrecedingStatements();
+        const right = context.transformExpression(expression.right);
+        const precedingStatements = context.popPrecedingStatements();
+        return transformAssignment(context, expression.left, right, precedingStatements);
     }
 }

@@ -162,14 +162,14 @@ export class TransformationContext {
         return identifier;
     }
 
-    public createTempForExpression(expression: ts.Expression) {
+    public createTempForNode(node: ts.Node) {
         let name: string | undefined;
-        if (ts.isStringLiteral(expression) || ts.isIdentifier(expression)) {
-            name = expression.text;
+        if (ts.isStringLiteral(node) || ts.isIdentifier(node) || ts.isMemberName(node)) {
+            name = node.text;
             if (!isValidLuaIdentifier(name)) {
                 name = fixInvalidLuaIdentifier(name);
             }
         }
-        return lua.createIdentifier(this.createTempName(name), expression);
+        return lua.createIdentifier(this.createTempName(name), node);
     }
 }

@@ -31,7 +31,7 @@ function transformProtectedConditionalExpression(
     context: TransformationContext,
     expression: ts.ConditionalExpression
 ): lua.Expression {
-    const tempVar = context.createTempForExpression(expression.condition);
+    const tempVar = context.createTempForNode(expression.condition);
 
     const condition = context.transformExpression(expression.condition);
 

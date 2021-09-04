@@ -91,8 +91,8 @@ export function transformCompoundAssignment(
     if (objExpression && indexExpression) {
         // Complex property/element accesses need to cache object/index expressions to avoid repeating side-effects
         // local __obj, __index = ${objExpression}, ${indexExpression};
-        const obj = context.createTempForExpression(objExpression);
-        const index = context.createTempForExpression(indexExpression);
+        const obj = context.createTempForNode(objExpression);
+        const index = context.createTempForNode(indexExpression);
         const objAndIndexDeclaration = lua.createVariableDeclarationStatement(
             [obj, index],
             [context.transformExpression(objExpression), context.transformExpression(indexExpression)]

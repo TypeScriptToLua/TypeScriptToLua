@@ -168,13 +168,22 @@ export const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (
         }
     }
 
-    return transformBinaryOperation(
-        context,
-        context.transformExpression(node.left),
-        context.transformExpression(node.right),
-        operator,
-        node
-    );
+    const lhs = context.transformExpression(node.left);
+    context.pushPrecedingStatements();
+    const rhs = context.transformExpression(node.right);
+    const precedingStatements = context.popPrecedingStatements();
+
+    // Cache left in temp if right had preceding statements that may have referenced things in the left
+    if (precedingStatements.length > 0) {
+        const tempVar = context.createTempForNode(node.left);
+        context.addPrecedingStatements([
+            lua.createVariableDeclarationStatement(tempVar, lhs, node.left),
+            ...precedingStatements,
+        ]);
+        return transformBinaryOperation(context, tempVar, rhs, operator, node);
+    }
+
+    return transformBinaryOperation(context, lhs, rhs, operator, node);
 };
 
 export function transformBinaryExpressionStatement(

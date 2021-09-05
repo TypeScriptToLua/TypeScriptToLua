@@ -12,7 +12,6 @@ const reactLib = `
         const isLua = typeof Component === "object"
 
         export function createElement(
-            this: void,
             type: any,
             props?: any,
             ...children: any[]
@@ -21,11 +20,13 @@ const reactLib = `
             if (isLua) {
                 typeStr =
                     typeof type === "function" ? "<< function >>" :
-                        typeof type === "object" ? \`<< class \${type.name} >>\` :
-                            type
+                    typeof type === "object" ? \`<< class \${type.name} >>\` :
+                    type
             } else {
-                typeStr = typeof type === "function" ? (type.isClass ? \`<< class \${type.name} >>\` : "<< function >>")
-                    : type
+                typeStr = typeof type === "function" ? (type.isClass
+                                                        ? \`<< class \${type.name} >>\`
+                                                        : "<< function >>")
+                                                     : type
             }
 
             return {
@@ -259,7 +260,6 @@ describe("jsx", () => {
     // language=TypeScript
     const customJsxLib = `export namespace MyLib {
         export function myCreate(
-            this: void,
             type: any,
             props: any,
             ...children: any[]

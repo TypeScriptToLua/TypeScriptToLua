@@ -16,8 +16,6 @@ export enum AnnotationKind {
     NoSelfInFile = "noSelfInFile",
     Vararg = "vararg",
     ForRange = "forRange",
-    Jsx = "jsx",
-    JsxFrag = "jsxFrag",
 }
 
 export interface Annotation {

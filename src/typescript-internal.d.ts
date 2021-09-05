@@ -28,4 +28,6 @@ declare module "typescript" {
         getElementTypeOfArrayType(type: Type): Type | undefined;
         getContextualTypeForObjectLiteralElement(element: ObjectLiteralElementLike): Type | undefined;
     }
+
+    function transformJsx(context: TransformationContext): (x: SourceFile) => SourceFile;
 }

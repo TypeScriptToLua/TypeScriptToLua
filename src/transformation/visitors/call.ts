@@ -23,7 +23,7 @@ import {
     transformTableSetExpression,
 } from "./language-extensions/table";
 import { annotationRemoved, invalidTableDeleteExpression, invalidTableSetExpression } from "../utils/diagnostics";
-import { transformExpressionList } from "./expression-list";
+import { moveToPrecedingTemp, transformExpressionList } from "./expression-list";
 
 export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
 
@@ -33,12 +33,17 @@ export function transformArguments(
     signature?: ts.Signature,
     callContext?: ts.Expression
 ): lua.Expression[] {
+    context.pushPrecedingStatements();
     const parameters = transformExpressionList(context, params);
+    const parametersPrecedingStatements = context.popPrecedingStatements();
 
     // Add context as first param if present
     if (callContext) {
         parameters.unshift(context.transformExpression(callContext));
     }
+
+    // Defer parameter preceding statements in case transforming the context arg generates some as well
+    context.addPrecedingStatements(parametersPrecedingStatements);
 
     if (signature && signature.parameters.length >= params.length) {
         for (const [index, param] of params.entries()) {
@@ -52,6 +57,50 @@ export function transformArguments(
     }
 
     return parameters;
+}
+
+function transformCallWithArgPrecedingStatements(
+    context: TransformationContext,
+    callExpression: ts.Expression,
+    args: lua.Expression[],
+    argPrecedingStatements: lua.Statement[],
+    callContext?: ts.Expression
+): [lua.Expression, lua.Expression[]] {
+    let call = context.transformExpression(callExpression);
+
+    args = args.slice();
+
+    // Transform and inject context if given one
+    if (callContext) {
+        context.pushPrecedingStatements();
+        const transformedContext = context.transformExpression(callContext);
+        argPrecedingStatements = [...context.popPrecedingStatements(), ...argPrecedingStatements];
+        args.unshift(transformedContext);
+    }
+
+    // Cache call expression and context arg in temps to preserve execution order
+    if (argPrecedingStatements.length > 0) {
+        call = moveToPrecedingTemp(context, call);
+        if (callContext) {
+            args[0] = moveToPrecedingTemp(context, args[0]);
+        }
+        context.addPrecedingStatements(argPrecedingStatements);
+    }
+
+    return [call, args];
+}
+
+export function transformCallAndArguments(
+    context: TransformationContext,
+    callExpression: ts.Expression,
+    params: readonly ts.Expression[],
+    signature?: ts.Signature,
+    callContext?: ts.Expression
+): [lua.Expression, lua.Expression[]] {
+    context.pushPrecedingStatements();
+    const args = transformArguments(context, params, signature, callContext);
+    const precedingStatements = context.popPrecedingStatements();
+    return transformCallWithArgPrecedingStatements(context, callExpression, args, precedingStatements);
 }
 
 function transformElementAccessCall(
@@ -87,7 +136,17 @@ export function transformContextualCallExpression(
     signature?: ts.Signature
 ): lua.CallExpression | lua.MethodCallExpression {
     const left = ts.isCallExpression(node) ? node.expression : node.tag;
-    if (ts.isPropertyAccessExpression(left) && ts.isIdentifier(left.name) && isValidLuaIdentifier(left.name.text)) {
+
+    context.pushPrecedingStatements();
+    const transformedArguments = transformArguments(context, args, signature);
+    const argPrecedingStatements = context.popPrecedingStatements();
+
+    if (
+        ts.isPropertyAccessExpression(left) &&
+        ts.isIdentifier(left.name) &&
+        isValidLuaIdentifier(left.name.text) &&
+        argPrecedingStatements.length === 0
+    ) {
         // table:name()
         const table = context.transformExpression(left.expression);
 
@@ -99,13 +158,13 @@ export function transformContextualCallExpression(
                 table,
                 lua.createStringLiteral(left.name.text, left.name),
                 lua.createBooleanLiteral(node.questionDotToken !== undefined), // Require method is present if no ?.() call
-                ...transformArguments(context, args, signature)
+                ...transformedArguments
             );
         } else {
             return lua.createMethodCallExpression(
                 table,
                 lua.createIdentifier(left.name.text, left.name),
-                transformArguments(context, args, signature),
+                transformedArguments,
                 node
             );
         }
@@ -120,16 +179,24 @@ export function transformContextualCallExpression(
             context.addPrecedingStatements([selfAssignment]);
             return callExpression;
         } else {
-            const callContext = context.transformExpression(left.expression);
-            const expression = context.transformExpression(left);
-            const transformedArguments = transformArguments(context, args, signature);
-            return lua.createCallExpression(expression, [callContext, ...transformedArguments]);
+            const [expression, updatedArgs] = transformCallWithArgPrecedingStatements(
+                context,
+                left,
+                transformedArguments,
+                argPrecedingStatements,
+                left.expression
+            );
+            return lua.createCallExpression(expression, updatedArgs, node);
         }
     } else if (ts.isIdentifier(left)) {
-        const callContext = context.isStrict ? ts.factory.createNull() : ts.factory.createIdentifier("_G");
-        const transformedArguments = transformArguments(context, args, signature, callContext);
-        const expression = context.transformExpression(left);
-        return lua.createCallExpression(expression, transformedArguments, node);
+        const callContext = context.isStrict ? lua.createNilLiteral() : lua.createIdentifier("_G");
+        const [expression, updatedArgs] = transformCallWithArgPrecedingStatements(
+            context,
+            left,
+            transformedArguments,
+            argPrecedingStatements
+        );
+        return lua.createCallExpression(expression, [callContext, ...updatedArgs], node);
     } else {
         throw new Error(`Unsupported LeftHandSideExpression kind: ${ts.SyntaxKind[left.kind]}`);
     }
@@ -153,8 +220,7 @@ function transformPropertyCall(
         return transformContextualCallExpression(context, node, node.arguments, signature);
     } else {
         // table.name()
-        const callPath = context.transformExpression(node.expression);
-        const parameters = transformArguments(context, node.arguments, signature);
+        const [callPath, parameters] = transformCallAndArguments(context, node.expression, node.arguments, signature);
 
         if (ts.isOptionalChain(node)) {
             return transformLuaLibFunction(context, LuaLibFeature.OptionalFunctionCall, node, callPath, ...parameters);
@@ -175,8 +241,7 @@ function transformElementCall(
         return transformContextualCallExpression(context, node, node.arguments, signature);
     } else {
         // No context
-        const expression = context.transformExpression(node.expression);
-        const parameters = transformArguments(context, node.arguments, signature);
+        const [expression, parameters] = transformCallAndArguments(context, node.expression, node.arguments, signature);
         return lua.createCallExpression(expression, parameters);
     }
 }
@@ -250,15 +315,21 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
         );
     }
 
-    const callPath = context.transformExpression(node.expression);
     const signatureDeclaration = signature?.getDeclaration();
 
+    let callPath: lua.Expression;
     let parameters: lua.Expression[] = [];
     if (signatureDeclaration && getDeclarationContextType(context, signatureDeclaration) === ContextType.Void) {
-        parameters = transformArguments(context, node.arguments, signature);
+        [callPath, parameters] = transformCallAndArguments(context, node.expression, node.arguments, signature);
     } else {
         const callContext = context.isStrict ? ts.factory.createNull() : ts.factory.createIdentifier("_G");
-        parameters = transformArguments(context, node.arguments, signature, callContext);
+        [callPath, parameters] = transformCallAndArguments(
+            context,
+            node.expression,
+            node.arguments,
+            signature,
+            callContext
+        );
     }
 
     const callExpression = lua.createCallExpression(callPath, parameters, node);

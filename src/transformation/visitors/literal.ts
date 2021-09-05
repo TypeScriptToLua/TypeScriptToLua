@@ -9,7 +9,7 @@ import { createSafeName, hasUnsafeIdentifierName, hasUnsafeSymbolName } from "..
 import { getSymbolIdOfSymbol, trackSymbolReference } from "../utils/symbols";
 import { isArrayType } from "../utils/typescript";
 import { transformFunctionLikeDeclaration } from "./function";
-import { transformExpressionList } from "./expression-list";
+import { moveToPrecedingTemp, transformExpressionList } from "./expression-list";
 import { findMultiAssignmentViolations } from "./language-extensions/multi";
 import { formatJSXStringValueLiteral } from "./jsx/jsx";
 
@@ -159,16 +159,10 @@ const transformObjectLiteralExpressionOrJsxAttributes: FunctionVisitor<ts.Object
                         !lua.isLiteral(property.value) &&
                         !(propertyPrecedingStatements.length > 0 && lua.isIdentifier(property.value))
                     ) {
-                        const tempVar = context.createTempForLuaExpression(property.value);
-                        context.addPrecedingStatements([
-                            lua.createVariableDeclarationStatement(tempVar, property.value),
-                        ]);
-                        property.value = lua.cloneIdentifier(tempVar);
+                        property.value = moveToPrecedingTemp(context, property.value);
                     }
                 } else {
-                    const tempVar = context.createTempForLuaExpression(property);
-                    context.addPrecedingStatements([lua.createVariableDeclarationStatement(tempVar, property)]);
-                    properties[i] = lua.cloneIdentifier(tempVar);
+                    properties[i] = moveToPrecedingTemp(context, property);
                 }
             }
         }

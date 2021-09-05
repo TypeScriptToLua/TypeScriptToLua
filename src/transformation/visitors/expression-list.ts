@@ -16,6 +16,16 @@ function isPrecedingStatementTemp(info: ExpressionListInfo) {
     return info.precedingStatements.length > 0 && lua.isIdentifier(info.transformedExpression);
 }
 
+export function moveToPrecedingTemp(context: TransformationContext, expression: lua.Expression) {
+    const tempIdentifier = context.createTempForLuaExpression(expression);
+    const tempDeclaration = lua.createVariableDeclarationStatement(tempIdentifier, expression);
+    lua.setNodePosition(tempDeclaration, lua.getOriginalPos(expression));
+    context.addPrecedingStatements([tempDeclaration]);
+    const tempClone = lua.cloneIdentifier(tempIdentifier);
+    lua.setNodePosition(tempClone, lua.getOriginalPos(tempIdentifier));
+    return tempClone;
+}
+
 function processPrecedingStatements(
     context: TransformationContext,
     expressionInfo: ExpressionListInfo[],
@@ -44,19 +54,14 @@ function processPrecedingStatements(
         }
 
         // Strip 'unpack' from spreads to store in a temp - it will be added back in buildArrayConcatCall, if needed
-        let expression = info.transformedExpression;
         if (info.isSpread) {
-            assert(lua.isCallExpression(expression) && expression.params.length === 1);
-            expression = expression.params[0];
+            assert(lua.isCallExpression(info.transformedExpression) && info.transformedExpression.params.length === 1);
+            info.transformedExpression = info.transformedExpression.params[0];
             info.needsUnpack = true;
         }
 
         // Inject temp assignment in correct place in preceding statements
-        const tempVar = context.createTempForLuaExpression(info.transformedExpression);
-        const tempDeclaration = lua.createVariableDeclarationStatement(tempVar, expression);
-        lua.setNodePosition(tempDeclaration, lua.getOriginalPos(expression));
-        context.addPrecedingStatements([tempDeclaration]);
-        info.transformedExpression = lua.cloneIdentifier(tempVar);
+        info.transformedExpression = moveToPrecedingTemp(context, info.transformedExpression);
     }
 }
 
@@ -111,4 +116,50 @@ export function transformExpressionList(
     }
 
     return expressionInfo.map(e => e.transformedExpression);
+}
+
+export function transformOrderedExpressions(
+    context: TransformationContext,
+    expressions: ts.Expression[]
+): lua.Expression[] {
+    const transformedExpressions: lua.Expression[] = [];
+    const precedingStatements: lua.Statement[][] = [];
+    let lastPrecedingStatementsIndex = -1;
+    for (let i = 0; i < expressions.length; ++i) {
+        context.pushPrecedingStatements();
+        transformedExpressions.push(context.transformExpression(expressions[i]));
+        const expressionPrecedingStatements = context.popPrecedingStatements();
+        precedingStatements.push(expressionPrecedingStatements);
+        if (expressionPrecedingStatements.length > 0) {
+            lastPrecedingStatementsIndex = i;
+        }
+    }
+
+    if (lastPrecedingStatementsIndex < 0) {
+        return transformedExpressions;
+    }
+
+    for (let i = 0; i < transformedExpressions.length; ++i) {
+        const transformedExpression = transformedExpressions[i];
+        const expressionPrecedingStatements = precedingStatements[i];
+
+        // Bubble up preceding statements
+        context.addPrecedingStatements(expressionPrecedingStatements);
+
+        // Cache expression in temp to maintain execution order, unless:
+        // - Expression is after the last one in the list which generated preceding statements
+        // - Expression is a literal that wouldn't be affected by preceding statements
+        // - Expression is a temp identifier which is a result of preceding statements
+        if (
+            i >= lastPrecedingStatementsIndex ||
+            lua.isLiteral(transformedExpression) ||
+            (expressionPrecedingStatements.length > 0 && lua.isIdentifier(transformedExpression))
+        ) {
+            continue;
+        }
+
+        transformedExpressions[i] = moveToPrecedingTemp(context, transformedExpression);
+    }
+
+    return transformedExpressions;
 }

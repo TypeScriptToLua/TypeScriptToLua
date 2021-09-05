@@ -14,6 +14,7 @@ import {
     unwrapCompoundAssignmentToken,
 } from "./compound";
 import { assert } from "../../../utils";
+import { transformOrderedExpressions } from "../expression-list";
 
 type SimpleOperator =
     | ts.AdditiveOperatorOrHigher
@@ -168,21 +169,7 @@ export const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (
         }
     }
 
-    const lhs = context.transformExpression(node.left);
-    context.pushPrecedingStatements();
-    const rhs = context.transformExpression(node.right);
-    const precedingStatements = context.popPrecedingStatements();
-
-    // Cache left in temp if right had preceding statements that may have referenced things in the left
-    if (precedingStatements.length > 0) {
-        const tempVar = context.createTempForNode(node.left);
-        context.addPrecedingStatements([
-            lua.createVariableDeclarationStatement(tempVar, lhs, node.left),
-            ...precedingStatements,
-        ]);
-        return transformBinaryOperation(context, tempVar, rhs, operator, node);
-    }
-
+    const [lhs, rhs] = transformOrderedExpressions(context, [node.left, node.right]);
     return transformBinaryOperation(context, lhs, rhs, operator, node);
 };
 

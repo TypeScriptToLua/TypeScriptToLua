@@ -114,11 +114,13 @@ describe("execution order", () => {
 
     test("tagged template literal", () => {
         util.testFunction`
+            let i = 0;
+
             function func(strings: TemplateStringsArray, ...expressions: any[]) {
-                return { strings: [...strings], raw: strings.raw, expressions };
+                const x = i > 0 ? "a" : "b";
+                return { strings: [x, ...strings], raw: strings.raw, expressions };
             }
 
-            let i = 0;
             return func\`hello \${i} \${i++}\`;
         `.expectToMatchJsResult();
     });
@@ -130,79 +132,92 @@ describe("execution order", () => {
         `.expectToMatchJsResult();
     });
 
+    test("index expression", () => {
+        util.testFunction`
+            let i = 0;
+            const a = [["A1", "A2"], ["B1", "B2"]];
+            const result = a[i][i++];
+            return [result, i];
+        `.expectToMatchJsResult();
+    });
+
     test("index assignment statement", () => {
         util.testFunction`
             let i = 0;
-            const a = [9, 8, 7];
+            const a = [4, 5];
             a[i] = i++;
-            return a;
+            return [a, i];
         `.expectToMatchJsResult();
     });
 
     test("index assignment expression", () => {
         util.testFunction`
             let i = 0;
-            const a = [9, 8, 7];
-            const x = a[i] = i++;
-            return a;
+            const a = [9, 8];
+            const result = a[i] = i++;
+            return [result, a, i];
         `.expectToMatchJsResult();
     });
 
     test("indirect index assignment statement", () => {
         util.testFunction`
-            let i = 1;
-            const a = [9, 8, 7];
-            function foo(x: number) { i += x; return a; }
+            let i = 0;
+            const a = [9, 8];
+            const b = [7, 6];
+            function foo(x: number) { if (x > 0) { return a; } else { return b; } }
             foo(i)[i] = i++;
-            return a;
+            return [a, b, i];
         `.expectToMatchJsResult();
     });
 
     test("indirect index assignment expression", () => {
         util.testFunction`
-            let i = 1;
-            const a = [9, 8, 7];
-            function foo(x: number) { i += x; return a; }
-            const x = foo(i)[i] = i++;
-            return a;
+            let i = 0;
+            const a = [9, 8];
+            const b = [7, 6];
+            function foo(x: number) { if (x > 0) { return a; } else { return b; } }
+            const result = foo(i)[i] = i++;
+            return [result, a, b, i];
         `.expectToMatchJsResult();
     });
 
     test("compound index assignment statement", () => {
         util.testFunction`
             let i = 0;
-            const a = [9, 8, 7];
+            const a = [9, 8];
             a[i] += i++;
-            return a;
+            return [a, i];
         `.expectToMatchJsResult();
     });
 
     test("compound index assignment expression", () => {
         util.testFunction`
             let i = 0;
-            const a = [9, 8, 7];
-            const x = a[i] += i++;
-            return a;
+            const a = [9, 8];
+            const result = a[i] += i++;
+            return [result, a, i];
         `.expectToMatchJsResult();
     });
 
     test("compound indirect index assignment statement", () => {
         util.testFunction`
-            let i = 1;
-            const a = [9, 8, 7];
-            function foo(x: number) { i += x; return a; }
+            let i = 0;
+            const a = [9, 8];
+            const b = [7, 6];
+            function foo(x: number) { if (x > 0) { return a; } else { return b; } }
             foo(i)[i] += i++;
-            return a;
+            return [a, b, i];
         `.expectToMatchJsResult();
     });
 
     test("compound indirect index assignment expression", () => {
         util.testFunction`
             let i = 1;
-            const a = [9, 8, 7];
-            function foo(x: number) { i += x; return a; }
-            const x = foo(i)[i] += i++;
-            return a;
+            const a = [9, 8];
+            const b = [7, 6];
+            function foo(x: number) { if (x > 0) { return a; } else { return b; } }
+            const result = foo(i)[i] += i++;
+            return [result, a, b, i];
         `.expectToMatchJsResult();
     });
 
@@ -224,23 +239,144 @@ describe("execution order", () => {
         `.expectToMatchJsResult();
     });
 
-    test("call statement", () => {
-        util.testFunction`
-            let i = 1;
-            const a = [9, 8, 7, 6, 5, 4, 3, 2, 1];
-            function foo(x: number) { i += x; return ((y: number) => { i += y; return a; }); }
-            foo(i++)(i++)[i] = 0;
-            return a;
-        `.expectToMatchJsResult();
-    });
-
     test("call expression", () => {
         util.testFunction`
             let i = 1;
-            const a = [9, 8, 7, 6, 5, 4, 3, 2, 1];
-            function foo(x: number) { i += x; return ((y: number) => { i += y; return a; }); }
-            const x = foo(i++)(i++)[i] = 0;
-            return a;
+            function a(x: number) { return x * 10; }
+            function b(x: number) { return x * 100; }
+            function foo(x: number) { if (x > 0) { return a; } else { return b; } }
+            const result = foo(i)(i++);
+            return [result, i];
+        `.expectToMatchJsResult();
+    });
+
+    test("call expression (function modified)", () => {
+        util.testFunction`
+            let i = 1;
+            let foo = (x: null, y: number) => { return y; };
+            function bar() {
+                foo = (x: null, y: number) => { return y * 10; };
+                return null;
+            }
+            const result = foo(bar(), i++);
+            return [result, i];
+        `.expectToMatchJsResult();
+    });
+
+    test("method call expression (method modified)", () => {
+        util.testFunction`
+            let i = 1;
+            let o = {
+                val: 3,
+                foo(x: null, y: number) { return y + this.val; }
+            };
+            function changeFoo(this: void) {
+                o.foo = function(x: null, y: number) { return (y + this.val) * 10; };
+                return null;
+            }
+            const result = o.foo(changeFoo(), i++);
+            return [result, i];
+        `.expectToMatchJsResult();
+    });
+
+    test("method element access call expression (method modified)", () => {
+        util.testFunction`
+            let i = 1;
+            let o = {
+                val: 3,
+                foo(x: null, y: number) { return y + this.val; }
+            };
+            function changeFoo(this: void) {
+                o.foo = function(x: null, y: number) { return (y + this.val) * 10; };
+                return null;
+            }
+            function getFoo() { return "foo"; }
+            function getO() { return o; }
+            const result = getO()[getFoo()](changeFoo(), i++);
+            return [result, i];
+        `.expectToMatchJsResult();
+    });
+
+    test("method call expression (object modified)", () => {
+        util.testFunction`
+            let i = 1;
+            let o = {
+                val: 3,
+                foo(x: null, y: number) { return y + this.val; }
+            };
+            function changeO(this: void) {
+                o = {
+                    val: 5,
+                    foo: function(x: null, y: number) { return (y + this.val) * 10; }
+                };
+                return null;
+            }
+            const result = o.foo(changeO(), i++);
+            return [result, i];
+        `.expectToMatchJsResult();
+    });
+
+    test("method element access call expression (object modified)", () => {
+        util.testFunction`
+            let i = 1;
+            let o = {
+                val: 3,
+                foo(x: null, y: number) { return y + this.val; }
+            };
+            function changeO(this: void) {
+                o = {
+                    val: 5,
+                    foo: function(x: null, y: number) { return (y + this.val) * 10; }
+                };
+                return null;
+            }
+            function getFoo() { return "foo"; }
+            function getO() { return o; }
+            const result = getO()[getFoo()](changeO(), i++);
+            return [result, i];
+        `.expectToMatchJsResult();
+    });
+
+    test("array method call", () => {
+        util.testFunction`
+            let a = [7];
+            let b = [9];
+            function foo(x: number) { if (x > 0) { return b; } else { return a; } }
+            let i = 0;
+            foo(i).push(i, i++, i);
+            return [a, b, i];
+        `.expectToMatchJsResult();
+    });
+
+    test("function method call", () => {
+        util.testFunction`
+            let o = {val: 3};
+            let a = function(x: number) { return this.val + x; };
+            let b = function(x: number) { return (this.val + x) * 10; };
+            function foo(x: number) { if (x > 0) { return b; } else { return a; } }
+            let i = 0;
+            const result = foo(i).call(o, i++);
+            return [result, i];
+        `.expectToMatchJsResult();
+    });
+
+    test("string method call", () => {
+        util.testFunction`
+            function foo(x: number) { if (x > 0) { return "foo"; } else { return "bar"; } }
+            let i = 0;
+            const result = foo(i).substr(++i);
+            return [result, i];
+        `.expectToMatchJsResult();
+    });
+
+    test("new call", () => {
+        util.testFunction`
+            class A { public val = 3; constructor(x: number) { this.val += x; } };
+            class B { public val = 5; constructor(x: number) { this.val += (x * 10); } };
+            function foo(x: number) { if (x > 0) { return B; } else { return A; } }
+            let i = 0;
+            const result = new (foo(i))(i++).val;
+            return [result, i];
         `.expectToMatchJsResult();
     });
 });

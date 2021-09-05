@@ -160,7 +160,7 @@ export function transformAssignmentExpression(
         context.addPrecedingStatements([
             ...precedingStatements,
             lua.createVariableDeclarationStatement(tempVar, right, expression.right),
-            lua.createAssignmentStatement(left, lua.cloneIdentifier(tempVar, expression.left)),
+            lua.createAssignmentStatement(left, lua.cloneIdentifier(tempVar), expression.left),
         ]);
         return lua.cloneIdentifier(tempVar);
     } else {

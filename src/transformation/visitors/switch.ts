@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
+import { popScope, pushScope, ScopeType, separateHoistedStatements } from "../utils/scope";
 
 const containsBreakOrReturn = (nodes: Iterable<ts.Node>): boolean => {
     for (const s of nodes) {
@@ -55,7 +55,9 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
 
     // If the switch only has a default clause, wrap it in a single do.
     // Otherwise, we need to generate a set of if statements to emulate the switch.
-    let statements: lua.Statement[] = [];
+    const statements: lua.Statement[] = [];
+    const prefixStatements: lua.Statement[] = [];
+    const prefixIdentifiers: lua.Identifier[] = [];
     const clauses = statement.caseBlock.clauses;
     if (clauses.length === 1 && ts.isDefaultClause(clauses[0])) {
         const defaultClause = clauses[0].statements;
@@ -124,10 +126,16 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
             }
 
             // Transform the clause and append the final break statement if necessary
-            const clauseStatements = context.transformStatements(clause.statements);
+            const {
+                statements: clauseStatements,
+                hoistedStatements,
+                hoistedIdentifiers,
+            } = separateHoistedStatements(context, context.transformStatements(clause.statements));
             if (i === clauses.length - 1 && !containsBreakOrReturn(clause.statements)) {
                 clauseStatements.push(lua.createBreakStatement());
             }
+            prefixStatements.push(...hoistedStatements);
+            prefixIdentifiers.push(...hoistedIdentifiers);
 
             // Push if statement for case
             statements.push(lua.createIfStatement(conditionVariable, lua.createBlock(clauseStatements)));
@@ -160,7 +168,11 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
     }
 
     // Hoist the variable, function, and import statements to the top of the switch
-    statements = performHoisting(context, statements);
+    statements.unshift(...prefixStatements);
+    if (prefixIdentifiers.length > 0) {
+        statements.unshift(lua.createVariableDeclarationStatement(prefixIdentifiers));
+    }
+
     popScope(context);
 
     // Add the switch expression after hoisting

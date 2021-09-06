@@ -646,4 +646,19 @@ describe("switch hoisting", () => {
             .expectToMatchJsResult()
             .expectLuaToMatchSnapshot();
     });
+
+    test("hoisting in a solo default clause", () => {
+        util.testFunction`
+            let x = 1;
+            let result = "";
+            switch (x) {
+                default:
+                    result = hoisted();
+                    function hoisted() {
+                        return "hoisted";
+                    }
+            }
+            return result;
+        `.expectToMatchJsResult();
+    });
 });

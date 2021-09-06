@@ -62,7 +62,14 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
     if (clauses.length === 1 && ts.isDefaultClause(clauses[0])) {
         const defaultClause = clauses[0].statements;
         if (defaultClause.length) {
-            statements.push(lua.createDoStatement(context.transformStatements(defaultClause)));
+            const {
+                statements: defaultStatements,
+                hoistedStatements,
+                hoistedIdentifiers,
+            } = separateHoistedStatements(context, context.transformStatements(defaultClause));
+            prefixStatements.push(...hoistedStatements);
+            prefixIdentifiers.push(...hoistedIdentifiers);
+            statements.push(lua.createDoStatement(defaultStatements));
         }
     } else {
         // Build up the condition for each if statement

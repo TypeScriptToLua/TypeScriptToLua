@@ -167,8 +167,15 @@ function resolveDependency(
         console.log(`Resolving "${dependency}" from ${normalizeSlashes(fileDirectory)}`);
     }
 
+    // Check if the import is relative
+    const isRelative = ["/", "./", "../"].some(p => dependency.startsWith(p));
+
+    // If the import is relative, always resolve it relative to the requiring file
+    // If the import is not relative, resolve it relative to options.baseUrl if it is set
+    const relativeTo = isRelative ? fileDirectory : options.baseUrl ?? fileDirectory;
+
     // Check if file is a file in the project
-    const resolvedPath = path.join(options.baseUrl ?? fileDirectory, dependency);
+    const resolvedPath = path.join(relativeTo, dependency);
 
     const possibleProjectFiles = [
         resolvedPath, // JSON files need their extension as part of the import path, caught by this branch,

@@ -6,6 +6,7 @@ test.each([
     'let result: string; { result = [...$vararg].join(""); }',
     'let result: string; if (true) { result = [...$vararg].join(""); }',
     'let result: string; do { result = [...$vararg].join(""); } while (false);',
+    'function foo(...args: unknown[]) { return args.join(""); } const result = foo(...$vararg);',
 ])("$vararg valid use (%p)", statement => {
     util.testModule`
         ${statement}
@@ -29,4 +30,26 @@ test.each([
     `
         .withLanguageExtensions()
         .expectDiagnosticsToMatchSnapshot([invalidVarargUse.code]);
+});
+
+test("$vararg in bundle entry point", () => {
+    util.testModule`
+        export const result = [...$vararg].join("");
+    `
+        .setMainFileName("src/main.ts")
+        .setOptions({ rootDir: "src", luaBundle: "bundle.lua", luaBundleEntry: "src/main.ts" })
+        .withLanguageExtensions()
+        .setLuaFactory(code => `return (function(...) ${code} end)("A", "B", "C", "D")`)
+        .expectToEqual({ result: "ABCD" });
+});
+
+test("$vararg in bundle sub-module", () => {
+    util.testModule`
+        export { result } from "./module";
+    `
+        .setMainFileName("src/main.ts")
+        .addExtraFile("src/module.ts", 'export const result = [...$vararg].join("")')
+        .setOptions({ rootDir: "src", luaBundle: "bundle.lua", luaBundleEntry: "src/main.ts" })
+        .withLanguageExtensions()
+        .expectToEqual({ result: "module" });
 });

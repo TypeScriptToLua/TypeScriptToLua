@@ -108,8 +108,22 @@ function transformElementAccessCall(
     left: ts.PropertyAccessExpression | ts.ElementAccessExpression,
     args: ts.Expression[] | ts.NodeArray<ts.Expression>,
     signature?: ts.Signature
-): { statements: lua.Statement; result: lua.CallExpression } {
+) {
+    // Cache left-side if it has effects
+    // local ____self = context; return ____self[argument](parameters);
     const selfIdentifier = lua.createIdentifier(context.createTempName("self"));
+    const callContext = context.transformExpression(left.expression);
+    const selfAssignment = lua.createVariableDeclarationStatement(selfIdentifier, callContext);
+    context.addPrecedingStatements([selfAssignment]);
+
+    const argument = ts.isElementAccessExpression(left)
+        ? transformElementAccessArgument(context, left)
+        : lua.createStringLiteral(left.name.text);
+
+    let index: lua.Expression = lua.createTableIndexExpression(selfIdentifier, argument);
+
+    context.pushPrecedingStatements();
+
     const transformedArguments = transformArguments(
         context,
         args,
@@ -117,16 +131,14 @@ function transformElementAccessCall(
         ts.factory.createIdentifier(selfIdentifier.text)
     );
 
-    // Cache left-side if it has effects
-    // (function() local ____self = context; return ____self[argument](parameters); end)()
-    const argument = ts.isElementAccessExpression(left)
-        ? transformElementAccessArgument(context, left)
-        : lua.createStringLiteral(left.name.text);
-    const callContext = context.transformExpression(left.expression);
-    const selfAssignment = lua.createVariableDeclarationStatement(selfIdentifier, callContext);
-    const index = lua.createTableIndexExpression(selfIdentifier, argument);
-    const callExpression = lua.createCallExpression(index, transformedArguments);
-    return { statements: selfAssignment, result: callExpression };
+    const argPrecedingStatements = context.popPrecedingStatements();
+    if (argPrecedingStatements.length > 0) {
+        // Cache index in temp if args had preceding statements
+        index = moveToPrecedingTemp(context, index);
+        context.addPrecedingStatements(argPrecedingStatements);
+    }
+
+    return lua.createCallExpression(index, transformedArguments);
 }
 
 export function transformContextualCallExpression(
@@ -170,14 +182,7 @@ export function transformContextualCallExpression(
         }
     } else if (ts.isElementAccessExpression(left) || ts.isPropertyAccessExpression(left)) {
         if (isExpressionWithEvaluationEffect(left.expression)) {
-            const { statements: selfAssignment, result: callExpression } = transformElementAccessCall(
-                context,
-                left,
-                args,
-                signature
-            );
-            context.addPrecedingStatements([selfAssignment]);
-            return callExpression;
+            return transformElementAccessCall(context, left, args, signature);
         } else {
             const [expression, updatedArgs] = transformCallWithArgPrecedingStatements(
                 context,

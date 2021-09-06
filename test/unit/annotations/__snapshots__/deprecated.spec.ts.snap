@@ -66,9 +66,10 @@ function ____exports.__main(self)
     local function luaIter(self)
         local i = 0
         return function()
+            local ____arr_1 = arr
             local ____i_0 = i
             i = ____i_0 + 1
-            return arr[____i_0 + 1]
+            return ____arr_1[____i_0 + 1]
         end
     end
     local result = \\"\\"

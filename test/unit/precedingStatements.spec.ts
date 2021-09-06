@@ -108,7 +108,7 @@ describe("execution order", () => {
     test("template expression", () => {
         util.testFunction`
             let i = 0;
-            return \`\${i} - \${i++}\`
+            return \`\${i}, \${i++}, \${i}\`;
         `.expectToMatchJsResult();
     });
 
@@ -239,6 +239,29 @@ describe("execution order", () => {
         `.expectToMatchJsResult();
     });
 
+    test("object destructuring assignment statement", () => {
+        util.testFunction`
+            let i = "A";
+            const o: Record<string, string> = {ABCDE: "success"};
+            function getO(x: string) { i = x + "C"; return o; }
+            function getI(x: string) { i = x + "E"; return i; }
+            const { [getI(i += "D")]: result } = getO(i += "B");
+            return [result, i];
+        `.expectToMatchJsResult();
+    });
+
+    test("object destructuring assignment expression", () => {
+        util.testFunction`
+            let i = "A";
+            const o: Record<string, string> = {ABCDE: "success"};
+            function getO(x: string) { i = x + "C"; return o; }
+            function getI(x: string) { i = x + "E"; return i; }
+            let result: string;
+            const x = ({ [getI(i += "D")]: result } = getO(i += "B"));
+            return [result, i];
+        `.expectToMatchJsResult();
+    });
+
     test("call expression", () => {
         util.testFunction`
             let i = 1;
@@ -290,7 +313,7 @@ describe("execution order", () => {
                 o.foo = function(x: null, y: number) { return (y + this.val) * 10; };
                 return null;
             }
-            function getFoo() { return "foo"; }
+            function getFoo() { return "foo" as const; }
             function getO() { return o; }
             const result = getO()[getFoo()](changeFoo(), i++);
             return [result, i];
@@ -330,7 +353,7 @@ describe("execution order", () => {
                 };
                 return null;
             }
-            function getFoo() { return "foo"; }
+            function getFoo() { return "foo" as const; }
             function getO() { return o; }
             const result = getO()[getFoo()](changeO(), i++);
             return [result, i];

@@ -263,7 +263,9 @@ function hoistFunctionDefinitions(context: TransformationContext, scope: Scope, 
                 continue; // statements array may not contain all statements in the scope (switch-case)
             }
             unhoistedStatements.splice(index, 1);
+
             if (lua.isVariableDeclarationStatement(functionDefinition.definition)) {
+                // Separate function definition and variable declaration
                 assert(functionDefinition.definition.right);
                 hoistedIdentifiers.push(...functionDefinition.definition.left);
                 hoistedStatements.push(

@@ -618,7 +618,9 @@ describe("switch hoisting", () => {
                     result = "3";
                 }
             return result;
-        `.expectToMatchJsResult();
+        `
+            .expectToMatchJsResult()
+            .expectLuaToMatchSnapshot();
     });
 
     test("hoisting from fallthrough clause after default is not duplicated", () => {
@@ -640,6 +642,8 @@ describe("switch hoisting", () => {
                     result = "3";
                 }
             return result;
-        `.expectToMatchJsResult();
+        `
+            .expectToMatchJsResult()
+            .expectLuaToMatchSnapshot();
     });
 });

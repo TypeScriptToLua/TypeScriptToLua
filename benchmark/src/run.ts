@@ -1,5 +1,13 @@
 import { runMemoryBenchmark, compareMemoryBenchmarks } from "./memory_benchmark";
-import { isMemoryBenchmarkResult, BenchmarkResult, MemoryBenchmarkResult, ComparisonInfo } from "./benchmark_types";
+import {
+    isMemoryBenchmarkResult,
+    BenchmarkResult,
+    MemoryBenchmarkResult,
+    ComparisonInfo,
+    RuntimeBenchmarkResult,
+    isRuntimeBenchmarkResult,
+} from "./benchmark_types";
+import { runRuntimeBenchmark, compareRuntimeBenchmarks } from "./runtime_benchmark";
 import { json, loadBenchmarksFromDirectory, readFile } from "./util";
 
 // CLI arguments
@@ -10,15 +18,16 @@ declare const arg: [string | undefined, string | undefined, string | undefined];
 
 function benchmark(): void {
     // Memory tests
-    let memoryBenchmarkNewResults: MemoryBenchmarkResult[] = [];
 
     const memoryBenchmarks = loadBenchmarksFromDirectory("memory_benchmarks");
+    const memoryBenchmarkNewResults: MemoryBenchmarkResult[] = memoryBenchmarks.map(runMemoryBenchmark);
 
-    memoryBenchmarkNewResults = memoryBenchmarks.map(runMemoryBenchmark);
+    // Run time tests
 
-    // run future benchmarks types here
+    const runtimeBenchmarks = loadBenchmarksFromDirectory("runtime_benchmarks");
+    const runtimeBenchmarkNewResults: RuntimeBenchmarkResult[] = runtimeBenchmarks.map(runRuntimeBenchmark);
 
-    const newBenchmarkResults = [...memoryBenchmarkNewResults];
+    const newBenchmarkResults = [...memoryBenchmarkNewResults, ...runtimeBenchmarkNewResults];
 
     // Try to read the baseline benchmark result
     let oldBenchmarkResults: BenchmarkResult[] = [];
@@ -38,7 +47,15 @@ function compareBenchmarks(oldResults: BenchmarkResult[], newResults: BenchmarkR
 
     const memoryComparisonInfo = compareMemoryBenchmarks(oldResultsMemory, newResultsMemory);
 
-    return { summary: memoryComparisonInfo.summary, text: memoryComparisonInfo.text };
+    const oldResultsRuntime = oldResults.filter(isRuntimeBenchmarkResult);
+    const newResultsRuntime = newResults.filter(isRuntimeBenchmarkResult);
+
+    const runtimeComparisonInfo = compareRuntimeBenchmarks(oldResultsRuntime, newResultsRuntime);
+
+    return {
+        summary: memoryComparisonInfo.summary + "\n" + runtimeComparisonInfo.summary,
+        text: memoryComparisonInfo.text + "\n" + runtimeComparisonInfo.text,
+    };
 }
 
 function outputBenchmarkData(oldResults: BenchmarkResult[], newResults: BenchmarkResult[]): void {

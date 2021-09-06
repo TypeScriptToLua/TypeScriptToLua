@@ -218,7 +218,7 @@ module.exports = {
             },
         },
         {
-            files: "benchmark/src/memory_benchmarks/**/*.ts",
+            files: "benchmark/src/*_benchmarks/**/*.ts",
             rules: {
                 "import/no-default-export": "off",
             },

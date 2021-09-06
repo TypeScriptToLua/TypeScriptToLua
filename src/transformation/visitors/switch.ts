@@ -66,6 +66,7 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
         }
     } else {
         // Build up the condition for each if statement
+        let defaultTransformed = false;
         let isInitialCondition = true;
         let condition: lua.Expression | undefined = undefined;
         for (let i = 0; i < clauses.length; i++) {
@@ -137,6 +138,11 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
             prefixStatements.push(...hoistedStatements);
             prefixIdentifiers.push(...hoistedIdentifiers);
 
+            // Remember that we transformed default clause so we don't duplicate hoisted statements later
+            if (ts.isDefaultClause(clause)) {
+                defaultTransformed = true;
+            }
+
             // Push if statement for case
             statements.push(lua.createIfStatement(conditionVariable, lua.createBlock(clauseStatements)));
 
@@ -153,11 +159,24 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
                 (clause, index) => index >= start && containsBreakOrReturn(clause.statements)
             );
 
-            // Combine the default and all fallthrough statements
-            const defaultStatements: lua.Statement[] = [];
-            clauses
-                .slice(start, end >= 0 ? end + 1 : undefined)
-                .forEach(c => defaultStatements.push(...context.transformStatements(c.statements)));
+            const {
+                statements: defaultStatements,
+                hoistedStatements,
+                hoistedIdentifiers,
+            } = separateHoistedStatements(context, context.transformStatements(clauses[start].statements));
+
+            // Only push hoisted statements if this is the first time we're transforming the default clause
+            if (!defaultTransformed) {
+                prefixStatements.push(...hoistedStatements);
+                prefixIdentifiers.push(...hoistedIdentifiers);
+            }
+
+            // Combine the fallthrough statements
+            for (const clause of clauses.slice(start + 1, end >= 0 ? end + 1 : undefined)) {
+                let statements = context.transformStatements(clause.statements);
+                ({ statements } = separateHoistedStatements(context, statements));
+                defaultStatements.push(...statements);
+            }
 
             // Add the default clause if it has any statements
             // The switch will always break on the final clause and skip execution if valid to do so

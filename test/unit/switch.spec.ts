@@ -580,4 +580,66 @@ describe("switch hoisting", () => {
             return result;
         `.expectToMatchJsResult();
     });
+
+    test("hoisting from default clause", () => {
+        util.testFunction`
+            let x = 1;
+            let result = "";
+            switch (x) {
+                case 1:
+                    result = hoisted();
+                    break;
+                default:
+                    function hoisted() {
+                        return "hoisted";
+                    }
+                    break;
+            }
+            return result;
+        `.expectToMatchJsResult();
+    });
+
+    test("hoisting from default clause is not duplicated when falling through", () => {
+        util.testFunction`
+            let x = 1;
+            let result = "";
+            switch (x) {
+                case 1:
+                    result = hoisted();
+                    break;
+                case 2:
+                    result = "2";
+                default:
+                    function hoisted() {
+                        return "hoisted";
+                    }
+                    result = "default";
+                case 3:
+                    result = "3";
+                }
+            return result;
+        `.expectToMatchJsResult();
+    });
+
+    test("hoisting from fallthrough clause after default is not duplicated", () => {
+        util.testFunction`
+            let x = 1;
+            let result = "";
+            switch (x) {
+                case 1:
+                    result = hoisted();
+                    break;
+                case 2:
+                    result = "2";
+                default:
+                    result = "default";
+                case 3:
+                    function hoisted() {
+                        return "hoisted";
+                    }
+                    result = "3";
+                }
+            return result;
+        `.expectToMatchJsResult();
+    });
 });

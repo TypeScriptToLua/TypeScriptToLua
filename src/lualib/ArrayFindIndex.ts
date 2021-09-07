@@ -3,9 +3,9 @@ function __TS__ArrayFindIndex<T>(
     arr: T[],
     callbackFn: (element: T, index?: number, array?: T[]) => boolean
 ): number {
-    for (let i = 0, len = arr.length; i < len; i++) {
-        if (callbackFn(arr[i], i, arr)) {
-            return i;
+    for (const i of $range(1, arr.length)) {
+        if (callbackFn(arr[i - 1], i - 1, arr)) {
+            return i - 1;
         }
     }
     return -1;

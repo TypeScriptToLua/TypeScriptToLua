@@ -4,14 +4,11 @@ function __TS__ArrayFind<T>(
     arr: T[],
     predicate: (value: T, index: number, obj: T[]) => unknown
 ): T | undefined {
-    const len = arr.length;
-    let k = 0;
-    while (k < len) {
-        const elem = arr[k];
-        if (predicate(elem, k, arr)) {
+    for (const i of $range(1, arr.length)) {
+        const elem = arr[i - 1];
+        if (predicate(elem, i - 1, arr)) {
             return elem;
         }
-        k += 1;
     }
 
     return undefined;

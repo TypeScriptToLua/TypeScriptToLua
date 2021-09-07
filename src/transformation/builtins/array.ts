@@ -89,7 +89,11 @@ export function transformArrayPrototypeCall(
         case "reverse":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayReverse, node, caller);
         case "shift":
-            return transformLuaLibFunction(context, LuaLibFeature.ArrayShift, node, caller);
+            return lua.createCallExpression(
+                lua.createTableIndexExpression(lua.createIdentifier("table"), lua.createStringLiteral("remove")),
+                [caller, lua.createNumericLiteral(1)],
+                node
+            );
         case "unshift":
             return transformLuaLibFunction(
                 context,

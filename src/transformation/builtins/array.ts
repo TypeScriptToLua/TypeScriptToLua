@@ -141,11 +141,14 @@ export function transformArrayPrototypeCall(
             const elementType = context.checker.getElementTypeOfArrayType(callerType);
             if (elementType && (isStringType(context, elementType) || isNumberType(context, elementType))) {
                 const defaultSeparatorLiteral = lua.createStringLiteral(",");
+                const param = params[0];
                 const parameters = [
                     caller,
                     node.arguments.length === 0
                         ? defaultSeparatorLiteral
-                        : lua.createBinaryExpression(params[0], defaultSeparatorLiteral, lua.SyntaxKind.OrOperator),
+                        : lua.isStringLiteral(param)
+                        ? param
+                        : lua.createBinaryExpression(param, defaultSeparatorLiteral, lua.SyntaxKind.OrOperator),
                 ];
 
                 return lua.createCallExpression(

@@ -3,8 +3,8 @@ function __TS__ArrayEvery<T>(
     arr: T[],
     callbackfn: (value: T, index?: number, array?: any[]) => boolean
 ): boolean {
-    for (let i = 0; i < arr.length; i++) {
-        if (!callbackfn(arr[i], i, arr)) {
+    for (const i of $range(1, arr.length)) {
+        if (!callbackfn(arr[i - 1], i - 1, arr)) {
             return false;
         }
     }

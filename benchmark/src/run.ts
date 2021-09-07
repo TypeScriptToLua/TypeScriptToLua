@@ -41,14 +41,20 @@ function benchmark(): void {
 }
 benchmark();
 
+function sortByName({ benchmarkName: a }: BenchmarkResult, { benchmarkName: b }: BenchmarkResult): number {
+    if (a < b) return -1;
+    if (a > b) return 1;
+    return 0;
+}
+
 function compareBenchmarks(oldResults: BenchmarkResult[], newResults: BenchmarkResult[]): ComparisonInfo {
-    const oldResultsMemory = oldResults.filter(isMemoryBenchmarkResult);
-    const newResultsMemory = newResults.filter(isMemoryBenchmarkResult);
+    const oldResultsMemory = oldResults.filter(isMemoryBenchmarkResult).sort(sortByName);
+    const newResultsMemory = newResults.filter(isMemoryBenchmarkResult).sort(sortByName);
 
     const memoryComparisonInfo = compareMemoryBenchmarks(oldResultsMemory, newResultsMemory);
 
-    const oldResultsRuntime = oldResults.filter(isRuntimeBenchmarkResult);
-    const newResultsRuntime = newResults.filter(isRuntimeBenchmarkResult);
+    const oldResultsRuntime = oldResults.filter(isRuntimeBenchmarkResult).sort(sortByName);
+    const newResultsRuntime = newResults.filter(isRuntimeBenchmarkResult).sort(sortByName);
 
     const runtimeComparisonInfo = compareRuntimeBenchmarks(oldResultsRuntime, newResultsRuntime);
 

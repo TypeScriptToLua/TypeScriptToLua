@@ -35,7 +35,7 @@ export function compareRuntimeBenchmarks(
             time => toFixed(time, 4)
         );
 
-    const text = `**master:**\n\`\`\`json\n${json.encode(oldResults)}\n\`\`\`\n**commit:**\n\`\`\`json\n${json.encode(
+    const text = `### master\n\`\`\`json\n${json.encode(oldResults)}\n\`\`\`\n### commit\n\`\`\`json\n${json.encode(
         newResults
     )}\n\`\`\``;
 

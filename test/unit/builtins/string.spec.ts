@@ -54,8 +54,9 @@ test("string index (side effect)", () => {
     `.expectToMatchJsResult();
 });
 
-test.each([
+const replaceTestCases = [
     { inp: "hello test", searchValue: "", replaceValue: "" },
+    { inp: "hello test", searchValue: "", replaceValue: "_" },
     { inp: "hello test", searchValue: " ", replaceValue: "" },
     { inp: "hello test", searchValue: "hello", replaceValue: "" },
     { inp: "hello test", searchValue: "test", replaceValue: "" },
@@ -68,8 +69,15 @@ test.each([
     { inp: "hello test", searchValue: "test", replaceValue: () => "a" },
     { inp: "hello test", searchValue: "test", replaceValue: () => "%a" },
     { inp: "aaa", searchValue: "a", replaceValue: "b" },
-])("string.replace (%p)", ({ inp, searchValue, replaceValue }) => {
+];
+test.each(replaceTestCases)("string.replace (%p)", ({ inp, searchValue, replaceValue }) => {
     util.testExpression`"${inp}".replace(${util.formatCode(searchValue, replaceValue)})`.expectToMatchJsResult();
+});
+test.each(replaceTestCases)("string.replaceAll (%p)", ({ inp, searchValue, replaceValue }) => {
+    util.testExpression`"${inp}${inp}".replaceAll(${util.formatCode(
+        searchValue,
+        replaceValue
+    )})`.expectToMatchJsResult();
 });
 
 test.each([

@@ -28,6 +28,8 @@ export function transformStringPrototypeCall(
     switch (expressionName) {
         case "replace":
             return transformLuaLibFunction(context, LuaLibFeature.StringReplace, node, caller, ...params);
+        case "replaceAll":
+            return transformLuaLibFunction(context, LuaLibFeature.StringReplaceAll, node, caller, ...params);
         case "concat":
             return transformLuaLibFunction(context, LuaLibFeature.StringConcat, node, caller, ...params);
 

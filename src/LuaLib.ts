@@ -83,6 +83,7 @@ export enum LuaLibFeature {
     StringPadEnd = "StringPadEnd",
     StringPadStart = "StringPadStart",
     StringReplace = "StringReplace",
+    StringReplaceAll = "StringReplaceAll",
     StringSlice = "StringSlice",
     StringSplit = "StringSplit",
     StringStartsWith = "StringStartsWith",

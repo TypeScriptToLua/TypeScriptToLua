@@ -1,5 +1,6 @@
 import { LuaLibImportKind } from "../../../src";
 import * as util from "../../util";
+import { describe } from "jest-circus";
 
 test("Supported lua string function", () => {
     const tsHeader = `
@@ -54,32 +55,46 @@ test("string index (side effect)", () => {
     `.expectToMatchJsResult();
 });
 
-const replaceTestCases = [
-    { inp: "hello test", searchValue: "", replaceValue: "" },
-    { inp: "hello test", searchValue: "", replaceValue: "_" },
-    { inp: "hello test", searchValue: " ", replaceValue: "" },
-    { inp: "hello test", searchValue: "hello", replaceValue: "" },
-    { inp: "hello test", searchValue: "test", replaceValue: "" },
-    { inp: "hello test", searchValue: "test", replaceValue: "world" },
-    { inp: "hello test", searchValue: "test", replaceValue: "%world" },
-    { inp: "hello test", searchValue: "test", replaceValue: "." },
-    { inp: "hello %test", searchValue: "test", replaceValue: "world" },
-    { inp: "hello %test", searchValue: "%test", replaceValue: "world" },
-    { inp: "hello test.", searchValue: ".", replaceValue: "$" },
-    { inp: "hello test", searchValue: "test", replaceValue: () => "a" },
-    { inp: "hello test", searchValue: "test", replaceValue: () => "%a" },
-    { inp: "aaa", searchValue: "a", replaceValue: "b" },
-];
-test.each(replaceTestCases)("string.replace (%p)", ({ inp, searchValue, replaceValue }) => {
-    util.testExpression`"${inp}".replace(${util.formatCode(searchValue, replaceValue)})`.expectToMatchJsResult();
+describe.each(["replace", "replaceAll"])("string.%s", method => {
+    const testCases = [
+        { inp: "hello test", searchValue: "", replaceValue: "" },
+        { inp: "hello test", searchValue: "", replaceValue: "_" },
+        { inp: "hello test", searchValue: " ", replaceValue: "" },
+        { inp: "hello test", searchValue: "hello", replaceValue: "" },
+        { inp: "hello test", searchValue: "test", replaceValue: "" },
+        { inp: "hello test", searchValue: "test", replaceValue: "world" },
+        { inp: "hello test", searchValue: "test", replaceValue: "%world" },
+        { inp: "hello test", searchValue: "test", replaceValue: "." },
+        { inp: "hello %test", searchValue: "test", replaceValue: "world" },
+        { inp: "hello %test", searchValue: "%test", replaceValue: "world" },
+        { inp: "hello test.", searchValue: ".", replaceValue: "$" },
+        { inp: "aaa", searchValue: "a", replaceValue: "b" },
+    ];
+    describe("string replacer", () => {
+        test.each(testCases)("%p", ({ inp, searchValue, replaceValue }) => {
+            util.testExpression`"${inp}${inp}".${method}(${util.formatCode(
+                searchValue,
+                replaceValue
+            )})`.expectToMatchJsResult();
+        });
+    });
+    describe("function replacer", () => {
+        test.each(testCases)("%p", ({ inp, searchValue, replaceValue }) => {
+            util.testFunction`
+        const result = {
+            args: [],
+            string: ""
+        }
+        function replacer(...args: any[]): string {
+            result.args.push(...args)
+            return ${util.formatCode(replaceValue)}
+        }
+        result.string = "${inp}${inp}".${method}(${util.formatCode(searchValue)}, replacer)
+        return result
+    `.expectToMatchJsResult();
+        });
+    });
 });
-test.each(replaceTestCases)("string.replaceAll (%p)", ({ inp, searchValue, replaceValue }) => {
-    util.testExpression`"${inp}${inp}".replaceAll(${util.formatCode(
-        searchValue,
-        replaceValue
-    )})`.expectToMatchJsResult();
-});
-
 test.each([
     ["", ""],
     ["hello", "test"],

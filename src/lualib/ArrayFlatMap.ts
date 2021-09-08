@@ -4,7 +4,7 @@ function __TS__ArrayFlatMap<T, U>(
     callback: (value: T, index: number, array: T[]) => U | readonly U[]
 ): U[] {
     const result: U[] = [];
-    let len = 1;
+    let len = 0;
     for (const i of $range(1, array.length)) {
         const value = callback(array[i - 1], i - 1, array);
         if (Array.isArray(value)) {

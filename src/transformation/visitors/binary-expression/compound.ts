@@ -3,7 +3,7 @@ import * as lua from "../../../LuaAST";
 import { cast, assertNever } from "../../../utils";
 import { TransformationContext } from "../../context";
 import { transformBinaryOperation } from "../binary-expression";
-import { transformAssignment } from "./assignments";
+import { transformAssignmentWithRightPrecedingStatements } from "./assignments";
 
 function isLuaExpressionWithSideEffect(expression: lua.Expression) {
     return !(lua.isLiteral(expression) || lua.isIdentifier(expression));
@@ -113,7 +113,12 @@ export function transformCompoundAssignment(
         const tmpIdentifier = context.createTempForLuaExpression(left);
         const tmpDeclaration = lua.createVariableDeclarationStatement(tmpIdentifier, left);
         const operatorExpression = transformBinaryOperation(context, tmpIdentifier, right, operator, expression);
-        const assignStatements = transformAssignment(context, lhs, operatorExpression, rightPrecedingStatements);
+        const assignStatements = transformAssignmentWithRightPrecedingStatements(
+            context,
+            lhs,
+            operatorExpression,
+            rightPrecedingStatements
+        );
         return { statements: [tmpDeclaration, ...assignStatements], result: tmpIdentifier };
     } else if (ts.isPropertyAccessExpression(lhs) || ts.isElementAccessExpression(lhs)) {
         // Simple property/element access expressions need to cache in temp to avoid double-evaluation
@@ -132,14 +137,14 @@ export function transformCompoundAssignment(
             return { statements, result: tmpIdentifier };
         }
 
-        const assignStatements = transformAssignment(context, lhs, tmpIdentifier, rightPrecedingStatements);
+        const assignStatements = transformAssignmentWithRightPrecedingStatements(
+            context,
+            lhs,
+            tmpIdentifier,
+            rightPrecedingStatements
+        );
         return { statements: [tmpDeclaration, ...assignStatements], result: tmpIdentifier };
     } else {
-        // Simple expressions
-        // ${left} = ${left} ${operator} ${right}
-        const operatorExpression = transformBinaryOperation(context, left, right, operator, expression);
-        const statements = transformAssignment(context, lhs, operatorExpression, rightPrecedingStatements);
-
         if (rightPrecedingStatements.length > 0 && isSetterSkippingCompoundAssignmentOperator(operator)) {
             return {
                 statements: transformSetterSkippingCompoundAssignment(left, operator, right, rightPrecedingStatements),
@@ -147,6 +152,15 @@ export function transformCompoundAssignment(
             };
         }
 
+        // Simple expressions
+        // ${left} = ${left} ${operator} ${right}
+        const operatorExpression = transformBinaryOperation(context, left, right, operator, expression);
+        const statements = transformAssignmentWithRightPrecedingStatements(
+            context,
+            lhs,
+            operatorExpression,
+            rightPrecedingStatements
+        );
         return { statements, result: left };
     }
 }
@@ -210,9 +224,13 @@ export function transformCompoundAssignmentStatement(
 
         // Simple statements
         // ${left} = ${left} ${replacementOperator} ${right}
-
         const operatorExpression = transformBinaryOperation(context, left, right, operator, node);
-        return transformAssignment(context, lhs, operatorExpression, rightPrecedingStatements);
+        return transformAssignmentWithRightPrecedingStatements(
+            context,
+            lhs,
+            operatorExpression,
+            rightPrecedingStatements
+        );
     }
 }
 

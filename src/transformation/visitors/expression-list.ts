@@ -120,7 +120,7 @@ export function transformExpressionList(
 
 export function transformOrderedExpressions(
     context: TransformationContext,
-    expressions: ts.Expression[]
+    expressions: readonly ts.Expression[]
 ): lua.Expression[] {
     const transformedExpressions: lua.Expression[] = [];
     const precedingStatements: lua.Statement[][] = [];

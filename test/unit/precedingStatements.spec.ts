@@ -221,21 +221,57 @@ describe("execution order", () => {
         `.expectToMatchJsResult();
     });
 
-    test("destructuring assignment statement", () => {
+    test("array destructuring assignment statement", () => {
         util.testFunction`
+            const a = [10, 9, 8, 7, 6, 5];
             let i = 0;
-            const a = [9, 8, 7];
-            [a[i++], a[i]] = [i++, i];
-            return a;
+            [a[i], a[i++]] = [i++, i++];
+            return [a, i];
         `.expectToMatchJsResult();
     });
 
-    test("destructuring assignment expression", () => {
+    test("array destructuring assignment expression", () => {
+        util.testFunction`
+            const a = [10, 9, 8, 7, 6, 5];
+            let i = 0;
+            const x = [a[i], a[i++]] = [i++, i++];
+            return [a, i, x];
+        `.expectToMatchJsResult();
+    });
+
+    test("array destructuring assignment statement with default", () => {
+        util.testFunction`
+            const a = [10, 9, 8, 7, 6, 5];
+            let i = 0;
+            [a[i] = i++, a[i++]] = [i++, i++];
+            return [a, i];
+        `.expectToMatchJsResult();
+    });
+
+    test("array destructuring assignment expression with default", () => {
+        util.testFunction`
+            const a = [10, 9, 8, 7, 6, 5];
+            let i = 0;
+            const x = [a[i] = i++, a[i++]] = [i++, i++];
+            return [a, i, x];
+        `.expectToMatchJsResult();
+    });
+
+    test("array destructuring assignment statement with spread", () => {
         util.testFunction`
             let i = 0;
-            const a = [9, 8, 7];
-            const x = [a[i++], a[i]] = [i++, i];
-            return a;
+            let a: number[][] = [[9, 9, 9], [9, 9, 9], [9, 9, 9]];
+            [a[0][i], ...a[i++]] = [i++, i++];
+            return [a, i];
+        `.expectToMatchJsResult();
+    });
+
+    test("array destructuring assignment expression with spread", () => {
+        util.testFunction`
+            let i = 0;
+            let a: number[][] = [[9, 9, 9], [9, 9, 9], [9, 9, 9]];
+            const x = [a[0][i], ...a[i++]] = [i++, i++];
+            return [a, i, x];
         `.expectToMatchJsResult();
     });
 
@@ -258,7 +294,7 @@ describe("execution order", () => {
             function getI(x: string) { i = x + "E"; return i; }
             let result: string;
             const x = ({ [getI(i += "D")]: result } = getO(i += "B"));
-            return [result, i];
+            return [result, i, x];
         `.expectToMatchJsResult();
     });
 

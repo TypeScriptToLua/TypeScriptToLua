@@ -64,7 +64,7 @@ export function transformForInitializer(
 
         block.statements.unshift(
             ...(isAssignmentPattern(initializer)
-                ? transformAssignmentPattern(context, initializer, valueVariable)
+                ? transformAssignmentPattern(context, initializer, valueVariable, false)
                 : transformAssignment(context, initializer, valueVariable))
         );
     }

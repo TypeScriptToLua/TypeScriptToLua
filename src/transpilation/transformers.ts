@@ -121,6 +121,8 @@ function loadTransformersFromOptions(program: ts.Program, diagnostics: ts.Diagno
     }
     if (options.jsx === ts.JsxEmit.React) {
         customTransformers.before.push(context => {
+            // if target < ES2017, typescript generates some unnecessary additional transformations in transformJSX.
+            // We can't control the target compiler option, so we override here.
             const patchedContext: ts.TransformationContext = {
                 ...context,
                 getCompilerOptions: () => ({

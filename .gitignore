@@ -9,4 +9,3 @@ yarn.lock
 
 benchmark/data/*
 benchmark/dist/*
-!benchmark/dist/json.lua

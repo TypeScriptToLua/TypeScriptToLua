@@ -1,7 +1,8 @@
-import { Position, SourceMapConsumer } from "source-map";
+import { SourceMapConsumer } from "source-map";
 import * as tstl from "../../../src";
 import { couldNotResolveRequire } from "../../../src/transpilation/diagnostics";
 import * as util from "../../util";
+import { lineAndColumnOf } from "./utils";
 
 test.each([
     {
@@ -306,27 +307,3 @@ test("Inline sourcemaps", () => {
     const inlineSourceMap = Buffer.from(inlineSourceMapMatch, "base64").toString();
     expect(inlineSourceMap).toBe(file.luaSourceMap);
 });
-
-// Helper functions
-
-function lineAndColumnOf(text: string, pattern: string): Position {
-    const pos = text.indexOf(pattern);
-    if (pos === -1) {
-        return { line: -1, column: -1 };
-    }
-
-    const lineLengths = text.split("\n").map(s => s.length);
-
-    let totalPos = 0;
-    for (let line = 1; line <= lineLengths.length; line++) {
-        // Add + 1 for the removed \n
-        const lineLength = lineLengths[line - 1] + 1;
-        if (pos < totalPos + lineLength) {
-            return { line, column: pos - totalPos };
-        }
-
-        totalPos += lineLengths[line - 1] + 1;
-    }
-
-    return { line: -1, column: -1 };
-}

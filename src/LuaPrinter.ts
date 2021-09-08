@@ -1,6 +1,6 @@
 import { Mapping, SourceMapGenerator, SourceNode } from "source-map";
 import * as ts from "typescript";
-import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
+import { CompilerOptions, isBundleEnabled, LuaLibImportKind } from "./CompilerOptions";
 import * as lua from "./LuaAST";
 import { loadLuaLibFeatures, LuaLibFeature } from "./LuaLib";
 import { isValidLuaIdentifier } from "./transformation/utils/safe-names";
@@ -123,6 +123,8 @@ export class LuaPrinter {
     private sourceFile: string;
     private options: CompilerOptions;
 
+    public static readonly sourceMapTracebackPlaceholder = "{#SourceMapTraceback}";
+
     constructor(private emitHost: EmitHost, program: ts.Program, fileName: string) {
         this.options = program.getCompilerOptions();
         this.sourceFile = fileName;
@@ -149,7 +151,7 @@ export class LuaPrinter {
 
         if (this.options.sourceMapTraceback) {
             const stackTraceOverride = this.printStackTraceOverride(rootSourceNode);
-            code = code.replace("{#SourceMapTraceback}", stackTraceOverride);
+            code = code.replace(LuaPrinter.sourceMapTracebackPlaceholder, stackTraceOverride);
         }
 
         return { code, sourceMap: sourceMap.toString(), sourceMapNode: rootSourceNode };
@@ -203,8 +205,10 @@ export class LuaPrinter {
             header += loadLuaLibFeatures(file.luaLibFeatures, this.emitHost);
         }
 
-        if (this.options.sourceMapTraceback) {
-            header += "{#SourceMapTraceback}\n";
+        if (this.options.sourceMapTraceback && !isBundleEnabled(this.options)) {
+            // In bundle mode the traceback is being generated for the entire file in getBundleResult
+            // Otherwise, traceback is being generated locally
+            header += `${LuaPrinter.sourceMapTracebackPlaceholder}\n`;
         }
 
         return this.concatNodes(header, ...this.printStatementArray(file.statements));

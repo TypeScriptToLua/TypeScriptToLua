@@ -34,6 +34,49 @@ local function require(file, ...)
 end
 `;
 
+export const sourceMapTracebackBundlePlaceholder = "{#SourceMapTracebackBundle}";
+
+type SourceMapLineData = number | { line: number; file: string };
+
+export function printStackTraceBundleOverride(rootNode: SourceNode): string {
+    const map: Record<number, SourceMapLineData> = {};
+    const getLineNumber = (line: number, fallback: number) => {
+        const data: SourceMapLineData | undefined = map[line];
+        if (data === undefined) {
+            return fallback;
+        }
+        if (typeof data === "number") {
+            return data;
+        }
+        return data.line;
+    };
+    const transformLineData = (data: SourceMapLineData) => {
+        if (typeof data === "number") {
+            return data;
+        }
+        return `{line = ${data.line}, file = "${data.file}"}`;
+    };
+
+    let currentLine = 1;
+    rootNode.walk((chunk, mappedPosition) => {
+        if (mappedPosition.line !== undefined && mappedPosition.line > 0) {
+            const line = getLineNumber(currentLine, mappedPosition.line);
+
+            map[currentLine] = {
+                line,
+                file: path.basename(mappedPosition.source),
+            };
+        }
+
+        currentLine += chunk.split("\n").length - 1;
+    });
+
+    const mapItems = Object.entries(map).map(([line, original]) => `["${line}"] = ${transformLineData(original)}`);
+    const mapString = "{" + mapItems.join(",") + "}";
+
+    return `__TS__SourceMapTraceBack(debug.getinfo(1).short_src, ${mapString});`;
+}
+
 export function getBundleResult(program: ts.Program, files: ProcessedFile[]): [ts.Diagnostic[], EmitFile] {
     const diagnostics: ts.Diagnostic[] = [];
 
@@ -58,14 +101,22 @@ export function getBundleResult(program: ts.Program, files: ProcessedFile[]): [t
     // return require("<entry module path>")
     const entryPoint = `return require(${createModulePath(entryModule, program)}, ...)\n`;
 
-    const sourceChunks = [requireOverride, moduleTable, entryPoint];
+    const footers: string[] = [];
+    if (options.sourceMapTraceback) {
+        // Generates SourceMapTraceback for the entire file
+        footers.push('require("lualib_bundle")\n');
+        footers.push(`${sourceMapTracebackBundlePlaceholder}\n`);
+    }
+
+    const sourceChunks = [requireOverride, moduleTable, ...footers, entryPoint];
 
     if (!options.noHeader) {
         sourceChunks.unshift(tstlHeader);
     }
 
     const bundleNode = joinSourceChunks(sourceChunks);
-    const { code, map } = bundleNode.toStringWithSourceMap();
+    let { code, map } = bundleNode.toStringWithSourceMap();
+    code = code.replace(sourceMapTracebackBundlePlaceholder, printStackTraceBundleOverride(bundleNode));
 
     return [
         diagnostics,
@@ -79,7 +130,7 @@ export function getBundleResult(program: ts.Program, files: ProcessedFile[]): [t
 }
 
 function moduleSourceNode({ code, sourceMapNode }: ProcessedFile, modulePath: string): SourceNode {
-    const tableEntryHead = `[${modulePath}] = function(...) `;
+    const tableEntryHead = `[${modulePath}] = function(...) \n`;
     const tableEntryTail = " end,\n";
 
     return joinSourceChunks([tableEntryHead, sourceMapNode ?? code, tableEntryTail]);
@@ -93,6 +144,7 @@ function createModuleTableNode(fileChunks: SourceChunk[]): SourceNode {
 }
 
 type SourceChunk = string | SourceNode;
+
 function joinSourceChunks(chunks: SourceChunk[]): SourceNode {
     return new SourceNode(null, null, null, chunks);
 }

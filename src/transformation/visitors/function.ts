@@ -188,10 +188,10 @@ export function transformFunctionToExpression(
         }
     }
 
-    let flags = lua.FunctionExpressionFlags.None;
-    if (!ts.isBlock(node.body)) flags |= lua.FunctionExpressionFlags.Inline;
+    let flags = lua.NodeFlags.None;
+    if (!ts.isBlock(node.body)) flags |= lua.NodeFlags.Inline;
     if (ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node)) {
-        flags |= lua.FunctionExpressionFlags.Declaration;
+        flags |= lua.NodeFlags.Declaration;
     }
 
     const [paramNames, dotsLiteral, spreadIdentifier] = transformParameters(context, node.parameters, functionContext);

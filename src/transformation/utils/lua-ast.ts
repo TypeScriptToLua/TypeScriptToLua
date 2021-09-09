@@ -66,9 +66,12 @@ export function createUnpackCall(
     context: TransformationContext,
     expression: lua.Expression,
     tsOriginal?: ts.Node
-): lua.Expression {
+): lua.CallExpression {
     if (context.luaTarget === LuaTarget.Universal) {
-        return transformLuaLibFunction(context, LuaLibFeature.Unpack, tsOriginal, expression);
+        return lua.setNodeFlags(
+            transformLuaLibFunction(context, LuaLibFeature.Unpack, tsOriginal, expression),
+            lua.NodeFlags.IsUnpackCall
+        );
     }
 
     const unpack =
@@ -76,12 +79,27 @@ export function createUnpackCall(
             ? lua.createIdentifier("unpack")
             : lua.createTableIndexExpression(lua.createIdentifier("table"), lua.createStringLiteral("unpack"));
 
-    return lua.createCallExpression(unpack, [expression], tsOriginal);
+    return lua.setNodeFlags(lua.createCallExpression(unpack, [expression], tsOriginal), lua.NodeFlags.IsUnpackCall);
+}
+
+export function isUnpackCall(node: lua.Node): node is lua.CallExpression {
+    return lua.isCallExpression(node) && (node.flags & lua.NodeFlags.IsUnpackCall) !== 0;
 }
 
 export function wrapInTable(...expressions: lua.Expression[]): lua.TableExpression {
     const fields = expressions.map(e => lua.createTableFieldExpression(e));
     return lua.createTableExpression(fields);
+}
+
+/**
+ * If params is only one unpack call, then returns the unpacked table instead.
+ * So the resulting expression should only be used when guaranteed readonly.
+ */
+export function wrapInReadonlyTable(args: lua.Expression[]): lua.Expression {
+    if (args.length === 1 && isUnpackCall(args[0])) {
+        return args[0].params[0];
+    }
+    return wrapInTable(...args);
 }
 
 export function wrapInToStringForConcat(expression: lua.Expression): lua.Expression {

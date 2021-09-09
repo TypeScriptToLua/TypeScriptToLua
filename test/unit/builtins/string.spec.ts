@@ -1,6 +1,5 @@
 import { LuaLibImportKind } from "../../../src";
 import * as util from "../../util";
-import { describe } from "jest-circus";
 
 test("Supported lua string function", () => {
     const tsHeader = `
@@ -70,31 +69,30 @@ describe.each(["replace", "replaceAll"])("string.%s", method => {
         { inp: "hello test.", searchValue: ".", replaceValue: "$" },
         { inp: "aaa", searchValue: "a", replaceValue: "b" },
     ];
-    describe("string replacer", () => {
-        test.each(testCases)("%p", ({ inp, searchValue, replaceValue }) => {
-            util.testExpression`"${inp}${inp}".${method}(${util.formatCode(
-                searchValue,
-                replaceValue
-            )})`.expectToMatchJsResult();
-        });
+
+    test.each(testCases)("string replacer %p", ({ inp, searchValue, replaceValue }) => {
+        util.testExpression`"${inp}${inp}".${method}(${util.formatCode(
+            searchValue,
+            replaceValue
+        )})`.expectToMatchJsResult();
     });
-    describe("function replacer", () => {
-        test.each(testCases)("%p", ({ inp, searchValue, replaceValue }) => {
-            util.testFunction`
-        const result = {
-            args: [],
-            string: ""
-        }
-        function replacer(...args: any[]): string {
-            result.args.push(...args)
-            return ${util.formatCode(replaceValue)}
-        }
-        result.string = "${inp}${inp}".${method}(${util.formatCode(searchValue)}, replacer)
-        return result
-    `.expectToMatchJsResult();
-        });
+
+    test.each(testCases)("function replacer %p", ({ inp, searchValue, replaceValue }) => {
+        util.testFunction`
+            const result = {
+                args: [],
+                string: ""
+            }
+            function replacer(...args: any[]): string {
+                result.args.push(...args)
+                return ${util.formatCode(replaceValue)}
+            }
+            result.string = "${inp}${inp}".${method}(${util.formatCode(searchValue)}, replacer)
+            return result
+        `.expectToMatchJsResult();
     });
 });
+
 test.each([
     ["", ""],
     ["hello", "test"],

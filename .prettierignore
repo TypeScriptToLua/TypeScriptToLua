@@ -1,3 +1,4 @@
 /dist
 /coverage
 /test/translation/transformation/characterEscapeSequence.ts
+/benchmark/dist

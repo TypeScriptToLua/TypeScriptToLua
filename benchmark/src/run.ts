@@ -1,5 +1,14 @@
 import { runMemoryBenchmark, compareMemoryBenchmarks } from "./memory_benchmark";
-import { isMemoryBenchmarkResult, BenchmarkResult, MemoryBenchmarkResult, ComparisonInfo } from "./benchmark_types";
+import {
+    isMemoryBenchmarkResult,
+    BenchmarkResult,
+    MemoryBenchmarkResult,
+    ComparisonInfo,
+    RuntimeBenchmarkResult,
+    isRuntimeBenchmarkResult,
+    BenchmarkKind,
+} from "./benchmark_types";
+import { runRuntimeBenchmark, compareRuntimeBenchmarks } from "./runtime_benchmark";
 import { json, loadBenchmarksFromDirectory, readFile } from "./util";
 
 // CLI arguments
@@ -10,15 +19,16 @@ declare const arg: [string | undefined, string | undefined, string | undefined];
 
 function benchmark(): void {
     // Memory tests
-    let memoryBenchmarkNewResults: MemoryBenchmarkResult[] = [];
 
     const memoryBenchmarks = loadBenchmarksFromDirectory("memory_benchmarks");
+    const memoryBenchmarkNewResults: MemoryBenchmarkResult[] = memoryBenchmarks.map(runMemoryBenchmark);
 
-    memoryBenchmarkNewResults = memoryBenchmarks.map(runMemoryBenchmark);
+    // Run time tests
 
-    // run future benchmarks types here
+    const runtimeBenchmarks = loadBenchmarksFromDirectory("runtime_benchmarks");
+    const runtimeBenchmarkNewResults: RuntimeBenchmarkResult[] = runtimeBenchmarks.map(runRuntimeBenchmark);
 
-    const newBenchmarkResults = [...memoryBenchmarkNewResults];
+    const newBenchmarkResults = [...memoryBenchmarkNewResults, ...runtimeBenchmarkNewResults];
 
     // Try to read the baseline benchmark result
     let oldBenchmarkResults: BenchmarkResult[] = [];
@@ -28,17 +38,48 @@ function benchmark(): void {
     }
 
     // Output comparison info
+    oldBenchmarkResults.sort(sortByName);
+    newBenchmarkResults.sort(sortByName);
     outputBenchmarkData(oldBenchmarkResults, newBenchmarkResults);
 }
 benchmark();
 
-function compareBenchmarks(oldResults: BenchmarkResult[], newResults: BenchmarkResult[]): ComparisonInfo {
+function sortByName({ benchmarkName: a }: BenchmarkResult, { benchmarkName: b }: BenchmarkResult): number {
+    if (a < b) return -1;
+    if (a > b) return 1;
+    return 0;
+}
+
+function compareBenchmarks(
+    oldResults: BenchmarkResult[],
+    newResults: BenchmarkResult[]
+): Record<BenchmarkKind, ComparisonInfo> {
     const oldResultsMemory = oldResults.filter(isMemoryBenchmarkResult);
     const newResultsMemory = newResults.filter(isMemoryBenchmarkResult);
 
     const memoryComparisonInfo = compareMemoryBenchmarks(oldResultsMemory, newResultsMemory);
 
-    return { summary: memoryComparisonInfo.summary, text: memoryComparisonInfo.text };
+    const oldResultsRuntime = oldResults.filter(isRuntimeBenchmarkResult);
+    const newResultsRuntime = newResults.filter(isRuntimeBenchmarkResult);
+
+    const runtimeComparisonInfo = compareRuntimeBenchmarks(oldResultsRuntime, newResultsRuntime);
+
+    return {
+        [BenchmarkKind.Memory]: memoryComparisonInfo,
+        [BenchmarkKind.Runtime]: runtimeComparisonInfo,
+    };
+}
+
+function formatComparisonMarkdownFile(comparisonInfo: Record<BenchmarkKind, ComparisonInfo>): string {
+    let result = "";
+    const benchmarkKinds = [BenchmarkKind.Memory, BenchmarkKind.Runtime];
+    for (const kind of benchmarkKinds) {
+        result += comparisonInfo[kind].summary + "\n";
+    }
+    for (const kind of benchmarkKinds) {
+        result += comparisonInfo[kind].text + "\n";
+    }
+    return result;
 }
 
 function outputBenchmarkData(oldResults: BenchmarkResult[], newResults: BenchmarkResult[]): void {
@@ -59,6 +100,6 @@ function outputBenchmarkData(oldResults: BenchmarkResult[], newResults: Benchmar
         // Compare results
         const comparisonInfo = compareBenchmarks(oldResults, newResults);
         const markdownDataFile = io.open(arg[2], "w+")[0]!;
-        markdownDataFile.write(comparisonInfo.summary + comparisonInfo.text);
+        markdownDataFile.write(formatComparisonMarkdownFile(comparisonInfo));
     }
 }

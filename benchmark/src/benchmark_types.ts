@@ -1,10 +1,11 @@
 export enum BenchmarkKind {
     Memory = "memory",
+    Runtime = "runtime",
 }
 
 export type BenchmarkFunction = () => void;
 
-export type BenchmarkResult = MemoryBenchmarkResult;
+export type BenchmarkResult = MemoryBenchmarkResult | RuntimeBenchmarkResult;
 
 export enum MemoryBenchmarkCategory {
     TotalMemory = "totalMemory",
@@ -19,6 +20,16 @@ export interface MemoryBenchmarkResult {
 
 export function isMemoryBenchmarkResult(result: BenchmarkResult): result is MemoryBenchmarkResult {
     return result.kind === BenchmarkKind.Memory;
+}
+
+export interface RuntimeBenchmarkResult {
+    kind: BenchmarkKind.Runtime;
+    time: number;
+    benchmarkName: string;
+}
+
+export function isRuntimeBenchmarkResult(result: BenchmarkResult): result is RuntimeBenchmarkResult {
+    return result.kind === BenchmarkKind.Runtime;
 }
 
 export interface ComparisonInfo {

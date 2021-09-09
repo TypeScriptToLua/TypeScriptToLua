@@ -6,6 +6,7 @@ import {
     ComparisonInfo,
     RuntimeBenchmarkResult,
     isRuntimeBenchmarkResult,
+    BenchmarkKind,
 } from "./benchmark_types";
 import { runRuntimeBenchmark, compareRuntimeBenchmarks } from "./runtime_benchmark";
 import { json, loadBenchmarksFromDirectory, readFile } from "./util";
@@ -37,6 +38,8 @@ function benchmark(): void {
     }
 
     // Output comparison info
+    oldBenchmarkResults.sort(sortByName);
+    newBenchmarkResults.sort(sortByName);
     outputBenchmarkData(oldBenchmarkResults, newBenchmarkResults);
 }
 benchmark();
@@ -47,21 +50,36 @@ function sortByName({ benchmarkName: a }: BenchmarkResult, { benchmarkName: b }:
     return 0;
 }
 
-function compareBenchmarks(oldResults: BenchmarkResult[], newResults: BenchmarkResult[]): ComparisonInfo {
-    const oldResultsMemory = oldResults.filter(isMemoryBenchmarkResult).sort(sortByName);
-    const newResultsMemory = newResults.filter(isMemoryBenchmarkResult).sort(sortByName);
+function compareBenchmarks(
+    oldResults: BenchmarkResult[],
+    newResults: BenchmarkResult[]
+): Record<BenchmarkKind, ComparisonInfo> {
+    const oldResultsMemory = oldResults.filter(isMemoryBenchmarkResult);
+    const newResultsMemory = newResults.filter(isMemoryBenchmarkResult);
 
     const memoryComparisonInfo = compareMemoryBenchmarks(oldResultsMemory, newResultsMemory);
 
-    const oldResultsRuntime = oldResults.filter(isRuntimeBenchmarkResult).sort(sortByName);
-    const newResultsRuntime = newResults.filter(isRuntimeBenchmarkResult).sort(sortByName);
+    const oldResultsRuntime = oldResults.filter(isRuntimeBenchmarkResult);
+    const newResultsRuntime = newResults.filter(isRuntimeBenchmarkResult);
 
     const runtimeComparisonInfo = compareRuntimeBenchmarks(oldResultsRuntime, newResultsRuntime);
 
     return {
-        summary: memoryComparisonInfo.summary + "\n" + runtimeComparisonInfo.summary,
-        text: memoryComparisonInfo.text + "\n" + runtimeComparisonInfo.text,
+        [BenchmarkKind.Memory]: memoryComparisonInfo,
+        [BenchmarkKind.Runtime]: runtimeComparisonInfo,
     };
+}
+
+function formatComparisonMarkdownFile(comparisonInfo: Record<BenchmarkKind, ComparisonInfo>): string {
+    let result = "";
+    const benchmarkKinds = [BenchmarkKind.Memory, BenchmarkKind.Runtime];
+    for (const kind of benchmarkKinds) {
+        result += comparisonInfo[kind].summary + "\n";
+    }
+    for (const kind of benchmarkKinds) {
+        result += comparisonInfo[kind].text + "\n";
+    }
+    return result;
 }
 
 function outputBenchmarkData(oldResults: BenchmarkResult[], newResults: BenchmarkResult[]): void {
@@ -82,6 +100,6 @@ function outputBenchmarkData(oldResults: BenchmarkResult[], newResults: Benchmar
         // Compare results
         const comparisonInfo = compareBenchmarks(oldResults, newResults);
         const markdownDataFile = io.open(arg[2], "w+")[0]!;
-        markdownDataFile.write(comparisonInfo.summary + comparisonInfo.text);
+        markdownDataFile.write(formatComparisonMarkdownFile(comparisonInfo));
     }
 }

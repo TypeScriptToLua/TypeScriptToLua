@@ -24,7 +24,6 @@ export function isMemoryBenchmarkResult(result: BenchmarkResult): result is Memo
 
 export interface RuntimeBenchmarkResult {
     kind: BenchmarkKind.Runtime;
-    // seconds, as returned by os.clock()
     time: number;
     benchmarkName: string;
 }

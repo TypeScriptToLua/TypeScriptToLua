@@ -216,7 +216,11 @@ function shouldHoistSymbol(context: TransformationContext, symbolId: lua.SymbolI
     return false;
 }
 
-function hoistVariableDeclarations(context: TransformationContext, scope: Scope, statements: lua.Statement[]) {
+function hoistVariableDeclarations(
+    context: TransformationContext,
+    scope: Scope,
+    statements: lua.Statement[]
+): { unhoistedStatements: lua.Statement[]; hoistedIdentifiers: lua.Identifier[] } {
     if (!scope.variableDeclarations) {
         return { unhoistedStatements: statements, hoistedIdentifiers: [] };
     }
@@ -246,7 +250,11 @@ function hoistVariableDeclarations(context: TransformationContext, scope: Scope,
     return { unhoistedStatements, hoistedIdentifiers };
 }
 
-function hoistFunctionDefinitions(context: TransformationContext, scope: Scope, statements: lua.Statement[]) {
+function hoistFunctionDefinitions(
+    context: TransformationContext,
+    scope: Scope,
+    statements: lua.Statement[]
+): { unhoistedStatements: lua.Statement[]; hoistedStatements: lua.Statement[]; hoistedIdentifiers: lua.Identifier[] } {
     if (!scope.functionDefinitions) {
         return { unhoistedStatements: statements, hoistedStatements: [], hoistedIdentifiers: [] };
     }
@@ -283,6 +291,9 @@ function hoistFunctionDefinitions(context: TransformationContext, scope: Scope, 
     return { unhoistedStatements, hoistedStatements, hoistedIdentifiers };
 }
 
-function hoistImportStatements(scope: Scope, statements: lua.Statement[]) {
+function hoistImportStatements(
+    scope: Scope,
+    statements: lua.Statement[]
+): { unhoistedStatements: lua.Statement[]; hoistedStatements: lua.Statement[] } {
     return { unhoistedStatements: statements, hoistedStatements: scope.importStatements ?? [] };
 }

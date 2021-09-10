@@ -11,6 +11,7 @@ import { isArrayType } from "../utils/typescript";
 import { transformFunctionLikeDeclaration } from "./function";
 import { moveToPrecedingTemp, transformExpressionList } from "./expression-list";
 import { findMultiAssignmentViolations } from "./language-extensions/multi";
+import { wrapInReadonlyTable } from "../utils/lua-ast";
 
 // TODO: Move to object-literal.ts?
 export function transformPropertyName(context: TransformationContext, node: ts.PropertyName): lua.Expression {
@@ -174,7 +175,12 @@ const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpressi
             tableExpressions.unshift(lua.createTableExpression(undefined, expression));
         }
 
-        return transformLuaLibFunction(context, LuaLibFeature.ObjectAssign, expression, ...tableExpressions);
+        return transformLuaLibFunction(
+            context,
+            LuaLibFeature.ObjectAssign,
+            expression,
+            wrapInReadonlyTable(tableExpressions)
+        );
     }
 };
 

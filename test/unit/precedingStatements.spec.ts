@@ -298,6 +298,18 @@ describe("execution order", () => {
         `.expectToMatchJsResult();
     });
 
+    test("object destructuring declaration", () => {
+        util.testFunction`
+            let i = "A";
+            const o: Record<string, string> = {ABCDE: "success"};
+            function getO(x: string) { i = x + "C"; return o; }
+            function getI(x: string) { i = x + "E"; return i; }
+            let result: string;
+            ({ [getI(i += "D")]: result } = getO(i += "B"));
+            return [result, i, x];
+        `.expectToMatchJsResult();
+    });
+
     test("call expression", () => {
         util.testFunction`
             let i = 1;

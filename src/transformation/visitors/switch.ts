@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
+import { popScope, pushScope, ScopeType, separateHoistedStatements } from "../utils/scope";
 
 const containsBreakOrReturn = (nodes: Iterable<ts.Node>): boolean => {
     for (const s of nodes) {
@@ -55,15 +55,25 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
 
     // If the switch only has a default clause, wrap it in a single do.
     // Otherwise, we need to generate a set of if statements to emulate the switch.
-    let statements: lua.Statement[] = [];
+    const statements: lua.Statement[] = [];
+    const hoistedStatements: lua.Statement[] = [];
+    const hoistedIdentifiers: lua.Identifier[] = [];
     const clauses = statement.caseBlock.clauses;
     if (clauses.length === 1 && ts.isDefaultClause(clauses[0])) {
         const defaultClause = clauses[0].statements;
         if (defaultClause.length) {
-            statements.push(lua.createDoStatement(context.transformStatements(defaultClause)));
+            const {
+                statements: defaultStatements,
+                hoistedStatements: defaultHoistedStatements,
+                hoistedIdentifiers: defaultHoistedIdentifiers,
+            } = separateHoistedStatements(context, context.transformStatements(defaultClause));
+            hoistedStatements.push(...defaultHoistedStatements);
+            hoistedIdentifiers.push(...defaultHoistedIdentifiers);
+            statements.push(lua.createDoStatement(defaultStatements));
         }
     } else {
         // Build up the condition for each if statement
+        let defaultTransformed = false;
         let isInitialCondition = true;
         let condition: lua.Expression | undefined = undefined;
         for (let i = 0; i < clauses.length; i++) {
@@ -124,9 +134,20 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
             }
 
             // Transform the clause and append the final break statement if necessary
-            const clauseStatements = context.transformStatements(clause.statements);
+            const {
+                statements: clauseStatements,
+                hoistedStatements: clauseHoistedStatements,
+                hoistedIdentifiers: clauseHoistedIdentifiers,
+            } = separateHoistedStatements(context, context.transformStatements(clause.statements));
             if (i === clauses.length - 1 && !containsBreakOrReturn(clause.statements)) {
                 clauseStatements.push(lua.createBreakStatement());
+            }
+            hoistedStatements.push(...clauseHoistedStatements);
+            hoistedIdentifiers.push(...clauseHoistedIdentifiers);
+
+            // Remember that we transformed default clause so we don't duplicate hoisted statements later
+            if (ts.isDefaultClause(clause)) {
+                defaultTransformed = true;
             }
 
             // Push if statement for case
@@ -145,11 +166,25 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
                 (clause, index) => index >= start && containsBreakOrReturn(clause.statements)
             );
 
-            // Combine the default and all fallthrough statements
-            const defaultStatements: lua.Statement[] = [];
-            clauses
-                .slice(start, end >= 0 ? end + 1 : undefined)
-                .forEach(c => defaultStatements.push(...context.transformStatements(c.statements)));
+            const {
+                statements: defaultStatements,
+                hoistedStatements: defaultHoistedStatements,
+                hoistedIdentifiers: defaultHoistedIdentifiers,
+            } = separateHoistedStatements(context, context.transformStatements(clauses[start].statements));
+
+            // Only push hoisted statements if this is the first time we're transforming the default clause
+            if (!defaultTransformed) {
+                hoistedStatements.push(...defaultHoistedStatements);
+                hoistedIdentifiers.push(...defaultHoistedIdentifiers);
+            }
+
+            // Combine the fallthrough statements
+            for (const clause of clauses.slice(start + 1, end >= 0 ? end + 1 : undefined)) {
+                let statements = context.transformStatements(clause.statements);
+                // Drop hoisted statements as they were already added when clauses were initially transformed above
+                ({ statements } = separateHoistedStatements(context, statements));
+                defaultStatements.push(...statements);
+            }
 
             // Add the default clause if it has any statements
             // The switch will always break on the final clause and skip execution if valid to do so
@@ -160,7 +195,11 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
     }
 
     // Hoist the variable, function, and import statements to the top of the switch
-    statements = performHoisting(context, statements);
+    statements.unshift(...hoistedStatements);
+    if (hoistedIdentifiers.length > 0) {
+        statements.unshift(lua.createVariableDeclarationStatement(hoistedIdentifiers));
+    }
+
     popScope(context);
 
     // Add the switch expression after hoisting

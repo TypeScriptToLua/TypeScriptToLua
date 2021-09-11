@@ -369,7 +369,7 @@ test.each([0, 1])("switch empty fallthrough to default (%p)", inp => {
             case 1:
             default:
                 out.push("default");
-            
+
         }
         return out;
     `
@@ -431,7 +431,7 @@ test.each([1, 2])("switch handles side-effects with empty fallthrough (%p)", inp
             ${new Array(inp).fill("case foo():").join("\n")}
             default:
                 out.push("default");
-            
+
         }
 
         out.push(y);
@@ -456,7 +456,7 @@ test.each([1, 2])("switch handles side-effects with empty fallthrough (preceding
             ${new Array(inp).fill("case foo():").join("\n")}
             default:
                 out.push("default");
-            
+
         }
 
         out.push(y);
@@ -521,4 +521,144 @@ test("switch produces optimal output", () => {
 
 test.each([0, 1, 2, 3, 4, 5])("switch produces valid optimal output (%p)", inp => {
     optimalOutput(inp).expectToMatchJsResult();
+});
+
+describe("switch hoisting", () => {
+    test("hoisting between cases", () => {
+        util.testFunction`
+            let x = 1;
+            let result = "";
+            switch (x) {
+                case 1:
+                    result = hoisted();
+                    break;
+                case 2:
+                    function hoisted() {
+                        return "hoisted";
+                    }
+                    break;
+            }
+            return result;
+        `.expectToMatchJsResult();
+    });
+
+    test("indirect hoisting between cases", () => {
+        util.testFunction`
+            let x = 1;
+            let result = "";
+            switch (x) {
+                case 1:
+                    function callHoisted() {
+                        return hoisted();
+                    }
+                    result = callHoisted();
+                    break;
+                case 2:
+                    function hoisted() {
+                        return "hoisted";
+                    }
+                    break;
+            }
+            return result;
+        `.expectToMatchJsResult();
+    });
+
+    test("hoisting in case expression", () => {
+        util.testFunction`
+            let x = 1;
+            let result = "";
+            switch (x) {
+                case hoisted():
+                    result = "hoisted";
+                    break;
+                case 2:
+                    function hoisted() {
+                        return 1;
+                    }
+                    break;
+            }
+            return result;
+        `.expectToMatchJsResult();
+    });
+
+    test("hoisting from default clause", () => {
+        util.testFunction`
+            let x = 1;
+            let result = "";
+            switch (x) {
+                case 1:
+                    result = hoisted();
+                    break;
+                default:
+                    function hoisted() {
+                        return "hoisted";
+                    }
+                    break;
+            }
+            return result;
+        `.expectToMatchJsResult();
+    });
+
+    test("hoisting from default clause is not duplicated when falling through", () => {
+        util.testFunction`
+            let x = 1;
+            let result = "";
+            switch (x) {
+                case 1:
+                    result = hoisted();
+                    break;
+                case 2:
+                    result = "2";
+                default:
+                    function hoisted() {
+                        return "hoisted";
+                    }
+                    result = "default";
+                case 3:
+                    result = "3";
+                }
+            return result;
+        `
+            .expectToMatchJsResult()
+            .expectLuaToMatchSnapshot();
+    });
+
+    test("hoisting from fallthrough clause after default is not duplicated", () => {
+        util.testFunction`
+            let x = 1;
+            let result = "";
+            switch (x) {
+                case 1:
+                    result = hoisted();
+                    break;
+                case 2:
+                    result = "2";
+                default:
+                    result = "default";
+                case 3:
+                    function hoisted() {
+                        return "hoisted";
+                    }
+                    result = "3";
+                }
+            return result;
+        `
+            .expectToMatchJsResult()
+            .expectLuaToMatchSnapshot();
+    });
+
+    test("hoisting in a solo default clause", () => {
+        util.testFunction`
+            let x = 1;
+            let result = "";
+            switch (x) {
+                default:
+                    result = hoisted();
+                    function hoisted() {
+                        return "hoisted";
+                    }
+            }
+            return result;
+        `.expectToMatchJsResult();
+    });
 });

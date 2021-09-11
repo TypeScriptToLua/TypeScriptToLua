@@ -33,6 +33,12 @@ export interface Scope {
     functionReturned?: boolean;
 }
 
+export interface HoistingResult {
+    statements: lua.Statement[];
+    hoistedStatements: lua.Statement[];
+    hoistedIdentifiers: lua.Identifier[];
+}
+
 const scopeStacks = new WeakMap<TransformationContext, Scope[]>();
 function getScopeStack(context: TransformationContext): Scope[] {
     return getOrUpdate(scopeStacks, context, () => []);
@@ -133,16 +139,47 @@ export function isFunctionScopeWithDefinition(scope: Scope): scope is Scope & { 
     return scope.node !== undefined && ts.isFunctionLike(scope.node);
 }
 
-export function performHoisting(context: TransformationContext, statements: lua.Statement[]): lua.Statement[] {
+export function separateHoistedStatements(context: TransformationContext, statements: lua.Statement[]): HoistingResult {
     const scope = peekScope(context);
-    let result = statements;
-    result = hoistFunctionDefinitions(context, scope, result);
-    result = hoistVariableDeclarations(context, scope, result);
-    result = hoistImportStatements(scope, result);
-    return result;
+    const allHoistedStatments: lua.Statement[] = [];
+    const allHoistedIdentifiers: lua.Identifier[] = [];
+
+    let { unhoistedStatements, hoistedStatements, hoistedIdentifiers } = hoistFunctionDefinitions(
+        context,
+        scope,
+        statements
+    );
+    allHoistedStatments.push(...hoistedStatements);
+    allHoistedIdentifiers.push(...hoistedIdentifiers);
+
+    ({ unhoistedStatements, hoistedIdentifiers } = hoistVariableDeclarations(context, scope, unhoistedStatements));
+    allHoistedIdentifiers.push(...hoistedIdentifiers);
+
+    ({ unhoistedStatements, hoistedStatements } = hoistImportStatements(scope, unhoistedStatements));
+    allHoistedStatments.unshift(...hoistedStatements);
+
+    return {
+        statements: unhoistedStatements,
+        hoistedStatements: allHoistedStatments,
+        hoistedIdentifiers: allHoistedIdentifiers,
+    };
+}
+
+export function performHoisting(context: TransformationContext, statements: lua.Statement[]): lua.Statement[] {
+    const result = separateHoistedStatements(context, statements);
+    const modifiedStatements = [...result.hoistedStatements, ...result.statements];
+    if (result.hoistedIdentifiers.length > 0) {
+        modifiedStatements.unshift(lua.createVariableDeclarationStatement(result.hoistedIdentifiers));
+    }
+    return modifiedStatements;
 }
 
 function shouldHoistSymbol(context: TransformationContext, symbolId: lua.SymbolId, scope: Scope): boolean {
+    // Always hoist in top-level of switch statements
+    if (scope.type === ScopeType.Switch) {
+        return true;
+    }
+
     const symbolInfo = getSymbolInfo(context, symbolId);
     if (!symbolInfo) {
         return false;
@@ -183,65 +220,80 @@ function hoistVariableDeclarations(
     context: TransformationContext,
     scope: Scope,
     statements: lua.Statement[]
-): lua.Statement[] {
+): { unhoistedStatements: lua.Statement[]; hoistedIdentifiers: lua.Identifier[] } {
     if (!scope.variableDeclarations) {
-        return statements;
+        return { unhoistedStatements: statements, hoistedIdentifiers: [] };
     }
 
-    const result = [...statements];
-    const hoistedLocals: lua.Identifier[] = [];
+    const unhoistedStatements = [...statements];
+    const hoistedIdentifiers: lua.Identifier[] = [];
     for (const declaration of scope.variableDeclarations) {
         const symbols = declaration.left.map(i => i.symbolId).filter(isNonNull);
         if (symbols.some(s => shouldHoistSymbol(context, s, scope))) {
-            const index = result.indexOf(declaration);
-            assert(index > -1);
+            const index = unhoistedStatements.indexOf(declaration);
+            if (index < 0) {
+                continue; // statements array may not contain all statements in the scope (switch-case)
+            }
 
             if (declaration.right) {
                 const assignment = lua.createAssignmentStatement(declaration.left, declaration.right);
                 lua.setNodePosition(assignment, declaration); // Preserve position info for sourcemap
-                result.splice(index, 1, assignment);
+                unhoistedStatements.splice(index, 1, assignment);
             } else {
-                result.splice(index, 1);
+                unhoistedStatements.splice(index, 1);
             }
 
-            hoistedLocals.push(...declaration.left);
-        } else if (scope.type === ScopeType.Switch) {
-            assert(!declaration.right);
-            hoistedLocals.push(...declaration.left);
+            hoistedIdentifiers.push(...declaration.left);
         }
     }
 
-    if (hoistedLocals.length > 0) {
-        result.unshift(lua.createVariableDeclarationStatement(hoistedLocals));
-    }
-
-    return result;
+    return { unhoistedStatements, hoistedIdentifiers };
 }
 
 function hoistFunctionDefinitions(
     context: TransformationContext,
     scope: Scope,
     statements: lua.Statement[]
-): lua.Statement[] {
+): { unhoistedStatements: lua.Statement[]; hoistedStatements: lua.Statement[]; hoistedIdentifiers: lua.Identifier[] } {
     if (!scope.functionDefinitions) {
-        return statements;
+        return { unhoistedStatements: statements, hoistedStatements: [], hoistedIdentifiers: [] };
     }
 
-    const result = [...statements];
-    const hoistedFunctions: Array<lua.VariableDeclarationStatement | lua.AssignmentStatement> = [];
+    const unhoistedStatements = [...statements];
+    const hoistedStatements: lua.Statement[] = [];
+    const hoistedIdentifiers: lua.Identifier[] = [];
     for (const [functionSymbolId, functionDefinition] of scope.functionDefinitions) {
         assert(functionDefinition.definition);
 
         if (shouldHoistSymbol(context, functionSymbolId, scope)) {
-            const index = result.indexOf(functionDefinition.definition);
-            result.splice(index, 1);
-            hoistedFunctions.push(functionDefinition.definition);
+            const index = unhoistedStatements.indexOf(functionDefinition.definition);
+            if (index < 0) {
+                continue; // statements array may not contain all statements in the scope (switch-case)
+            }
+            unhoistedStatements.splice(index, 1);
+
+            if (lua.isVariableDeclarationStatement(functionDefinition.definition)) {
+                // Separate function definition and variable declaration
+                assert(functionDefinition.definition.right);
+                hoistedIdentifiers.push(...functionDefinition.definition.left);
+                hoistedStatements.push(
+                    lua.createAssignmentStatement(
+                        functionDefinition.definition.left,
+                        functionDefinition.definition.right
+                    )
+                );
+            } else {
+                hoistedStatements.push(functionDefinition.definition);
+            }
         }
     }
 
-    return [...hoistedFunctions, ...result];
+    return { unhoistedStatements, hoistedStatements, hoistedIdentifiers };
 }
 
-function hoistImportStatements(scope: Scope, statements: lua.Statement[]): lua.Statement[] {
-    return scope.importStatements ? [...scope.importStatements, ...statements] : statements;
+function hoistImportStatements(
+    scope: Scope,
+    statements: lua.Statement[]
+): { unhoistedStatements: lua.Statement[]; hoistedStatements: lua.Statement[] } {
+    return { unhoistedStatements: statements, hoistedStatements: scope.importStatements ?? [] };
 }

@@ -79,10 +79,10 @@ test.each(invalidTestFunctionCasts)(
     "Invalid object with method assignment with cast (%p, %p, %p)",
     (testFunction, castedFunction, isSelfConversion) => {
         util.testModule`
-        ${testFunction.definition ?? ""}
-        let obj: { fn: typeof ${testFunction.value} };
-        obj = {fn: ${castedFunction}};
-    `.expectDiagnosticsToMatchSnapshot(
+            ${testFunction.definition ?? ""}
+            let obj: { fn: typeof ${testFunction.value} };
+            obj = {fn: ${castedFunction}};
+        `.expectDiagnosticsToMatchSnapshot(
             isSelfConversion
                 ? [unsupportedSelfFunctionConversion.code, unsupportedNoSelfFunctionConversion.code]
                 : [unsupportedNoSelfFunctionConversion.code, unsupportedSelfFunctionConversion.code],

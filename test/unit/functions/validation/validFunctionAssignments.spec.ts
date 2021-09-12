@@ -58,10 +58,10 @@ test.each(validTestMethodCasts)(
     "Valid object with method assignment with cast (%p, %p)",
     (testFunction, castedFunction) => {
         util.testFunction`
-        let obj: { fn: typeof ${testFunction.value} };
-        obj = {fn: ${castedFunction}};
-        return obj.fn("foobar");
-    `
+            let obj: { fn: typeof ${testFunction.value} };
+            obj = {fn: ${castedFunction}};
+            return obj.fn("foobar");
+        `
             .setTsHeader(testFunction.definition ?? "")
             .expectToMatchJsResult();
     }

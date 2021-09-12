@@ -467,8 +467,12 @@ describe("for...of empty destructuring", () => {
         });
     };
 
-    describe("declaration", () => declareTests("const "));
-    describe("assignment", () => declareTests(""));
+    describe("declaration", () => {
+        declareTests("const ");
+    });
+    describe("assignment", () => {
+        declareTests("");
+    });
 });
 
 for (const testCase of [

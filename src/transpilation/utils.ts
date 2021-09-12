@@ -46,11 +46,13 @@ export function resolvePlugin(
         return { error: cliDiagnostics.compilerOptionRequiresAValueOfType(optionName, "string") };
     }
 
+    const isModuleNotFoundError = (error: any) => error.code === "MODULE_NOT_FOUND";
+
     let resolved: string;
     try {
         resolved = resolve.sync(query, { basedir, extensions: [".js", ".ts", ".tsx"] });
     } catch (err) {
-        if (err.code !== "MODULE_NOT_FOUND") throw err;
+        if (!isModuleNotFoundError(err)) throw err;
         return { error: diagnosticFactories.couldNotResolveFrom(kind, query, basedir) };
     }
 
@@ -61,7 +63,7 @@ export function resolvePlugin(
             const tsNode: typeof import("ts-node") = require(tsNodePath);
             tsNode.register({ transpileOnly: true });
         } catch (err) {
-            if (err.code !== "MODULE_NOT_FOUND") throw err;
+            if (!isModuleNotFoundError(err)) throw err;
             return { error: diagnosticFactories.toLoadItShouldBeTranspiled(kind, query) };
         }
     }

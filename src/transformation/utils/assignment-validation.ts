@@ -60,7 +60,8 @@ export function validateAssignment(
 
     if (
         (toType.flags & ts.TypeFlags.Object) !== 0 &&
-        ((toType as ts.ObjectType).objectFlags & ts.ObjectFlags.ClassOrInterface) !== 0 &&
+        (ts.isTypeLiteralNode(toTypeNode) ||
+            ((toType as ts.ObjectType).objectFlags & ts.ObjectFlags.ClassOrInterface) !== 0) &&
         toType.symbol &&
         toType.symbol.members &&
         fromType.symbol &&

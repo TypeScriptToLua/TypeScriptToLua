@@ -10,7 +10,7 @@ import * as vm from "vm";
 import * as tstl from "../src";
 import { createEmitOutputCollector } from "../src/transpilation/output-collector";
 import { EmitHost, getEmitOutDir, transpileProject } from "../src";
-import { formatPathToLuaPath, normalizeSlashes } from "../src/utils";
+import { assertNever, formatPathToLuaPath, normalizeSlashes } from "../src/utils";
 
 const jsonLib = fs.readFileSync(path.join(__dirname, "json.lua"), "utf8");
 const luaLib = fs.readFileSync(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"), "utf8");
@@ -491,6 +491,7 @@ end)());`;
         try {
             result = vm.runInContext(this.getJsCodeWithWrapper(), globalContext);
         } catch (error) {
+            assert(error instanceof Error);
             return new ExecutionError(error.message);
         }
 

@@ -4,7 +4,11 @@ import {
     unsupportedSelfFunctionConversion,
 } from "../../../../src/transformation/utils/diagnostics";
 import * as util from "../../../util";
-import { invalidTestFunctionAssignments, invalidTestFunctionCasts } from "./functionPermutations";
+import {
+    invalidTestFunctionAssignments,
+    invalidTestFunctionCasts,
+    invalidTestMethodAssignments,
+} from "./functionPermutations";
 
 test.each(invalidTestFunctionAssignments)(
     "Invalid function variable declaration (%p)",
@@ -12,6 +16,19 @@ test.each(invalidTestFunctionAssignments)(
         util.testModule`
             ${testFunction.definition ?? ""}
             const fn: ${functionType} = ${testFunction.value};
+        `.expectDiagnosticsToMatchSnapshot(
+            [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
+            true
+        );
+    }
+);
+
+test.each(invalidTestMethodAssignments)(
+    "Invalid object with method variable declaration (%p, %p)",
+    (testFunction, functionType, isSelfConversion) => {
+        util.testModule`
+            ${testFunction.definition ?? ""}
+            const obj: { fn: ${functionType} } = {fn: ${testFunction.value}};
         `.expectDiagnosticsToMatchSnapshot(
             [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
             true
@@ -33,6 +50,20 @@ test.each(invalidTestFunctionAssignments)(
     }
 );
 
+test.each(invalidTestMethodAssignments)(
+    "Invalid object with method assignment (%p, %p, %p)",
+    (testFunction, functionType, isSelfConversion) => {
+        util.testModule`
+            ${testFunction.definition ?? ""}
+            let obj: { fn: ${functionType} };
+            obj = {fn: ${testFunction.value}};
+        `.expectDiagnosticsToMatchSnapshot(
+            [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
+            true
+        );
+    }
+);
+
 test.each(invalidTestFunctionCasts)("Invalid function assignment with cast (%p)", (testFunction, castedFunction) => {
     util.testModule`
         ${testFunction.definition ?? ""}
@@ -44,6 +75,22 @@ test.each(invalidTestFunctionCasts)("Invalid function assignment with cast (%p)"
     );
 });
 
+test.each(invalidTestFunctionCasts)(
+    "Invalid object with method assignment with cast (%p, %p, %p)",
+    (testFunction, castedFunction, isSelfConversion) => {
+        util.testModule`
+            ${testFunction.definition ?? ""}
+            let obj: { fn: typeof ${testFunction.value} };
+            obj = {fn: ${castedFunction}};
+        `.expectDiagnosticsToMatchSnapshot(
+            isSelfConversion
+                ? [unsupportedSelfFunctionConversion.code, unsupportedNoSelfFunctionConversion.code]
+                : [unsupportedNoSelfFunctionConversion.code, unsupportedSelfFunctionConversion.code],
+            true
+        );
+    }
+);
+
 test.each(invalidTestFunctionAssignments)(
     "Invalid function argument (%p)",
     (testFunction, functionType, isSelfConversion) => {
@@ -51,6 +98,20 @@ test.each(invalidTestFunctionAssignments)(
             ${testFunction.definition ?? ""}
             declare function takesFunction(fn: ${functionType});
             takesFunction(${testFunction.value});
+        `.expectDiagnosticsToMatchSnapshot(
+            [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
+            true
+        );
+    }
+);
+
+test.each(invalidTestMethodAssignments)(
+    "Invalid object with method argument (%p, %p, %p)",
+    (testFunction, functionType, isSelfConversion) => {
+        util.testModule`
+            ${testFunction.definition ?? ""}
+            declare function takesObjectWithMethod(obj: { fn: ${functionType} });
+            takesObjectWithMethod({fn: ${testFunction.value}});
         `.expectDiagnosticsToMatchSnapshot(
             [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
             true

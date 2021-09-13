@@ -163,13 +163,11 @@ export function createLocalOrExportedOrGlobalDeclaration(
 
         if (context.isModule || !isTopLevelVariable) {
             let precededDeclaration = false;
-            if (scope.type === ScopeType.Switch || (!isFunctionDeclaration && hasMultipleReferences(scope, lhs))) {
+            if (!isFunctionDeclaration && hasMultipleReferences(scope, lhs)) {
                 // Split declaration and assignment of identifiers that reference themselves in their declaration
                 declaration = lua.createVariableDeclarationStatement(lhs, undefined, tsOriginal);
-                if (scope.type !== ScopeType.Switch) {
-                    context.addPrecedingStatements([declaration], true);
-                    precededDeclaration = true;
-                }
+                context.addPrecedingStatements([declaration], true);
+                precededDeclaration = true;
                 if (rhs) {
                     assignment = lua.createAssignmentStatement(lhs, rhs, tsOriginal);
                 }
@@ -177,16 +175,19 @@ export function createLocalOrExportedOrGlobalDeclaration(
                 declaration = lua.createVariableDeclarationStatement(lhs, rhs, tsOriginal);
             }
 
-            // Remember local variable declarations for hoisting later
-            if (!scope.variableDeclarations) {
-                scope.variableDeclarations = [];
+            if (!isFunctionDeclaration) {
+                // Remember local variable declarations for hoisting later
+                if (!scope.variableDeclarations) {
+                    scope.variableDeclarations = [];
+                }
+
+                scope.variableDeclarations.push(declaration);
             }
 
-            scope.variableDeclarations.push(declaration);
-
-            if (scope.type === ScopeType.Switch || precededDeclaration) {
+            if (precededDeclaration) {
                 declaration = undefined;
             }
+
         } else if (rhs) {
             // global
             assignment = lua.createAssignmentStatement(lhs, rhs, tsOriginal);

@@ -86,40 +86,53 @@ function loadTransformersFromOptions(program: ts.Program, diagnostics: ts.Diagno
     };
 
     const options = program.getCompilerOptions() as CompilerOptions;
-    if (!options.plugins) return customTransformers;
+    if (options.plugins) {
+        for (const [index, transformerImport] of options.plugins.entries()) {
+            if (!("transform" in transformerImport)) continue;
+            const optionName = `compilerOptions.plugins[${index}]`;
 
-    for (const [index, transformerImport] of options.plugins.entries()) {
-        if (!("transform" in transformerImport)) continue;
-        const optionName = `compilerOptions.plugins[${index}]`;
+            const { error: resolveError, result: factory } = resolvePlugin(
+                "transformer",
+                `${optionName}.transform`,
+                getConfigDirectory(options),
+                transformerImport.transform,
+                transformerImport.import
+            );
 
-        const { error: resolveError, result: factory } = resolvePlugin(
-            "transformer",
-            `${optionName}.transform`,
-            getConfigDirectory(options),
-            transformerImport.transform,
-            transformerImport.import
-        );
+            if (resolveError) diagnostics.push(resolveError);
+            if (factory === undefined) continue;
 
-        if (resolveError) diagnostics.push(resolveError);
-        if (factory === undefined) continue;
+            const { error: loadError, transformer } = loadTransformer(optionName, program, factory, transformerImport);
+            if (loadError) diagnostics.push(loadError);
+            if (transformer === undefined) continue;
 
-        const { error: loadError, transformer } = loadTransformer(optionName, program, factory, transformerImport);
-        if (loadError) diagnostics.push(loadError);
-        if (transformer === undefined) continue;
+            if (transformer.before) {
+                customTransformers.before.push(transformer.before);
+            }
 
-        if (transformer.before) {
-            customTransformers.before.push(transformer.before);
-        }
+            if (transformer.after) {
+                customTransformers.after.push(transformer.after);
+            }
 
-        if (transformer.after) {
-            customTransformers.after.push(transformer.after);
-        }
-
-        if (transformer.afterDeclarations) {
-            customTransformers.afterDeclarations.push(transformer.afterDeclarations);
+            if (transformer.afterDeclarations) {
+                customTransformers.afterDeclarations.push(transformer.afterDeclarations);
+            }
         }
     }
-
+    if (options.jsx === ts.JsxEmit.React) {
+        customTransformers.before.push(context => {
+            // if target < ES2017, typescript generates some unnecessary additional transformations in transformJSX.
+            // We can't control the target compiler option, so we override here.
+            const patchedContext: ts.TransformationContext = {
+                ...context,
+                getCompilerOptions: () => ({
+                    ...context.getCompilerOptions(),
+                    target: ts.ScriptTarget.ESNext,
+                }),
+            };
+            return ts.transformJsx(patchedContext);
+        });
+    }
     return customTransformers;
 }
 

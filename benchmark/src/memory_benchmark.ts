@@ -1,5 +1,6 @@
 import { BenchmarkKind, MemoryBenchmarkResult, ComparisonInfo, MemoryBenchmarkCategory } from "./benchmark_types";
-import { toFixed, json, calculatePercentageChange } from "./util";
+import { compareNumericBenchmarks } from "./benchmark_util";
+import { toFixed, json } from "./util";
 
 export function runMemoryBenchmark(benchmarkFunction: () => void): MemoryBenchmarkResult {
     const result: MemoryBenchmarkResult = {
@@ -42,8 +43,6 @@ export function runMemoryBenchmark(benchmarkFunction: () => void): MemoryBenchma
 }
 
 const formatMemory = (memInKB: number) => toFixed(memInKB / 1024, 3);
-const makeMarkdownTableRow = (cells: string[]) => `| ${cells.join(" | ")} |\n`;
-const makeBold = (input: string) => `**${input}**`;
 
 export function compareMemoryBenchmarks(
     oldResults: MemoryBenchmarkResult[],
@@ -53,10 +52,10 @@ export function compareMemoryBenchmarks(
     const categories = [MemoryBenchmarkCategory.TotalMemory, MemoryBenchmarkCategory.Garbage];
 
     const summary = categories
-        .map(category => `${makeBold(category)}\n${compareCategory(newResults, oldResults, category)}`)
+        .map(category => `### ${category}\n\n${compareCategory(newResults, oldResults, category)}`)
         .join("\n");
 
-    const text = `**master:**\n\`\`\`json\n${json.encode(oldResults)}\n\`\`\`\n**commit:**\n\`\`\`json\n${json.encode(
+    const text = `### master:\n\`\`\`json\n${json.encode(oldResults)}\n\`\`\`\n### commit:\n\`\`\`json\n${json.encode(
         newResults
     )}\n\`\`\``;
 
@@ -68,47 +67,5 @@ function compareCategory(
     oldResults: MemoryBenchmarkResult[],
     category: MemoryBenchmarkCategory
 ): string {
-    let comparisonTable = makeMarkdownTableRow(["name", "master (mb)", "commit (mb)", "change (mb)", "change (%)"]);
-    comparisonTable += makeMarkdownTableRow(["-", "-", "-", "-", "-"]);
-
-    let oldValueSum = 0;
-    let newValueSum = 0;
-
-    newResults.forEach(newResult => {
-        const oldResult = oldResults.find(r => r.benchmarkName === newResult.benchmarkName);
-        if (oldResult) {
-            const oldValue = oldResult.categories[category];
-            const newValue = newResult.categories[category];
-            const percentageChange = calculatePercentageChange(
-                newResult.categories[category],
-                oldResult.categories[category]
-            );
-            const change = newResult.categories[category] - oldResult.categories[category];
-            const row = [
-                newResult.benchmarkName,
-                formatMemory(oldValue),
-                formatMemory(newValue),
-                formatMemory(change),
-                toFixed(percentageChange, 2),
-            ];
-            comparisonTable += makeMarkdownTableRow(row);
-            oldValueSum += oldValue;
-            newValueSum += newValue;
-        } else {
-            // No master found => new benchmark
-            const row = [newResult.benchmarkName, formatMemory(newResult.categories[category]), "/", "/", "/"];
-            comparisonTable += makeMarkdownTableRow(row);
-        }
-    });
-
-    const sumPercentageChange = calculatePercentageChange(oldValueSum, newValueSum);
-    comparisonTable += makeMarkdownTableRow([
-        makeBold("sum"),
-        makeBold(formatMemory(oldValueSum)),
-        makeBold(formatMemory(newValueSum)),
-        makeBold(formatMemory(newValueSum - oldValueSum)),
-        makeBold(toFixed(sumPercentageChange, 2)),
-    ]);
-
-    return comparisonTable;
+    return compareNumericBenchmarks(newResults, oldResults, "mb", result => result.categories[category], formatMemory);
 }

@@ -1538,9 +1538,10 @@ main.ts(4,24): error TSTL: Unable to convert function with no 'this' parameter t
 
 exports[`Invalid function tuple assignment: diagnostics 1`] = `
 "main.ts(5,13): error TS2322: Type '[number, Meth]' is not assignable to type '[number, Func]'.
-  Type 'Meth' is not assignable to type 'Func'.
-    The 'this' types of each signature are incompatible.
-      Type 'void' is not assignable to type '{}'.
+  Type at position 1 in source is not compatible with type at position 1 in target.
+    Type 'Meth' is not assignable to type 'Func'.
+      The 'this' types of each signature are incompatible.
+        Type 'void' is not assignable to type '{}'.
 main.ts(5,38): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."
 `;
 

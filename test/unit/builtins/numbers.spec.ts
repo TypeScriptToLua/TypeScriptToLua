@@ -22,6 +22,8 @@ test.each([
     util.testExpression(code).expectToMatchJsResult();
 });
 
+// Current implementation does not allow this
+// eslint-disable-next-line jest/no-disabled-tests
 test.skip.each(["NaN", "Infinity"])("%s reassignment", name => {
     util.testFunction`
         const ${name} = 1;

@@ -491,6 +491,8 @@ end)());`;
         try {
             result = vm.runInContext(this.getJsCodeWithWrapper(), globalContext);
         } catch (error) {
+            const hasMessage = (error: any): error is { message: string } => error.message !== undefined;
+            assert(hasMessage(error));
             return new ExecutionError(error.message);
         }
 

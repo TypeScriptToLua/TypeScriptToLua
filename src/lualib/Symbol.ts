@@ -5,7 +5,7 @@ const ____symbolMetatable = {
 };
 
 function __TS__Symbol(this: void, description?: string | number): symbol {
-    return setmetatable({ description }, ____symbolMetatable) as symbol;
+    return setmetatable({ description }, ____symbolMetatable) as unknown as symbol;
 }
 
 Symbol = {

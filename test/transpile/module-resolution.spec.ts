@@ -330,6 +330,53 @@ test("module resolution should not try to resolve @noResolution annotation", () 
         .expectToHaveNoDiagnostics();
 });
 
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1101
+test("module resolution inline require of environment library workaround", () => {
+    util.testModule`
+        declare function require(this: void, module: string): any;
+
+        const test = require("@NoResolution:luasource");
+        test.foo();
+    `.expectToHaveNoDiagnostics();
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1118
+describe("module resolution should not try to resolve modules in noResolvePaths", () => {
+    test("as used in direct import", () => {
+        util.testModule`
+            import * as lua from "directimport";
+            lua.foo();
+        `
+            .addExtraFile(
+                "directimport.d.ts",
+                `declare module "directimport" {
+                    export function foo(): void;
+                }`
+            )
+            .setOptions({ noResolvePaths: ["directimport"] })
+            .expectToHaveNoDiagnostics();
+    });
+
+    test("as used in imported lua sources", () => {
+        util.testModule`
+            import * as lua from "./luasource";
+            lua.foo();
+        `
+            .addExtraFile("luasource.d.ts", "export function foo(): void;")
+            .addExtraFile(
+                "luasource.lua",
+                `
+                require("dontResolveThis")
+                require("a.b.c.foo")
+
+                return { foo = function() return "bar" end }
+            `
+            )
+            .setOptions({ noResolvePaths: ["a.b.c.foo", "somethingExtra", "dontResolveThis"] })
+            .expectToHaveNoDiagnostics();
+    });
+});
+
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1062
 test("module resolution should not rewrite @NoResolution requires in library mode", () => {
     const { transpiledFiles } = util.testModule`

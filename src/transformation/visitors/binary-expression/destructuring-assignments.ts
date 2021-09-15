@@ -1,9 +1,11 @@
 import * as ts from "typescript";
+import { transformBinaryOperation } from ".";
 import * as lua from "../../../LuaAST";
-import { assertNever } from "../../../utils";
+import { assertNever, cast } from "../../../utils";
 import { TransformationContext } from "../../context";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isAssignmentPattern } from "../../utils/typescript";
+import { moveToPrecedingTemp } from "../expression-list";
 import { transformPropertyName } from "../literal";
 import {
     transformAssignment,
@@ -255,34 +257,72 @@ function transformPropertyAssignment(
         }
     }
 
-    const leftExpression = ts.isBinaryExpression(node.initializer) ? node.initializer.left : node.initializer;
-    const variableToExtract = transformPropertyName(context, node.name);
+    context.pushPrecedingStatements();
+
+    let variableToExtract = transformPropertyName(context, node.name);
+    variableToExtract = moveToPrecedingTemp(context, variableToExtract); // Must be evaluated before left's preceding statements
     const extractingExpression = lua.createTableIndexExpression(root, variableToExtract);
 
-    const destructureAssignmentStatements = transformAssignment(
-        context,
-        leftExpression,
-        extractingExpression,
-        rootHasPrecedingStatements
-    );
-
-    result.push(...destructureAssignmentStatements);
-
+    let destructureAssignmentStatements: lua.Statement[];
     if (ts.isBinaryExpression(node.initializer)) {
-        const assignmentLeftHandSide = context.transformExpression(node.initializer.left);
+        if (
+            ts.isPropertyAccessExpression(node.initializer.left) ||
+            ts.isElementAccessExpression(node.initializer.left)
+        ) {
+            // Access expressions need their table and index expressions cached to preserve execution order
+            const left = cast(context.transformExpression(node.initializer.left), lua.isTableIndexExpression);
 
-        const nilCondition = lua.createBinaryExpression(
-            assignmentLeftHandSide,
-            lua.createNilLiteral(),
-            lua.SyntaxKind.EqualityOperator
+            context.pushPrecedingStatements();
+            const defaultExpression = context.transformExpression(node.initializer.right);
+            const defaultPrecedingStatements = context.popPrecedingStatements();
+
+            const tableTemp = context.createTempForLuaExpression(left.table);
+            const indexTemp = context.createTempForLuaExpression(left.index);
+
+            const tempsDeclaration = lua.createVariableDeclarationStatement(
+                [tableTemp, indexTemp],
+                [left.table, left.index]
+            );
+
+            // obj[index] = extractingExpression ?? defaultExpression
+            const assignStatement = lua.createAssignmentStatement(
+                lua.createTableIndexExpression(tableTemp, indexTemp),
+                transformBinaryOperation(
+                    context,
+                    extractingExpression,
+                    defaultExpression,
+                    ts.SyntaxKind.QuestionQuestionToken,
+                    node.initializer
+                )
+            );
+
+            destructureAssignmentStatements = [tempsDeclaration, ...defaultPrecedingStatements, assignStatement];
+        } else {
+            const assignmentLeftHandSide = context.transformExpression(node.initializer.left);
+
+            const nilCondition = lua.createBinaryExpression(
+                assignmentLeftHandSide,
+                lua.createNilLiteral(),
+                lua.SyntaxKind.EqualityOperator
+            );
+
+            const ifBlock = lua.createBlock(
+                transformAssignmentStatement(context, node.initializer as ts.AssignmentExpression<ts.EqualsToken>)
+            );
+
+            destructureAssignmentStatements = [lua.createIfStatement(nilCondition, ifBlock, undefined, node)];
+        }
+    } else {
+        destructureAssignmentStatements = transformAssignment(
+            context,
+            node.initializer,
+            extractingExpression,
+            rootHasPrecedingStatements
         );
-
-        const ifBlock = lua.createBlock(
-            transformAssignmentStatement(context, node.initializer as ts.AssignmentExpression<ts.EqualsToken>)
-        );
-
-        result.push(lua.createIfStatement(nilCondition, ifBlock, undefined, node));
     }
+
+    result.push(...context.popPrecedingStatements());
+    result.push(...destructureAssignmentStatements);
 
     return result;
 }

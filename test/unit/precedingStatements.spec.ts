@@ -278,23 +278,50 @@ describe("execution order", () => {
     test("object destructuring assignment statement", () => {
         util.testFunction`
             let i = "A";
-            const o: Record<string, string> = {ABCDE: "success"};
+            const o: Record<string, string> = {ABCDEFG: "success", result: ""};
             function getO(x: string) { i = x + "C"; return o; }
+            function getO2(x: string) { i = x + "G"; return o; }
             function getI(x: string) { i = x + "E"; return i; }
-            const { [getI(i += "D")]: result } = getO(i += "B");
-            return [result, i];
+            ({ [getI(i += "D")]: getO2(i += "F").result } = getO(i += "B"));
+            return [i, o];
+        `.expectToMatchJsResult();
+    });
+
+    test("object destructuring assignment statement with default", () => {
+        util.testFunction`
+            let i = "A";
+            const o: Record<string, string> = {ABCDEFGHIJ: "success", result: ""};
+            function getO(x: string) { i = x + "C"; return o; }
+            function getO2(x: string) { i = x + "G"; return o; }
+            function getO3(x: string) { i = x + "I"; return o; }
+            function getI(x: string): any { i = x + "E"; return undefined; }
+            ({ [getI(i += "D")]: getO2(i += "F").result = getO3(i += "H")[i += "J"] } = getO(i += "B"));
+            return [o, i];
         `.expectToMatchJsResult();
     });
 
     test("object destructuring assignment expression", () => {
         util.testFunction`
             let i = "A";
-            const o: Record<string, string> = {ABCDE: "success"};
+            const o: Record<string, string> = {ABCDEFG: "success", result: ""};
             function getO(x: string) { i = x + "C"; return o; }
+            function getO2(x: string) { i = x + "G"; return o; }
             function getI(x: string) { i = x + "E"; return i; }
-            let result: string;
-            const x = ({ [getI(i += "D")]: result } = getO(i += "B"));
-            return [result, i, x];
+            const x = ({ [getI(i += "D")]: getO2(i += "F").result } = getO(i += "B"));
+            return [i, o, x];
+        `.expectToMatchJsResult();
+    });
+
+    test("object destructuring assignment expression with default", () => {
+        util.testFunction`
+            let i = "A";
+            const o: Record<string, string> = {ABCDEFGHIJ: "success", result: ""};
+            function getO(x: string) { i = x + "C"; return o; }
+            function getO2(x: string) { i = x + "G"; return o; }
+            function getO3(x: string) { i = x + "I"; return o; }
+            function getI(x: string): any { i = x + "E"; return undefined; }
+            const x = ({ [getI(i += "D")]: getO2(i += "F").result = getO3(i += "H")[i += "J"] } = getO(i += "B"));
+            return [o, i, x];
         `.expectToMatchJsResult();
     });
 
@@ -304,9 +331,20 @@ describe("execution order", () => {
             const o: Record<string, string> = {ABCDE: "success"};
             function getO(x: string) { i = x + "C"; return o; }
             function getI(x: string) { i = x + "E"; return i; }
-            let result: string;
-            ({ [getI(i += "D")]: result } = getO(i += "B"));
-            return [result, i, x];
+            const { [getI(i += "D")]: result } = getO(i += "B");
+            return [result, i];
+        `.expectToMatchJsResult();
+    });
+
+    test("object destructuring declaration with default", () => {
+        util.testFunction`
+            let i = "A";
+            const o: Record<string, string> = {ABCDEFGH: "success"};
+            function getO(x: string) { i = x + "C"; return o; }
+            function getO2(x: string) { i = x + "G"; return o; }
+            function getI(x: string): any { i = x + "E"; return undefined; }
+            const { [getI(i += "D")]: result = getO2(i += "F")[i += "H"]} = getO(i += "B");
+            return [result, i];
         `.expectToMatchJsResult();
     });
 

@@ -187,7 +187,6 @@ export function createLocalOrExportedOrGlobalDeclaration(
             if (precededDeclaration) {
                 declaration = undefined;
             }
-
         } else if (rhs) {
             // global
             assignment = lua.createAssignmentStatement(lhs, rhs, tsOriginal);

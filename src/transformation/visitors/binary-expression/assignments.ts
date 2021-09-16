@@ -75,15 +75,16 @@ export function transformAssignment(
         return [arrayLengthAssignment];
     }
 
-    const symbol = ts.isShorthandPropertyAssignment(lhs.parent)
-        ? context.checker.getShorthandAssignmentValueSymbol(lhs.parent)
-        : context.checker.getSymbolAtLocation(lhs);
+    const symbol =
+        lhs.parent && ts.isShorthandPropertyAssignment(lhs.parent)
+            ? context.checker.getShorthandAssignmentValueSymbol(lhs.parent)
+            : context.checker.getSymbolAtLocation(lhs);
 
     const dependentSymbols = symbol ? getDependenciesOfSymbol(context, symbol) : [];
 
     const left = transformAssignmentLeftHandSideExpression(context, lhs, rightHasPrecedingStatements);
 
-    const rootAssignment = lua.createAssignmentStatement(left, right, lhs.parent);
+    const rootAssignment = lua.createAssignmentStatement(left, right, lhs);
 
     return [
         rootAssignment,

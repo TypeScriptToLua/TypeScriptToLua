@@ -542,11 +542,14 @@ test("switch scoping", () => {
     util.testFunction`
         let i = 0;
         let x = 0;
+        let result = "";
         switch (x) {
             case i++:
-                return i;
+                result = "test";
+                break;
             case i++:
         }
+        return [i, result];
     `.expectToMatchJsResult();
 });
 

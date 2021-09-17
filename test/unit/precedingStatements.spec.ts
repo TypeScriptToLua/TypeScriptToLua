@@ -55,6 +55,8 @@ describe("execution order", () => {
         "i, ...a, i++, ...[1, i++, 2], i, i++, ...a",
         "i, inc(), i++",
         "i, ...[1, i++, inc(), 2], i++",
+        "[i, ...'foo', i++]",
+        "[i, ...([1, i++, 2] as any), i++]",
     ];
 
     test.each(sequenceTests)("array literal ([%p])", sequence => {

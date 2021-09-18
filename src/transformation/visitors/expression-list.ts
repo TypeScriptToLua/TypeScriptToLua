@@ -3,28 +3,18 @@ import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
-import { popScope, pushScope, Scope, ScopeType } from "../utils/scope";
-import { getSymbolIdOfSymbol } from "../utils/symbols";
+import { getReferenceCountInScope, popScope, pushScope, ScopeType } from "../utils/scope";
+import { isConstIdentifier } from "../utils/typescript";
 
-// Returns true if expressions before this one should be cached to preserve order.
-// This is basically a place to check for situations where temps can be optimized out.
-function shouldCachePreviousExpressions(context: TransformationContext, expression: ts.Expression, scope: Scope) {
-    // ++i or i++ where i hasn't been referenced in previous expressions
-    let symbol: ts.Symbol | undefined;
-    let symbolId: lua.SymbolId | undefined;
-    if (
-        (ts.isPrefixUnaryExpression(expression) || ts.isPostfixUnaryExpression(expression)) &&
-        ts.isIdentifier(expression.operand) &&
-        (symbol = context.checker.getSymbolAtLocation(expression.operand)) &&
-        (symbolId = getSymbolIdOfSymbol(context, symbol)) &&
-        (!scope.referencedSymbols || !scope.referencedSymbols.has(symbolId))
-    ) {
-        return false;
+// Cache an expression in a preceding statement and return the temp identifier
+export function moveToPrecedingTemp(
+    context: TransformationContext,
+    expression: lua.Expression,
+    tsOriginal?: ts.Node
+): lua.Expression {
+    if (lua.isLiteral(expression) || (tsOriginal && isConstIdentifier(context, tsOriginal))) {
+        return expression;
     }
-    return true;
-}
-
-export function moveToPrecedingTemp(context: TransformationContext, expression: lua.Expression) {
     const tempIdentifier = context.createTempForLuaExpression(expression);
     const tempDeclaration = lua.createVariableDeclarationStatement(tempIdentifier, expression);
     lua.setNodePosition(tempDeclaration, lua.getOriginalPos(expression));
@@ -38,15 +28,14 @@ function transformExpressionsInOrder(
     context: TransformationContext,
     expressions: readonly ts.Expression[]
 ): [lua.Expression[], number] {
+    // Use a custom scope to track variable references
     const scope = pushScope(context, ScopeType.ExpressionList);
 
     const transformedExpressions: lua.Expression[] = [];
     const precedingStatements: lua.Statement[][] = [];
-    let hasPrecedingStatements = false;
     let lastPrecedingStatementsIndex = -1;
     for (let i = 0; i < expressions.length; ++i) {
         const expression = expressions[i];
-        const cachePrevious = shouldCachePreviousExpressions(context, expression, scope); // Must call before transform
 
         // Transform expression and catch preceding statements
         context.pushPrecedingStatements();
@@ -57,20 +46,19 @@ function transformExpressionsInOrder(
 
         // Track preceding statements
         if (expressionPrecedingStatements.length > 0) {
-            hasPrecedingStatements = true;
-            if (cachePrevious) {
-                lastPrecedingStatementsIndex = i;
-            }
+            lastPrecedingStatementsIndex = i;
         }
     }
 
-    if (!hasPrecedingStatements) {
+    // No need for extra processing if there were no preceding statements generated
+    if (lastPrecedingStatementsIndex === -1) {
         popScope(context);
         return [transformedExpressions, lastPrecedingStatementsIndex];
     }
 
     for (let i = 0; i < transformedExpressions.length; ++i) {
         let transformedExpression = transformedExpressions[i];
+        const expression = expressions[i];
         const expressionPrecedingStatements = precedingStatements[i];
 
         // Bubble up preceding statements
@@ -78,28 +66,29 @@ function transformExpressionsInOrder(
 
         // Cache expression in temp to maintain execution order, unless:
         // - Expression is after the last one in the list which generated preceding statements
-        // - Expression is a literal that wouldn't be affected by preceding statements
-        // - Expression is a temp identifier which is a result of preceding statements
+        // - Expression is an identifier that hasn't been referenced more than once
         if (
             i >= lastPrecedingStatementsIndex ||
-            lua.isLiteral(transformedExpression) ||
-            (expressionPrecedingStatements.length > 0 && lua.isIdentifier(transformedExpression))
+            (lua.isIdentifier(transformedExpression) &&
+                transformedExpression.symbolId &&
+                getReferenceCountInScope(scope, transformedExpression.symbolId) <= 1)
         ) {
             continue;
         }
 
         // Wrap spreads in table to store in a temp
-        if (ts.isSpreadElement(expressions[i])) {
+        if (ts.isSpreadElement(expression)) {
             transformedExpression = wrapInTable(transformedExpression);
         }
 
-        transformedExpressions[i] = moveToPrecedingTemp(context, transformedExpression);
+        transformedExpressions[i] = moveToPrecedingTemp(context, transformedExpression, expression);
     }
 
     popScope(context);
     return [transformedExpressions, lastPrecedingStatementsIndex];
 }
 
+// Transforms a series of expressions while maintaining execution order
 export function transformOrderedExpressions(
     context: TransformationContext,
     expressions: readonly ts.Expression[]

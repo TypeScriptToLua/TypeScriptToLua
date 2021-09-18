@@ -70,6 +70,7 @@ const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpressi
     }
 
     const properties: lua.Expression[] = [];
+    const initializers: ts.Node[] = [];
     const precedingStatements: lua.Statement[][] = [];
     let lastPrecedingStatementsIndex = -1;
 
@@ -82,6 +83,7 @@ const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpressi
         if (ts.isPropertyAssignment(element)) {
             const expression = context.transformExpression(element.initializer);
             properties.push(lua.createTableFieldExpression(expression, name, element));
+            initializers.push(element.initializer);
         } else if (ts.isShorthandPropertyAssignment(element)) {
             const valueSymbol = context.checker.getShorthandAssignmentValueSymbol(element);
             if (valueSymbol) {
@@ -90,9 +92,11 @@ const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpressi
 
             const identifier = createShorthandIdentifier(context, valueSymbol, element.name);
             properties.push(lua.createTableFieldExpression(identifier, name, element));
+            initializers.push(element);
         } else if (ts.isMethodDeclaration(element)) {
             const expression = transformFunctionLikeDeclaration(element, context);
             properties.push(lua.createTableFieldExpression(expression, name, element));
+            initializers.push(element);
         } else if (ts.isSpreadAssignment(element) || ts.isJsxSpreadAttribute(element)) {
             const type = context.checker.getTypeAtLocation(element.expression);
             let tableExpression: lua.Expression;
@@ -108,6 +112,7 @@ const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpressi
             }
 
             properties.push(tableExpression);
+            initializers.push(element.expression);
         } else if (ts.isAccessor(element)) {
             context.diagnostics.push(unsupportedAccessorInObjectLiteral(element));
         } else {
@@ -130,21 +135,13 @@ const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpressi
             const propertyPrecedingStatements = precedingStatements[i];
             context.addPrecedingStatements(propertyPrecedingStatements);
 
-            // Ignore expressions after the last one the generated preceding statements
+            // Ignore expressions after the last one that generated preceding statements
             if (i >= lastPrecedingStatementsIndex) continue;
 
             if (lua.isTableFieldExpression(property)) {
-                // Skip fields whose values are:
-                // - literal values that couldn't be affected by preceding statements
-                // - temp identifiers which are results from preceding statements
-                if (
-                    !lua.isLiteral(property.value) &&
-                    !(propertyPrecedingStatements.length > 0 && lua.isIdentifier(property.value))
-                ) {
-                    property.value = moveToPrecedingTemp(context, property.value);
-                }
+                property.value = moveToPrecedingTemp(context, property.value, initializers[i]);
             } else {
-                properties[i] = moveToPrecedingTemp(context, property);
+                properties[i] = moveToPrecedingTemp(context, property, initializers[i]);
             }
         }
     }

@@ -260,7 +260,8 @@ function transformPropertyAssignment(
     context.pushPrecedingStatements();
 
     let variableToExtract = transformPropertyName(context, node.name);
-    variableToExtract = moveToPrecedingTemp(context, variableToExtract); // Must be evaluated before left's preceding statements
+    // Must be evaluated before left's preceding statements
+    variableToExtract = moveToPrecedingTemp(context, variableToExtract, node.name);
     const extractingExpression = lua.createTableIndexExpression(root, variableToExtract);
 
     let destructureAssignmentStatements: lua.Statement[];

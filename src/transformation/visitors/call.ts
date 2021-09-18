@@ -80,9 +80,9 @@ function transformCallWithArgPrecedingStatements(
 
     // Cache call expression and context arg in temps to preserve execution order
     if (argPrecedingStatements.length > 0) {
-        call = moveToPrecedingTemp(context, call);
+        call = moveToPrecedingTemp(context, call, callExpression);
         if (callContext) {
-            args[0] = moveToPrecedingTemp(context, args[0]);
+            args[0] = moveToPrecedingTemp(context, args[0], callContext);
         }
         context.addPrecedingStatements(argPrecedingStatements);
     }
@@ -134,7 +134,11 @@ function transformElementAccessCall(
     const argPrecedingStatements = context.popPrecedingStatements();
     if (argPrecedingStatements.length > 0) {
         // Cache index in temp if args had preceding statements
-        index = moveToPrecedingTemp(context, index);
+        index = moveToPrecedingTemp(
+            context,
+            index,
+            ts.isElementAccessExpression(left) ? left.argumentExpression : left.name
+        );
         context.addPrecedingStatements(argPrecedingStatements);
     }
 

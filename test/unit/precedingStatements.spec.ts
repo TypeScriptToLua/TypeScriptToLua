@@ -99,6 +99,14 @@ describe("execution order", () => {
         `.expectToMatchJsResult();
     });
 
+    test("object literal with computed property names", () => {
+        util.testFunction`
+            let i = "A";
+            const o = {[i += "B"]: i += "C", [i += "D"]: i += "E"};
+            return [i, o];
+        `.expectToMatchJsResult();
+    });
+
     test("comma operator", () => {
         util.testFunction`
             let a = 0, b = 0, c = 0;

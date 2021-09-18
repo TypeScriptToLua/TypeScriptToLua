@@ -71,13 +71,25 @@ const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpressi
 
     const properties: lua.Expression[] = [];
     const initializers: ts.Node[] = [];
-    const precedingStatements: lua.Statement[][] = [];
+    const keyPrecedingStatements: lua.Statement[][] = [];
+    const valuePrecedingStatements: lua.Statement[][] = [];
     let lastPrecedingStatementsIndex = -1;
 
     for (let i = 0; i < expression.properties.length; ++i) {
         const element = expression.properties[i];
+
+        // Transform key and cache preceding statements
+        context.pushPrecedingStatements();
+
         const name = element.name ? transformPropertyName(context, element.name) : undefined;
 
+        let precedingStatements = context.popPrecedingStatements();
+        keyPrecedingStatements.push(precedingStatements);
+        if (precedingStatements.length > 0) {
+            lastPrecedingStatementsIndex = i;
+        }
+
+        // Transform value and cache preceding statements
         context.pushPrecedingStatements();
 
         if (ts.isPropertyAssignment(element)) {
@@ -119,9 +131,9 @@ const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpressi
             assertNever(element);
         }
 
-        const propertyPrecedingStatements = context.popPrecedingStatements();
-        precedingStatements.push(propertyPrecedingStatements);
-        if (propertyPrecedingStatements.length > 0) {
+        precedingStatements = context.popPrecedingStatements();
+        valuePrecedingStatements.push(precedingStatements);
+        if (precedingStatements.length > 0) {
             lastPrecedingStatementsIndex = i;
         }
     }
@@ -131,17 +143,24 @@ const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpressi
         for (let i = 0; i < properties.length; ++i) {
             const property = properties[i];
 
-            // Bubble up preceding statements
-            const propertyPrecedingStatements = precedingStatements[i];
-            context.addPrecedingStatements(propertyPrecedingStatements);
+            // Bubble up key's preceding statements
+            context.addPrecedingStatements(keyPrecedingStatements[i]);
 
-            // Ignore expressions after the last one that generated preceding statements
-            if (i >= lastPrecedingStatementsIndex) continue;
+            // Cache computed property name in temp if before the last expression that generated preceding statements
+            if (i <= lastPrecedingStatementsIndex && lua.isTableFieldExpression(property) && property.key) {
+                property.key = moveToPrecedingTemp(context, property.key, expression.properties[i].name);
+            }
 
-            if (lua.isTableFieldExpression(property)) {
-                property.value = moveToPrecedingTemp(context, property.value, initializers[i]);
-            } else {
-                properties[i] = moveToPrecedingTemp(context, property, initializers[i]);
+            // Bubble up value's preceding statements
+            context.addPrecedingStatements(valuePrecedingStatements[i]);
+
+            // Cache property value in temp if before the last expression that generated preceding statements
+            if (i < lastPrecedingStatementsIndex) {
+                if (lua.isTableFieldExpression(property)) {
+                    property.value = moveToPrecedingTemp(context, property.value, initializers[i]);
+                } else {
+                    properties[i] = moveToPrecedingTemp(context, property, initializers[i]);
+                }
             }
         }
     }

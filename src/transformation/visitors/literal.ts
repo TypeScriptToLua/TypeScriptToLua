@@ -109,7 +109,7 @@ const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpressi
             const expression = transformFunctionLikeDeclaration(element, context);
             properties.push(lua.createTableFieldExpression(expression, name, element));
             initializers.push(element);
-        } else if (ts.isSpreadAssignment(element) || ts.isJsxSpreadAttribute(element)) {
+        } else if (ts.isSpreadAssignment(element)) {
             const type = context.checker.getTypeAtLocation(element.expression);
             let tableExpression: lua.Expression;
             if (isArrayType(context, type)) {

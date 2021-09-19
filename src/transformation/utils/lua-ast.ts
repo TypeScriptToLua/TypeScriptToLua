@@ -4,7 +4,7 @@ import * as lua from "../../LuaAST";
 import { assert, castArray } from "../../utils";
 import { TransformationContext } from "../context";
 import { createExportedIdentifier, getIdentifierExportScope } from "./export";
-import { peekScope, ScopeType, Scope } from "./scope";
+import { peekScope, ScopeType, Scope, addScopeVariableDeclaration } from "./scope";
 import { transformLuaLibFunction } from "./lualib";
 import { LuaLibFeature } from "../../LuaLib";
 
@@ -106,12 +106,7 @@ export function createHoistableVariableDeclarationStatement(
     if (identifier.symbolId !== undefined) {
         const scope = peekScope(context);
         assert(scope.type !== ScopeType.Switch);
-
-        if (!scope.variableDeclarations) {
-            scope.variableDeclarations = [];
-        }
-
-        scope.variableDeclarations.push(declaration);
+        addScopeVariableDeclaration(scope, declaration);
     }
 
     return declaration;
@@ -162,30 +157,26 @@ export function createLocalOrExportedOrGlobalDeclaration(
         const isTopLevelVariable = scope.type === ScopeType.File;
 
         if (context.isModule || !isTopLevelVariable) {
-            let precededDeclaration = false;
             if (!isFunctionDeclaration && hasMultipleReferences(scope, lhs)) {
-                // Split declaration and assignment of identifiers that reference themselves in their declaration
-                declaration = lua.createVariableDeclarationStatement(lhs, undefined, tsOriginal);
-                context.addPrecedingStatements([declaration], true);
-                precededDeclaration = true;
+                // Split declaration and assignment of identifiers that reference themselves in their declaration.
+                // Put declaration above preceding statements in case the identifier is referenced in those.
+                const precedingDeclaration = lua.createVariableDeclarationStatement(lhs, undefined, tsOriginal);
+                context.addPrecedingStatements([precedingDeclaration], true);
                 if (rhs) {
                     assignment = lua.createAssignmentStatement(lhs, rhs, tsOriginal);
                 }
+
+                if (!isFunctionDeclaration) {
+                    // Remember local variable declarations for hoisting later
+                    addScopeVariableDeclaration(scope, precedingDeclaration);
+                }
             } else {
                 declaration = lua.createVariableDeclarationStatement(lhs, rhs, tsOriginal);
-            }
 
-            if (!isFunctionDeclaration) {
-                // Remember local variable declarations for hoisting later
-                if (!scope.variableDeclarations) {
-                    scope.variableDeclarations = [];
+                if (!isFunctionDeclaration) {
+                    // Remember local variable declarations for hoisting later
+                    addScopeVariableDeclaration(scope, declaration);
                 }
-
-                scope.variableDeclarations.push(declaration);
-            }
-
-            if (precededDeclaration) {
-                declaration = undefined;
             }
         } else if (rhs) {
             // global

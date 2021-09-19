@@ -110,6 +110,13 @@ export function popScope(context: TransformationContext): Scope {
     return scope;
 }
 
+export function addScopeVariableDeclaration(scope: Scope, declaration: lua.VariableDeclarationStatement) {
+    if (!scope.variableDeclarations) {
+        scope.variableDeclarations = [];
+    }
+    scope.variableDeclarations.push(declaration);
+}
+
 function isHoistableFunctionDeclaredInScope(symbol: ts.Symbol, scopeNode: ts.Node) {
     return symbol?.declarations?.some(
         d => ts.isFunctionDeclaration(d) && findFirstNodeAbove(d, (n): n is ts.Node => n === scopeNode)

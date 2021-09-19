@@ -82,8 +82,8 @@ export function getProgramTranspileResult(
                 console.log(`Printing ${sourceFile.fileName}`);
             }
 
-            const sourceMapSourceFile = normalizeSlashes(path.relative(getProjectRoot(program), sourceFile.fileName));
-            const printResult = printer(program, emitHost, sourceMapSourceFile, file);
+            const relativeSourcePath = normalizeSlashes(path.relative(getProjectRoot(program), sourceFile.fileName));
+            const printResult = printer(program, emitHost, relativeSourcePath, file);
             transpiledFiles.push({
                 sourceFiles: [sourceFile],
                 fileName: path.normalize(sourceFile.fileName),

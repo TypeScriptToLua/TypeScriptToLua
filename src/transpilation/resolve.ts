@@ -23,14 +23,24 @@ interface ResolutionResult {
 
 class ResolutionContext {
     private resultsCache = new Map<string, ResolutionResult>();
+    private noResolvePaths: Set<string>;
 
     constructor(
         public readonly program: ts.Program,
         public readonly options: CompilerOptions,
         private readonly emitHost: EmitHost
-    ) {}
+    ) {
+        this.noResolvePaths = new Set(options.noResolvePaths);
+    }
 
     public resolve(file: ProcessedFile, required: string): ResolutionResult {
+        if (this.noResolvePaths.has(required)) {
+            if (this.options.tstlVerbose) {
+                console.log(`Skipping module resolution of ${required} as it is in the tsconfig noResolvePaths.`);
+            }
+            return { resolvedFiles: [], diagnostics: [] };
+        }
+
         const resolvedDependency = resolveDependency(file, required, this.program, this.emitHost);
         if (resolvedDependency) {
             if (this.options.tstlVerbose) {

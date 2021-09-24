@@ -3,7 +3,6 @@ import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
-import { getReferenceCountInScope, popScope, pushScope, ScopeType } from "../utils/scope";
 import { isConstIdentifier } from "../utils/typescript";
 
 // Cache an expression in a preceding statement and return the temp identifier
@@ -28,9 +27,6 @@ function transformExpressionsInOrder(
     context: TransformationContext,
     expressions: readonly ts.Expression[]
 ): [lua.Expression[], number] {
-    // Use a custom scope to track variable references
-    const scope = pushScope(context, ScopeType.ExpressionList);
-
     const transformedExpressions: lua.Expression[] = [];
     const precedingStatements: lua.Statement[][] = [];
     let lastPrecedingStatementsIndex = -1;
@@ -52,7 +48,6 @@ function transformExpressionsInOrder(
 
     // No need for extra processing if there were no preceding statements generated
     if (lastPrecedingStatementsIndex === -1) {
-        popScope(context);
         return [transformedExpressions, lastPrecedingStatementsIndex];
     }
 
@@ -64,15 +59,8 @@ function transformExpressionsInOrder(
         // Bubble up preceding statements
         context.addPrecedingStatements(expressionPrecedingStatements);
 
-        // Cache expression in temp to maintain execution order, unless:
-        // - Expression is after the last one in the list which generated preceding statements
-        // - Expression is an identifier that hasn't been referenced more than once
-        if (
-            i >= lastPrecedingStatementsIndex ||
-            (lua.isIdentifier(transformedExpression) &&
-                transformedExpression.symbolId &&
-                getReferenceCountInScope(scope, transformedExpression.symbolId) <= 1)
-        ) {
+        // No need to cache at or after last expression which generated preceding statements
+        if (i >= lastPrecedingStatementsIndex) {
             continue;
         }
 
@@ -84,7 +72,6 @@ function transformExpressionsInOrder(
         transformedExpressions[i] = moveToPrecedingTemp(context, transformedExpression, expression);
     }
 
-    popScope(context);
     return [transformedExpressions, lastPrecedingStatementsIndex];
 }
 

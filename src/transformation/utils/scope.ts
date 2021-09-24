@@ -14,7 +14,6 @@ export enum ScopeType {
     Block = 1 << 5,
     Try = 1 << 6,
     Catch = 1 << 7,
-    ExpressionList = 1 << 8,
 }
 
 interface FunctionDefinitionInfo {

@@ -196,6 +196,8 @@ const canBeTransformedToLuaAssignmentStatement = (
         }
 
         if (ts.isPropertyAccessExpression(element) || ts.isElementAccessExpression(element)) {
+            // Lua's execution order for multi-assignments is not the same as JS's, so we should always
+            // break these down when the left side may have side effects.
             return false;
         }
 

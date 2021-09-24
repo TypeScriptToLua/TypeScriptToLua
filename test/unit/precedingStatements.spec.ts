@@ -75,7 +75,9 @@ describe("execution order", () => {
             function inc() { ++i; return i; }
             function foo(...args: unknown[]) { return args; }
             return foo(${sequence});
-        `.expectToMatchJsResult();
+        `
+            .debug()
+            .expectToMatchJsResult();
     });
 
     test.each([
@@ -516,8 +518,13 @@ describe("loop expressions", () => {
 
     test("for loop", () => {
         util.testFunction`
-            let i: number, j: number;
-            for (i = 0, j = 0; i++ < 5 && j < 10; ++j) {}
+            let j = 0;
+            for (let i = 0; i++ < 5;) {
+                ++j;
+                if (j >= 10) {
+                    break;
+                }
+            }
             return i;
         `.expectToMatchJsResult();
     });
@@ -548,7 +555,7 @@ describe("loop expressions", () => {
     });
 });
 
-test("switch scoping", () => {
+test("switch", () => {
     util.testFunction`
         let i = 0;
         let x = 0;

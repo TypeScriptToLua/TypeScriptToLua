@@ -27,67 +27,33 @@ import { moveToPrecedingTemp, transformExpressionList } from "./expression-list"
 
 export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
 
+export function validateArguments(
+    context: TransformationContext,
+    params: readonly ts.Expression[],
+    signature?: ts.Signature
+) {
+    if (!signature || signature.parameters.length < params.length) {
+        return;
+    }
+    for (const [index, param] of params.entries()) {
+        const signatureParameter = signature.parameters[index];
+        const paramType = context.checker.getTypeAtLocation(param);
+        if (signatureParameter.valueDeclaration !== undefined) {
+            const signatureType = context.checker.getTypeAtLocation(signatureParameter.valueDeclaration);
+            validateAssignment(context, param, paramType, signatureType, signatureParameter.name);
+        }
+    }
+}
+
 export function transformArguments(
     context: TransformationContext,
     params: readonly ts.Expression[],
     signature?: ts.Signature,
     callContext?: ts.Expression
 ): lua.Expression[] {
-    context.pushPrecedingStatements();
-    const parameters = transformExpressionList(context, params);
-    const parametersPrecedingStatements = context.popPrecedingStatements();
-
-    // Add context as first param if present
-    if (callContext) {
-        parameters.unshift(context.transformExpression(callContext));
-    }
-
-    // Defer parameter preceding statements in case transforming the context arg generates some as well
-    context.addPrecedingStatements(parametersPrecedingStatements);
-
-    if (signature && signature.parameters.length >= params.length) {
-        for (const [index, param] of params.entries()) {
-            const signatureParameter = signature.parameters[index];
-            const paramType = context.checker.getTypeAtLocation(param);
-            if (signatureParameter.valueDeclaration !== undefined) {
-                const signatureType = context.checker.getTypeAtLocation(signatureParameter.valueDeclaration);
-                validateAssignment(context, param, paramType, signatureType, signatureParameter.name);
-            }
-        }
-    }
-
+    validateArguments(context, params, signature);
+    const parameters = transformExpressionList(context, callContext ? [callContext, ...params] : params);
     return parameters;
-}
-
-function transformCallWithArgPrecedingStatements(
-    context: TransformationContext,
-    callExpression: ts.Expression,
-    args: lua.Expression[],
-    argPrecedingStatements: lua.Statement[],
-    callContext?: ts.Expression
-): [lua.Expression, lua.Expression[]] {
-    let call = context.transformExpression(callExpression);
-
-    args = args.slice();
-
-    // Transform and inject context if given one
-    if (callContext) {
-        context.pushPrecedingStatements();
-        const transformedContext = context.transformExpression(callContext);
-        argPrecedingStatements = [...context.popPrecedingStatements(), ...argPrecedingStatements];
-        args.unshift(transformedContext);
-    }
-
-    // Cache call expression and context arg in temps to preserve execution order
-    if (argPrecedingStatements.length > 0) {
-        call = moveToPrecedingTemp(context, call, callExpression);
-        if (callContext) {
-            args[0] = moveToPrecedingTemp(context, args[0], callContext);
-        }
-        context.addPrecedingStatements(argPrecedingStatements);
-    }
-
-    return [call, args];
 }
 
 export function transformCallAndArguments(
@@ -97,10 +63,15 @@ export function transformCallAndArguments(
     signature?: ts.Signature,
     callContext?: ts.Expression
 ): [lua.Expression, lua.Expression[]] {
+    let call = context.transformExpression(callExpression);
     context.pushPrecedingStatements();
-    const args = transformArguments(context, params, signature, callContext);
-    const precedingStatements = context.popPrecedingStatements();
-    return transformCallWithArgPrecedingStatements(context, callExpression, args, precedingStatements);
+    const parameters = transformArguments(context, params, signature, callContext);
+    const paramPrecedingStatements = context.popPrecedingStatements();
+    if (paramPrecedingStatements.length > 0) {
+        context.addPrecedingStatements(paramPrecedingStatements);
+        call = moveToPrecedingTemp(context, call, callExpression);
+    }
+    return [call, parameters];
 }
 
 function transformElementAccessCall(
@@ -134,11 +105,7 @@ function transformElementAccessCall(
     const argPrecedingStatements = context.popPrecedingStatements();
     if (argPrecedingStatements.length > 0) {
         // Cache index in temp if args had preceding statements
-        index = moveToPrecedingTemp(
-            context,
-            index,
-            ts.isElementAccessExpression(left) ? left.argumentExpression : left.name
-        );
+        index = moveToPrecedingTemp(context, index);
         context.addPrecedingStatements(argPrecedingStatements);
     }
 
@@ -153,18 +120,9 @@ export function transformContextualCallExpression(
 ): lua.CallExpression | lua.MethodCallExpression {
     const left = ts.isCallExpression(node) ? node.expression : node.tag;
 
-    context.pushPrecedingStatements();
-    const transformedArguments = transformArguments(context, args, signature);
-    const argPrecedingStatements = context.popPrecedingStatements();
-
-    if (
-        ts.isPropertyAccessExpression(left) &&
-        ts.isIdentifier(left.name) &&
-        isValidLuaIdentifier(left.name.text) &&
-        argPrecedingStatements.length === 0
-    ) {
+    if (ts.isPropertyAccessExpression(left) && ts.isIdentifier(left.name) && isValidLuaIdentifier(left.name.text)) {
         // table:name()
-        const table = context.transformExpression(left.expression);
+        const [table, ...transformedArguments] = transformExpressionList(context, [left.expression, ...args]);
 
         if (ts.isOptionalChain(node)) {
             return transformLuaLibFunction(
@@ -188,24 +146,25 @@ export function transformContextualCallExpression(
         if (isExpressionWithEvaluationEffect(left.expression)) {
             return transformElementAccessCall(context, left, args, signature);
         } else {
-            const [expression, updatedArgs] = transformCallWithArgPrecedingStatements(
+            const [expression, transformedArguments] = transformCallAndArguments(
                 context,
                 left,
-                transformedArguments,
-                argPrecedingStatements,
+                args,
+                signature,
                 left.expression
             );
-            return lua.createCallExpression(expression, updatedArgs, node);
+            return lua.createCallExpression(expression, transformedArguments, node);
         }
     } else if (ts.isIdentifier(left)) {
-        const callContext = context.isStrict ? lua.createNilLiteral() : lua.createIdentifier("_G");
-        const [expression, updatedArgs] = transformCallWithArgPrecedingStatements(
+        const callContext = context.isStrict ? ts.factory.createNull() : ts.factory.createIdentifier("_G");
+        const [expression, transformedArguments] = transformCallAndArguments(
             context,
             left,
-            transformedArguments,
-            argPrecedingStatements
+            args,
+            signature,
+            callContext
         );
-        return lua.createCallExpression(expression, [callContext, ...updatedArgs], node);
+        return lua.createCallExpression(expression, transformedArguments, node);
     } else {
         throw new Error(`Unsupported LeftHandSideExpression kind: ${ts.SyntaxKind[left.kind]}`);
     }

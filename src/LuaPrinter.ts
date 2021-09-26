@@ -1,5 +1,5 @@
 import { Mapping, SourceMapGenerator, SourceNode } from "source-map";
-import { getEmitPathRelativeToOutDir } from ".";
+import { getEmitPath } from ".";
 import * as ts from "typescript";
 import { CompilerOptions, isBundleEnabled, LuaLibImportKind } from "./CompilerOptions";
 import * as lua from "./LuaAST";
@@ -130,9 +130,9 @@ export class LuaPrinter {
 
     constructor(private emitHost: EmitHost, private program: ts.Program, private sourceFile: string) {
         this.options = program.getCompilerOptions();
-        this.luaFile = normalizeSlashes(getEmitPathRelativeToOutDir(this.sourceFile, this.program));
-        console.log(this.sourceFile, this.luaFile);
-        this.relativeSourcePath = normalizeSlashes(path.relative(this.luaFile, this.sourceFile));
+        this.luaFile = normalizeSlashes(getEmitPath(this.sourceFile, this.program));
+        // Source nodes contain relative path from mapped lua file to original TS source file
+        this.relativeSourcePath = normalizeSlashes(path.relative(path.dirname(this.luaFile), this.sourceFile));
     }
 
     public print(file: lua.File): PrintResult {

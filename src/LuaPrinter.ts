@@ -1,3 +1,4 @@
+import * as path from "path";
 import { Mapping, SourceMapGenerator, SourceNode } from "source-map";
 import { getEmitPath } from ".";
 import * as ts from "typescript";
@@ -7,7 +8,6 @@ import { loadLuaLibFeatures, LuaLibFeature } from "./LuaLib";
 import { isValidLuaIdentifier } from "./transformation/utils/safe-names";
 import { EmitHost } from "./transpilation";
 import { intersperse, normalizeSlashes } from "./utils";
-import path = require("path");
 
 // https://www.lua.org/pil/2.4.html
 // https://www.ecma-international.org/ecma-262/10.0/index.html#table-34

@@ -792,7 +792,7 @@ export class LuaPrinter {
     // will not generate 'empty' mappings in the source map that point to nothing in the original TS.
     private buildSourceMap(sourceRoot: string, rootSourceNode: SourceNode): SourceMapGenerator {
         const map = new SourceMapGenerator({
-            file: this.luaFile,
+            file: path.basename(this.luaFile),
             sourceRoot,
         });
 

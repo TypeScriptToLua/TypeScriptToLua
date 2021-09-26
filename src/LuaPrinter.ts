@@ -7,6 +7,7 @@ import { loadLuaLibFeatures, LuaLibFeature } from "./LuaLib";
 import { isValidLuaIdentifier } from "./transformation/utils/safe-names";
 import { EmitHost } from "./transpilation";
 import { intersperse, normalizeSlashes } from "./utils";
+import path = require("path");
 
 // https://www.lua.org/pil/2.4.html
 // https://www.ecma-international.org/ecma-262/10.0/index.html#table-34
@@ -121,12 +122,17 @@ export class LuaPrinter {
     };
 
     private currentIndent = "";
+    private luaFile: string;
+    private relativeSourcePath: string;
     private options: CompilerOptions;
 
     public static readonly sourceMapTracebackPlaceholder = "{#SourceMapTraceback}";
 
     constructor(private emitHost: EmitHost, private program: ts.Program, private sourceFile: string) {
         this.options = program.getCompilerOptions();
+        this.luaFile = normalizeSlashes(getEmitPathRelativeToOutDir(this.sourceFile, this.program));
+        console.log(this.sourceFile, this.luaFile);
+        this.relativeSourcePath = normalizeSlashes(path.relative(this.luaFile, this.sourceFile));
     }
 
     public print(file: lua.File): PrintResult {
@@ -229,12 +235,12 @@ export class LuaPrinter {
         const { line, column } = lua.getOriginalPos(node);
 
         return line !== undefined && column !== undefined
-            ? new SourceNode(line + 1, column, this.sourceFile, chunks, name)
-            : new SourceNode(null, null, this.sourceFile, chunks, name);
+            ? new SourceNode(line + 1, column, this.relativeSourcePath, chunks, name)
+            : new SourceNode(null, null, this.relativeSourcePath, chunks, name);
     }
 
     protected concatNodes(...chunks: SourceChunk[]): SourceNode {
-        return new SourceNode(null, null, this.sourceFile, chunks);
+        return new SourceNode(null, null, this.relativeSourcePath, chunks);
     }
 
     protected printBlock(block: lua.Block): SourceNode {
@@ -756,7 +762,7 @@ export class LuaPrinter {
     }
 
     public printOperator(kind: lua.Operator): SourceNode {
-        return new SourceNode(null, null, this.sourceFile, LuaPrinter.operatorMap[kind]);
+        return new SourceNode(null, null, this.relativeSourcePath, LuaPrinter.operatorMap[kind]);
     }
 
     protected joinChunksWithComma(chunks: SourceChunk[]): SourceChunk[] {
@@ -786,7 +792,7 @@ export class LuaPrinter {
     // will not generate 'empty' mappings in the source map that point to nothing in the original TS.
     private buildSourceMap(sourceRoot: string, rootSourceNode: SourceNode): SourceMapGenerator {
         const map = new SourceMapGenerator({
-            file: normalizeSlashes(getEmitPathRelativeToOutDir(this.sourceFile, this.program)),
+            file: this.luaFile,
             sourceRoot,
         });
 

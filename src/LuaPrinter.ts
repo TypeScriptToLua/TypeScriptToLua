@@ -1,11 +1,12 @@
 import { Mapping, SourceMapGenerator, SourceNode } from "source-map";
+import { getEmitPathRelativeToOutDir } from ".";
 import * as ts from "typescript";
 import { CompilerOptions, isBundleEnabled, LuaLibImportKind } from "./CompilerOptions";
 import * as lua from "./LuaAST";
 import { loadLuaLibFeatures, LuaLibFeature } from "./LuaLib";
 import { isValidLuaIdentifier } from "./transformation/utils/safe-names";
 import { EmitHost } from "./transpilation";
-import { intersperse, trimExtension } from "./utils";
+import { intersperse, normalizeSlashes } from "./utils";
 
 // https://www.lua.org/pil/2.4.html
 // https://www.ecma-international.org/ecma-262/10.0/index.html#table-34
@@ -120,14 +121,12 @@ export class LuaPrinter {
     };
 
     private currentIndent = "";
-    private sourceFile: string;
     private options: CompilerOptions;
 
     public static readonly sourceMapTracebackPlaceholder = "{#SourceMapTraceback}";
 
-    constructor(private emitHost: EmitHost, program: ts.Program, fileName: string) {
+    constructor(private emitHost: EmitHost, private program: ts.Program, private sourceFile: string) {
         this.options = program.getCompilerOptions();
-        this.sourceFile = fileName;
     }
 
     public print(file: lua.File): PrintResult {
@@ -787,7 +786,7 @@ export class LuaPrinter {
     // will not generate 'empty' mappings in the source map that point to nothing in the original TS.
     private buildSourceMap(sourceRoot: string, rootSourceNode: SourceNode): SourceMapGenerator {
         const map = new SourceMapGenerator({
-            file: trimExtension(this.sourceFile) + ".lua",
+            file: normalizeSlashes(getEmitPathRelativeToOutDir(this.sourceFile, this.program)),
             sourceRoot,
         });
 

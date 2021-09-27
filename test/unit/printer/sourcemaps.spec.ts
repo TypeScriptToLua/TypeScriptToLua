@@ -163,25 +163,35 @@ test.each([
 });
 
 test.each([
-    { fileName: "/proj/foo.ts", config: {} },
+    {
+        fileName: "/proj/foo.ts",
+        config: {},
+        expectedSourcePath: "foo.ts", // ts and lua will be emitted to same directory
+    },
     {
         fileName: "/proj/src/foo.ts",
-        config: { outDir: "/proj/dst" },
+        config: {
+            outDir: "/proj/dst",
+        },
+        expectedSourcePath: "../src/foo.ts", // path from proj/dst outDir to proj/src/foo.ts
     },
     {
         fileName: "/proj/src/foo.ts",
         config: { rootDir: "/proj/src", outDir: "/proj/dst" },
+        expectedSourcePath: "../src/foo.ts", // path from proj/dst outDir to proj/src/foo.ts
     },
     {
         fileName: "/proj/src/sub/foo.ts",
         config: { rootDir: "/proj/src", outDir: "/proj/dst" },
+        expectedSourcePath: "../../src/sub/foo.ts", // path from proj/dst/sub outDir to proj/src/sub/foo.ts
     },
     {
         fileName: "/proj/src/sub/main.ts",
-        config: { rootDir: "/proj/src", outDir: "/proj/dst", sourceRoot: "bin" },
-        fullSource: "bin/proj/src/sub/main.ts",
+        config: { rootDir: "/proj/src", outDir: "/proj/dst", sourceRoot: "bin/binsub/binsubsub" },
+        expectedSourcePath: "../../src/sub/main.ts", // path from proj/dst/sub outDir to proj/src/sub/foo.ts
+        fullSource: "bin/src/sub/main.ts",
     },
-])("Source map has correct sources (%p)", async ({ fileName, config, fullSource }) => {
+])("Source map has correct sources (%p)", async ({ fileName, config, fullSource, expectedSourcePath }) => {
     const file = util.testModule`
         const foo = "foo"
     `
@@ -191,11 +201,11 @@ test.each([
 
     const sourceMap = JSON.parse(file.luaSourceMap);
     expect(sourceMap.sources).toHaveLength(1);
-    expect(sourceMap.sources[0]).toBe(fileName);
+    expect(sourceMap.sources[0]).toBe(expectedSourcePath);
 
     const consumer = await new SourceMapConsumer(file.luaSourceMap);
     expect(consumer.sources).toHaveLength(1);
-    expect(consumer.sources[0]).toBe(fullSource ?? fileName);
+    expect(consumer.sources[0]).toBe(fullSource ?? expectedSourcePath);
 });
 
 test.each([

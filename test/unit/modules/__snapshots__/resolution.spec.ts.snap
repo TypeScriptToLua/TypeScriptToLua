@@ -7,4 +7,4 @@ local ____ = module
 return ____exports"
 `;
 
-exports[`doesn't resolve paths out of root dir: diagnostics 1`] = `"error TSTL: Could not resolve require path '../module' in file main.ts."`;
+exports[`doesn't resolve paths out of root dir: diagnostics 1`] = `"error TSTL: Could not resolve lua source files for require path '../module' in file main.ts."`;

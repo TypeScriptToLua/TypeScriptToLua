@@ -52,8 +52,36 @@ export function transformArguments(
     callContext?: ts.Expression
 ): lua.Expression[] {
     validateArguments(context, params, signature);
-    const parameters = transformExpressionList(context, callContext ? [callContext, ...params] : params);
-    return parameters;
+    return transformExpressionList(context, callContext ? [callContext, ...params] : params);
+}
+
+function transformCallWithArguments(
+    context: TransformationContext,
+    callExpression: ts.Expression,
+    transformedArguments: lua.Expression[],
+    argPrecedingStatements: lua.Statement[],
+    callContext?: ts.Expression
+): [lua.Expression, lua.Expression[]] {
+    let call = context.transformExpression(callExpression);
+
+    let transformedContext: lua.Expression | undefined;
+    if (callContext) {
+        transformedContext = context.transformExpression(callContext);
+    }
+
+    if (argPrecedingStatements.length > 0) {
+        if (transformedContext) {
+            transformedContext = moveToPrecedingTemp(context, transformedContext, callContext);
+        }
+        call = moveToPrecedingTemp(context, call, callExpression);
+        context.addPrecedingStatements(argPrecedingStatements);
+    }
+
+    if (transformedContext) {
+        transformedArguments.unshift(transformedContext);
+    }
+
+    return [call, transformedArguments];
 }
 
 export function transformCallAndArguments(
@@ -63,22 +91,17 @@ export function transformCallAndArguments(
     signature?: ts.Signature,
     callContext?: ts.Expression
 ): [lua.Expression, lua.Expression[]] {
-    let call = context.transformExpression(callExpression);
     context.pushPrecedingStatements();
-    const parameters = transformArguments(context, params, signature, callContext);
-    const paramPrecedingStatements = context.popPrecedingStatements();
-    if (paramPrecedingStatements.length > 0) {
-        context.addPrecedingStatements(paramPrecedingStatements);
-        call = moveToPrecedingTemp(context, call, callExpression);
-    }
-    return [call, parameters];
+    const transformedArguments = transformArguments(context, params, signature, callContext);
+    const argPrecedingStatements = context.popPrecedingStatements();
+    return transformCallWithArguments(context, callExpression, transformedArguments, argPrecedingStatements);
 }
 
 function transformElementAccessCall(
     context: TransformationContext,
     left: ts.PropertyAccessExpression | ts.ElementAccessExpression,
-    args: ts.Expression[] | ts.NodeArray<ts.Expression>,
-    signature?: ts.Signature
+    transformedArguments: lua.Expression[],
+    argPrecedingStatements: lua.Statement[]
 ) {
     // Cache left-side if it has effects
     // local ____self = context; return ____self[argument](parameters);
@@ -93,23 +116,13 @@ function transformElementAccessCall(
 
     let index: lua.Expression = lua.createTableIndexExpression(selfIdentifier, argument);
 
-    context.pushPrecedingStatements();
-
-    const transformedArguments = transformArguments(
-        context,
-        args,
-        signature,
-        ts.factory.createIdentifier(selfIdentifier.text)
-    );
-
-    const argPrecedingStatements = context.popPrecedingStatements();
     if (argPrecedingStatements.length > 0) {
         // Cache index in temp if args had preceding statements
         index = moveToPrecedingTemp(context, index);
         context.addPrecedingStatements(argPrecedingStatements);
     }
 
-    return lua.createCallExpression(index, transformedArguments);
+    return lua.createCallExpression(index, [selfIdentifier, ...transformedArguments]);
 }
 
 export function transformContextualCallExpression(
@@ -120,10 +133,18 @@ export function transformContextualCallExpression(
 ): lua.CallExpression | lua.MethodCallExpression {
     const left = ts.isCallExpression(node) ? node.expression : node.tag;
 
-    if (ts.isPropertyAccessExpression(left) && ts.isIdentifier(left.name) && isValidLuaIdentifier(left.name.text)) {
-        // table:name()
-        const [table, ...transformedArguments] = transformExpressionList(context, [left.expression, ...args]);
+    context.pushPrecedingStatements();
+    let transformedArguments = transformArguments(context, args, signature);
+    const argPrecedingStatements = context.popPrecedingStatements();
 
+    if (
+        ts.isPropertyAccessExpression(left) &&
+        ts.isIdentifier(left.name) &&
+        isValidLuaIdentifier(left.name.text) &&
+        argPrecedingStatements.length === 0
+    ) {
+        // table:name()
+        const table = context.transformExpression(left.expression);
         if (ts.isOptionalChain(node)) {
             return transformLuaLibFunction(
                 context,
@@ -144,24 +165,26 @@ export function transformContextualCallExpression(
         }
     } else if (ts.isElementAccessExpression(left) || ts.isPropertyAccessExpression(left)) {
         if (isExpressionWithEvaluationEffect(left.expression)) {
-            return transformElementAccessCall(context, left, args, signature);
+            return transformElementAccessCall(context, left, transformedArguments, argPrecedingStatements);
         } else {
-            const [expression, transformedArguments] = transformCallAndArguments(
+            let expression: lua.Expression;
+            [expression, transformedArguments] = transformCallWithArguments(
                 context,
                 left,
-                args,
-                signature,
+                transformedArguments,
+                argPrecedingStatements,
                 left.expression
             );
             return lua.createCallExpression(expression, transformedArguments, node);
         }
     } else if (ts.isIdentifier(left)) {
         const callContext = context.isStrict ? ts.factory.createNull() : ts.factory.createIdentifier("_G");
-        const [expression, transformedArguments] = transformCallAndArguments(
+        let expression: lua.Expression;
+        [expression, transformedArguments] = transformCallWithArguments(
             context,
             left,
-            args,
-            signature,
+            transformedArguments,
+            argPrecedingStatements,
             callContext
         );
         return lua.createCallExpression(expression, transformedArguments, node);

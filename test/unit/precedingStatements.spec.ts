@@ -75,9 +75,7 @@ describe("execution order", () => {
             function inc() { ++i; return i; }
             function foo(...args: unknown[]) { return args; }
             return foo(${sequence});
-        `
-            .debug()
-            .expectToMatchJsResult();
+        `.expectToMatchJsResult();
     });
 
     test.each([
@@ -512,7 +510,7 @@ describe("loop expressions", () => {
                     break;
                 }
             }
-            return i;
+            return [i, j];
         `.expectToMatchJsResult();
     });
 
@@ -525,7 +523,7 @@ describe("loop expressions", () => {
                     break;
                 }
             }
-            return i;
+            return j;
         `.expectToMatchJsResult();
     });
 
@@ -538,7 +536,7 @@ describe("loop expressions", () => {
                     break;
                 }
             } while (i++ < 5);
-            return i;
+            return [i, j];
         `.expectToMatchJsResult();
     });
 

@@ -1,7 +1,7 @@
+import assert = require("assert");
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
-import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isConstIdentifier } from "../utils/typescript";
 
@@ -23,93 +23,120 @@ export function moveToPrecedingTemp(
     return tempClone;
 }
 
-function transformExpressionsInOrder(
+function shouldMoveToTemp(
+    context: TransformationContext,
+    expression: ts.Expression,
+    transformedExpression: lua.Expression
+) {
+    return !lua.isLiteral(transformedExpression) && !isConstIdentifier(context, expression);
+}
+
+function transformExpressions(
     context: TransformationContext,
     expressions: readonly ts.Expression[]
-): [lua.Expression[], number] {
-    const transformedExpressions: lua.Expression[] = [];
+): [lua.Expression[], lua.Statement[][], number] {
     const precedingStatements: lua.Statement[][] = [];
+    const transformExpressions: lua.Expression[] = [];
     let lastPrecedingStatementsIndex = -1;
     for (let i = 0; i < expressions.length; ++i) {
-        const expression = expressions[i];
-
-        // Transform expression and catch preceding statements
         context.pushPrecedingStatements();
-        const transformedExpression = context.transformExpression(expression);
-        transformedExpressions.push(transformedExpression);
+        transformExpressions.push(context.transformExpression(expressions[i]));
         const expressionPrecedingStatements = context.popPrecedingStatements();
-        precedingStatements.push(expressionPrecedingStatements);
-
-        // Track preceding statements
         if (expressionPrecedingStatements.length > 0) {
             lastPrecedingStatementsIndex = i;
         }
+        precedingStatements.push(expressionPrecedingStatements);
     }
-
-    // No need for extra processing if there were no preceding statements generated
-    if (lastPrecedingStatementsIndex === -1) {
-        return [transformedExpressions, lastPrecedingStatementsIndex];
-    }
-
-    for (let i = 0; i < transformedExpressions.length; ++i) {
-        let transformedExpression = transformedExpressions[i];
-        const expression = expressions[i];
-        const expressionPrecedingStatements = precedingStatements[i];
-
-        // Bubble up preceding statements
-        context.addPrecedingStatements(expressionPrecedingStatements);
-
-        // No need to cache at or after last expression which generated preceding statements
-        if (i >= lastPrecedingStatementsIndex) {
-            continue;
-        }
-
-        // Wrap spreads in table to store in a temp
-        if (ts.isSpreadElement(expression)) {
-            transformedExpression = wrapInTable(transformedExpression);
-        }
-
-        transformedExpressions[i] = moveToPrecedingTemp(context, transformedExpression, expression);
-    }
-
-    return [transformedExpressions, lastPrecedingStatementsIndex];
+    return [transformExpressions, precedingStatements, lastPrecedingStatementsIndex];
 }
 
-// Transforms a series of expressions while maintaining execution order
-export function transformOrderedExpressions(
+function transformExpressionsUsingTemps(
     context: TransformationContext,
-    expressions: readonly ts.Expression[]
-): lua.Expression[] {
-    const [transformedExpressions] = transformExpressionsInOrder(context, expressions);
+    expressions: readonly ts.Expression[],
+    transformedExpressions: lua.Expression[],
+    precedingStatements: lua.Statement[][],
+    lastPrecedingStatementsIndex: number
+) {
+    for (let i = 0; i < transformedExpressions.length; ++i) {
+        context.addPrecedingStatements(precedingStatements[i]);
+
+        const transformedExpression = transformedExpressions[i];
+        const expression = expressions[i];
+        if (i < lastPrecedingStatementsIndex && shouldMoveToTemp(context, expression, transformedExpression)) {
+            transformedExpressions[i] = moveToPrecedingTemp(context, transformedExpression, expression);
+        }
+    }
+
     return transformedExpressions;
 }
 
-function buildArrayConcatCall(
+function pushToList(
+    context: TransformationContext,
+    listIdentifier: lua.Identifier | undefined,
+    expressions: lua.Expression[]
+) {
+    if (!listIdentifier) {
+        listIdentifier = lua.createIdentifier(context.createTempName("list"));
+        const libCall = transformLuaLibFunction(context, LuaLibFeature.SparseArrayNew, undefined, ...expressions);
+        const declaration = lua.createVariableDeclarationStatement(listIdentifier, libCall);
+        context.addPrecedingStatements([declaration]);
+    } else {
+        const libCall = transformLuaLibFunction(
+            context,
+            LuaLibFeature.SparseArrayPush,
+            undefined,
+            listIdentifier,
+            ...expressions
+        );
+        context.addPrecedingStatements([lua.createExpressionStatement(libCall)]);
+    }
+    return listIdentifier;
+}
+
+function transformExpressionsUsingList(
+    context: TransformationContext,
+    expressions: readonly ts.Expression[],
+    transformedExpressions: lua.Expression[],
+    precedingStatements: lua.Statement[][]
+) {
+    let listIdentifier: lua.Identifier | undefined;
+
+    let expressionSet: lua.Expression[] = [];
+    for (let i = 0; i < expressions.length; ++i) {
+        if (precedingStatements[i].length > 0 && expressionSet.length > 0) {
+            listIdentifier = pushToList(context, listIdentifier, expressionSet);
+            expressionSet = [];
+        }
+
+        context.addPrecedingStatements(precedingStatements[i]);
+        expressionSet.push(transformedExpressions[i]);
+
+        if (ts.isSpreadElement(expressions[i])) {
+            listIdentifier = pushToList(context, listIdentifier, expressionSet);
+            expressionSet = [];
+        }
+    }
+
+    if (expressionSet.length > 0) {
+        listIdentifier = pushToList(context, listIdentifier, expressionSet);
+    }
+
+    assert(listIdentifier);
+    return [transformLuaLibFunction(context, LuaLibFeature.SparseArraySpread, undefined, listIdentifier)];
+}
+
+function countTempCandidates(
     context: TransformationContext,
     expressions: readonly ts.Expression[],
     transformedExpressions: lua.Expression[],
     lastPrecedingStatementsIndex: number
 ) {
-    const tbls: lua.Expression[] = [];
-    let tbl: lua.Expression[] = [];
-    for (let i = 0; i < expressions.length; ++i) {
-        const transformedExpression = transformedExpressions[i];
-        if (ts.isSpreadElement(expressions[i])) {
-            if (i < lastPrecedingStatementsIndex) {
-                // Spread statements cached in temps will need to be unpacked
-                tbls.push(wrapInTable(...tbl, createUnpackCall(context, transformedExpression)));
-            } else {
-                tbls.push(wrapInTable(...tbl, transformedExpression));
-            }
-            tbl = [];
-        } else {
-            tbl.push(transformedExpression);
-        }
+    if (lastPrecedingStatementsIndex < 0) {
+        return 0;
     }
-    if (tbl.length > 0) {
-        tbls.push(wrapInTable(...tbl));
-    }
-    return [createUnpackCall(context, transformLuaLibFunction(context, LuaLibFeature.ArrayConcat, undefined, ...tbls))];
+    return transformedExpressions
+        .slice(0, lastPrecedingStatementsIndex)
+        .filter((e, i) => shouldMoveToTemp(context, expressions[i], e)).length;
 }
 
 // Transforms a list of expressions while flattening spreads and maintaining execution order
@@ -117,13 +144,47 @@ export function transformExpressionList(
     context: TransformationContext,
     expressions: readonly ts.Expression[]
 ): lua.Expression[] {
-    const [transformedExpressions, lastPrecedingStatementsIndex] = transformExpressionsInOrder(context, expressions);
+    const [transformedExpressions, precedingStatements, lastPrecedingStatementsIndex] = transformExpressions(
+        context,
+        expressions
+    );
 
-    // If there are spreads in the middle, use the array concat lib function
-    const firstSpreadIndex = expressions.findIndex(i => ts.isSpreadElement(i));
-    if (firstSpreadIndex >= 0 && firstSpreadIndex < expressions.length - 1) {
-        return buildArrayConcatCall(context, expressions, transformedExpressions, lastPrecedingStatementsIndex);
+    // If more than this number of temps are required to preserve execution order, we'll fall back to using the list
+    // lib functions instead to prevent excessive locals.
+    const maxTemps = 2;
+
+    // Use list lib if there are spreads before the last expression or if too many temps are needed to preserve order
+    const lastSpread = expressions.findIndex(e => ts.isSpreadElement(e));
+    if (
+        (lastSpread >= 0 && lastSpread < expressions.length - 1) ||
+        countTempCandidates(context, expressions, transformedExpressions, lastPrecedingStatementsIndex) > maxTemps
+    ) {
+        return transformExpressionsUsingList(context, expressions, transformedExpressions, precedingStatements);
+    } else {
+        return transformExpressionsUsingTemps(
+            context,
+            expressions,
+            transformedExpressions,
+            precedingStatements,
+            lastPrecedingStatementsIndex
+        );
     }
+}
 
-    return transformedExpressions;
+// Transforms a series of expressions while maintaining execution order
+export function transformOrderedExpressions(
+    context: TransformationContext,
+    expressions: readonly ts.Expression[]
+): lua.Expression[] {
+    const [transformedExpressions, precedingStatements, lastPrecedingStatementsIndex] = transformExpressions(
+        context,
+        expressions
+    );
+    return transformExpressionsUsingTemps(
+        context,
+        expressions,
+        transformedExpressions,
+        precedingStatements,
+        lastPrecedingStatementsIndex
+    );
 }

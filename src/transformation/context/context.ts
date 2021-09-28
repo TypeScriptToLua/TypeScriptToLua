@@ -136,6 +136,7 @@ export class TransformationContext {
 
     public addPrecedingStatements(statements: lua.Statement[], prepend = false) {
         const precedingStatements = this.precedingStatementsStack[this.precedingStatementsStack.length - 1];
+        assert(precedingStatements);
         if (prepend) {
             precedingStatements.unshift(...statements);
         } else {

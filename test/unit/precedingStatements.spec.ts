@@ -191,6 +191,17 @@ describe("execution order", () => {
         `.expectToMatchJsResult();
     });
 
+    test("indirect property assignment expression", () => {
+        util.testFunction`
+            const a = {value: 10};
+            const b = {value: 11};
+            let i = 0;
+            function foo() { if (i === 0) { return b; } else { return a; } }
+            foo().value = i++;
+            return [a, b, i];
+        `.expectToMatchJsResult();
+    });
+
     test("compound index assignment statement", () => {
         util.testFunction`
             let i = 0;

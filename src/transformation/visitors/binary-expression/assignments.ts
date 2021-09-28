@@ -11,33 +11,26 @@ import { isArrayLength, transformDestructuringAssignment } from "./destructuring
 import { isMultiReturnCall } from "../language-extensions/multi";
 import { notAllowedOptionalAssignment } from "../../utils/diagnostics";
 import { transformElementAccessArgument } from "../access";
-import { transformOrderedExpressions } from "../expression-list";
+import { moveToPrecedingTemp, transformOrderedExpressions } from "../expression-list";
 
 export function transformAssignmentLeftHandSideExpression(
     context: TransformationContext,
     node: ts.Expression,
     rightHasPrecedingStatements?: boolean
 ): lua.AssignmentLeftHandSideExpression {
-    // Cache index expression in a temp so it can be evaluated before right's preceding statements
-    if (
-        rightHasPrecedingStatements &&
-        ts.isElementAccessExpression(node) &&
-        !ts.isLiteralExpression(node.argumentExpression)
-    ) {
+    // Access expressions need the components of the left side cached in temps before the right side's preceding statements
+    if (rightHasPrecedingStatements && (ts.isElementAccessExpression(node) || ts.isPropertyAccessExpression(node))) {
         let table = context.transformExpression(node.expression);
+        table = moveToPrecedingTemp(context, table, node.expression);
 
-        // If table is complex, it could reference things from the index expression and needs to be cached as well
-        if (!ts.isIdentifier(node.expression)) {
-            const tableTemp = context.createTempForNode(node.expression);
-            context.addPrecedingStatements(lua.createVariableDeclarationStatement(tableTemp, table, node.expression));
-            table = lua.cloneIdentifier(tableTemp);
+        let index: lua.Expression;
+        if (ts.isElementAccessExpression(node)) {
+            index = transformElementAccessArgument(context, node);
+            index = moveToPrecedingTemp(context, index, node.argumentExpression);
+        } else {
+            index = lua.createStringLiteral(node.name.text, node.name);
         }
-
-        const indexNode = node.argumentExpression;
-        const indexTemp = context.createTempForNode(indexNode);
-        const index = transformElementAccessArgument(context, node);
-        context.addPrecedingStatements(lua.createVariableDeclarationStatement(indexTemp, index, indexNode));
-        return lua.createTableIndexExpression(table, lua.cloneIdentifier(indexTemp), node);
+        return lua.createTableIndexExpression(table, index, node);
     }
 
     const symbol = context.checker.getSymbolAtLocation(node);

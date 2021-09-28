@@ -11,22 +11,7 @@ import { tryGetConstEnumValue } from "./enum";
 import { transformOrderedExpressions } from "./expression-list";
 import { isMultiReturnCall, returnsMultiType } from "./language-extensions/multi";
 
-export function transformElementAccessArgument(
-    context: TransformationContext,
-    node: ts.ElementAccessExpression
-): lua.Expression {
-    const index = context.transformExpression(node.argumentExpression);
-
-    const type = context.checker.getTypeAtLocation(node.expression);
-    const argumentType = context.checker.getTypeAtLocation(node.argumentExpression);
-    if (isArrayType(context, type) && isNumberType(context, argumentType)) {
-        return addToNumericExpression(index, 1);
-    }
-
-    return index;
-}
-
-export function getElementAccessArgument(
+function getElementAccessArgument(
     context: TransformationContext,
     node: ts.ElementAccessExpression,
     index: lua.Expression
@@ -36,8 +21,15 @@ export function getElementAccessArgument(
     if (isArrayType(context, type) && isNumberType(context, argumentType)) {
         return addToNumericExpression(index, 1);
     }
-
     return index;
+}
+
+export function transformElementAccessArgument(
+    context: TransformationContext,
+    node: ts.ElementAccessExpression
+): lua.Expression {
+    const index = context.transformExpression(node.argumentExpression);
+    return getElementAccessArgument(context, node, index);
 }
 
 export const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessExpression> = (node, context) => {

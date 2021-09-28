@@ -45,8 +45,8 @@ function transformProtectedConditionalExpression(
     const falseStatements = context.popPrecedingStatements();
     falseStatements.push(lua.createAssignmentStatement(lua.cloneIdentifier(tempVar), val2, expression.whenFalse));
 
-    context.addPrecedingStatements([lua.createVariableDeclarationStatement(tempVar, undefined, expression.condition)]);
     context.addPrecedingStatements([
+        lua.createVariableDeclarationStatement(tempVar, undefined, expression.condition),
         lua.createIfStatement(
             condition,
             lua.createBlock(trueStatements, expression.whenTrue),

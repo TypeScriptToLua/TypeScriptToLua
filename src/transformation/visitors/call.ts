@@ -108,7 +108,7 @@ function transformElementAccessCall(
     const selfIdentifier = lua.createIdentifier(context.createTempName("self"));
     const callContext = context.transformExpression(left.expression);
     const selfAssignment = lua.createVariableDeclarationStatement(selfIdentifier, callContext);
-    context.addPrecedingStatements([selfAssignment]);
+    context.addPrecedingStatements(selfAssignment);
 
     const argument = ts.isElementAccessExpression(left)
         ? transformElementAccessArgument(context, left)
@@ -256,7 +256,7 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
 
     if (isTableDeleteCall(context, node)) {
         context.diagnostics.push(invalidTableDeleteExpression(node));
-        context.addPrecedingStatements([transformTableDeleteExpression(context, node)]);
+        context.addPrecedingStatements(transformTableDeleteExpression(context, node));
         return lua.createNilLiteral();
     }
 
@@ -270,7 +270,7 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
 
     if (isTableSetCall(context, node)) {
         context.diagnostics.push(invalidTableSetExpression(node));
-        context.addPrecedingStatements([transformTableSetExpression(context, node)]);
+        context.addPrecedingStatements(transformTableSetExpression(context, node));
         return lua.createNilLiteral();
     }
 

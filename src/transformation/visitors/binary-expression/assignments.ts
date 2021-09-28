@@ -29,14 +29,14 @@ export function transformAssignmentLeftHandSideExpression(
         // If table is complex, it could reference things from the index expression and needs to be cached as well
         if (!ts.isIdentifier(node.expression)) {
             const tableTemp = context.createTempForNode(node.expression);
-            context.addPrecedingStatements([lua.createVariableDeclarationStatement(tableTemp, table, node.expression)]);
+            context.addPrecedingStatements(lua.createVariableDeclarationStatement(tableTemp, table, node.expression));
             table = lua.cloneIdentifier(tableTemp);
         }
 
         const indexNode = node.argumentExpression;
         const indexTemp = context.createTempForNode(indexNode);
         const index = transformElementAccessArgument(context, node);
-        context.addPrecedingStatements([lua.createVariableDeclarationStatement(indexTemp, index, indexNode)]);
+        context.addPrecedingStatements(lua.createVariableDeclarationStatement(indexTemp, index, indexNode));
         return lua.createTableIndexExpression(table, lua.cloneIdentifier(indexTemp), node);
     }
 

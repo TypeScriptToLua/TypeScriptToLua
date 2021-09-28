@@ -246,9 +246,9 @@ export function transformFunctionLikeDeclaration(
             // Only handle if the name is actually referenced inside the function
             if (isReferenced) {
                 const nameIdentifier = transformIdentifier(context, node.name);
-                context.addPrecedingStatements([
-                    lua.createVariableDeclarationStatement(nameIdentifier, functionExpression),
-                ]);
+                context.addPrecedingStatements(
+                    lua.createVariableDeclarationStatement(nameIdentifier, functionExpression)
+                );
                 return lua.cloneIdentifier(nameIdentifier);
             }
         }

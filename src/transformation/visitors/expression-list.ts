@@ -17,7 +17,7 @@ export function moveToPrecedingTemp(
     const tempIdentifier = context.createTempForLuaExpression(expression);
     const tempDeclaration = lua.createVariableDeclarationStatement(tempIdentifier, expression);
     lua.setNodePosition(tempDeclaration, lua.getOriginalPos(expression));
-    context.addPrecedingStatements([tempDeclaration]);
+    context.addPrecedingStatements(tempDeclaration);
     const tempClone = lua.cloneIdentifier(tempIdentifier);
     lua.setNodePosition(tempClone, lua.getOriginalPos(tempIdentifier));
     return tempClone;
@@ -79,7 +79,7 @@ function pushToList(
         listIdentifier = lua.createIdentifier(context.createTempName("list"));
         const libCall = transformLuaLibFunction(context, LuaLibFeature.SparseArrayNew, undefined, ...expressions);
         const declaration = lua.createVariableDeclarationStatement(listIdentifier, libCall);
-        context.addPrecedingStatements([declaration]);
+        context.addPrecedingStatements(declaration);
     } else {
         const libCall = transformLuaLibFunction(
             context,
@@ -88,7 +88,7 @@ function pushToList(
             listIdentifier,
             ...expressions
         );
-        context.addPrecedingStatements([lua.createExpressionStatement(libCall)]);
+        context.addPrecedingStatements(lua.createExpressionStatement(libCall));
     }
     return listIdentifier;
 }

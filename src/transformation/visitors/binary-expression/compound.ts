@@ -175,7 +175,7 @@ export function transformCompoundAssignmentExpression(
     isPostfix: boolean
 ): lua.Expression {
     const { statements, result } = transformCompoundAssignment(context, expression, lhs, rhs, operator, isPostfix);
-    context.addPrecedingStatements(Array.isArray(statements) ? statements : [statements]);
+    context.addPrecedingStatements(statements);
     return result;
 }
 

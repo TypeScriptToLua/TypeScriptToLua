@@ -134,9 +134,12 @@ export class TransformationContext {
         return precedingStatements;
     }
 
-    public addPrecedingStatements(statements: lua.Statement[], prepend = false) {
+    public addPrecedingStatements(statements: lua.Statement | lua.Statement[], prepend = false) {
         const precedingStatements = this.precedingStatementsStack[this.precedingStatementsStack.length - 1];
         assert(precedingStatements);
+        if (!Array.isArray(statements)) {
+            statements = [statements];
+        }
         if (prepend) {
             precedingStatements.unshift(...statements);
         } else {

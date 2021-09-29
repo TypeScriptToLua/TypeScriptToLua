@@ -68,7 +68,7 @@ function pushToSparseArray(
     expressions: lua.Expression[]
 ) {
     if (!arrayIdentifier) {
-        arrayIdentifier = lua.createIdentifier(context.createTempName("list"));
+        arrayIdentifier = lua.createIdentifier(context.createTempName("array"));
         const libCall = transformLuaLibFunction(context, LuaLibFeature.SparseArrayNew, undefined, ...expressions);
         const declaration = lua.createVariableDeclarationStatement(arrayIdentifier, libCall);
         context.addPrecedingStatements(declaration);

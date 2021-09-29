@@ -151,29 +151,63 @@ export class TransformationContext {
         return `____${prefix}_${this.nextTempId++}`;
     }
 
-    public createTempForLuaExpression(expression: lua.Expression) {
+    private getTempNameForLuaExpression(expression: lua.Expression): string | undefined {
         let name: string | undefined;
-        if (lua.isStringLiteral(expression)) {
-            name = expression.value;
+        if (lua.isStringLiteral(expression) || lua.isNumericLiteral(expression)) {
+            name = expression.value.toString();
         } else if (lua.isIdentifier(expression)) {
             name = expression.text;
+        } else if (lua.isCallExpression(expression)) {
+            name = this.getTempNameForLuaExpression(expression.expression);
+            if (name) {
+                name = `${name}_result`;
+            }
+        } else if (lua.isTableIndexExpression(expression)) {
+            const tableName = this.getTempNameForLuaExpression(expression.table);
+            const indexName = this.getTempNameForLuaExpression(expression.index);
+            if (tableName || indexName) {
+                name = `${tableName ?? "table"}_${indexName ?? "index"}`;
+            }
         }
         if (name && !isValidLuaIdentifier(name)) {
             name = fixInvalidLuaIdentifier(name);
         }
+        return name;
+    }
+
+    public createTempForLuaExpression(expression: lua.Expression) {
+        const name = this.getTempNameForLuaExpression(expression);
         const identifier = lua.createIdentifier(this.createTempName(name));
         lua.setNodePosition(identifier, lua.getOriginalPos(expression));
         return identifier;
     }
 
-    public createTempForNode(node: ts.Node) {
+    private getTempNameForNode(node: ts.Node): string | undefined {
         let name: string | undefined;
-        if (ts.isStringLiteral(node) || ts.isIdentifier(node) || ts.isMemberName(node)) {
+        if (ts.isStringLiteral(node) || ts.isNumericLiteral(node) || ts.isIdentifier(node) || ts.isMemberName(node)) {
             name = node.text;
-            if (!isValidLuaIdentifier(name)) {
-                name = fixInvalidLuaIdentifier(name);
+        } else if (ts.isCallExpression(node)) {
+            name = this.getTempNameForNode(node.expression);
+            if (name) {
+                name = `${name}_result`;
+            }
+        } else if (ts.isElementAccessExpression(node) || ts.isPropertyAccessExpression(node)) {
+            const tableName = this.getTempNameForNode(node.expression);
+            const indexName = ts.isElementAccessExpression(node)
+                ? this.getTempNameForNode(node.argumentExpression)
+                : node.name.text;
+            if (tableName || indexName) {
+                name = `${tableName ?? "table"}_${indexName ?? "index"}`;
             }
         }
+        if (name && !isValidLuaIdentifier(name)) {
+            name = fixInvalidLuaIdentifier(name);
+        }
+        return name;
+    }
+
+    public createTempForNode(node: ts.Node) {
+        const name = this.getTempNameForNode(node);
         return lua.createIdentifier(this.createTempName(name), node);
     }
 }

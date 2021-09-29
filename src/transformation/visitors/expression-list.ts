@@ -3,10 +3,15 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
+import { tempSymbolId } from "../utils/symbols";
 import { isConstIdentifier } from "../utils/typescript";
 
 function shouldMoveToTemp(context: TransformationContext, expression: lua.Expression, tsOriginal?: ts.Node) {
-    return !lua.isLiteral(expression) && !(tsOriginal && isConstIdentifier(context, tsOriginal));
+    return (
+        !lua.isLiteral(expression) &&
+        !(lua.isIdentifier(expression) && expression.symbolId === tempSymbolId) &&
+        !(tsOriginal && isConstIdentifier(context, tsOriginal))
+    );
 }
 
 // Cache an expression in a preceding statement and return the temp identifier

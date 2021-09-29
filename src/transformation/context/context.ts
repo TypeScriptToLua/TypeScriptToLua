@@ -5,6 +5,7 @@ import { assert, castArray } from "../../utils";
 import { unsupportedNodeKind } from "../utils/diagnostics";
 import { unwrapVisitorResult } from "../utils/lua-ast";
 import { fixInvalidLuaIdentifier, isValidLuaIdentifier } from "../utils/safe-names";
+import { tempSymbolId } from "../utils/symbols";
 import { ExpressionLikeNode, ObjectVisitor, StatementLikeNode, VisitorMap } from "./visitors";
 
 export interface AllAccessorDeclarations {
@@ -148,48 +149,46 @@ export class TransformationContext {
     }
 
     public createTempName(prefix = "temp") {
+        if (!isValidLuaIdentifier(prefix)) {
+            prefix = fixInvalidLuaIdentifier(prefix);
+        }
+        prefix = prefix.replace(/^_*/, "");
         return `____${prefix}_${this.nextTempId++}`;
     }
 
     private getTempNameForLuaExpression(expression: lua.Expression): string | undefined {
-        let name: string | undefined;
         if (lua.isStringLiteral(expression) || lua.isNumericLiteral(expression)) {
-            name = expression.value.toString();
+            return expression.value.toString();
         } else if (lua.isIdentifier(expression)) {
-            name = expression.text;
+            return expression.text;
         } else if (lua.isCallExpression(expression)) {
-            name = this.getTempNameForLuaExpression(expression.expression);
+            const name = this.getTempNameForLuaExpression(expression.expression);
             if (name) {
-                name = `${name}_result`;
+                return `${name}_result`;
             }
         } else if (lua.isTableIndexExpression(expression)) {
             const tableName = this.getTempNameForLuaExpression(expression.table);
             const indexName = this.getTempNameForLuaExpression(expression.index);
             if (tableName || indexName) {
-                name = `${tableName ?? "table"}_${indexName ?? "index"}`;
+                return `${tableName ?? "table"}_${indexName ?? "index"}`;
             }
         }
-        if (name && !isValidLuaIdentifier(name)) {
-            name = fixInvalidLuaIdentifier(name);
-        }
-        return name;
     }
 
     public createTempForLuaExpression(expression: lua.Expression) {
         const name = this.getTempNameForLuaExpression(expression);
-        const identifier = lua.createIdentifier(this.createTempName(name));
+        const identifier = lua.createIdentifier(this.createTempName(name), undefined, tempSymbolId);
         lua.setNodePosition(identifier, lua.getOriginalPos(expression));
         return identifier;
     }
 
     private getTempNameForNode(node: ts.Node): string | undefined {
-        let name: string | undefined;
         if (ts.isStringLiteral(node) || ts.isNumericLiteral(node) || ts.isIdentifier(node) || ts.isMemberName(node)) {
-            name = node.text;
+            return node.text;
         } else if (ts.isCallExpression(node)) {
-            name = this.getTempNameForNode(node.expression);
+            const name = this.getTempNameForNode(node.expression);
             if (name) {
-                name = `${name}_result`;
+                return `${name}_result`;
             }
         } else if (ts.isElementAccessExpression(node) || ts.isPropertyAccessExpression(node)) {
             const tableName = this.getTempNameForNode(node.expression);
@@ -197,17 +196,13 @@ export class TransformationContext {
                 ? this.getTempNameForNode(node.argumentExpression)
                 : node.name.text;
             if (tableName || indexName) {
-                name = `${tableName ?? "table"}_${indexName ?? "index"}`;
+                return `${tableName ?? "table"}_${indexName ?? "index"}`;
             }
         }
-        if (name && !isValidLuaIdentifier(name)) {
-            name = fixInvalidLuaIdentifier(name);
-        }
-        return name;
     }
 
     public createTempForNode(node: ts.Node) {
         const name = this.getTempNameForNode(node);
-        return lua.createIdentifier(this.createTempName(name), node);
+        return lua.createIdentifier(this.createTempName(name), node, tempSymbolId);
     }
 }

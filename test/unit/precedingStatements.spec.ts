@@ -55,8 +55,8 @@ describe("execution order", () => {
         "i, ...a, i++, ...[1, i++, 2], i, i++, ...a",
         "i, inc(), i++",
         "i, ...[1, i++, inc(), 2], i++",
-        "[i, ...'foo', i++]",
-        "[i, ...([1, i++, 2] as any), i++]",
+        "i, ...'foo', i++",
+        "i, ...([1, i++, 2] as any), i++",
     ];
 
     test.each(sequenceTests)("array literal ([%p])", sequence => {
@@ -150,7 +150,9 @@ describe("execution order", () => {
             return [result, i];
         `.expectToMatchJsResult();
     });
+});
 
+describe("assignment execution order", () => {
     test("index assignment statement", () => {
         util.testFunction`
             let i = 0;
@@ -174,7 +176,7 @@ describe("execution order", () => {
             let i = 0;
             const a = [9, 8];
             const b = [7, 6];
-            function foo(x: number) { if (x > 0) { return a; } else { return b; } }
+            function foo(x: number) { return (x > 0) ? b : a; }
             foo(i)[i] = i++;
             return [a, b, i];
         `.expectToMatchJsResult();
@@ -185,9 +187,20 @@ describe("execution order", () => {
             let i = 0;
             const a = [9, 8];
             const b = [7, 6];
-            function foo(x: number) { if (x > 0) { return a; } else { return b; } }
+            function foo(x: number) { return (x > 0) ? b : a; }
             const result = foo(i)[i] = i++;
             return [result, a, b, i];
+        `.expectToMatchJsResult();
+    });
+
+    test("indirect property assignment statement", () => {
+        util.testFunction`
+            const a = {value: 10};
+            const b = {value: 11};
+            let i = 0;
+            function foo(x: number) { return (x > 0) ? b : a; }
+            foo(i).value = i++;
+            return [a, b, i];
         `.expectToMatchJsResult();
     });
 
@@ -196,9 +209,9 @@ describe("execution order", () => {
             const a = {value: 10};
             const b = {value: 11};
             let i = 0;
-            function foo() { if (i === 0) { return b; } else { return a; } }
-            foo().value = i++;
-            return [a, b, i];
+            function foo(x: number) { return (x > 0) ? b : a; }
+            const result = foo(i).value = i++;
+            return [result, a, b, i];
         `.expectToMatchJsResult();
     });
 
@@ -225,7 +238,7 @@ describe("execution order", () => {
             let i = 0;
             const a = [9, 8];
             const b = [7, 6];
-            function foo(x: number) { if (x > 0) { return a; } else { return b; } }
+            function foo(x: number) { return (x > 0) ? b : a; }
             foo(i)[i] += i++;
             return [a, b, i];
         `.expectToMatchJsResult();
@@ -236,7 +249,7 @@ describe("execution order", () => {
             let i = 1;
             const a = [9, 8];
             const b = [7, 6];
-            function foo(x: number) { if (x > 0) { return a; } else { return b; } }
+            function foo(x: number) { return (x > 0) ? b : a; }
             const result = foo(i)[i] += i++;
             return [result, a, b, i];
         `.expectToMatchJsResult();
@@ -255,8 +268,8 @@ describe("execution order", () => {
         util.testFunction`
             const a = [10, 9, 8, 7, 6, 5];
             let i = 0;
-            const x = [a[i], a[i++]] = [i++, i++];
-            return [a, i, x];
+            const result = [a[i], a[i++]] = [i++, i++];
+            return [a, i, result];
         `.expectToMatchJsResult();
     });
 
@@ -273,8 +286,8 @@ describe("execution order", () => {
         util.testFunction`
             const a = [10, 9, 8, 7, 6, 5];
             let i = 0;
-            const x = [a[i] = i++, a[i++]] = [i++, i++];
-            return [a, i, x];
+            const result = [a[i] = i++, a[i++]] = [i++, i++];
+            return [a, i, result];
         `.expectToMatchJsResult();
     });
 
@@ -291,81 +304,81 @@ describe("execution order", () => {
         util.testFunction`
             let i = 0;
             let a: number[][] = [[9, 9, 9], [9, 9, 9], [9, 9, 9]];
-            const x = [a[0][i], ...a[i++]] = [i++, i++];
-            return [a, i, x];
+            const result = [a[0][i], ...a[i++]] = [i++, i++];
+            return [a, i, result];
         `.expectToMatchJsResult();
     });
 
     test("object destructuring assignment statement", () => {
         util.testFunction`
-            let i = "A";
+            let s = "A";
             const o: Record<string, string> = {ABCDEFG: "success", result: ""};
-            function getO(x: string) { i = x + "C"; return o; }
-            function getO2(x: string) { i = x + "G"; return o; }
-            function getI(x: string) { i = x + "E"; return i; }
-            ({ [getI(i += "D")]: getO2(i += "F").result } = getO(i += "B"));
-            return [i, o];
+            function c(x: string) { s = x + "C"; return o; }
+            function g(x: string) { s = x + "G"; return o; }
+            function e(x: string) { s = x + "E"; return s; }
+            ({ [e(s += "D")]: g(s += "F").result } = c(s += "B"));
+            return [s, o];
         `.expectToMatchJsResult();
     });
 
     test("object destructuring assignment statement with default", () => {
         util.testFunction`
-            let i = "A";
+            let s = "A";
             const o: Record<string, string> = {ABCDEFGHIJ: "success", result: ""};
-            function getO(x: string) { i = x + "C"; return o; }
-            function getO2(x: string) { i = x + "G"; return o; }
-            function getO3(x: string) { i = x + "I"; return o; }
-            function getI(x: string): any { i = x + "E"; return undefined; }
-            ({ [getI(i += "D")]: getO2(i += "F").result = getO3(i += "H")[i += "J"] } = getO(i += "B"));
-            return [o, i];
+            function c(x: string) { s = x + "C"; return o; }
+            function g(x: string) { s = x + "G"; return o; }
+            function i(x: string) { s = x + "I"; return o; }
+            function e(x: string): any { s = x + "E"; return undefined; }
+            ({ [e(s += "D")]: g(s += "F").result = i(s += "H")[s += "J"] } = c(s += "B"));
+            return [o, s];
         `.expectToMatchJsResult();
     });
 
     test("object destructuring assignment expression", () => {
         util.testFunction`
-            let i = "A";
+            let s = "A";
             const o: Record<string, string> = {ABCDEFG: "success", result: ""};
-            function getO(x: string) { i = x + "C"; return o; }
-            function getO2(x: string) { i = x + "G"; return o; }
-            function getI(x: string) { i = x + "E"; return i; }
-            const x = ({ [getI(i += "D")]: getO2(i += "F").result } = getO(i += "B"));
-            return [i, o, x];
+            function c(x: string) { s = x + "C"; return o; }
+            function g(x: string) { s = x + "G"; return o; }
+            function e(x: string) { s = x + "E"; return s; }
+            const result = ({ [e(s += "D")]: g(s += "F").result } = c(s += "B"));
+            return [s, o, result];
         `.expectToMatchJsResult();
     });
 
     test("object destructuring assignment expression with default", () => {
         util.testFunction`
-            let i = "A";
+            let s = "A";
             const o: Record<string, string> = {ABCDEFGHIJ: "success", result: ""};
-            function getO(x: string) { i = x + "C"; return o; }
-            function getO2(x: string) { i = x + "G"; return o; }
-            function getO3(x: string) { i = x + "I"; return o; }
-            function getI(x: string): any { i = x + "E"; return undefined; }
-            const x = ({ [getI(i += "D")]: getO2(i += "F").result = getO3(i += "H")[i += "J"] } = getO(i += "B"));
-            return [o, i, x];
+            function c(x: string) { s = x + "C"; return o; }
+            function g(x: string) { s = x + "G"; return o; }
+            function i(x: string) { s = x + "I"; return o; }
+            function e(x: string): any { s = x + "E"; return undefined; }
+            const result = ({ [e(s += "D")]: g(s += "F").result = i(s += "H")[s += "J"] } = c(s += "B"));
+            return [o, s, result];
         `.expectToMatchJsResult();
     });
 
     test("object destructuring declaration", () => {
         util.testFunction`
-            let i = "A";
+            let s = "A";
             const o: Record<string, string> = {ABCDE: "success"};
-            function getO(x: string) { i = x + "C"; return o; }
-            function getI(x: string) { i = x + "E"; return i; }
-            const { [getI(i += "D")]: result } = getO(i += "B");
-            return [result, i];
+            function c(x: string) { s = x + "C"; return o; }
+            function e(x: string) { s = x + "E"; return s; }
+            const { [e(s += "D")]: result } = c(s += "B");
+            return [result, s];
         `.expectToMatchJsResult();
     });
 
     test("object destructuring declaration with default", () => {
         util.testFunction`
-            let i = "A";
+            let s = "A";
             const o: Record<string, string> = {ABCDEFGH: "success"};
-            function getO(x: string) { i = x + "C"; return o; }
-            function getO2(x: string) { i = x + "G"; return o; }
-            function getI(x: string): any { i = x + "E"; return undefined; }
-            const { [getI(i += "D")]: result = getO2(i += "F")[i += "H"]} = getO(i += "B");
-            return [result, i];
+            function c(x: string) { s = x + "C"; return o; }
+            function g(x: string) { s = x + "G"; return o; }
+            function e(x: string): any { s = x + "E"; return undefined; }
+            const { [e(s += "D")]: result = g(s += "F")[s += "H"]} = c(s += "B");
+            return [result, s];
         `.expectToMatchJsResult();
     });
 
@@ -374,7 +387,7 @@ describe("execution order", () => {
             let i = 1;
             function a(x: number) { return x * 10; }
             function b(x: number) { return x * 100; }
-            function foo(x: number) { if (x > 0) { return a; } else { return b; } }
+            function foo(x: number) { return (x > 0) ? b : a; }
             const result = foo(i)(i++);
             return [result, i];
         `.expectToMatchJsResult();
@@ -384,11 +397,11 @@ describe("execution order", () => {
         util.testFunction`
             let i = 1;
             let foo = (x: null, y: number) => { return y; };
-            function bar() {
+            function changeFoo() {
                 foo = (x: null, y: number) => { return y * 10; };
                 return null;
             }
-            const result = foo(bar(), i++);
+            const result = foo(changeFoo(), i++);
             return [result, i];
         `.expectToMatchJsResult();
     });
@@ -471,7 +484,7 @@ describe("execution order", () => {
         util.testFunction`
             let a = [7];
             let b = [9];
-            function foo(x: number) { if (x > 0) { return b; } else { return a; } }
+            function foo(x: number) { return (x > 0) ? b : a; }
             let i = 0;
             foo(i).push(i, i++, i);
             return [a, b, i];
@@ -483,7 +496,7 @@ describe("execution order", () => {
             let o = {val: 3};
             let a = function(x: number) { return this.val + x; };
             let b = function(x: number) { return (this.val + x) * 10; };
-            function foo(x: number) { if (x > 0) { return b; } else { return a; } }
+            function foo(x: number) { return (x > 0) ? b : a; }
             let i = 0;
             const result = foo(i).call(o, i++);
             return [result, i];
@@ -492,7 +505,7 @@ describe("execution order", () => {
 
     test("string method call", () => {
         util.testFunction`
-            function foo(x: number) { if (x > 0) { return "foo"; } else { return "bar"; } }
+            function foo(x: number) { return (x > 0) ? "foo" : "bar"; }
             let i = 0;
             const result = foo(i).substr(++i);
             return [result, i];
@@ -503,7 +516,7 @@ describe("execution order", () => {
         util.testFunction`
             class A { public val = 3; constructor(x: number) { this.val += x; } };
             class B { public val = 5; constructor(x: number) { this.val += (x * 10); } };
-            function foo(x: number) { if (x > 0) { return B; } else { return A; } }
+            function foo(x: number) { return (x > 0) ? B : A; }
             let i = 0;
             const result = new (foo(i))(i++).val;
             return [result, i];

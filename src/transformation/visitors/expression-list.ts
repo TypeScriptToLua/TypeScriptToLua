@@ -9,7 +9,7 @@ import { isConstIdentifier } from "../utils/typescript";
 function shouldMoveToTemp(context: TransformationContext, expression: lua.Expression, tsOriginal?: ts.Node) {
     return (
         !lua.isLiteral(expression) &&
-        !(lua.isIdentifier(expression) && expression.symbolId === tempSymbolId) &&
+        !(lua.isIdentifier(expression) && expression.symbolId === tempSymbolId) && // Treat generated temps as consts
         !(tsOriginal && isConstIdentifier(context, tsOriginal))
     );
 }

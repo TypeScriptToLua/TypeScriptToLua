@@ -98,7 +98,7 @@ export function hasUnsafeIdentifierName(
     return checkName(context, identifier.text, identifier);
 }
 
-export const fixInvalidLuaIdentifier = (name: string) =>
+const fixInvalidLuaIdentifier = (name: string) =>
     name.replace(/[^a-zA-Z0-9_]/g, c => `_${c.charCodeAt(0).toString(16).toUpperCase()}`);
 
 export const createSafeName = (name: string) => "____" + fixInvalidLuaIdentifier(name);

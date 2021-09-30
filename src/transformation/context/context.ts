@@ -4,7 +4,7 @@ import * as lua from "../../LuaAST";
 import { assert, castArray } from "../../utils";
 import { unsupportedNodeKind } from "../utils/diagnostics";
 import { unwrapVisitorResult } from "../utils/lua-ast";
-import { fixInvalidLuaIdentifier, isValidLuaIdentifier } from "../utils/safe-names";
+import { createSafeName } from "../utils/safe-names";
 import { tempSymbolId } from "../utils/symbols";
 import { ExpressionLikeNode, ObjectVisitor, StatementLikeNode, VisitorMap } from "./visitors";
 
@@ -149,11 +149,8 @@ export class TransformationContext {
     }
 
     public createTempName(prefix = "temp") {
-        if (!isValidLuaIdentifier(prefix)) {
-            prefix = fixInvalidLuaIdentifier(prefix);
-        }
-        prefix = prefix.replace(/^_*/, "");
-        return `____${prefix}_${this.nextTempId++}`;
+        prefix = prefix.replace(/^_*/, ""); // Strip leading underscores
+        return createSafeName(`${prefix}_${this.nextTempId++}`);
     }
 
     private getTempNameForLuaExpression(expression: lua.Expression): string | undefined {

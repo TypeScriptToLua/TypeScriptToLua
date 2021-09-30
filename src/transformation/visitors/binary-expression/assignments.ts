@@ -11,7 +11,7 @@ import { isArrayLength, transformDestructuringAssignment } from "./destructuring
 import { isMultiReturnCall } from "../language-extensions/multi";
 import { notAllowedOptionalAssignment } from "../../utils/diagnostics";
 import { transformElementAccessArgument } from "../access";
-import { moveToPrecedingTemp, transformOrderedExpressions } from "../expression-list";
+import { moveToPrecedingTemp, transformExpressionList } from "../expression-list";
 
 export function transformAssignmentLeftHandSideExpression(
     context: TransformationContext,
@@ -218,7 +218,7 @@ export function transformAssignmentStatement(
             let right: lua.Expression | lua.Expression[];
 
             if (ts.isArrayLiteralExpression(expression.right)) {
-                right = transformOrderedExpressions(context, expression.right.elements);
+                right = transformExpressionList(context, expression.right.elements);
             } else {
                 right = context.transformExpression(expression.right);
                 if (!isMultiReturnCall(context, expression.right) && isArrayType(context, rightType)) {

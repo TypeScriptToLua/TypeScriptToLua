@@ -48,5 +48,8 @@ function __TS__AsyncAwaiter(this: void, generator: (this: void) => void) {
 }
 
 function __TS__Await(this: void, thing: unknown) {
+    if (thing instanceof __TS__Promise && thing.state === __TS__PromiseState.Rejected) {
+        throw thing.rejectionReason;
+    }
     return coroutine.yield(thing);
 }

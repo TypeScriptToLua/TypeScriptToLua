@@ -161,6 +161,19 @@ test.each(["async function abc() {", "const abc = async () => {"])(
     }
 );
 
+test("can make inline async functions", () => {
+    util.testFunction`
+        const foo = async function() { return "foo"; };
+        const bar = async function() { return await foo(); };
+
+        const { state, value } = bar() as any;
+        return { state, value };
+    `.debug().expectToEqual({
+        state: 1, // __TS__PromiseState.Fulfilled
+        value: "foo",
+    });
+});
+
 test("can make async lambdas with expression body", () => {
     util.testFunction`
         const foo = async () => "foo";
@@ -168,7 +181,7 @@ test("can make async lambdas with expression body", () => {
 
         const { state, value } = bar() as any;
         return { state, value };
-    `.expectToEqual({
+    `.debug().expectToEqual({
         state: 1, // __TS__PromiseState.Fulfilled
         value: "foo",
     });
@@ -401,6 +414,25 @@ describe("try/catch in async function", () => {
             foo().catch(e => {
                 reason = e;
             });
+        `.expectToEqual({ reason: "an error occurred in the async function: test error" });
+    });
+
+    test("await inside try/catch deferred rejection uses catch clause", () => {
+        util.testModule`
+            export let reason = "";
+            let reject: (reason: string) => void;
+
+            async function foo(): Promise<number> {
+                try {
+                    return await new Promise((res, rej) => { reject = rej; });
+                } catch (e) {
+                    throw "an error occurred in the async function: " + e;
+                }
+            }
+            foo().catch(e => {
+                reason = e;
+            });
+            reject("test error");
         `.expectToEqual({ reason: "an error occurred in the async function: test error" });
     });
 });

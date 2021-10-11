@@ -168,7 +168,7 @@ test("can make inline async functions", () => {
 
         const { state, value } = bar() as any;
         return { state, value };
-    `.debug().expectToEqual({
+    `.expectToEqual({
         state: 1, // __TS__PromiseState.Fulfilled
         value: "foo",
     });
@@ -181,7 +181,7 @@ test("can make async lambdas with expression body", () => {
 
         const { state, value } = bar() as any;
         return { state, value };
-    `.debug().expectToEqual({
+    `.expectToEqual({
         state: 1, // __TS__PromiseState.Fulfilled
         value: "foo",
     });

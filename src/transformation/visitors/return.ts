@@ -56,7 +56,7 @@ export function transformExpressionBodyToReturnStatement(
     node: ts.Expression
 ): lua.Statement {
     const expressions = transformExpressionsInReturn(context, node, false);
-    return lua.createReturnStatement(expressions, node);
+    return createReturnStatement(context, expressions, node);
 }
 
 export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (statement, context) => {

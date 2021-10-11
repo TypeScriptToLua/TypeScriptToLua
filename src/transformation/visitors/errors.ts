@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor } from "../context";
 import { createUnpackCall } from "../utils/lua-ast";
-import { findScope, ScopeType } from "../utils/scope";
+import { ScopeType } from "../utils/scope";
 import { transformScopeBlock } from "./block";
 import { transformIdentifier } from "./identifier";
 import { isInMultiReturnFunction } from "./language-extensions/multi";
@@ -26,8 +26,10 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
         // try with catch
         const [catchBlock, catchScope] = transformScopeBlock(context, statement.catchClause.block, ScopeType.Catch);
 
-        const catchParameter = statement.catchClause.variableDeclaration ? transformIdentifier(context, statement.catchClause.variableDeclaration.name as ts.Identifier) : undefined;
-        const catchParameters = () => catchParameter ? [lua.cloneIdentifier(catchParameter)] : [];
+        const catchParameter = statement.catchClause.variableDeclaration
+            ? transformIdentifier(context, statement.catchClause.variableDeclaration.name as ts.Identifier)
+            : undefined;
+        const catchParameters = () => (catchParameter ? [lua.cloneIdentifier(catchParameter)] : []);
 
         const catchIdentifier = lua.createIdentifier("____catch");
         const catchFunction = lua.createFunctionExpression(catchBlock, catchParameters());
@@ -74,16 +76,7 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
     }
 
     if (returnCondition && returnedIdentifier) {
-        // With catch clause:
-        //     if ____returned then return ____returnValue end
-        // No catch clause:
-        //     if ____try and ____returned then return ____returnValue end
         const returnValues: lua.Expression[] = [];
-        const parentTryCatch = findScope(context, ScopeType.Function | ScopeType.Try | ScopeType.Catch);
-        if (parentTryCatch && parentTryCatch.type !== ScopeType.Function) {
-            // Nested try/catch needs to prefix a 'true' return value
-            returnValues.push(lua.createBooleanLiteral(true));
-        }
 
         if (isInMultiReturnFunction(context, statement)) {
             returnValues.push(createUnpackCall(context, lua.cloneIdentifier(returnValueIdentifier)));

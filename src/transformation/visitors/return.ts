@@ -60,7 +60,6 @@ export function transformExpressionBodyToReturnStatement(
 }
 
 export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (statement, context) => {
-
     let results: lua.Expression[];
 
     if (statement.expression) {
@@ -79,7 +78,11 @@ export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (st
     return createReturnStatement(context, results, statement);
 };
 
-export function createReturnStatement(context: TransformationContext, values: lua.Expression[], node: ts.Node): lua.ReturnStatement {
+export function createReturnStatement(
+    context: TransformationContext,
+    values: lua.Expression[],
+    node: ts.Node
+): lua.ReturnStatement {
     const results = [...values];
 
     if (isInTryCatch(context)) {

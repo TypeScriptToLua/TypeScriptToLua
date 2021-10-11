@@ -46,7 +46,7 @@ function __TS__AsyncAwaiter(this: void, generator: (this: void) => void) {
             } else {
                 // If no catch clause, just reject
                 return value => {
-                    reject(value)
+                    reject(value);
                 };
             }
         }

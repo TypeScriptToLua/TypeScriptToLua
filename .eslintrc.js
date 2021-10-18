@@ -2,7 +2,12 @@ module.exports = {
     extends: ["plugin:jest/recommended", "plugin:jest/style"],
     parserOptions: {
         sourceType: "module",
-        project: ["test/tsconfig.json", "src/lualib/tsconfig.json", "benchmark/tsconfig.json"],
+        project: [
+            "test/tsconfig.json",
+            "src/lualib/tsconfig.json",
+            "benchmark/tsconfig.json",
+            "language-extensions/tsconfig.json",
+        ],
     },
     env: { es6: true, node: true },
     plugins: ["import"],

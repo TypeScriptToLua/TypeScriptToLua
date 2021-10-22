@@ -1,5 +1,6 @@
 import { ModuleKind, ScriptTarget } from "typescript";
-import { awaitMustBeInAsyncFunction } from "../../../src/transformation/utils/diagnostics";
+import { LuaTarget } from "../../../src";
+import { awaitMustBeInAsyncFunction, unsupportedForTarget } from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
 const promiseTestLib = `
@@ -401,7 +402,10 @@ describe("try/catch in async function", () => {
             });
         `,
         // Cannot execute LuaJIT with test runner
-        util.expectEachVersionExceptJit(builder => builder.expectToEqual({ result: 4 }))
+        {
+            ...util.expectEachVersionExceptJit(builder => builder.expectToEqual({ result: 4 })),
+            [LuaTarget.Lua51]: builder => builder.expectToHaveDiagnostics([unsupportedForTarget.code]),
+        }
     );
 
     util.testEachVersion(
@@ -419,9 +423,12 @@ describe("try/catch in async function", () => {
                 reason = e;
             });
         `,
-        util.expectEachVersionExceptJit(builder =>
-            builder.expectToEqual({ reason: "an error occurred in the async function: test error" })
-        )
+        {
+            ...util.expectEachVersionExceptJit(builder =>
+                builder.expectToEqual({ reason: "an error occurred in the async function: test error" })
+            ),
+            [LuaTarget.Lua51]: builder => builder.expectToHaveDiagnostics([unsupportedForTarget.code]),
+        }
     );
 
     util.testEachVersion(
@@ -443,8 +450,11 @@ describe("try/catch in async function", () => {
             });
             reject("test error");
         `,
-        util.expectEachVersionExceptJit(builder =>
-            builder.expectToEqual({ reason: "an error occurred in the async function: test error" })
-        )
+        {
+            ...util.expectEachVersionExceptJit(builder =>
+                builder.expectToEqual({ reason: "an error occurred in the async function: test error" })
+            ),
+            [LuaTarget.Lua51]: builder => builder.expectToHaveDiagnostics([unsupportedForTarget.code]),
+        }
     );
 });

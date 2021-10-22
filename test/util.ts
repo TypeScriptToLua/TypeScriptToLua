@@ -65,7 +65,9 @@ export function testEachVersion<T extends TestBuilder>(
     }
 }
 
-export function expectEachVersionExceptJit<T>(expectation: (builder: T) => void): Record<tstl.LuaTarget, ((builder: T) => void) | boolean> {
+export function expectEachVersionExceptJit<T>(
+    expectation: (builder: T) => void
+): Record<tstl.LuaTarget, ((builder: T) => void) | boolean> {
     return {
         [tstl.LuaTarget.Universal]: expectation,
         [tstl.LuaTarget.Lua51]: expectation,
@@ -73,7 +75,7 @@ export function expectEachVersionExceptJit<T>(expectation: (builder: T) => void)
         [tstl.LuaTarget.Lua53]: expectation,
         [tstl.LuaTarget.Lua54]: expectation,
         [tstl.LuaTarget.LuaJIT]: false, // Exclude JIT
-    }
+    };
 }
 
 const memoize: MethodDecorator = (_target, _propertyKey, descriptor) => {

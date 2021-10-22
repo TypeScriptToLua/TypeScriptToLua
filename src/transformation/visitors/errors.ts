@@ -1,8 +1,11 @@
 import * as ts from "typescript";
+import { LuaTarget } from "../..";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor } from "../context";
+import { unsupportedForTarget } from "../utils/diagnostics";
 import { createUnpackCall } from "../utils/lua-ast";
 import { ScopeType } from "../utils/scope";
+import { isInAsyncFunction } from "../utils/typescript";
 import { transformScopeBlock } from "./block";
 import { transformIdentifier } from "./identifier";
 import { isInMultiReturnFunction } from "./language-extensions/multi";
@@ -10,6 +13,11 @@ import { createReturnStatement } from "./return";
 
 export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statement, context) => {
     const [tryBlock, tryScope] = transformScopeBlock(context, statement.tryBlock, ScopeType.Try);
+
+    if (context.options.luaTarget === LuaTarget.Lua51 && isInAsyncFunction(statement)) {
+        context.diagnostics.push(unsupportedForTarget(statement, "try/catch inside async functions", LuaTarget.Lua51));
+        return tryBlock.statements;
+    }
 
     const tryResultIdentifier = lua.createIdentifier("____try");
     const returnValueIdentifier = lua.createIdentifier("____returnValue");

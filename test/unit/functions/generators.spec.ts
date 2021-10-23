@@ -1,3 +1,5 @@
+import { LuaTarget } from "../../../src/CompilerOptions";
+import { unsupportedForTarget } from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
 test("generator parameters", () => {
@@ -161,5 +163,8 @@ util.testEachVersion(
         return generator().next();
     `,
     // Cannot execute LuaJIT with test runner
-    util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    {
+        ...util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
+        [LuaTarget.Lua51]: builder => builder.expectToHaveDiagnostics([unsupportedForTarget.code]),
+    }
 );

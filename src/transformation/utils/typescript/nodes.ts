@@ -36,6 +36,16 @@ export function isInAsyncFunction(node: ts.Node): boolean {
     return declaration.modifiers?.some(m => m.kind === ts.SyntaxKind.AsyncKeyword) ?? false;
 }
 
+export function isInGeneratorFunction(node: ts.Node): boolean {
+    // Check if node is in function declaration with `async`
+    const declaration = findFirstNodeAbove(node, ts.isFunctionDeclaration);
+    if (!declaration) {
+        return false;
+    }
+
+    return declaration.asteriskToken !== undefined;
+}
+
 /**
  * Quite hacky, avoid unless absolutely necessary!
  */

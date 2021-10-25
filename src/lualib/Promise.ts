@@ -70,13 +70,16 @@ class __TS__Promise<T> implements Promise<T> {
         onFulfilled?: FulfillCallback<T, TResult1>,
         onRejected?: RejectCallback<TResult2>
     ): Promise<TResult1 | TResult2> {
-        const { promise, resolve, reject } = __TS__PromiseDeferred<TResult1 | TResult2>();
+        const { promise, resolve, reject } = __TS__PromiseDeferred<T | TResult1 | TResult2>();
+
+        const isFulfilled = this.state === __TS__PromiseState.Fulfilled;
+        const isRejected = this.state === __TS__PromiseState.Rejected;
 
         if (onFulfilled) {
             const internalCallback = this.createPromiseResolvingCallback(onFulfilled, resolve, reject);
             this.fulfilledCallbacks.push(internalCallback);
 
-            if (this.state === __TS__PromiseState.Fulfilled) {
+            if (isFulfilled) {
                 // If promise already resolved, immediately call callback
                 internalCallback(this.value);
             }
@@ -89,13 +92,23 @@ class __TS__Promise<T> implements Promise<T> {
             const internalCallback = this.createPromiseResolvingCallback(onRejected, resolve, reject);
             this.rejectedCallbacks.push(internalCallback);
 
-            if (this.state === __TS__PromiseState.Rejected) {
+            if (isRejected) {
                 // If promise already rejected, immediately call callback
                 internalCallback(this.rejectionReason);
             }
         }
 
-        return promise;
+        if (isFulfilled) {
+            // If promise already resolved, also resolve returned promise
+            resolve(this.value);
+        }
+
+        if (isRejected) {
+            // If promise already rejected, also reject returned promise
+            reject(this.rejectionReason);
+        }
+
+        return promise as Promise<TResult1 | TResult2>;
     }
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/catch
     public catch<TResult = never>(onRejected?: (reason: any) => TResult | PromiseLike<TResult>): Promise<T | TResult> {

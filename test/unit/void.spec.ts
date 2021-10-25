@@ -14,6 +14,20 @@ test("void applies to function declarations", () => {
     `.expectToMatchJsResult();
 });
 
+test("void used to ignore function return values", () => {
+    util.testFunction`
+        let result = 0;
+        function setResult() {
+            result = 1;
+            return 3
+        };
+
+        void(setResult());
+
+        return result;
+    `.expectToMatchJsResult();
+});
+
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1102
 test("void works with lambdas", () => {
     util.testExpression`void (() => {})()`.expectToMatchJsResult();

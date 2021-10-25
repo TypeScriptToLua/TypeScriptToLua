@@ -71,6 +71,8 @@ export const stripParenthesisExpressionsTransformer: ts.TransformerFactory<ts.So
                 node.typeArguments,
                 node.arguments
             );
+        } else if (ts.isVoidExpression(node)) {
+            return ts.factory.updateVoidExpression(node, unwrapParentheses(node.expression));
         }
 
         return ts.visitEachChild(node, visit, context);

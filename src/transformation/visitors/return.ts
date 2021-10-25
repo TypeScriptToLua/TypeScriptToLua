@@ -14,6 +14,7 @@ import {
     canBeMultiReturnType,
 } from "./language-extensions/multi";
 import { invalidMultiFunctionReturnType } from "../utils/diagnostics";
+import { findFirstNodeAbove } from "../utils/typescript";
 
 function transformExpressionsInReturn(
     context: TransformationContext,
@@ -55,11 +56,58 @@ export function transformExpressionBodyToReturnStatement(
     node: ts.Expression
 ): lua.Statement {
     const expressions = transformExpressionsInReturn(context, node, false);
-    return lua.createReturnStatement(expressions, node);
+    return createReturnStatement(context, expressions, node);
 }
 
 export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (statement, context) => {
-    // Bubble up explicit return flag and check if we're inside a try/catch block
+    let results: lua.Expression[];
+
+    if (statement.expression) {
+        const expressionType = context.checker.getTypeAtLocation(statement.expression);
+        const returnType = context.checker.getContextualType(statement.expression);
+        if (returnType) {
+            validateAssignment(context, statement, expressionType, returnType);
+        }
+
+        results = transformExpressionsInReturn(context, statement.expression, isInTryCatch(context));
+    } else {
+        // Empty return
+        results = [];
+    }
+
+    return createReturnStatement(context, results, statement);
+};
+
+export function createReturnStatement(
+    context: TransformationContext,
+    values: lua.Expression[],
+    node: ts.Node
+): lua.ReturnStatement {
+    const results = [...values];
+
+    if (isInTryCatch(context)) {
+        // Bubble up explicit return flag and check if we're inside a try/catch block
+        results.unshift(lua.createBooleanLiteral(true));
+    } else if (isInAsyncFunction(node)) {
+        // Add nil error handler in async function and not in try
+        results.unshift(lua.createNilLiteral());
+    }
+
+    return lua.createReturnStatement(results, node);
+}
+
+function isInAsyncFunction(node: ts.Node): boolean {
+    // Check if node is in function declaration with `async`
+    const declaration = findFirstNodeAbove(node, ts.isFunctionLike);
+    if (!declaration) {
+        return false;
+    }
+
+    return declaration.modifiers?.some(m => m.kind === ts.SyntaxKind.AsyncKeyword) ?? false;
+}
+
+function isInTryCatch(context: TransformationContext): boolean {
+    // Check if context is in a try or catch
     let insideTryCatch = false;
     for (const scope of walkScopesUp(context)) {
         scope.functionReturned = true;
@@ -71,24 +119,5 @@ export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (st
         insideTryCatch = insideTryCatch || scope.type === ScopeType.Try || scope.type === ScopeType.Catch;
     }
 
-    let results: lua.Expression[];
-
-    if (statement.expression) {
-        const expressionType = context.checker.getTypeAtLocation(statement.expression);
-        const returnType = context.checker.getContextualType(statement.expression);
-        if (returnType) {
-            validateAssignment(context, statement, expressionType, returnType);
-        }
-
-        results = transformExpressionsInReturn(context, statement.expression, insideTryCatch);
-    } else {
-        // Empty return
-        results = [];
-    }
-
-    if (insideTryCatch) {
-        results.unshift(lua.createBooleanLiteral(true));
-    }
-
-    return lua.createReturnStatement(results, statement);
-};
+    return insideTryCatch;
+}

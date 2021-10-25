@@ -14,6 +14,8 @@
 // };
 //
 
+type ErrorHandler = (this: void, error: unknown) => unknown;
+
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 function __TS__AsyncAwaiter(this: void, generator: (this: void) => void) {
     return new Promise((resolve, reject) => {
@@ -23,30 +25,47 @@ function __TS__AsyncAwaiter(this: void, generator: (this: void) => void) {
         function adopt(value: unknown) {
             return value instanceof __TS__Promise ? value : Promise.resolve(value);
         }
-        function fulfilled(value) {
-            const [success, resultOrError] = coroutine.resume(asyncCoroutine, value);
+        function fulfilled(value: unknown) {
+            const [success, errorOrErrorHandler, resultOrError] = coroutine.resume(asyncCoroutine, value);
             if (success) {
-                step(resultOrError);
+                step(resultOrError, errorOrErrorHandler);
             } else {
                 reject(resultOrError);
             }
         }
-        function step(result: unknown) {
+        function rejected(handler: ErrorHandler | undefined) {
+            if (handler) {
+                return (value: unknown) => {
+                    const [success, valueOrError] = pcall(handler, value);
+                    if (success) {
+                        step(valueOrError, handler);
+                    } else {
+                        reject(valueOrError);
+                    }
+                };
+            } else {
+                // If no catch clause, just reject
+                return value => {
+                    reject(value);
+                };
+            }
+        }
+        function step(result: unknown, errorHandler: ErrorHandler | undefined) {
             if (coroutine.status(asyncCoroutine) === "dead") {
                 resolve(result);
             } else {
-                adopt(result).then(fulfilled, reason => reject(reason));
+                adopt(result).then(fulfilled, rejected(errorHandler));
             }
         }
-        const [success, resultOrError] = coroutine.resume(asyncCoroutine);
+        const [success, errorOrErrorHandler, resultOrError] = coroutine.resume(asyncCoroutine);
         if (success) {
-            step(resultOrError);
+            step(resultOrError, errorOrErrorHandler);
         } else {
-            reject(resultOrError);
+            reject(errorOrErrorHandler);
         }
     });
 }
 
-function __TS__Await(this: void, thing: unknown) {
-    return coroutine.yield(thing);
+function __TS__Await(this: void, errorHandler: ErrorHandler, thing: unknown) {
+    return coroutine.yield(errorHandler, thing);
 }

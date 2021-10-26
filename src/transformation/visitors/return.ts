@@ -14,7 +14,7 @@ import {
     canBeMultiReturnType,
 } from "./language-extensions/multi";
 import { invalidMultiFunctionReturnType } from "../utils/diagnostics";
-import { findFirstNodeAbove } from "../utils/typescript";
+import { isInAsyncFunction } from "../utils/typescript";
 
 function transformExpressionsInReturn(
     context: TransformationContext,
@@ -94,16 +94,6 @@ export function createReturnStatement(
     }
 
     return lua.createReturnStatement(results, node);
-}
-
-function isInAsyncFunction(node: ts.Node): boolean {
-    // Check if node is in function declaration with `async`
-    const declaration = findFirstNodeAbove(node, ts.isFunctionLike);
-    if (!declaration) {
-        return false;
-    }
-
-    return declaration.modifiers?.some(m => m.kind === ts.SyntaxKind.AsyncKeyword) ?? false;
 }
 
 function isInTryCatch(context: TransformationContext): boolean {

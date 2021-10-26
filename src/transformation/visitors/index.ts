@@ -41,6 +41,7 @@ import { typescriptVisitors } from "./typescript";
 import { transformPostfixUnaryExpression, transformPrefixUnaryExpression } from "./unary-expression";
 import { transformVariableStatement } from "./variable-declaration";
 import { transformAwaitExpression } from "./async-await";
+import { transformVoidExpression } from "./void";
 
 const transformEmptyStatement: FunctionVisitor<ts.EmptyStatement> = () => undefined;
 const transformParenthesizedExpression: FunctionVisitor<ts.ParenthesizedExpression> = (node, context) =>
@@ -98,4 +99,5 @@ export const standardVisitors: Visitors = {
     [ts.SyntaxKind.VariableStatement]: transformVariableStatement,
     [ts.SyntaxKind.WhileStatement]: transformWhileStatement,
     [ts.SyntaxKind.YieldExpression]: transformYieldExpression,
+    [ts.SyntaxKind.VoidExpression]: transformVoidExpression,
 };

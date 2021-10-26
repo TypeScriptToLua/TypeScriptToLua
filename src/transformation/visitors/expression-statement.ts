@@ -9,6 +9,7 @@ import {
     transformTableSetExpression,
 } from "./language-extensions/table";
 import { transformUnaryExpressionStatement } from "./unary-expression";
+import { transformVoidExpressionStatement } from "./void";
 
 export const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatement> = (node, context) => {
     const expression = node.expression;
@@ -19,6 +20,10 @@ export const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatemen
 
     if (ts.isCallExpression(expression) && isTableSetCall(context, expression)) {
         return transformTableSetExpression(context, expression);
+    }
+
+    if (ts.isVoidExpression(expression)) {
+        return transformVoidExpressionStatement(expression, context);
     }
 
     const unaryExpressionResult = transformUnaryExpressionStatement(context, node);

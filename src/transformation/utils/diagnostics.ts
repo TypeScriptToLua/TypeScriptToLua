@@ -10,9 +10,9 @@ const createDiagnosticFactory = <TArgs extends any[]>(
     message: MessageProvider<TArgs>
 ) =>
     createSerialDiagnosticFactory((node: ts.Node, ...args: TArgs) => ({
-        file: node.getSourceFile(),
-        start: node.getStart(),
-        length: node.getWidth(),
+        file: ts.getOriginalNode(node).getSourceFile(),
+        start: ts.getOriginalNode(node).getStart(),
+        length: ts.getOriginalNode(node).getWidth(),
         messageText: typeof message === "string" ? message : message(...args),
         category,
     }));

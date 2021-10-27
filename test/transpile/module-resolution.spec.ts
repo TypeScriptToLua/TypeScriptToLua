@@ -503,3 +503,16 @@ test("includes lualib_bundle when external lua requests it", () => {
             foo: ["foo", "bar"],
         });
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1146
+test("require matches correct pattern", () => {
+    util.testModule`
+        declare function require(this: void, module: string): any;
+        export const addResult = require("a").foo + require("b").foo;
+        export const callResult = require("c")("foo");
+    `
+        .addExtraFile("a.lua", "return { foo = 3 }")
+        .addExtraFile("b.lua", "return { foo = 5 }")
+        .addExtraFile("c.lua", "return function(self, a) return a end")
+        .expectToEqual({ addResult: 3 + 5, callResult: "foo" });
+});

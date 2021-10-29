@@ -3,7 +3,7 @@ import * as lua from "../../../LuaAST";
 import { assert } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import {
-    createDefaultExportIdentifier,
+    createDefaultExportExpression,
     createDefaultExportStringLiteral,
     createExportedIdentifier,
 } from "../../utils/export";
@@ -114,10 +114,9 @@ function transformExportSpecifier(context: TransformationContext, node: ts.Expor
     const exportedExpression = createShorthandIdentifier(context, exportedSymbol, exportedIdentifier);
 
     const isDefault = isDefaultExportSpecifier(node);
-    const identifierToExport = isDefault
-        ? createDefaultExportIdentifier(node)
-        : transformIdentifier(context, node.name);
-    const exportAssignmentLeftHandSide = createExportedIdentifier(context, identifierToExport);
+    const exportAssignmentLeftHandSide = isDefault
+        ? createDefaultExportExpression(node)
+        : createExportedIdentifier(context, transformIdentifier(context, node.name));
 
     return lua.createAssignmentStatement(exportAssignmentLeftHandSide, exportedExpression, node);
 }

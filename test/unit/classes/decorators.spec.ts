@@ -184,3 +184,56 @@ describe("Decorators /w descriptors", () => {
         }
     );
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1149
+test("exported class with decorator", () => {
+    util.testModule`
+        import { MyClass } from "./other";
+        const inst = new MyClass();
+        export const result = inst.foo();
+    `
+        .addExtraFile(
+            "other.ts",
+            `function myDecorator(target: {new(): any}) {
+                return class extends target {
+                    foo() {
+                        return "overridden";
+                    }
+                }
+            }
+
+            @myDecorator
+            export class MyClass {
+                foo() {
+                    return "foo";
+                }
+            }`
+        )
+        .expectToEqual({ result: "overridden" });
+});
+
+test("default exported class with decorator", () => {
+    util.testModule`
+        import MyClass from "./other";
+        const inst = new MyClass();
+        export const result = inst.foo();
+    `
+        .addExtraFile(
+            "other.ts",
+            `function myDecorator(target: {new(): any}) {
+                return class extends target {
+                    foo() {
+                        return "overridden";
+                    }
+                }
+            }
+
+            @myDecorator
+            export default class {
+                foo() {
+                    return "foo";
+                }
+            }`
+        )
+        .expectToEqual({ result: "overridden" });
+});

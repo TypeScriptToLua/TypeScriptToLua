@@ -13,7 +13,10 @@ export const transformSourceFileNode: FunctionVisitor<ts.SourceFile> = (node, co
         const [statement] = node.statements;
         if (statement) {
             assert(ts.isExpressionStatement(statement));
-            statements.push(lua.createReturnStatement([context.transformExpression(statement.expression)]));
+            context.pushPrecedingStatements();
+            const expression = context.transformExpression(statement.expression);
+            statements.push(...context.popPrecedingStatements());
+            statements.push(lua.createReturnStatement([expression]));
         } else {
             const errorCall = lua.createCallExpression(lua.createIdentifier("error"), [
                 lua.createStringLiteral("Unexpected end of JSON input"),

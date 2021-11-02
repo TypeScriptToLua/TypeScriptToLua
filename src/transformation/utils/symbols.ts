@@ -5,6 +5,8 @@ import { TransformationContext } from "../context";
 import { isOptimizedVarArgSpread } from "../visitors/spread";
 import { markSymbolAsReferencedInCurrentScopes } from "./scope";
 
+export const tempSymbolId = -1 as lua.SymbolId;
+
 const symbolIdCounters = new WeakMap<TransformationContext, number>();
 function nextSymbolId(context: TransformationContext): lua.SymbolId {
     const symbolId = (symbolIdCounters.get(context) ?? 0) + 1;

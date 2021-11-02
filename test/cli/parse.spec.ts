@@ -235,6 +235,13 @@ describe("tsconfig", () => {
 
             ["luaBundle", "foo", { luaBundle: "foo" }],
             ["luaBundleEntry", "bar", { luaBundleEntry: "bar" }],
+
+            ["noImplicitSelf", true, { noImplicitSelf: true }],
+
+            ["tstlVerbose", true, { tstlVerbose: true }],
+
+            ["noResolvePaths", [], { noResolvePaths: [] }],
+            ["noResolvePaths", ["path1", "path2"], { noResolvePaths: ["path1", "path2"] }],
         ])("{ %p: %p }", (optionName, value, expected) => {
             const result = parseConfigFileContent({ tstl: { [optionName]: value } });
 

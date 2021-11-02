@@ -32,3 +32,22 @@ test("void used to ignore function return values", () => {
 test("void works with lambdas", () => {
     util.testExpression`void (() => {})()`.expectToMatchJsResult();
 });
+
+test("void with side effects", () => {
+    util.testFunction`
+        let result = [];
+        
+        function setResult(){
+            result.push(1);
+            return 2;
+        }
+        
+        function someFunc(...args: any[]){
+            result.push(3);
+        }
+        
+        someFunc(void setResult());
+        
+        return result;
+    `.expectToMatchJsResult();
+});

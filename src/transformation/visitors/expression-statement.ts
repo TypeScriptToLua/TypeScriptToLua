@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
-import { FunctionVisitor } from "../context";
+import { FunctionVisitor, VisitorResult, TransformationContext } from "../context";
 import { transformBinaryExpressionStatement } from "./binary-expression";
 import {
     isTableDeleteCall,
@@ -9,11 +9,14 @@ import {
     transformTableSetExpression,
 } from "./language-extensions/table";
 import { transformUnaryExpressionStatement } from "./unary-expression";
-import { transformVoidExpressionStatement } from "./void";
 
-export const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatement> = (node, context) => {
-    const expression = node.expression;
+export const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatement> = (node, context) =>
+    transformExpressionToStatement(context, node.expression);
 
+export function transformExpressionToStatement(
+    context: TransformationContext,
+    expression: ts.Expression
+): VisitorResult<ts.ExpressionStatement> {
     if (ts.isCallExpression(expression) && isTableDeleteCall(context, expression)) {
         return transformTableDeleteExpression(context, expression);
     }
@@ -23,15 +26,15 @@ export const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatemen
     }
 
     if (ts.isVoidExpression(expression)) {
-        return transformVoidExpressionStatement(expression, context);
+        return transformExpressionToStatement(context, expression.expression);
     }
 
-    const unaryExpressionResult = transformUnaryExpressionStatement(context, node);
+    const unaryExpressionResult = transformUnaryExpressionStatement(context, expression);
     if (unaryExpressionResult) {
         return unaryExpressionResult;
     }
 
-    const binaryExpressionResult = transformBinaryExpressionStatement(context, node);
+    const binaryExpressionResult = transformBinaryExpressionStatement(context, expression);
     if (binaryExpressionResult) {
         return binaryExpressionResult;
     }
@@ -41,4 +44,4 @@ export const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatemen
         ? lua.createExpressionStatement(result)
         : // Assign expression statements to dummy to make sure they're legal Lua
           lua.createVariableDeclarationStatement(lua.createAnonymousIdentifier(), result);
-};
+}

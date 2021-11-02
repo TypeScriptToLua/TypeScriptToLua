@@ -10,9 +10,8 @@ import {
 
 export function transformUnaryExpressionStatement(
     context: TransformationContext,
-    node: ts.ExpressionStatement
+    expression: ts.Expression
 ): lua.Statement[] | undefined {
-    const expression = ts.isExpressionStatement(node) ? node.expression : node;
     if (
         ts.isPrefixUnaryExpression(expression) &&
         (expression.operator === ts.SyntaxKind.PlusPlusToken || expression.operator === ts.SyntaxKind.MinusMinusToken)

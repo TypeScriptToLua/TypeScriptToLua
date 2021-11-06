@@ -820,10 +820,19 @@ export class LuaPrinter {
         return intersperse(chunks, ", ");
     }
 
+    /**
+     * Returns true if the expression list (table field or parameters) should be printed on one line.
+     */
+    protected isSimpleExpressionList(expressions: lua.Expression[]): boolean {
+        if (expressions.length <= 1) return true;
+        if (expressions.length > 4) return false;
+        return expressions.every(isSimpleExpression);
+    }
+
     protected printExpressionList(expressions: lua.Expression[]): SourceChunk[] {
         const chunks: SourceChunk[] = [];
 
-        if (expressions.every(isSimpleExpression)) {
+        if (this.isSimpleExpressionList(expressions)) {
             chunks.push(...this.joinChunksWithComma(expressions.map(e => this.printExpression(e))));
         } else {
             chunks.push("\n");

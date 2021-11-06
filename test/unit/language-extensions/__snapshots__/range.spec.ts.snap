@@ -36,11 +36,7 @@ exports[`$range invalid use ("const y = [...$range(1, 10)];"): code 1`] = `
 "require(\\"lualib_bundle\\");
 local ____exports = {}
 function ____exports.__main(self)
-    local y = {
-        __TS__Spread(
-            ____(nil, 1, 10)
-        )
-    }
+    local y = {__TS__Spread(____(nil, 1, 10))}
 end
 return ____exports"
 `;
@@ -50,9 +46,7 @@ exports[`$range invalid use ("const y = [...$range(1, 10)];"): diagnostics 1`] =
 exports[`$range invalid use ("for (const i in $range(1, 10, 2)) {}"): code 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    for i in pairs(
-        ____(nil, 1, 10, 2)
-    ) do
+    for i in pairs(____(nil, 1, 10, 2)) do
     end
 end
 return ____exports"
@@ -63,9 +57,7 @@ exports[`$range invalid use ("for (const i in $range(1, 10, 2)) {}"): diagnostic
 exports[`$range invalid use ("for (const i of $range(1, 10, 2) as number[]) {}"): code 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    for ____, i in ipairs(
-        ____(nil, 1, 10, 2)
-    ) do
+    for ____, i in ipairs(____(nil, 1, 10, 2)) do
     end
 end
 return ____exports"
@@ -77,9 +69,7 @@ exports[`$range invalid use ("for (const i of ($range(1, 10, 2))) {}"): code 1`]
 "require(\\"lualib_bundle\\");
 local ____exports = {}
 function ____exports.__main(self)
-    for ____, i in __TS__Iterator(
-        ____(nil, 1, 10, 2)
-    ) do
+    for ____, i in __TS__Iterator(____(nil, 1, 10, 2)) do
     end
 end
 return ____exports"

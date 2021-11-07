@@ -1,5 +1,6 @@
 import { ModuleKind, ScriptTarget } from "typescript";
-import { awaitMustBeInAsyncFunction } from "../../../src/transformation/utils/diagnostics";
+import { LuaTarget } from "../../../src";
+import { awaitMustBeInAsyncFunction, unsupportedForTarget } from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
 const promiseTestLib = `
@@ -160,6 +161,19 @@ test.each(["async function abc() {", "const abc = async () => {"])(
             ]);
     }
 );
+
+test("can make inline async functions", () => {
+    util.testFunction`
+        const foo = async function() { return "foo"; };
+        const bar = async function() { return await foo(); };
+
+        const { state, value } = bar() as any;
+        return { state, value };
+    `.expectToEqual({
+        state: 1, // __TS__PromiseState.Fulfilled
+        value: "foo",
+    });
+});
 
 test("can make async lambdas with expression body", () => {
     util.testFunction`
@@ -368,4 +382,79 @@ test("async function can forward varargs", () => {
     `
         .setTsHeader(promiseTestLib)
         .expectToEqual(["resolved", "A", "B", "C"]);
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1105
+describe("try/catch in async function", () => {
+    util.testEachVersion(
+        "await inside try/catch returns inside async function",
+        () => util.testModule`
+            export let result = 0;
+            async function foo(): Promise<number> {
+                try {
+                    return await new Promise(resolve => resolve(4));
+                } catch {
+                    throw "an error occurred in the async function"
+                }
+            }
+            foo().then(value => {
+                result = value;
+            });
+        `,
+        // Cannot execute LuaJIT with test runner
+        {
+            ...util.expectEachVersionExceptJit(builder => builder.expectToEqual({ result: 4 })),
+            [LuaTarget.Lua51]: builder => builder.expectToHaveDiagnostics([unsupportedForTarget.code]),
+        }
+    );
+
+    util.testEachVersion(
+        "await inside try/catch throws inside async function",
+        () => util.testModule`
+            export let reason = "";
+            async function foo(): Promise<number> {
+                try {
+                    return await new Promise((resolve, reject) => reject("test error"));
+                } catch (e) {
+                    throw "an error occurred in the async function: " + e;
+                }
+            }
+            foo().catch(e => {
+                reason = e;
+            });
+        `,
+        {
+            ...util.expectEachVersionExceptJit(builder =>
+                builder.expectToEqual({ reason: "an error occurred in the async function: test error" })
+            ),
+            [LuaTarget.Lua51]: builder => builder.expectToHaveDiagnostics([unsupportedForTarget.code]),
+        }
+    );
+
+    util.testEachVersion(
+        "await inside try/catch deferred rejection uses catch clause",
+        () =>
+            util.testModule`
+            export let reason = "";
+            let reject: (reason: string) => void;
+
+            async function foo(): Promise<number> {
+                try {
+                    return await new Promise((res, rej) => { reject = rej; });
+                } catch (e) {
+                    throw "an error occurred in the async function: " + e;
+                }
+            }
+            foo().catch(e => {
+                reason = e;
+            });
+            reject("test error");
+        `,
+        {
+            ...util.expectEachVersionExceptJit(builder =>
+                builder.expectToEqual({ reason: "an error occurred in the async function: test error" })
+            ),
+            [LuaTarget.Lua51]: builder => builder.expectToHaveDiagnostics([unsupportedForTarget.code]),
+        }
+    );
 });

@@ -18,7 +18,7 @@ interface CommandLineOptionOfEnum extends CommandLineOptionBase {
 }
 
 interface CommandLineOptionOfPrimitive extends CommandLineOptionBase {
-    type: "boolean" | "string" | "object";
+    type: "boolean" | "string" | "object" | "array";
 }
 
 type CommandLineOption = CommandLineOptionOfEnum | CommandLineOptionOfPrimitive;
@@ -77,6 +77,11 @@ export const optionDeclarations: CommandLineOption[] = [
         name: "tstlVerbose",
         description: "Provide verbose output useful for diagnosing problems.",
         type: "boolean",
+    },
+    {
+        name: "noResolvePaths",
+        description: "An array of paths that tstl should not resolve and keep as-is.",
+        type: "array",
     },
 ];
 
@@ -199,7 +204,16 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
 
             return { value };
         }
+        case "array": {
+            if (!Array.isArray(value)) {
+                return {
+                    value: undefined,
+                    error: cliDiagnostics.compilerOptionRequiresAValueOfType(option.name, option.type),
+                };
+            }
 
+            return { value };
+        }
         case "enum": {
             if (typeof value !== "string") {
                 return {

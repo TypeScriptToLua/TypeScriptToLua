@@ -23,15 +23,16 @@ export interface LuaPluginImport {
 
 export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> & {
     buildMode?: BuildMode;
-    noImplicitSelf?: boolean;
-    noHeader?: boolean;
     luaBundle?: string;
     luaBundleEntry?: string;
     luaTarget?: LuaTarget;
     luaLibImport?: LuaLibImportKind;
-    sourceMapTraceback?: boolean;
     luaPlugins?: LuaPluginImport[];
+    noImplicitSelf?: boolean;
+    noHeader?: boolean;
+    noResolvePaths?: string[];
     plugins?: Array<ts.PluginImport | TransformerImport>;
+    sourceMapTraceback?: boolean;
     tstlVerbose?: boolean;
     [option: string]: any;
 };

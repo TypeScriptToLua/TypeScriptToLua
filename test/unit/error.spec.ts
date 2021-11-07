@@ -6,6 +6,8 @@ test("throwString", () => {
     `.expectToEqual(new util.ExecutionError("Some Error"));
 });
 
+// TODO: Finally does not behave like it should, see #1137
+// eslint-disable-next-line jest/no-disabled-tests
 test.skip.each([0, 1, 2])("re-throw (%p)", i => {
     util.testFunction`
         const i: number = ${i};

@@ -709,6 +709,48 @@ test("promise is instanceof promise", () => {
     util.testExpression`Promise.resolve(4) instanceof Promise`.expectToMatchJsResult();
 });
 
+test("chained then on resolved promise", () => {
+    util.testFunction`
+        Promise.resolve("result1").then(undefined, () => {}).then(value => log(value));
+        Promise.resolve("result2").then(value => "then1", () => {}).then(value => log(value));
+        Promise.resolve("result3").then(value => undefined, () => {}).then(value => log(value ?? "undefined"));
+        Promise.resolve("result4").then(value => "then2").then(value => [value, "then3"]).then(([v1, v2]) => log(v1, v2));
+
+        return allLogs;
+    `
+        .setTsHeader(promiseTestLib)
+        .expectToEqual(["result1", "then1", "undefined", "then2", "then3"]);
+});
+
+test("chained catch on rejected promise", () => {
+    util.testFunction`
+        Promise.reject("reason1").then(() => {}).then(v => log("resolved", v), reason => log("rejected", reason));
+        Promise.reject("reason2").then(() => {}, () => "reason3").then(v => log("resolved", v));
+        Promise.reject("reason4").then(() => {}, () => undefined).then(v => log("resolved", v ?? "undefined"));
+
+        return allLogs;
+    `
+        .setTsHeader(promiseTestLib)
+        .expectToEqual(["rejected", "reason1", "resolved", "reason3", "resolved", "undefined"]);
+});
+
+// Issue 2 from https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1105
+test("catch after then catches rejected promise", () => {
+    util.testFunction`
+        Promise.reject('test error')
+            .then(result => {
+                log("then", result);
+            })
+            .catch(e => {
+                log("catch", e);
+            })
+
+        return allLogs;
+    `
+        .setTsHeader(promiseTestLib)
+        .expectToEqual(["catch", "test error"]);
+});
+
 describe("Promise.all", () => {
     test("resolves once all arguments are resolved", () => {
         util.testFunction`

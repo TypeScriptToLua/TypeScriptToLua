@@ -10,10 +10,11 @@ export function hasDefaultExportModifier(node: ts.Node): boolean {
     return (node.modifiers ?? []).some(modifier => modifier.kind === ts.SyntaxKind.DefaultKeyword);
 }
 
-export const createDefaultExportIdentifier = (original: ts.Node): lua.Identifier =>
-    lua.createIdentifier("default", original);
+export function hasExportModifier(node: ts.Node): boolean {
+    return (node.modifiers ?? []).some(modifier => modifier.kind === ts.SyntaxKind.ExportKeyword);
+}
 
-export const createDefaultExportStringLiteral = (original: ts.Node): lua.StringLiteral =>
+export const createDefaultExportStringLiteral = (original?: ts.Node): lua.StringLiteral =>
     lua.createStringLiteral("default", original);
 
 export function getExportedSymbolDeclaration(symbol: ts.Symbol): ts.Declaration | undefined {
@@ -141,4 +142,8 @@ export function createExportedIdentifier(
             : createExportsIdentifier();
 
     return lua.createTableIndexExpression(exportTable, lua.createStringLiteral(identifier.text));
+}
+
+export function createDefaultExportExpression(node: ts.Node): lua.AssignmentLeftHandSideExpression {
+    return lua.createTableIndexExpression(createExportsIdentifier(), createDefaultExportStringLiteral(node), node);
 }

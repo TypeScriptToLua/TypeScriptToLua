@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.1.0
+
+- **[Breaking]** We now use TypeScript's JSX transformer instead of maintaining our own. As a result, `React.createElement` now requires a self parameter, so remove `@noSelf`, `this: void` if necessary.
+- **[Breaking(-ish)]** Due to limitations in 5.1, try/catch can no longer be used in async or generator functions when targetting Lua 5.1. This was already broken but now tstl will explicitly give an error if you try.
+- Added support for the `switch` statement in all versions! (Before they were not supported in 5.1 and universal).
+- Added support for `string.prototype.replaceAll` and improved `string.prototype.replace` implementation.
+- Added `noResolvePaths` tsconfig option to disable module resolution for environment-provided modules.
+- Implemented support for void expressions, i.e `void(0)` or `void(ignoreThisReturnValue())`.
+- Upgraded TypeScript to 4.4.4 and made it a peer dependency to hopefully avoid plugin issues due to mismatching TypeScript versions.
+- The `$vararg` language extension can be used to access CLI arguments, now also in bundles.
+- Fixed a bug regarding `baseUrl` and relative imports.
+- Fixed `sourceMapTraceback: true` not working correctly for bundles.
+- Fixed an issue regarding hoisting in switch case clauses.
+- Added missing function context validation cases for object literals.
+- Fixed a problem where awaiting rejected promises in try/catch would give the wrong result.
+- Fixed an issue where chained `.then` calls on already-resolved or already-rejected promises would cause some callbacks to not fire while they should.
+- Fixed source file paths in source maps being absolute, they are now relative again.
+
 ## 1.0.0
 
 - **[Breaking]** `/* @tupleReturn */` has been removed and will no longer have any effect. You will get an error if you try ot use it or if you use declarations that use it.

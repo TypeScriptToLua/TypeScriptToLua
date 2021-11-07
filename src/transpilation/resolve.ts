@@ -23,14 +23,24 @@ interface ResolutionResult {
 
 class ResolutionContext {
     private resultsCache = new Map<string, ResolutionResult>();
+    private noResolvePaths: Set<string>;
 
     constructor(
         public readonly program: ts.Program,
         public readonly options: CompilerOptions,
         private readonly emitHost: EmitHost
-    ) {}
+    ) {
+        this.noResolvePaths = new Set(options.noResolvePaths);
+    }
 
     public resolve(file: ProcessedFile, required: string): ResolutionResult {
+        if (this.noResolvePaths.has(required)) {
+            if (this.options.tstlVerbose) {
+                console.log(`Skipping module resolution of ${required} as it is in the tsconfig noResolvePaths.`);
+            }
+            return { resolvedFiles: [], diagnostics: [] };
+        }
+
         const resolvedDependency = resolveDependency(file, required, this.program, this.emitHost);
         if (resolvedDependency) {
             if (this.options.tstlVerbose) {
@@ -283,7 +293,7 @@ function isBuildModeLibrary(program: ts.Program) {
 function findRequiredPaths(code: string): string[] {
     // Find all require("<path>") paths in a lua code string
     const paths: string[] = [];
-    const pattern = /(^|\s|;|=)require\("(.+)"\)/g;
+    const pattern = /(^|\s|;|=)require\("(.+?)"\)/g;
     // eslint-disable-next-line @typescript-eslint/ban-types
     let match: RegExpExecArray | null;
     while ((match = pattern.exec(code))) {

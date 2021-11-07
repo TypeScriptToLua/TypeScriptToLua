@@ -2,7 +2,12 @@ module.exports = {
     extends: ["plugin:jest/recommended", "plugin:jest/style"],
     parserOptions: {
         sourceType: "module",
-        project: ["test/tsconfig.json", "src/lualib/tsconfig.json", "benchmark/tsconfig.json"],
+        project: [
+            "test/tsconfig.json",
+            "src/lualib/tsconfig.json",
+            "benchmark/tsconfig.json",
+            "language-extensions/tsconfig.json",
+        ],
     },
     env: { es6: true, node: true },
     plugins: ["import"],
@@ -68,7 +73,9 @@ module.exports = {
 
         "jest/expect-expect": "off",
         "jest/consistent-test-it": ["error", { fn: "test", withinDescribe: "test" }],
+        "jest/no-disabled-tests": "error",
         "jest/no-expect-resolves": "error",
+        "jest/no-identical-title": "off",
         "jest/no-test-return-statement": "error",
         "jest/no-truthy-falsy": "error",
         "jest/prefer-spy-on": "error",

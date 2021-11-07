@@ -5,9 +5,10 @@ import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
 import { annotationRemoved } from "../../utils/diagnostics";
 import {
-    createDefaultExportIdentifier,
+    createDefaultExportExpression,
     createExportedIdentifier,
     hasDefaultExportModifier,
+    hasExportModifier,
     isSymbolExported,
 } from "../../utils/export";
 import { createSelfIdentifier } from "../../utils/lua-ast";
@@ -29,7 +30,7 @@ import { getExtendedNode, getExtendedType, isStaticNode } from "./utils";
 export const transformClassDeclaration: FunctionVisitor<ts.ClassLikeDeclaration> = (declaration, context) => {
     // If declaration is a default export, transform to export variable assignment instead
     if (hasDefaultExportModifier(declaration)) {
-        const left = createExportedIdentifier(context, createDefaultExportIdentifier(declaration));
+        const left = createDefaultExportExpression(declaration);
         const right = transformClassAsExpression(declaration, context);
         return [lua.createAssignmentStatement(left, right, declaration)];
     }
@@ -213,6 +214,15 @@ function transformClassLikeDeclaration(
         );
         const decoratingStatement = lua.createAssignmentStatement(localClassName, decoratingExpression);
         result.push(decoratingStatement);
+
+        if (hasExportModifier(classDeclaration)) {
+            const exportExpression = hasDefaultExportModifier(classDeclaration)
+                ? createDefaultExportExpression(classDeclaration)
+                : createExportedIdentifier(context, className);
+
+            const classAssignment = lua.createAssignmentStatement(exportExpression, localClassName);
+            result.push(classAssignment);
+        }
     }
 
     superInfo.pop();

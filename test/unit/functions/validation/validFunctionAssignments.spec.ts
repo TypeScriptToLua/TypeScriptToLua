@@ -12,12 +12,23 @@ import {
     TestFunctionAssignment,
     validTestFunctionAssignments,
     validTestFunctionCasts,
+    validTestMethodAssignments,
+    validTestMethodCasts,
 } from "./functionPermutations";
 
 test.each(validTestFunctionAssignments)("Valid function variable declaration (%p)", (testFunction, functionType) => {
     util.testFunction`
         const fn: ${functionType} = ${testFunction.value};
         return fn("foobar");
+    `
+        .setTsHeader(testFunction.definition ?? "")
+        .expectToMatchJsResult();
+});
+
+test.each(validTestMethodAssignments)("Valid object wit method declaration (%p, %p)", (testFunction, functionType) => {
+    util.testFunction`
+        const obj: { fn: ${functionType} } = {fn: ${testFunction.value}};
+        return obj.fn("foobar");
     `
         .setTsHeader(testFunction.definition ?? "")
         .expectToMatchJsResult();
@@ -43,12 +54,36 @@ test.each(validTestFunctionCasts)("Valid function assignment with cast (%p)", (t
         .expectToMatchJsResult();
 });
 
+test.each(validTestMethodCasts)(
+    "Valid object with method assignment with cast (%p, %p)",
+    (testFunction, castedFunction) => {
+        util.testFunction`
+            let obj: { fn: typeof ${testFunction.value} };
+            obj = {fn: ${castedFunction}};
+            return obj.fn("foobar");
+        `
+            .setTsHeader(testFunction.definition ?? "")
+            .expectToMatchJsResult();
+    }
+);
+
 test.each(validTestFunctionAssignments)("Valid function argument (%p)", (testFunction, functionType) => {
     util.testFunction`
         function takesFunction(fn: ${functionType}) {
             return fn("foobar");
         }
         return takesFunction(${testFunction.value});
+    `
+        .setTsHeader(testFunction.definition ?? "")
+        .expectToMatchJsResult();
+});
+
+test.each(validTestMethodAssignments)("Valid object with method argument (%p, %p)", (testFunction, functionType) => {
+    util.testFunction`
+        function takesObjectWithMethod(obj: { fn: ${functionType} }) {
+            return obj.fn("foobar");
+        }
+        return takesObjectWithMethod({fn: ${testFunction.value}});
     `
         .setTsHeader(testFunction.definition ?? "")
         .expectToMatchJsResult();

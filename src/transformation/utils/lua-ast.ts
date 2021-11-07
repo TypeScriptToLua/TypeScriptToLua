@@ -161,7 +161,7 @@ export function createLocalOrExportedOrGlobalDeclaration(
                 // Split declaration and assignment of identifiers that reference themselves in their declaration.
                 // Put declaration above preceding statements in case the identifier is referenced in those.
                 const precedingDeclaration = lua.createVariableDeclarationStatement(lhs, undefined, tsOriginal);
-                context.addPrecedingStatements(precedingDeclaration, true);
+                context.prependPrecedingStatements(precedingDeclaration);
                 if (rhs) {
                     assignment = lua.createAssignmentStatement(lhs, rhs, tsOriginal);
                 }

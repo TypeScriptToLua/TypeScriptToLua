@@ -2,6 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { cast, assertNever } from "../../../utils";
 import { TransformationContext } from "../../context";
+import { transformInPrecedingStatementScope } from "../../utils/preceding-statements";
 import { transformBinaryOperation } from "../binary-expression";
 import { transformAssignmentWithRightPrecedingStatements } from "./assignments";
 
@@ -71,20 +72,20 @@ export function transformCompoundAssignment(
     isPostfix: boolean
 ) {
     const left = cast(context.transformExpression(lhs), lua.isAssignmentLeftHandSideExpression);
-    context.pushPrecedingStatements();
-    const right = context.transformExpression(rhs);
-    const rightPrecedingStatements = context.popPrecedingStatements();
+    const [rightPrecedingStatements, right] = transformInPrecedingStatementScope(context, () =>
+        context.transformExpression(rhs)
+    );
 
     if (lua.isTableIndexExpression(left) && shouldCacheTableIndexExpressions(left, rightPrecedingStatements)) {
         // Complex property/element accesses need to cache object/index expressions to avoid repeating side-effects
         // local __obj, __index = ${objExpression}, ${indexExpression};
-        const obj = context.createTempForLuaExpression(left.table);
-        const index = context.createTempForLuaExpression(left.index);
+        const obj = context.createTempNameForLuaExpression(left.table);
+        const index = context.createTempNameForLuaExpression(left.index);
 
         const objAndIndexDeclaration = lua.createVariableDeclarationStatement([obj, index], [left.table, left.index]);
         const accessExpression = lua.createTableIndexExpression(obj, index);
 
-        const tmp = context.createTempForLuaExpression(left);
+        const tmp = context.createTempNameForLuaExpression(left);
         let tmpDeclaration: lua.VariableDeclarationStatement;
         let assignStatement: lua.AssignmentStatement;
         if (isPostfix) {
@@ -110,7 +111,7 @@ export function transformCompoundAssignment(
         // local ____tmp = ${left};
         // ${left} = ____tmp ${replacementOperator} ${right};
         // return ____tmp
-        const tmpIdentifier = context.createTempForLuaExpression(left);
+        const tmpIdentifier = context.createTempNameForLuaExpression(left);
         const tmpDeclaration = lua.createVariableDeclarationStatement(tmpIdentifier, left);
         const operatorExpression = transformBinaryOperation(context, tmpIdentifier, right, operator, expression);
         const assignStatements = transformAssignmentWithRightPrecedingStatements(
@@ -125,7 +126,7 @@ export function transformCompoundAssignment(
         // local ____tmp = ${left} ${replacementOperator} ${right};
         // ${left} = ____tmp;
         // return ____tmp
-        const tmpIdentifier = context.createTempForLuaExpression(left);
+        const tmpIdentifier = context.createTempNameForLuaExpression(left);
         const operatorExpression = transformBinaryOperation(context, left, right, operator, expression);
         const tmpDeclaration = lua.createVariableDeclarationStatement(tmpIdentifier, operatorExpression);
 
@@ -187,16 +188,16 @@ export function transformCompoundAssignmentStatement(
     operator: CompoundAssignmentToken
 ): lua.Statement[] {
     const left = cast(context.transformExpression(lhs), lua.isAssignmentLeftHandSideExpression);
-    context.pushPrecedingStatements();
-    const right = context.transformExpression(rhs);
-    const rightPrecedingStatements = context.popPrecedingStatements();
+    const [rightPrecedingStatements, right] = transformInPrecedingStatementScope(context, () =>
+        context.transformExpression(rhs)
+    );
 
     if (lua.isTableIndexExpression(left) && shouldCacheTableIndexExpressions(left, rightPrecedingStatements)) {
         // Complex property/element accesses need to cache object/index expressions to avoid repeating side-effects
         // local __obj, __index = ${objExpression}, ${indexExpression};
         // ____obj[____index] = ____obj[____index] ${replacementOperator} ${right};
-        const obj = context.createTempForLuaExpression(left.table);
-        const index = context.createTempForLuaExpression(left.index);
+        const obj = context.createTempNameForLuaExpression(left.table);
+        const index = context.createTempNameForLuaExpression(left.index);
 
         const objAndIndexDeclaration = lua.createVariableDeclarationStatement([obj, index], [left.table, left.index]);
         const accessExpression = lua.createTableIndexExpression(obj, index);

@@ -1,6 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { FunctionVisitor } from "../../context";
+import { transformInPrecedingStatementScope } from "../../utils/preceding-statements";
 import { checkVariableDeclarationList, transformVariableDeclaration } from "../variable-declaration";
 import { invertCondition, transformLoopBody } from "./utils";
 
@@ -21,11 +22,13 @@ export const transformForStatement: FunctionVisitor<ts.ForStatement> = (statemen
 
     let condition: lua.Expression;
     if (statement.condition) {
-        context.pushPrecedingStatements();
-        condition = context.transformExpression(statement.condition);
-        const precedingStatements = context.popPrecedingStatements();
+        let precedingStatements: lua.Statement[];
+        const tsCondition = statement.condition;
+        [precedingStatements, condition] = transformInPrecedingStatementScope(context, () =>
+            context.transformExpression(tsCondition)
+        );
 
-        // Change 'while condition' to 'while true - if not condition break'
+        // Change 'while condition' to 'while true - [preceding statements] if not condition break'
         if (precedingStatements.length > 0) {
             precedingStatements.push(
                 lua.createIfStatement(

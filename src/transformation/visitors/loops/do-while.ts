@@ -1,16 +1,18 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { FunctionVisitor } from "../../context";
+import { transformInPrecedingStatementScope } from "../../utils/preceding-statements";
 import { invertCondition, transformLoopBody } from "./utils";
 
 export const transformWhileStatement: FunctionVisitor<ts.WhileStatement> = (statement, context) => {
     const body = transformLoopBody(context, statement);
 
-    context.pushPrecedingStatements();
-    let condition = context.transformExpression(statement.expression);
-    const precedingStatements = context.popPrecedingStatements();
+    let [precedingStatements, condition] = transformInPrecedingStatementScope(context, () =>
+        context.transformExpression(statement.expression)
+    );
 
-    // Change from 'while condition' to 'while true - if not condition then break'
+    // Change from 'while condition' to 'while true - [preceding statements] if not condition then break'
+    // This is so that preceding statements are evaluated every iteration.
     if (precedingStatements.length > 0) {
         precedingStatements.push(
             lua.createIfStatement(
@@ -30,11 +32,11 @@ export const transformWhileStatement: FunctionVisitor<ts.WhileStatement> = (stat
 export const transformDoStatement: FunctionVisitor<ts.DoStatement> = (statement, context) => {
     const body = lua.createDoStatement(transformLoopBody(context, statement));
 
-    context.pushPrecedingStatements();
-    let condition = invertCondition(context.transformExpression(statement.expression));
-    const precedingStatements = context.popPrecedingStatements();
+    let [precedingStatements, condition] = transformInPrecedingStatementScope(context, () =>
+        invertCondition(context.transformExpression(statement.expression))
+    );
 
-    // Change from 'repeat until not condition' to 'repeat - if not condition break - until false'
+    // Change from 'repeat until not condition' to 'repeat - [preceding statements] if not condition break - until false'
     if (precedingStatements.length > 0) {
         precedingStatements.push(
             lua.createIfStatement(

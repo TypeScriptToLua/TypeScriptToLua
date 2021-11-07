@@ -5,8 +5,9 @@ import { assert, castArray } from "../../utils";
 import { unsupportedNodeKind } from "../utils/diagnostics";
 import { unwrapVisitorResult } from "../utils/lua-ast";
 import { createSafeName } from "../utils/safe-names";
-import { tempSymbolId } from "../utils/symbols";
 import { ExpressionLikeNode, ObjectVisitor, StatementLikeNode, VisitorMap } from "./visitors";
+
+export const tempSymbolId = -1 as lua.SymbolId;
 
 export interface AllAccessorDeclarations {
     firstAccessor: ts.AccessorDeclaration;
@@ -135,27 +136,34 @@ export class TransformationContext {
         return precedingStatements;
     }
 
-    public addPrecedingStatements(statements: lua.Statement | lua.Statement[], prepend = false) {
+    public addPrecedingStatements(statements: lua.Statement | lua.Statement[]) {
         const precedingStatements = this.precedingStatementsStack[this.precedingStatementsStack.length - 1];
         assert(precedingStatements);
         if (!Array.isArray(statements)) {
             statements = [statements];
         }
-        if (prepend) {
-            precedingStatements.unshift(...statements);
-        } else {
-            precedingStatements.push(...statements);
+        precedingStatements.push(...statements);
+    }
+
+    public prependPrecedingStatements(statements: lua.Statement | lua.Statement[]) {
+        const precedingStatements = this.precedingStatementsStack[this.precedingStatementsStack.length - 1];
+        assert(precedingStatements);
+        if (!Array.isArray(statements)) {
+            statements = [statements];
         }
+        precedingStatements.unshift(...statements);
     }
 
     public createTempName(prefix = "temp") {
-        prefix = prefix.replace(/^_*/, ""); // Strip leading underscores
+        prefix = prefix.replace(/^_*/, ""); // Strip leading underscores because createSafeName will add them again
         return createSafeName(`${prefix}_${this.nextTempId++}`);
     }
 
     private getTempNameForLuaExpression(expression: lua.Expression): string | undefined {
-        if (lua.isStringLiteral(expression) || lua.isNumericLiteral(expression)) {
-            return expression.value.toString();
+        if (lua.isStringLiteral(expression)) {
+            return expression.value;
+        } else if (lua.isNumericLiteral(expression)) {
+            return `_${expression.value.toString()}`;
         } else if (lua.isIdentifier(expression)) {
             return expression.text;
         } else if (lua.isCallExpression(expression)) {
@@ -172,7 +180,7 @@ export class TransformationContext {
         }
     }
 
-    public createTempForLuaExpression(expression: lua.Expression) {
+    public createTempNameForLuaExpression(expression: lua.Expression) {
         const name = this.getTempNameForLuaExpression(expression);
         const identifier = lua.createIdentifier(this.createTempName(name), undefined, tempSymbolId);
         lua.setNodePosition(identifier, lua.getOriginalPos(expression));
@@ -180,8 +188,10 @@ export class TransformationContext {
     }
 
     private getTempNameForNode(node: ts.Node): string | undefined {
-        if (ts.isStringLiteral(node) || ts.isNumericLiteral(node) || ts.isIdentifier(node) || ts.isMemberName(node)) {
+        if (ts.isStringLiteral(node) || ts.isIdentifier(node) || ts.isMemberName(node)) {
             return node.text;
+        } else if (ts.isNumericLiteral(node)) {
+            return `_${node.text}`;
         } else if (ts.isCallExpression(node)) {
             const name = this.getTempNameForNode(node.expression);
             if (name) {
@@ -198,7 +208,7 @@ export class TransformationContext {
         }
     }
 
-    public createTempForNode(node: ts.Node) {
+    public createTempNameForNode(node: ts.Node) {
         const name = this.getTempNameForNode(node);
         return lua.createIdentifier(this.createTempName(name), node, tempSymbolId);
     }

@@ -1,4 +1,4 @@
-function __TS__SparseArraySpread(this: void, list: unknown[]) {
+function __TS__SparseArraySpread<T>(this: void, sparseArray: __TS__SparseArray<T>): LuaMultiReturn<T[]> {
     const _unpack = unpack ?? table.unpack;
-    return _unpack(list, 1, (list as __TS__SparseArray)["#"]);
+    return _unpack(sparseArray, 1, sparseArray.sparseLength);
 }

@@ -15,6 +15,7 @@ import {
 } from "./compound";
 import { assert } from "../../../utils";
 import { transformOrderedExpressions } from "../expression-list";
+import { transformInPrecedingStatementScope } from "../../utils/preceding-statements";
 
 type SimpleOperator =
     | ts.AdditiveOperatorOrHigher
@@ -83,11 +84,11 @@ function createShortCircuitBinaryExpression(
     createCondition: (identifier: lua.Identifier) => lua.Expression
 ) {
     const lhs = context.transformExpression(node.left);
-    context.pushPrecedingStatements();
-    const rhs = context.transformExpression(node.right);
-    const rightPrecedingStatements = context.popPrecedingStatements();
+    const [rightPrecedingStatements, rhs] = transformInPrecedingStatementScope(context, () =>
+        context.transformExpression(node.right)
+    );
     if (rightPrecedingStatements.length > 0) {
-        const result = context.createTempForLuaExpression(lhs);
+        const result = context.createTempNameForLuaExpression(lhs);
         const assignmentStatement = lua.createVariableDeclarationStatement(result, lhs, node.left);
         const ifStatement = lua.createIfStatement(
             createCondition(lua.cloneIdentifier(result)),
@@ -145,9 +146,10 @@ export const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (
 
         case ts.SyntaxKind.CommaToken: {
             const statements = context.transformStatements(ts.factory.createExpressionStatement(node.left));
-            context.pushPrecedingStatements();
-            const result = context.transformExpression(node.right);
-            statements.push(...context.popPrecedingStatements());
+            const [precedingStatements, result] = transformInPrecedingStatementScope(context, () =>
+                context.transformExpression(node.right)
+            );
+            statements.push(...precedingStatements);
             context.addPrecedingStatements(statements);
             return result;
         }

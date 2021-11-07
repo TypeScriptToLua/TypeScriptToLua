@@ -4,6 +4,7 @@ import { assert } from "../../utils";
 import { FunctionVisitor } from "../context";
 import { createExportsIdentifier } from "../utils/lua-ast";
 import { getUsedLuaLibFeatures } from "../utils/lualib";
+import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
 import { performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
 import { hasExportEquals } from "../utils/typescript";
 
@@ -13,9 +14,10 @@ export const transformSourceFileNode: FunctionVisitor<ts.SourceFile> = (node, co
         const [statement] = node.statements;
         if (statement) {
             assert(ts.isExpressionStatement(statement));
-            context.pushPrecedingStatements();
-            const expression = context.transformExpression(statement.expression);
-            statements.push(...context.popPrecedingStatements());
+            const [precedingStatements, expression] = transformInPrecedingStatementScope(context, () =>
+                context.transformExpression(statement.expression)
+            );
+            statements.push(...precedingStatements);
             statements.push(lua.createReturnStatement([expression]));
         } else {
             const errorCall = lua.createCallExpression(lua.createIdentifier("error"), [

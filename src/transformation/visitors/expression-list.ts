@@ -1,9 +1,8 @@
 import assert = require("assert");
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
-import { TransformationContext } from "../context";
+import { TransformationContext, tempSymbolId } from "../context";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
-import { tempSymbolId } from "../utils/symbols";
 import { isConstIdentifier } from "../utils/typescript";
 
 function shouldMoveToTemp(context: TransformationContext, expression: lua.Expression, tsOriginal?: ts.Node) {
@@ -23,7 +22,7 @@ export function moveToPrecedingTemp(
     if (!shouldMoveToTemp(context, expression, tsOriginal)) {
         return expression;
     }
-    const tempIdentifier = context.createTempForLuaExpression(expression);
+    const tempIdentifier = context.createTempNameForLuaExpression(expression);
     const tempDeclaration = lua.createVariableDeclarationStatement(tempIdentifier, expression);
     lua.setNodePosition(tempDeclaration, lua.getOriginalPos(expression));
     context.addPrecedingStatements(tempDeclaration);

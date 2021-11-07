@@ -7,6 +7,7 @@ import { unsupportedVarDeclaration } from "../utils/diagnostics";
 import { addExportToIdentifier } from "../utils/export";
 import { createLocalOrExportedOrGlobalDeclaration, createUnpackCall, wrapInTable } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
+import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
 import { transformIdentifier } from "./identifier";
 import { isMultiReturnCall } from "./language-extensions/multi";
 import { transformPropertyName } from "./literal";
@@ -63,9 +64,11 @@ export function transformBindingPattern(
         // The identifier of the new variable
         const variableName = transformIdentifier(context, element.name);
         // The field to extract
-        context.pushPrecedingStatements();
-        const propertyName = transformPropertyName(context, element.propertyName ?? element.name);
-        result.push(...context.popPrecedingStatements()); // Keep property's preceding statements in order
+        const elementName = element.propertyName ?? element.name;
+        const [precedingStatements, propertyName] = transformInPrecedingStatementScope(context, () =>
+            transformPropertyName(context, elementName)
+        );
+        result.push(...precedingStatements); // Keep property's preceding statements in order
 
         let expression: lua.Expression;
         if (element.dotDotDotToken) {
@@ -125,9 +128,10 @@ export function transformBindingPattern(
         result.push(...createLocalOrExportedOrGlobalDeclaration(context, variableName, expression));
         if (element.initializer) {
             const identifier = addExportToIdentifier(context, variableName);
-            context.pushPrecedingStatements();
-            const initializer = context.transformExpression(element.initializer);
-            const initializerPrecedingStatements = context.popPrecedingStatements();
+            const tsInitializer = element.initializer;
+            const [initializerPrecedingStatements, initializer] = transformInPrecedingStatementScope(context, () =>
+                context.transformExpression(tsInitializer)
+            );
             result.push(
                 lua.createIfStatement(
                     lua.createBinaryExpression(identifier, lua.createNilLiteral(), lua.SyntaxKind.EqualityOperator),
@@ -162,7 +166,7 @@ export function transformBindingVariableDeclaration(
         } else {
             // Contain the expression in a temporary variable
             if (initializer) {
-                table = context.createTempForNode(initializer);
+                table = context.createTempNameForNode(initializer);
                 let expression = context.transformExpression(initializer);
                 if (isMultiReturnCall(context, initializer)) {
                     expression = wrapInTable(expression);

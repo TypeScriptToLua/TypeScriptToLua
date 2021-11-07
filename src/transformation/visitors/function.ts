@@ -13,6 +13,7 @@ import {
     wrapInTable,
 } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
+import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
 import { peekScope, performHoisting, popScope, pushScope, Scope, ScopeType } from "../utils/scope";
 import { isAsyncFunction, wrapInAsyncAwaiter } from "./async-await";
 import { transformIdentifier } from "./identifier";
@@ -52,9 +53,9 @@ function isRestParameterReferenced(identifier: lua.Identifier, scope: Scope): bo
 
 export function transformFunctionBodyContent(context: TransformationContext, body: ts.ConciseBody): lua.Statement[] {
     if (!ts.isBlock(body)) {
-        context.pushPrecedingStatements();
-        const returnStatement = transformExpressionBodyToReturnStatement(context, body);
-        const precedingStatements = context.popPrecedingStatements();
+        const [precedingStatements, returnStatement] = transformInPrecedingStatementScope(context, () =>
+            transformExpressionBodyToReturnStatement(context, body)
+        );
         return [...precedingStatements, returnStatement];
     }
 

@@ -1,8 +1,8 @@
-function __TS__SparseArrayPush(this: void, list: unknown[], ...args: unknown[]) {
+function __TS__SparseArrayPush<T>(this: void, sparseArray: __TS__SparseArray<T>, ...args: T[]): void {
     const argsLen = select("#", ...args);
-    const listLen = (list as __TS__SparseArray)["#"];
+    const listLen = sparseArray.sparseLength;
     for (const i of $range(1, argsLen)) {
-        list[listLen + i - 1] = args[i - 1];
+        sparseArray[listLen + i - 1] = args[i - 1];
     }
-    (list as __TS__SparseArray)["#"] = listLen + argsLen;
+    sparseArray.sparseLength = listLen + argsLen;
 }

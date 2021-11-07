@@ -24,6 +24,7 @@ import {
 } from "./language-extensions/table";
 import { annotationRemoved, invalidTableDeleteExpression, invalidTableSetExpression } from "../utils/diagnostics";
 import { moveToPrecedingTemp, transformExpressionList } from "./expression-list";
+import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
 
 export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
 
@@ -91,9 +92,9 @@ export function transformCallAndArguments(
     signature?: ts.Signature,
     callContext?: ts.Expression
 ): [lua.Expression, lua.Expression[]] {
-    context.pushPrecedingStatements();
-    const transformedArguments = transformArguments(context, params, signature, callContext);
-    const argPrecedingStatements = context.popPrecedingStatements();
+    const [argPrecedingStatements, transformedArguments] = transformInPrecedingStatementScope(context, () =>
+        transformArguments(context, params, signature, callContext)
+    );
     return transformCallWithArguments(context, callExpression, transformedArguments, argPrecedingStatements);
 }
 
@@ -133,9 +134,9 @@ export function transformContextualCallExpression(
 ): lua.CallExpression | lua.MethodCallExpression {
     const left = ts.isCallExpression(node) ? node.expression : node.tag;
 
-    context.pushPrecedingStatements();
-    let transformedArguments = transformArguments(context, args, signature);
-    const argPrecedingStatements = context.popPrecedingStatements();
+    let [argPrecedingStatements, transformedArguments] = transformInPrecedingStatementScope(context, () =>
+        transformArguments(context, args, signature)
+    );
 
     if (
         ts.isPropertyAccessExpression(left) &&

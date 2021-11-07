@@ -1,6 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
+import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
 import { performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
 import { transformBlockOrStatement } from "./block";
 
@@ -31,18 +32,18 @@ function transformProtectedConditionalExpression(
     context: TransformationContext,
     expression: ts.ConditionalExpression
 ): lua.Expression {
-    const tempVar = context.createTempForNode(expression.condition);
+    const tempVar = context.createTempNameForNode(expression.condition);
 
     const condition = context.transformExpression(expression.condition);
 
-    context.pushPrecedingStatements();
-    const val1 = context.transformExpression(expression.whenTrue);
-    const trueStatements = context.popPrecedingStatements();
+    const [trueStatements, val1] = transformInPrecedingStatementScope(context, () =>
+        context.transformExpression(expression.whenTrue)
+    );
     trueStatements.push(lua.createAssignmentStatement(lua.cloneIdentifier(tempVar), val1, expression.whenTrue));
 
-    context.pushPrecedingStatements();
-    const val2 = context.transformExpression(expression.whenFalse);
-    const falseStatements = context.popPrecedingStatements();
+    const [falseStatements, val2] = transformInPrecedingStatementScope(context, () =>
+        context.transformExpression(expression.whenFalse)
+    );
     falseStatements.push(lua.createAssignmentStatement(lua.cloneIdentifier(tempVar), val2, expression.whenFalse));
 
     context.addPrecedingStatements([
@@ -80,9 +81,18 @@ export function transformIfStatement(statement: ts.IfStatement, context: Transfo
 
     if (statement.elseStatement) {
         if (ts.isIfStatement(statement.elseStatement)) {
-            context.pushPrecedingStatements();
-            const elseStatement = transformIfStatement(statement.elseStatement, context);
-            const precedingStatements = context.popPrecedingStatements();
+            const tsElseStatement = statement.elseStatement;
+            const [precedingStatements, elseStatement] = transformInPrecedingStatementScope(context, () =>
+                transformIfStatement(tsElseStatement, context)
+            );
+            // If else-if condition generates preceding statements, we can't use elseif, we have to break it down:
+            // if conditionA then
+            //     ...
+            // else
+            //     conditionB's preceding statements
+            //     if conditionB then
+            //     end
+            // end
             if (precedingStatements.length > 0) {
                 const elseBlock = lua.createBlock([...precedingStatements, elseStatement]);
                 return lua.createIfStatement(condition, ifBlock, elseBlock);

@@ -150,6 +150,17 @@ describe("execution order", () => {
             return [result, i];
         `.expectToMatchJsResult();
     });
+
+    test("void expression", () => {
+        util.testFunction`
+            function foo(x: number, y: number, z: number | undefined) {
+                return z;
+            }
+            let i = 0;
+            const result = foo(i, i++, void(i++));
+            return {result, i};
+        `.expectToMatchJsResult();
+    });
 });
 
 describe("assignment execution order", () => {

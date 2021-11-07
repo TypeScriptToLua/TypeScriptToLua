@@ -22,15 +22,23 @@ export const transformForStatement: FunctionVisitor<ts.ForStatement> = (statemen
 
     let condition: lua.Expression;
     if (statement.condition) {
-        let precedingStatements: lua.Statement[];
+        let conditionPrecedingStatements: lua.Statement[];
         const tsCondition = statement.condition;
-        [precedingStatements, condition] = transformInPrecedingStatementScope(context, () =>
+        [conditionPrecedingStatements, condition] = transformInPrecedingStatementScope(context, () =>
             context.transformExpression(tsCondition)
         );
 
-        // Change 'while condition' to 'while true - [preceding statements] if not condition break'
-        if (precedingStatements.length > 0) {
-            precedingStatements.push(
+        // If condition has preceding statements, ensure they are executed every iteration by using the form:
+        //
+        // while true do
+        //     condition's preceding statements
+        //     if not condition then
+        //         break
+        //     end
+        //     ...
+        // end
+        if (conditionPrecedingStatements.length > 0) {
+            conditionPrecedingStatements.push(
                 lua.createIfStatement(
                     invertCondition(condition),
                     lua.createBlock([lua.createBreakStatement()]),
@@ -38,7 +46,7 @@ export const transformForStatement: FunctionVisitor<ts.ForStatement> = (statemen
                     statement.condition
                 )
             );
-            body.unshift(...precedingStatements);
+            body.unshift(...conditionPrecedingStatements);
             condition = lua.createBooleanLiteral(true);
         }
     } else {

@@ -7,14 +7,21 @@ import { invertCondition, transformLoopBody } from "./utils";
 export const transformWhileStatement: FunctionVisitor<ts.WhileStatement> = (statement, context) => {
     const body = transformLoopBody(context, statement);
 
-    let [precedingStatements, condition] = transformInPrecedingStatementScope(context, () =>
+    let [conditionPrecedingStatements, condition] = transformInPrecedingStatementScope(context, () =>
         context.transformExpression(statement.expression)
     );
 
-    // Change from 'while condition' to 'while true - [preceding statements] if not condition then break'
-    // This is so that preceding statements are evaluated every iteration.
-    if (precedingStatements.length > 0) {
-        precedingStatements.push(
+    // If condition has preceding statements, ensure they are executed every iteration by using the form:
+    //
+    // while true do
+    //     condition's preceding statements
+    //     if not condition then
+    //         break
+    //     end
+    //     ...
+    // end
+    if (conditionPrecedingStatements.length > 0) {
+        conditionPrecedingStatements.push(
             lua.createIfStatement(
                 invertCondition(condition),
                 lua.createBlock([lua.createBreakStatement()]),
@@ -22,7 +29,7 @@ export const transformWhileStatement: FunctionVisitor<ts.WhileStatement> = (stat
                 statement.expression
             )
         );
-        body.unshift(...precedingStatements);
+        body.unshift(...conditionPrecedingStatements);
         condition = lua.createBooleanLiteral(true);
     }
 
@@ -32,13 +39,21 @@ export const transformWhileStatement: FunctionVisitor<ts.WhileStatement> = (stat
 export const transformDoStatement: FunctionVisitor<ts.DoStatement> = (statement, context) => {
     const body = lua.createDoStatement(transformLoopBody(context, statement));
 
-    let [precedingStatements, condition] = transformInPrecedingStatementScope(context, () =>
+    let [conditionPrecedingStatements, condition] = transformInPrecedingStatementScope(context, () =>
         invertCondition(context.transformExpression(statement.expression))
     );
 
-    // Change from 'repeat until not condition' to 'repeat - [preceding statements] if not condition break - until false'
-    if (precedingStatements.length > 0) {
-        precedingStatements.push(
+    // If condition has preceding statements, ensure they are executed every iteration by using the form:
+    //
+    // repeat
+    //     ...
+    //     condition's preceding statements
+    //     if condition then
+    //         break
+    //     end
+    // end
+    if (conditionPrecedingStatements.length > 0) {
+        conditionPrecedingStatements.push(
             lua.createIfStatement(
                 condition,
                 lua.createBlock([lua.createBreakStatement()]),
@@ -49,5 +64,5 @@ export const transformDoStatement: FunctionVisitor<ts.DoStatement> = (statement,
         condition = lua.createBooleanLiteral(false);
     }
 
-    return lua.createRepeatStatement(lua.createBlock([body, ...precedingStatements]), condition, statement);
+    return lua.createRepeatStatement(lua.createBlock([body, ...conditionPrecedingStatements]), condition, statement);
 };

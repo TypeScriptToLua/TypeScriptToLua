@@ -222,11 +222,15 @@ describe("delete from object", () => {
     test("delete from object", () => {
         util.testFunction`
             const obj = { foo: "bar", bar: "baz" };
-            delete obj["foo"];
-            return obj;
-        `
-            .setTsHeader("declare function setmetatable<T extends object>(this: void, table: T, metatable: any): T;")
-            .expectToEqual({ bar: "baz" });
+            return [delete obj["foo"], obj];
+        `.expectToMatchJsResult();
+    });
+
+    test("delete nonexistent property", () => {
+        util.testFunction`
+            const obj = {} as any
+            return [delete obj["foo"], obj];
+        `.expectToMatchJsResult();
     });
 
     // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/993
@@ -234,10 +238,26 @@ describe("delete from object", () => {
         util.testFunction`
         const obj = { foo: "bar", bar: "baz" };
         setmetatable(obj, {});
-        delete obj["foo"];
-        return obj;
+        return [delete obj["foo"], obj];
     `
             .setTsHeader("declare function setmetatable<T extends object>(this: void, table: T, metatable: any): T;")
-            .expectToEqual({ bar: "baz" });
+            .expectToEqual([true, { bar: "baz" }]);
+    });
+
+    test("delete nonconfigurable own property", () => {
+        util.testFunction`
+
+        const obj = {};
+        Object.defineProperty(obj,"foo", {
+            configurable: false,
+            value: true
+        })
+        try {
+            delete obj["foo"]
+            return "deleted"
+        } catch (e) {
+            return e instanceof TypeError
+        }
+    `.expectToMatchJsResult();
     });
 });

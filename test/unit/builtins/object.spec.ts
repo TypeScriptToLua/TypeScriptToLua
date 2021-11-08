@@ -246,18 +246,17 @@ describe("delete from object", () => {
 
     test("delete nonconfigurable own property", () => {
         util.testFunction`
-
-        const obj = {};
-        Object.defineProperty(obj,"foo", {
-            configurable: false,
-            value: true
-        })
-        try {
-            delete obj["foo"]
-            return "deleted"
-        } catch (e) {
-            return e instanceof TypeError
-        }
-    `.expectToMatchJsResult();
+            const obj = {};
+            Object.defineProperty(obj, "foo", {
+                configurable: false,
+                value: true
+            })
+            try {
+                delete obj["foo"]
+                return "deleted"
+            } catch (e) {
+                return e instanceof TypeError
+            }
+        `.expectToMatchJsResult();
     });
 });

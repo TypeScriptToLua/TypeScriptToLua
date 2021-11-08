@@ -246,7 +246,7 @@ describe("delete from object", () => {
 
     test("delete nonconfigurable own property", () => {
         util.testFunction`
-            const obj = {};
+            const obj = {} as any
             Object.defineProperty(obj, "foo", {
                 configurable: false,
                 value: true
@@ -257,6 +257,10 @@ describe("delete from object", () => {
             } catch (e) {
                 return e instanceof TypeError
             }
-        `.expectToMatchJsResult();
+        `
+            .setOptions({
+                strict: true,
+            })
+            .expectToMatchJsResult();
     });
 });

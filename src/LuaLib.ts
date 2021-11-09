@@ -106,7 +106,7 @@ const luaLibDependencies: Partial<Record<LuaLibFeature, LuaLibFeature[]>> = {
     Await: [LuaLibFeature.InstanceOf, LuaLibFeature.New],
     Decorate: [LuaLibFeature.ObjectGetOwnPropertyDescriptor, LuaLibFeature.SetDescriptor, LuaLibFeature.ObjectAssign],
     DelegatedYield: [LuaLibFeature.StringAccess],
-    Delete: [LuaLibFeature.ObjectGetOwnPropertyDescriptors],
+    Delete: [LuaLibFeature.ObjectGetOwnPropertyDescriptors, LuaLibFeature.Error, LuaLibFeature.New],
     Error: [LuaLibFeature.Class, LuaLibFeature.ClassExtends, LuaLibFeature.New],
     FunctionBind: [LuaLibFeature.Unpack],
     Generator: [LuaLibFeature.Symbol],

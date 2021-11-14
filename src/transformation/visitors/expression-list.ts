@@ -3,6 +3,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { TransformationContext, tempSymbolId } from "../context";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
+import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
 import { isConstIdentifier } from "../utils/typescript";
 
 function shouldMoveToTemp(context: TransformationContext, expression: lua.Expression, tsOriginal?: ts.Node) {
@@ -23,31 +24,33 @@ export function moveToPrecedingTemp(
         return expression;
     }
     const tempIdentifier = context.createTempNameForLuaExpression(expression);
-    const tempDeclaration = lua.createVariableDeclarationStatement(tempIdentifier, expression);
-    lua.setNodePosition(tempDeclaration, lua.getOriginalPos(expression));
+    const tempDeclaration = lua.createVariableDeclarationStatement(tempIdentifier, expression, tsOriginal);
     context.addPrecedingStatements(tempDeclaration);
-    const tempClone = lua.cloneIdentifier(tempIdentifier);
-    lua.setNodePosition(tempClone, lua.getOriginalPos(tempIdentifier));
-    return tempClone;
+    return lua.cloneIdentifier(tempIdentifier, tsOriginal);
 }
 
 function transformExpressions(
     context: TransformationContext,
     expressions: readonly ts.Expression[]
-): [lua.Expression[], lua.Statement[][], number] {
+): {
+    transformedExpressions: lua.Expression[];
+    precedingStatements: lua.Statement[][];
+    lastPrecedingStatementsIndex: number;
+} {
     const precedingStatements: lua.Statement[][] = [];
-    const transformExpressions: lua.Expression[] = [];
+    const transformedExpressions: lua.Expression[] = [];
     let lastPrecedingStatementsIndex = -1;
     for (let i = 0; i < expressions.length; ++i) {
-        context.pushPrecedingStatements();
-        transformExpressions.push(context.transformExpression(expressions[i]));
-        const expressionPrecedingStatements = context.popPrecedingStatements();
+        const [expressionPrecedingStatements, expression] = transformInPrecedingStatementScope(context, () =>
+            context.transformExpression(expressions[i])
+        );
+        transformedExpressions.push(expression);
         if (expressionPrecedingStatements.length > 0) {
             lastPrecedingStatementsIndex = i;
         }
         precedingStatements.push(expressionPrecedingStatements);
     }
-    return [transformExpressions, precedingStatements, lastPrecedingStatementsIndex];
+    return { transformedExpressions, precedingStatements, lastPrecedingStatementsIndex };
 }
 
 function transformExpressionsUsingTemps(
@@ -142,7 +145,7 @@ export function transformExpressionList(
     context: TransformationContext,
     expressions: readonly ts.Expression[]
 ): lua.Expression[] {
-    const [transformedExpressions, precedingStatements, lastPrecedingStatementsIndex] = transformExpressions(
+    const { transformedExpressions, precedingStatements, lastPrecedingStatementsIndex } = transformExpressions(
         context,
         expressions
     );
@@ -175,7 +178,7 @@ export function transformOrderedExpressions(
     context: TransformationContext,
     expressions: readonly ts.Expression[]
 ): lua.Expression[] {
-    const [transformedExpressions, precedingStatements, lastPrecedingStatementsIndex] = transformExpressions(
+    const { transformedExpressions, precedingStatements, lastPrecedingStatementsIndex } = transformExpressions(
         context,
         expressions
     );

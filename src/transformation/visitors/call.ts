@@ -241,6 +241,26 @@ function transformElementCall(
     }
 }
 
+function transformPlainRequireArgument(
+    expression: lua.Expression,
+    node: ts.CallExpression
+): lua.Expression[] | undefined {
+    if (
+        lua.isIdentifier(expression) &&
+        expression.text === "require" &&
+        node.arguments.length === 1 &&
+        ts.isStringLiteral(node.arguments[0])
+    ) {
+        const path = node.arguments[0].text;
+        let param: string;
+        if (path.startsWith("@TsResolve:")) {
+            param = path.substr("@TsResolve:".length);
+        } else {
+            param = "@PlainRequire:" + path;
+        }
+        return [lua.createStringLiteral(param)];
+    }
+}
 export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node, context) => {
     const wrapResultInTable = isMultiReturnCall(context, node) && shouldMultiReturnCallBeWrapped(context, node);
     const wrapResultInOptional = ts.isOptionalChain(node);
@@ -319,9 +339,10 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     const callPath = context.transformExpression(node.expression);
     const signatureDeclaration = signature?.getDeclaration();
 
-    let parameters: lua.Expression[] = [];
+    let parameters: lua.Expression[];
     if (signatureDeclaration && getDeclarationContextType(context, signatureDeclaration) === ContextType.Void) {
-        parameters = transformArguments(context, node.arguments, signature);
+        parameters =
+            transformPlainRequireArgument(callPath, node) ?? transformArguments(context, node.arguments, signature);
     } else {
         const callContext = context.isStrict ? ts.factory.createNull() : ts.factory.createIdentifier("_G");
         parameters = transformArguments(context, node.arguments, signature, callContext);

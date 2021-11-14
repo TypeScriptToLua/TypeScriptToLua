@@ -33,7 +33,7 @@ class ResolutionContext {
         this.noResolvePaths = new Set(options.noResolvePaths);
     }
 
-    public resolve(file: ProcessedFile, required: string): ResolutionResult {
+    public resolve(file: ProcessedFile, required: string, isPlainRequire: boolean): ResolutionResult {
         if (this.noResolvePaths.has(required)) {
             if (this.options.tstlVerbose) {
                 console.log(`Skipping module resolution of ${required} as it is in the tsconfig noResolvePaths.`);
@@ -50,7 +50,7 @@ class ResolutionContext {
             // Figure out resolved require path and dependency output path
             const resolvedRequire = getEmitPathRelativeToOutDir(resolvedDependency, this.program);
 
-            if (shouldRewriteRequires(resolvedDependency, this.program)) {
+            if (!isPlainRequire && shouldRewriteRequires(resolvedDependency, this.program)) {
                 replaceRequireInCode(file, required, resolvedRequire);
                 replaceRequireInSourceMap(file, required, resolvedRequire);
             }
@@ -93,6 +93,13 @@ class ResolutionContext {
                 return result;
             }
         } else {
+            if (isPlainRequire) {
+                // do not error on failed plain require
+                return {
+                    resolvedFiles: [],
+                    diagnostics: [],
+                };
+            }
             const fallbackRequire = fallbackResolve(required, getSourceDir(this.program), path.dirname(file.fileName));
             replaceRequireInCode(file, required, fallbackRequire);
             replaceRequireInSourceMap(file, required, fallbackRequire);
@@ -156,10 +163,17 @@ function resolveFileDependencies(file: ProcessedFile, context: ResolutionContext
             continue;
         }
 
+        const isPlainRequire = required.startsWith("@PlainRequire:");
+        const path = isPlainRequire ? required.substr("@PlainRequire:".length) : required;
         // Try to resolve the import starting from the directory `file` is in
-        const resolvedDependency = context.resolve(file, required);
+        const resolvedDependency = context.resolve(file, path, isPlainRequire);
         dependencies.push(...resolvedDependency.resolvedFiles);
         diagnostics.push(...resolvedDependency.diagnostics);
+
+        if (isPlainRequire) {
+            replaceRequireInCode(file, required, path, true);
+            replaceRequireInSourceMap(file, required, path, true);
+        }
     }
     return { resolvedFiles: dependencies, diagnostics };
 }
@@ -303,8 +317,13 @@ function findRequiredPaths(code: string): string[] {
     return paths;
 }
 
-function replaceRequireInCode(file: ProcessedFile, originalRequire: string, newRequire: string): void {
-    const requirePath = formatPathToLuaPath(newRequire.replace(".lua", ""));
+function replaceRequireInCode(
+    file: ProcessedFile,
+    originalRequire: string,
+    newRequire: string,
+    plainReplace?: boolean
+): void {
+    const requirePath = plainReplace ? newRequire : formatPathToLuaPath(newRequire.replace(".lua", ""));
 
     // Escape special characters to prevent the regex from breaking...
     const escapedRequire = originalRequire.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
@@ -315,8 +334,13 @@ function replaceRequireInCode(file: ProcessedFile, originalRequire: string, newR
     );
 }
 
-function replaceRequireInSourceMap(file: ProcessedFile, originalRequire: string, newRequire: string): void {
-    const requirePath = formatPathToLuaPath(newRequire.replace(".lua", ""));
+function replaceRequireInSourceMap(
+    file: ProcessedFile,
+    originalRequire: string,
+    newRequire: string,
+    plainReplace?: boolean
+): void {
+    const requirePath = plainReplace ? newRequire : formatPathToLuaPath(newRequire.replace(".lua", ""));
     if (file.sourceMapNode) {
         replaceInSourceMap(file.sourceMapNode, file.sourceMapNode, `"${originalRequire}"`, `"${requirePath}"`);
     }

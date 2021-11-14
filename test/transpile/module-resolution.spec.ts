@@ -312,6 +312,31 @@ describe("dependency with complicated inner structure", () => {
     });
 });
 
+describe("plain require", () => {
+    test.each(["a", "b.c", "d/e", "_()++_)"])("Does not change output module name", path => {
+        const require = `require("${path}")`;
+        const { transpiledFiles } = util.testModule`
+            declare function require(this: void, module: string): any;
+            ${require}
+        `
+            .expectToHaveNoDiagnostics()
+            .getLuaResult();
+        expect(transpiledFiles).toHaveLength(1);
+        expect(transpiledFiles[0].lua).toContain(require);
+    });
+
+    test("includes module if module name exists", () => {
+        const result = util.testModule`
+            declare function require(this: void, module: string): any;
+            export const result = require("a")
+        `
+            .addExtraFile("a.lua", 'return "value"')
+            .expectToEqual({ result: "value" })
+            .getLuaResult();
+        expect(result.transpiledFiles).toHaveLength(2);
+    });
+});
+
 test("module resolution should not try to resolve @noResolution annotation", () => {
     util.testModule`
         import * as json from "json";

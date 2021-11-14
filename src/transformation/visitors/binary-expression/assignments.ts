@@ -78,7 +78,7 @@ export function transformAssignment(
 
     const left = transformAssignmentLeftHandSideExpression(context, lhs, rightHasPrecedingStatements);
 
-    const rootAssignment = lua.createAssignmentStatement(left, right, lhs);
+    const rootAssignment = lua.createAssignmentStatement(left, right, lhs.parent);
 
     return [
         rootAssignment,

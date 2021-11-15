@@ -1,6 +1,6 @@
 import * as util from "../util";
 
-test.each([
+const shortCircuitTests: Array<{ operator: string; testValue: unknown }> = [
     { operator: "&&", testValue: true },
     { operator: "&&", testValue: false },
     { operator: "&&", testValue: null },
@@ -19,12 +19,23 @@ test.each([
     { operator: "??=", testValue: true },
     { operator: "??=", testValue: false },
     { operator: "??=", testValue: null },
-])("short circuit operator (%p)", ({ operator, testValue }) => {
+];
+
+test.each(shortCircuitTests)("short circuit operator (%p)", ({ operator, testValue }) => {
     util.testFunction`
         let x: unknown = ${testValue};
         let y = 1;
         const z = x ${operator} y++;
         return {x, y, z};
+    `.expectToMatchJsResult();
+});
+
+test.each(shortCircuitTests)("short circuit operator on property (%p)", ({ operator, testValue }) => {
+    util.testFunction`
+        let x: { foo: unknown } = { foo: ${testValue} };
+        let y = 1;
+        const z = x.foo ${operator} y++;
+        return {x: x.foo, y, z};
     `.expectToMatchJsResult();
 });
 

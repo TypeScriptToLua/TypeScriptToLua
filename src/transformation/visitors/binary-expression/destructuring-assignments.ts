@@ -292,18 +292,20 @@ function transformPropertyAssignment(
             );
 
             // obj[index] = extractingExpression ?? defaultExpression
+            const [rightPrecedingStatements, rhs] = transformBinaryOperation(
+                context,
+                extractingExpression,
+                defaultExpression,
+                defaultPrecedingStatements,
+                ts.SyntaxKind.QuestionQuestionToken,
+                node.initializer
+            );
             const assignStatement = lua.createAssignmentStatement(
                 lua.createTableIndexExpression(tableTemp, indexTemp),
-                transformBinaryOperation(
-                    context,
-                    extractingExpression,
-                    defaultExpression,
-                    ts.SyntaxKind.QuestionQuestionToken,
-                    node.initializer
-                )
+                rhs
             );
 
-            destructureAssignmentStatements = [tempsDeclaration, ...defaultPrecedingStatements, assignStatement];
+            destructureAssignmentStatements = [tempsDeclaration, ...rightPrecedingStatements, assignStatement];
         } else {
             const assignmentLeftHandSide = context.transformExpression(node.initializer.left);
 

@@ -50,14 +50,14 @@ function ____exports.__main(self)
             result = hoisted(nil)
             break
         end
-        ____cond3 = ____cond3 or (____switch3 == 2)
+        ____cond3 = ____cond3 or ____switch3 == 2
         if ____cond3 then
             result = \\"2\\"
         end
         if ____cond3 then
             result = \\"default\\"
         end
-        ____cond3 = ____cond3 or (____switch3 == 3)
+        ____cond3 = ____cond3 or ____switch3 == 3
         if ____cond3 then
             result = \\"3\\"
             break
@@ -88,14 +88,14 @@ function ____exports.__main(self)
             result = hoisted(nil)
             break
         end
-        ____cond3 = ____cond3 or (____switch3 == 2)
+        ____cond3 = ____cond3 or ____switch3 == 2
         if ____cond3 then
             result = \\"2\\"
         end
         if ____cond3 then
             result = \\"default\\"
         end
-        ____cond3 = ____cond3 or (____switch3 == 3)
+        ____cond3 = ____cond3 or ____switch3 == 3
         if ____cond3 then
             result = \\"3\\"
             break
@@ -118,19 +118,19 @@ function ____exports.__main(self)
     local out = {}
     repeat
         local ____switch3 = 0
-        local ____cond3 = ((____switch3 == 0) or (____switch3 == 1)) or (____switch3 == 2)
+        local ____cond3 = ____switch3 == 0 or ____switch3 == 1 or ____switch3 == 2
         if ____cond3 then
             __TS__ArrayPush(out, \\"0,1,2\\")
             break
         end
-        ____cond3 = ____cond3 or (____switch3 == 3)
+        ____cond3 = ____cond3 or ____switch3 == 3
         if ____cond3 then
             do
                 __TS__ArrayPush(out, \\"3\\")
                 break
             end
         end
-        ____cond3 = ____cond3 or (____switch3 == 4)
+        ____cond3 = ____cond3 or ____switch3 == 4
         if ____cond3 then
             break
         end

@@ -90,9 +90,7 @@ function ____exports.__main(self)
     end
     return test(
         nil,
-        {
-            fn = function(____, arg) return arg end
-        },
+        {fn = function(____, arg) return arg end},
         \\"foobar\\"
     )
 end
@@ -108,11 +106,9 @@ function ____exports.__main(self)
     end
     local function test(self, ...)
         do
-            pcall(
-                function()
-                    error(\\"foobar\\", 0)
-                end
-            )
+            pcall(function()
+                error(\\"foobar\\", 0)
+            end)
             do
                 return pick(nil, ...)
             end

@@ -20,9 +20,7 @@ function ____exports.__main(self)
     local function multi(self, ...)
         return ...
     end
-    return ({
-        multi(nil)
-    }).forEach
+    return ({multi(nil)}).forEach
 end
 return ____exports"
 `;
@@ -42,9 +40,7 @@ exports[`invalid $multi call ($multi): diagnostics 1`] = `"main.ts(2,9): error T
 exports[`invalid $multi call (([a] = $multi(1)) => {}): code 1`] = `
 "local function ____(____, ____bindingPattern0)
     if ____bindingPattern0 == nil then
-        ____bindingPattern0 = {
-            ____(_G, 1)
-        }
+        ____bindingPattern0 = {____(_G, 1)}
     end
     local a = ____bindingPattern0[1]
 end"
@@ -65,21 +61,11 @@ end"
 
 exports[`invalid $multi call (const [a = 0] = $multi()): diagnostics 1`] = `"main.ts(2,25): error TSTL: The $multi function must be called in a return statement."`;
 
-exports[`invalid $multi call (const {} = $multi();): code 1`] = `
-"local ____ = {
-    {
-        ____(_G)
-    }
-}"
-`;
+exports[`invalid $multi call (const {} = $multi();): code 1`] = `"local ____ = {{____(_G)}}"`;
 
 exports[`invalid $multi call (const {} = $multi();): diagnostics 1`] = `"main.ts(2,20): error TSTL: The $multi function must be called in a return statement."`;
 
-exports[`invalid $multi call (const a = $multi();): code 1`] = `
-"a = {
-    ____(_G)
-}"
-`;
+exports[`invalid $multi call (const a = $multi();): code 1`] = `"a = {____(_G)}"`;
 
 exports[`invalid $multi call (const a = $multi();): diagnostics 1`] = `"main.ts(2,19): error TSTL: The $multi function must be called in a return statement."`;
 
@@ -180,9 +166,7 @@ local function multi(self, ...)
     return ...
 end
 local a
-local ____ = {
-    ____(nil)
-}
+local ____ = {____(nil)}
 a = ____[1]
 ____exports.a = a
 ____exports.a = a
@@ -198,9 +182,7 @@ local function multi(self, ...)
 end
 local a
 do
-    local ____ = {
-        ____(nil, 1, 2)
-    }
+    local ____ = {____(nil, 1, 2)}
     a = ____[1]
     ____exports.a = a
     while false do
@@ -238,9 +220,7 @@ local function multi(self, ...)
 end
 local a
 if (function()
-    local ____ = {
-        ____(nil, 1)
-    }
+    local ____ = {____(nil, 1)}
     a = ____[1]
     ____exports.a = a
     return ____

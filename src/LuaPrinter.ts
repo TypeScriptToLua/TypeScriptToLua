@@ -120,6 +120,42 @@ export class LuaPrinter {
         [lua.SyntaxKind.BitwiseLeftShiftOperator]: "<<",
         [lua.SyntaxKind.BitwiseNotOperator]: "~",
     };
+    private static operatorPrecedence: Record<lua.Operator, number> = {
+        [lua.SyntaxKind.OrOperator]: 1,
+        [lua.SyntaxKind.AndOperator]: 2,
+
+        [lua.SyntaxKind.EqualityOperator]: 3,
+        [lua.SyntaxKind.InequalityOperator]: 3,
+        [lua.SyntaxKind.LessThanOperator]: 3,
+        [lua.SyntaxKind.LessEqualOperator]: 3,
+        [lua.SyntaxKind.GreaterThanOperator]: 3,
+        [lua.SyntaxKind.GreaterEqualOperator]: 3,
+
+        [lua.SyntaxKind.BitwiseOrOperator]: 4,
+        [lua.SyntaxKind.BitwiseExclusiveOrOperator]: 5,
+        [lua.SyntaxKind.BitwiseAndOperator]: 6,
+
+        [lua.SyntaxKind.BitwiseLeftShiftOperator]: 7,
+        [lua.SyntaxKind.BitwiseRightShiftOperator]: 7,
+
+        [lua.SyntaxKind.ConcatOperator]: 8,
+
+        [lua.SyntaxKind.AdditionOperator]: 9,
+        [lua.SyntaxKind.SubtractionOperator]: 9,
+
+        [lua.SyntaxKind.MultiplicationOperator]: 10,
+        [lua.SyntaxKind.DivisionOperator]: 10,
+        [lua.SyntaxKind.FloorDivisionOperator]: 10,
+        [lua.SyntaxKind.ModuloOperator]: 10,
+
+        [lua.SyntaxKind.NotOperator]: 11,
+        [lua.SyntaxKind.LengthOperator]: 11,
+        [lua.SyntaxKind.NegationOperator]: 11,
+        [lua.SyntaxKind.BitwiseNotOperator]: 11,
+
+        [lua.SyntaxKind.PowerOperator]: 12,
+    };
+    private static rightAssociativeOperators = new Set([lua.SyntaxKind.ConcatOperator, lua.SyntaxKind.PowerOperator]);
 
     private currentIndent = "";
     private luaFile: string;
@@ -676,34 +712,49 @@ export class LuaPrinter {
         const chunks: SourceChunk[] = [];
 
         chunks.push(this.printOperator(expression.operator));
-        chunks.push(this.printExpressionInParenthesesIfNeeded(expression.operand));
+        chunks.push(
+            this.printExpressionInParenthesesIfNeeded(
+                expression.operand,
+                LuaPrinter.operatorPrecedence[expression.operator]
+            )
+        );
 
         return this.createSourceNode(expression, chunks);
     }
 
     public printBinaryExpression(expression: lua.BinaryExpression): SourceNode {
         const chunks: SourceChunk[] = [];
-
-        chunks.push(this.printExpressionInParenthesesIfNeeded(expression.left));
+        const isRightAssociative = LuaPrinter.rightAssociativeOperators.has(expression.operator);
+        const precedence = LuaPrinter.operatorPrecedence[expression.operator];
+        chunks.push(
+            this.printExpressionInParenthesesIfNeeded(expression.left, isRightAssociative ? precedence + 1 : precedence)
+        );
         chunks.push(" ", this.printOperator(expression.operator), " ");
-        chunks.push(this.printExpressionInParenthesesIfNeeded(expression.right));
+        chunks.push(
+            this.printExpressionInParenthesesIfNeeded(
+                expression.right,
+                isRightAssociative ? precedence : precedence + 1
+            )
+        );
 
         return this.createSourceNode(expression, chunks);
     }
 
-    private printExpressionInParenthesesIfNeeded(expression: lua.Expression): SourceNode {
-        return this.needsParenthesis(expression)
+    private printExpressionInParenthesesIfNeeded(expression: lua.Expression, minPrecedenceToOmit?: number): SourceNode {
+        return this.needsParenthesis(expression, minPrecedenceToOmit)
             ? this.createSourceNode(expression, ["(", this.printExpression(expression), ")"])
             : this.printExpression(expression);
     }
 
-    private needsParenthesis(expression: lua.Expression): boolean {
-        return (
-            lua.isBinaryExpression(expression) ||
-            lua.isFunctionExpression(expression) ||
-            lua.isTableExpression(expression) ||
-            (lua.isUnaryExpression(expression) && expression.operator === lua.SyntaxKind.NotOperator)
-        );
+    private needsParenthesis(expression: lua.Expression, minPrecedenceToOmit?: number): boolean {
+        if (lua.isBinaryExpression(expression) || lua.isUnaryExpression(expression)) {
+            return (
+                minPrecedenceToOmit === undefined ||
+                LuaPrinter.operatorPrecedence[expression.operator] < minPrecedenceToOmit
+            );
+        } else {
+            return lua.isFunctionExpression(expression) || lua.isTableExpression(expression);
+        }
     }
 
     public printCallExpression(expression: lua.CallExpression): SourceNode {
@@ -769,10 +820,19 @@ export class LuaPrinter {
         return intersperse(chunks, ", ");
     }
 
+    /**
+     * Returns true if the expression list (table field or parameters) should be printed on one line.
+     */
+    protected isSimpleExpressionList(expressions: lua.Expression[]): boolean {
+        if (expressions.length <= 1) return true;
+        if (expressions.length > 4) return false;
+        return expressions.every(isSimpleExpression);
+    }
+
     protected printExpressionList(expressions: lua.Expression[]): SourceChunk[] {
         const chunks: SourceChunk[] = [];
 
-        if (expressions.every(isSimpleExpression)) {
+        if (this.isSimpleExpressionList(expressions)) {
             chunks.push(...this.joinChunksWithComma(expressions.map(e => this.printExpression(e))));
         } else {
             chunks.push("\n");

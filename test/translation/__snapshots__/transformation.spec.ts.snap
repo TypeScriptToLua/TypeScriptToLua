@@ -21,7 +21,7 @@ backQuoteInTemplateString = \\"\` \` \`\\"
 escapedCharsInQuotes = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" ' \`\\"
 escapedCharsInDoubleQuotes = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" ' \`\\"
 escapedCharsInTemplateString = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" ' \`\\"
-nonEmptyTemplateString = (\\"Level 0: \\\\n\\\\t \\" .. ((\\"Level 1: \\\\n\\\\t\\\\t \\" .. ((\\"Level 3: \\\\n\\\\t\\\\t\\\\t \\" .. \\"Last level \\\\n --\\") .. \\" \\\\n --\\")) .. \\" \\\\n --\\")) .. \\" \\\\n --\\""
+nonEmptyTemplateString = (\\"Level 0: \\\\n\\\\t \\" .. (\\"Level 1: \\\\n\\\\t\\\\t \\" .. (\\"Level 3: \\\\n\\\\t\\\\t\\\\t \\" .. \\"Last level \\\\n --\\") .. \\" \\\\n --\\") .. \\" \\\\n --\\") .. \\" \\\\n --\\""
 `;
 
 exports[`Transformation (exportStatement) 1`] = `
@@ -229,6 +229,30 @@ return ____exports"
 `;
 
 exports[`Transformation (modulesVariableNoExport) 1`] = `"foo = \\"bar\\""`;
+
+exports[`Transformation (printFormat) 1`] = `
+"stringConcat = ((\\"a\\" .. \\"b\\" .. \\"c\\") .. \\"d\\") .. \\"e\\"
+numbers = 2 * 2 + 3 + 4 * (5 + 6) ~= 7
+function func(...)
+end
+func(function()
+    local b = \\"A function\\"
+end)
+func(func())
+array = {func()}
+array2 = {
+    func(),
+    func()
+}
+object = {a = 1, b = 2, c = 3}
+bigObject = {
+    a = 1,
+    b = 2,
+    c = 3,
+    d = \\"value1\\",
+    e = \\"value2\\"
+}"
+`;
 
 exports[`Transformation (returnDefault) 1`] = `
 "function myFunc(self)

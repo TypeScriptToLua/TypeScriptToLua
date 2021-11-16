@@ -3,7 +3,7 @@ import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
 import { popScope, pushScope, ScopeType, separateHoistedStatements } from "../utils/scope";
-import { createShortCircuitBinaryExpression } from "./binary-expression";
+import { createShortCircuitBinaryExpressionPrecedingStatements } from "./binary-expression";
 
 const containsBreakOrReturn = (nodes: Iterable<ts.Node>): boolean => {
     for (const s of nodes) {
@@ -26,7 +26,7 @@ const createOrExpression = (
     rightPrecedingStatements: lua.Statement[]
 ): [lua.Statement[], lua.Expression] => {
     if (rightPrecedingStatements.length > 0) {
-        return createShortCircuitBinaryExpression(
+        return createShortCircuitBinaryExpressionPrecedingStatements(
             context,
             left,
             right,

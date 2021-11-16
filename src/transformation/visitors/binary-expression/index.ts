@@ -87,7 +87,7 @@ function transformBinaryOperationWithNoPrecedingStatements(
     return lua.createBinaryExpression(left, right, luaOperator, node);
 }
 
-export function createShortCircuitBinaryExpression(
+export function createShortCircuitBinaryExpressionPrecedingStatements(
     context: TransformationContext,
     lhs: lua.Expression,
     rhs: lua.Expression,
@@ -139,7 +139,14 @@ function transformShortCircuitBinaryExpression(
         context.transformExpression(node.right)
     );
     if (rightPrecedingStatements.length > 0) {
-        return createShortCircuitBinaryExpression(context, lhs, rhs, rightPrecedingStatements, operator, node);
+        return createShortCircuitBinaryExpressionPrecedingStatements(
+            context,
+            lhs,
+            rhs,
+            rightPrecedingStatements,
+            operator,
+            node
+        );
     } else {
         return [
             rightPrecedingStatements,
@@ -158,7 +165,14 @@ export function transformBinaryOperation(
 ): [lua.Statement[], lua.Expression] {
     if (rightPrecedingStatements.length > 0 && isShortCircuitOperator(operator)) {
         assert(ts.isBinaryExpression(node));
-        return createShortCircuitBinaryExpression(context, left, right, rightPrecedingStatements, operator, node);
+        return createShortCircuitBinaryExpressionPrecedingStatements(
+            context,
+            left,
+            right,
+            rightPrecedingStatements,
+            operator,
+            node
+        );
     }
 
     return [

@@ -72,7 +72,7 @@ export function transformCompoundAssignment(
     isPostfix: boolean
 ) {
     const left = cast(context.transformExpression(lhs), lua.isAssignmentLeftHandSideExpression);
-    let [rightPrecedingStatements, right] = transformInPrecedingStatementScope(context, () =>
+    const [rightPrecedingStatements, right] = transformInPrecedingStatementScope(context, () =>
         context.transformExpression(rhs)
     );
 
@@ -86,14 +86,12 @@ export function transformCompoundAssignment(
         const accessExpression = lua.createTableIndexExpression(obj, index);
 
         const tmp = context.createTempNameForLuaExpression(left);
-        let tmpDeclaration: lua.VariableDeclarationStatement;
-        let assignStatement: lua.AssignmentStatement;
-        let operatorExpression: lua.Expression;
         if (isPostfix) {
             // local ____tmp = ____obj[____index];
             // ____obj[____index] = ____tmp ${replacementOperator} ${right};
-            tmpDeclaration = lua.createVariableDeclarationStatement(tmp, accessExpression);
-            [rightPrecedingStatements, operatorExpression] = transformBinaryOperation(
+            // return ____tmp
+            const tmpDeclaration = lua.createVariableDeclarationStatement(tmp, accessExpression);
+            const [precedingStatements, operatorExpression] = transformBinaryOperation(
                 context,
                 tmp,
                 right,
@@ -101,11 +99,16 @@ export function transformCompoundAssignment(
                 operator,
                 expression
             );
-            assignStatement = lua.createAssignmentStatement(accessExpression, operatorExpression);
+            const assignStatement = lua.createAssignmentStatement(accessExpression, operatorExpression);
+            return {
+                statements: [objAndIndexDeclaration, ...precedingStatements, tmpDeclaration, assignStatement],
+                result: tmp,
+            };
         } else {
             // local ____tmp = ____obj[____index] ${replacementOperator} ${right};
             // ____obj[____index] = ____tmp;
-            [rightPrecedingStatements, operatorExpression] = transformBinaryOperation(
+            // return ____tmp
+            const [precedingStatements, operatorExpression] = transformBinaryOperation(
                 context,
                 accessExpression,
                 right,
@@ -113,14 +116,13 @@ export function transformCompoundAssignment(
                 operator,
                 expression
             );
-            tmpDeclaration = lua.createVariableDeclarationStatement(tmp, operatorExpression);
-            assignStatement = lua.createAssignmentStatement(accessExpression, tmp);
+            const tmpDeclaration = lua.createVariableDeclarationStatement(tmp, operatorExpression);
+            const assignStatement = lua.createAssignmentStatement(accessExpression, tmp);
+            return {
+                statements: [objAndIndexDeclaration, ...precedingStatements, tmpDeclaration, assignStatement],
+                result: tmp,
+            };
         }
-        // return ____tmp
-        return {
-            statements: [objAndIndexDeclaration, ...rightPrecedingStatements, tmpDeclaration, assignStatement],
-            result: tmp,
-        };
     } else if (isPostfix) {
         // Postfix expressions need to cache original value in temp
         // local ____tmp = ${left};
@@ -128,8 +130,7 @@ export function transformCompoundAssignment(
         // return ____tmp
         const tmpIdentifier = context.createTempNameForLuaExpression(left);
         const tmpDeclaration = lua.createVariableDeclarationStatement(tmpIdentifier, left);
-        let operatorExpression: lua.Expression;
-        [rightPrecedingStatements, operatorExpression] = transformBinaryOperation(
+        const [precedingStatements, operatorExpression] = transformBinaryOperation(
             context,
             tmpIdentifier,
             right,
@@ -143,15 +144,14 @@ export function transformCompoundAssignment(
             operatorExpression,
             rightPrecedingStatements
         );
-        return { statements: [tmpDeclaration, ...assignStatements], result: tmpIdentifier };
+        return { statements: [tmpDeclaration, ...precedingStatements, ...assignStatements], result: tmpIdentifier };
     } else if (ts.isPropertyAccessExpression(lhs) || ts.isElementAccessExpression(lhs)) {
         // Simple property/element access expressions need to cache in temp to avoid double-evaluation
         // local ____tmp = ${left} ${replacementOperator} ${right};
         // ${left} = ____tmp;
         // return ____tmp
         const tmpIdentifier = context.createTempNameForLuaExpression(left);
-        let operatorExpression: lua.Expression;
-        [rightPrecedingStatements, operatorExpression] = transformBinaryOperation(
+        const [precedingStatements, operatorExpression] = transformBinaryOperation(
             context,
             left,
             right,
@@ -164,7 +164,7 @@ export function transformCompoundAssignment(
         if (isSetterSkippingCompoundAssignmentOperator(operator)) {
             const statements = [
                 tmpDeclaration,
-                ...transformSetterSkippingCompoundAssignment(tmpIdentifier, operator, right, rightPrecedingStatements),
+                ...transformSetterSkippingCompoundAssignment(tmpIdentifier, operator, right, precedingStatements),
             ];
             return { statements, result: tmpIdentifier };
         }
@@ -173,7 +173,7 @@ export function transformCompoundAssignment(
             context,
             lhs,
             tmpIdentifier,
-            rightPrecedingStatements
+            precedingStatements
         );
         return { statements: [tmpDeclaration, ...assignStatements], result: tmpIdentifier };
     } else {
@@ -186,8 +186,7 @@ export function transformCompoundAssignment(
 
         // Simple expressions
         // ${left} = ${left} ${operator} ${right}
-        let operatorExpression: lua.Expression;
-        [rightPrecedingStatements, operatorExpression] = transformBinaryOperation(
+        const [precedingStatements, operatorExpression] = transformBinaryOperation(
             context,
             left,
             right,
@@ -199,7 +198,7 @@ export function transformCompoundAssignment(
             context,
             lhs,
             operatorExpression,
-            rightPrecedingStatements
+            precedingStatements
         );
         return { statements, result: left };
     }

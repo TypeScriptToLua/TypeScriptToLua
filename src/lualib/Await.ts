@@ -30,7 +30,7 @@ function __TS__AsyncAwaiter(this: void, generator: (this: void) => void) {
             if (success) {
                 step(resultOrError, errorOrErrorHandler);
             } else {
-                reject(resultOrError);
+                reject(errorOrErrorHandler);
             }
         }
         function rejected(handler: ErrorHandler | undefined) {

@@ -384,6 +384,64 @@ test("async function can forward varargs", () => {
         .expectToEqual(["resolved", "A", "B", "C"]);
 });
 
+test.each(["async function abc() {", "const abc = async () => {"])(
+    "can throw error after await in async function (%p)",
+    functionHeader => {
+        util.testFunction`
+        const { promise, resolve } = defer<string>();
+        promise.then(data => log("resolving first promise", data));
+
+        ${functionHeader}
+            await promise;
+            log("run abc");
+            throw "test throw";
+        }
+
+        const awaitingPromise = abc();
+        awaitingPromise.catch(error => log("caught error", error));
+
+        resolve("resolved data");
+        return allLogs;
+    `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual(["resolving first promise", "resolved data", "run abc", "caught error", "test throw"]);
+    }
+);
+
+test.each(["async function abc() {", "const abc = async () => {"])(
+    "can throw object after await in async function (%p)",
+    functionHeader => {
+        util.testFunction`
+        const { promise, resolve } = defer<string>();
+        promise.then(data => log("resolving first promise", data));
+
+        ${functionHeader}
+            await promise;
+            log("run abc");
+            throw new Error("test throw");
+        }
+
+        const awaitingPromise = abc();
+        awaitingPromise.catch(error => log("caught error", error));
+
+        resolve("resolved data");
+        return allLogs;
+    `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual([
+                "resolving first promise",
+                "resolved data",
+                "run abc",
+                "caught error",
+                {
+                    message: "test throw",
+                    name: "Error",
+                    stack: expect.stringContaining("stack traceback"),
+                },
+            ]);
+    }
+);
+
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1105
 describe("try/catch in async function", () => {
     util.testEachVersion(

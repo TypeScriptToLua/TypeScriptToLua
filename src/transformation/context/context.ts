@@ -1,10 +1,13 @@
 import * as ts from "typescript";
 import { CompilerOptions, LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
-import { castArray } from "../../utils";
+import { assert, castArray } from "../../utils";
 import { unsupportedNodeKind } from "../utils/diagnostics";
 import { unwrapVisitorResult } from "../utils/lua-ast";
+import { createSafeName } from "../utils/safe-names";
 import { ExpressionLikeNode, ObjectVisitor, StatementLikeNode, VisitorMap } from "./visitors";
+
+export const tempSymbolId = -1 as lua.SymbolId;
 
 export interface AllAccessorDeclarations {
     firstAccessor: ts.AccessorDeclaration;
@@ -29,6 +32,7 @@ export class TransformationContext {
     public readonly diagnostics: ts.Diagnostic[] = [];
     public readonly checker: DiagnosticsProducingTypeChecker = this.program.getDiagnosticsProducingTypeChecker();
     public readonly resolver: EmitResolver;
+    public readonly precedingStatementsStack: lua.Statement[][] = [];
 
     public readonly options: CompilerOptions = this.program.getCompilerOptions();
     public readonly luaTarget = this.options.luaTarget ?? LuaTarget.Universal;
@@ -46,6 +50,7 @@ export class TransformationContext {
     }
 
     private currentNodeVisitors: Array<ObjectVisitor<ts.Node>> = [];
+    private nextTempId = 0;
 
     public transformNode(node: ts.Node): lua.Node[];
     /** @internal */
@@ -104,10 +109,107 @@ export class TransformationContext {
     }
 
     public transformStatements(node: StatementLikeNode | readonly StatementLikeNode[]): lua.Statement[] {
-        return castArray(node).flatMap(n => this.transformNode(n) as lua.Statement[]);
+        return castArray(node).flatMap(n => {
+            this.pushPrecedingStatements();
+            const statements = this.transformNode(n) as lua.Statement[];
+            statements.unshift(...this.popPrecedingStatements());
+            return statements;
+        });
     }
 
     public superTransformStatements(node: StatementLikeNode | readonly StatementLikeNode[]): lua.Statement[] {
-        return castArray(node).flatMap(n => this.superTransformNode(n) as lua.Statement[]);
+        return castArray(node).flatMap(n => {
+            this.pushPrecedingStatements();
+            const statements = this.superTransformNode(n) as lua.Statement[];
+            statements.unshift(...this.popPrecedingStatements());
+            return statements;
+        });
+    }
+
+    public pushPrecedingStatements() {
+        this.precedingStatementsStack.push([]);
+    }
+
+    public popPrecedingStatements() {
+        const precedingStatements = this.precedingStatementsStack.pop();
+        assert(precedingStatements);
+        return precedingStatements;
+    }
+
+    public addPrecedingStatements(statements: lua.Statement | lua.Statement[]) {
+        const precedingStatements = this.precedingStatementsStack[this.precedingStatementsStack.length - 1];
+        assert(precedingStatements);
+        if (!Array.isArray(statements)) {
+            statements = [statements];
+        }
+        precedingStatements.push(...statements);
+    }
+
+    public prependPrecedingStatements(statements: lua.Statement | lua.Statement[]) {
+        const precedingStatements = this.precedingStatementsStack[this.precedingStatementsStack.length - 1];
+        assert(precedingStatements);
+        if (!Array.isArray(statements)) {
+            statements = [statements];
+        }
+        precedingStatements.unshift(...statements);
+    }
+
+    public createTempName(prefix = "temp") {
+        prefix = prefix.replace(/^_*/, ""); // Strip leading underscores because createSafeName will add them again
+        return createSafeName(`${prefix}_${this.nextTempId++}`);
+    }
+
+    private getTempNameForLuaExpression(expression: lua.Expression): string | undefined {
+        if (lua.isStringLiteral(expression)) {
+            return expression.value;
+        } else if (lua.isNumericLiteral(expression)) {
+            return `_${expression.value.toString()}`;
+        } else if (lua.isIdentifier(expression)) {
+            return expression.text;
+        } else if (lua.isCallExpression(expression)) {
+            const name = this.getTempNameForLuaExpression(expression.expression);
+            if (name) {
+                return `${name}_result`;
+            }
+        } else if (lua.isTableIndexExpression(expression)) {
+            const tableName = this.getTempNameForLuaExpression(expression.table);
+            const indexName = this.getTempNameForLuaExpression(expression.index);
+            if (tableName || indexName) {
+                return `${tableName ?? "table"}_${indexName ?? "index"}`;
+            }
+        }
+    }
+
+    public createTempNameForLuaExpression(expression: lua.Expression) {
+        const name = this.getTempNameForLuaExpression(expression);
+        const identifier = lua.createIdentifier(this.createTempName(name), undefined, tempSymbolId);
+        lua.setNodePosition(identifier, lua.getOriginalPos(expression));
+        return identifier;
+    }
+
+    private getTempNameForNode(node: ts.Node): string | undefined {
+        if (ts.isStringLiteral(node) || ts.isIdentifier(node) || ts.isMemberName(node)) {
+            return node.text;
+        } else if (ts.isNumericLiteral(node)) {
+            return `_${node.text}`;
+        } else if (ts.isCallExpression(node)) {
+            const name = this.getTempNameForNode(node.expression);
+            if (name) {
+                return `${name}_result`;
+            }
+        } else if (ts.isElementAccessExpression(node) || ts.isPropertyAccessExpression(node)) {
+            const tableName = this.getTempNameForNode(node.expression);
+            const indexName = ts.isElementAccessExpression(node)
+                ? this.getTempNameForNode(node.argumentExpression)
+                : node.name.text;
+            if (tableName || indexName) {
+                return `${tableName ?? "table"}_${indexName ?? "index"}`;
+            }
+        }
+    }
+
+    public createTempNameForNode(node: ts.Node) {
+        const name = this.getTempNameForNode(node);
+        return lua.createIdentifier(this.createTempName(name), node, tempSymbolId);
     }
 }

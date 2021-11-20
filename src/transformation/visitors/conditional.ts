@@ -1,6 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
+import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
 import { performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
 import { transformBlockOrStatement } from "./block";
 
@@ -27,32 +28,34 @@ function canBeFalsy(context: TransformationContext, type: ts.Type): boolean {
     }
 }
 
-function wrapInFunctionCall(expression: lua.Expression): lua.FunctionExpression {
-    const returnStatement = lua.createReturnStatement([expression]);
-
-    return lua.createFunctionExpression(
-        lua.createBlock([returnStatement]),
-        undefined,
-        undefined,
-        lua.FunctionExpressionFlags.Inline
-    );
-}
-
 function transformProtectedConditionalExpression(
     context: TransformationContext,
     expression: ts.ConditionalExpression
-): lua.CallExpression {
+): lua.Expression {
+    const tempVar = context.createTempNameForNode(expression.condition);
+
     const condition = context.transformExpression(expression.condition);
-    const val1 = context.transformExpression(expression.whenTrue);
-    const val2 = context.transformExpression(expression.whenFalse);
 
-    const val1Function = wrapInFunctionCall(val1);
-    const val2Function = wrapInFunctionCall(val2);
+    const [trueStatements, val1] = transformInPrecedingStatementScope(context, () =>
+        context.transformExpression(expression.whenTrue)
+    );
+    trueStatements.push(lua.createAssignmentStatement(lua.cloneIdentifier(tempVar), val1, expression.whenTrue));
 
-    // (condition and (() => v1) or (() => v2))()
-    const conditionAnd = lua.createBinaryExpression(condition, val1Function, lua.SyntaxKind.AndOperator);
-    const orExpression = lua.createBinaryExpression(conditionAnd, val2Function, lua.SyntaxKind.OrOperator);
-    return lua.createCallExpression(orExpression, [], expression);
+    const [falseStatements, val2] = transformInPrecedingStatementScope(context, () =>
+        context.transformExpression(expression.whenFalse)
+    );
+    falseStatements.push(lua.createAssignmentStatement(lua.cloneIdentifier(tempVar), val2, expression.whenFalse));
+
+    context.addPrecedingStatements([
+        lua.createVariableDeclarationStatement(tempVar, undefined, expression.condition),
+        lua.createIfStatement(
+            condition,
+            lua.createBlock(trueStatements, expression.whenTrue),
+            lua.createBlock(falseStatements, expression.whenFalse),
+            expression
+        ),
+    ]);
+    return lua.cloneIdentifier(tempVar);
 }
 
 export const transformConditionalExpression: FunctionVisitor<ts.ConditionalExpression> = (expression, context) => {
@@ -78,8 +81,24 @@ export function transformIfStatement(statement: ts.IfStatement, context: Transfo
 
     if (statement.elseStatement) {
         if (ts.isIfStatement(statement.elseStatement)) {
-            const elseStatement = transformIfStatement(statement.elseStatement, context);
-            return lua.createIfStatement(condition, ifBlock, elseStatement);
+            const tsElseStatement = statement.elseStatement;
+            const [precedingStatements, elseStatement] = transformInPrecedingStatementScope(context, () =>
+                transformIfStatement(tsElseStatement, context)
+            );
+            // If else-if condition generates preceding statements, we can't use elseif, we have to break it down:
+            // if conditionA then
+            //     ...
+            // else
+            //     conditionB's preceding statements
+            //     if conditionB then
+            //     end
+            // end
+            if (precedingStatements.length > 0) {
+                const elseBlock = lua.createBlock([...precedingStatements, elseStatement]);
+                return lua.createIfStatement(condition, ifBlock, elseBlock);
+            } else {
+                return lua.createIfStatement(condition, ifBlock, elseStatement);
+            }
         } else {
             pushScope(context, ScopeType.Conditional);
             const elseStatements = performHoisting(

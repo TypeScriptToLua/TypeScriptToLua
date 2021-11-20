@@ -11,9 +11,8 @@ import {
     hasExportModifier,
     isSymbolExported,
 } from "../../utils/export";
-import { createSelfIdentifier, unwrapVisitorResult } from "../../utils/lua-ast";
+import { createSelfIdentifier } from "../../utils/lua-ast";
 import { createSafeName, isUnsafeName } from "../../utils/safe-names";
-import { transformToImmediatelyInvokedFunctionExpression } from "../../utils/transform";
 import { transformIdentifier } from "../identifier";
 import { createDecoratingExpression, transformDecoratorExpression } from "./decorators";
 import { transformAccessorDeclarations } from "./members/accessors";
@@ -46,14 +45,9 @@ export function transformClassAsExpression(
     expression: ts.ClassLikeDeclaration,
     context: TransformationContext
 ): lua.Expression {
-    return transformToImmediatelyInvokedFunctionExpression(
-        context,
-        () => {
-            const { statements, name } = transformClassLikeDeclaration(expression, context);
-            return { statements: unwrapVisitorResult(statements), result: name };
-        },
-        expression
-    );
+    const { statements, name } = transformClassLikeDeclaration(expression, context);
+    context.addPrecedingStatements(statements);
+    return name;
 }
 
 const classSuperInfos = new WeakMap<TransformationContext, ClassSuperInfo[]>();
@@ -73,8 +67,7 @@ function transformClassLikeDeclaration(
     } else if (classDeclaration.name !== undefined) {
         className = transformIdentifier(context, classDeclaration.name);
     } else {
-        // TypeScript error
-        className = lua.createAnonymousIdentifier();
+        className = lua.createIdentifier(context.createTempName("class"), classDeclaration);
     }
 
     const annotations = getTypeAnnotations(context.checker.getTypeAtLocation(classDeclaration));

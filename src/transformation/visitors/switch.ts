@@ -1,7 +1,9 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
+import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
 import { popScope, pushScope, ScopeType, separateHoistedStatements } from "../utils/scope";
+import { createShortCircuitBinaryExpressionPrecedingStatements } from "./binary-expression";
 
 const containsBreakOrReturn = (nodes: Iterable<ts.Node>): boolean => {
     for (const s of nodes) {
@@ -17,31 +19,48 @@ const containsBreakOrReturn = (nodes: Iterable<ts.Node>): boolean => {
     return false;
 };
 
+const createOrExpression = (
+    context: TransformationContext,
+    left: lua.Expression,
+    right: lua.Expression,
+    rightPrecedingStatements: lua.Statement[]
+): [lua.Statement[], lua.Expression] => {
+    if (rightPrecedingStatements.length > 0) {
+        return createShortCircuitBinaryExpressionPrecedingStatements(
+            context,
+            left,
+            right,
+            rightPrecedingStatements,
+            ts.SyntaxKind.BarBarToken
+        );
+    } else {
+        return [rightPrecedingStatements, lua.createBinaryExpression(left, right, lua.SyntaxKind.OrOperator)];
+    }
+};
+
 const coalesceCondition = (
     condition: lua.Expression | undefined,
+    conditionPrecedingStatements: lua.Statement[],
     switchVariable: lua.Identifier,
     expression: ts.Expression,
     context: TransformationContext
-): lua.Expression => {
+): [lua.Statement[], lua.Expression] => {
+    const [precedingStatements, transformedExpression] = transformInPrecedingStatementScope(context, () =>
+        context.transformExpression(expression)
+    );
+
     // Coalesce skipped statements
+    const comparison = lua.createBinaryExpression(
+        switchVariable,
+        transformedExpression,
+        lua.SyntaxKind.EqualityOperator
+    );
     if (condition) {
-        return lua.createBinaryExpression(
-            condition,
-            lua.createBinaryExpression(
-                switchVariable,
-                context.transformExpression(expression),
-                lua.SyntaxKind.EqualityOperator
-            ),
-            lua.SyntaxKind.OrOperator
-        );
+        return createOrExpression(context, condition, comparison, precedingStatements);
     }
 
     // Next condition
-    return lua.createBinaryExpression(
-        switchVariable,
-        context.transformExpression(expression),
-        lua.SyntaxKind.EqualityOperator
-    );
+    return [[...conditionPrecedingStatements, ...precedingStatements], comparison];
 };
 
 export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (statement, context) => {
@@ -76,6 +95,7 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
         let defaultTransformed = false;
         let isInitialCondition = true;
         let condition: lua.Expression | undefined = undefined;
+        let conditionPrecedingStatements: lua.Statement[] = [];
         for (let i = 0; i < clauses.length; i++) {
             const clause = clauses[i];
             const previousClause: ts.CaseOrDefaultClause | undefined = clauses[i - 1];
@@ -88,25 +108,41 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
 
             // Compute the condition for the if statement
             if (!ts.isDefaultClause(clause)) {
-                condition = coalesceCondition(condition, switchVariable, clause.expression, context);
+                [conditionPrecedingStatements, condition] = coalesceCondition(
+                    condition,
+                    conditionPrecedingStatements,
+                    switchVariable,
+                    clause.expression,
+                    context
+                );
 
                 // Skip empty clauses unless final clause (i.e side-effects)
                 if (i !== clauses.length - 1 && clause.statements.length === 0) continue;
 
                 // Declare or assign condition variable
-                statements.push(
-                    isInitialCondition
-                        ? lua.createVariableDeclarationStatement(conditionVariable, condition)
-                        : lua.createAssignmentStatement(
-                              conditionVariable,
-                              lua.createBinaryExpression(conditionVariable, condition, lua.SyntaxKind.OrOperator)
-                          )
-                );
+                if (isInitialCondition) {
+                    statements.push(
+                        ...conditionPrecedingStatements,
+                        lua.createVariableDeclarationStatement(conditionVariable, condition)
+                    );
+                } else {
+                    [conditionPrecedingStatements, condition] = createOrExpression(
+                        context,
+                        conditionVariable,
+                        condition,
+                        conditionPrecedingStatements
+                    );
+                    statements.push(
+                        ...conditionPrecedingStatements,
+                        lua.createAssignmentStatement(conditionVariable, condition)
+                    );
+                }
                 isInitialCondition = false;
             } else {
                 // If the default is proceeded by empty clauses and will be emitted we may need to initialize the condition
                 if (isInitialCondition) {
                     statements.push(
+                        ...conditionPrecedingStatements,
                         lua.createVariableDeclarationStatement(
                             conditionVariable,
                             condition ?? lua.createBooleanLiteral(false)
@@ -115,6 +151,7 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
 
                     // Clear condition ot ensure it is not evaluated twice
                     condition = undefined;
+                    conditionPrecedingStatements = [];
                     isInitialCondition = false;
                 }
 
@@ -122,11 +159,15 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
                 if (i === clauses.length - 1) {
                     // Evaluate the final condition that we may be skipping
                     if (condition) {
+                        [conditionPrecedingStatements, condition] = createOrExpression(
+                            context,
+                            conditionVariable,
+                            condition,
+                            conditionPrecedingStatements
+                        );
                         statements.push(
-                            lua.createAssignmentStatement(
-                                conditionVariable,
-                                lua.createBinaryExpression(conditionVariable, condition, lua.SyntaxKind.OrOperator)
-                            )
+                            ...conditionPrecedingStatements,
+                            lua.createAssignmentStatement(conditionVariable, condition)
                         );
                     }
                     continue;
@@ -155,6 +196,7 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
 
             // Clear condition for next clause
             condition = undefined;
+            conditionPrecedingStatements = [];
         }
 
         // If no conditions above match, we need to create the final default case code-path,

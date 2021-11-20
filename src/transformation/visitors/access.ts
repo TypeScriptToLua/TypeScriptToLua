@@ -8,21 +8,28 @@ import { addToNumericExpression } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isArrayType, isNumberType, isStringType } from "../utils/typescript";
 import { tryGetConstEnumValue } from "./enum";
+import { transformOrderedExpressions } from "./expression-list";
 import { isMultiReturnCall, returnsMultiType } from "./language-extensions/multi";
+
+function addOneToArrayAccessArgument(
+    context: TransformationContext,
+    node: ts.ElementAccessExpression,
+    index: lua.Expression
+): lua.Expression {
+    const type = context.checker.getTypeAtLocation(node.expression);
+    const argumentType = context.checker.getTypeAtLocation(node.argumentExpression);
+    if (isArrayType(context, type) && isNumberType(context, argumentType)) {
+        return addToNumericExpression(index, 1);
+    }
+    return index;
+}
 
 export function transformElementAccessArgument(
     context: TransformationContext,
     node: ts.ElementAccessExpression
 ): lua.Expression {
     const index = context.transformExpression(node.argumentExpression);
-
-    const type = context.checker.getTypeAtLocation(node.expression);
-    const argumentType = context.checker.getTypeAtLocation(node.argumentExpression);
-    if (isArrayType(context, type) && isNumberType(context, argumentType)) {
-        return addToNumericExpression(index, 1);
-    }
-
-    return index;
+    return addOneToArrayAccessArgument(context, node, index);
 }
 
 export const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessExpression> = (node, context) => {
@@ -31,16 +38,15 @@ export const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessE
         return constEnumValue;
     }
 
-    const table = context.transformExpression(node.expression);
+    const [table, accessExpression] = transformOrderedExpressions(context, [node.expression, node.argumentExpression]);
 
     const type = context.checker.getTypeAtLocation(node.expression);
     const argumentType = context.checker.getTypeAtLocation(node.argumentExpression);
     if (isStringType(context, type) && isNumberType(context, argumentType)) {
-        const index = context.transformExpression(node.argumentExpression);
-        return transformLuaLibFunction(context, LuaLibFeature.StringAccess, node, table, index);
+        return transformLuaLibFunction(context, LuaLibFeature.StringAccess, node, table, accessExpression);
     }
 
-    const accessExpression = transformElementAccessArgument(context, node);
+    const updatedAccessExpression = addOneToArrayAccessArgument(context, node, accessExpression);
 
     if (isMultiReturnCall(context, node.expression)) {
         const accessType = context.checker.getTypeAtLocation(node.argumentExpression);
@@ -53,16 +59,22 @@ export const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessE
             return table;
         } else {
             const selectIdentifier = lua.createIdentifier("select");
-            const selectCall = lua.createCallExpression(selectIdentifier, [accessExpression, table]);
+            const selectCall = lua.createCallExpression(selectIdentifier, [updatedAccessExpression, table]);
             return selectCall;
         }
     }
 
     if (ts.isOptionalChain(node)) {
-        return transformLuaLibFunction(context, LuaLibFeature.OptionalChainAccess, node, table, accessExpression);
+        return transformLuaLibFunction(
+            context,
+            LuaLibFeature.OptionalChainAccess,
+            node,
+            table,
+            updatedAccessExpression
+        );
     }
 
-    return lua.createTableIndexExpression(table, accessExpression, node);
+    return lua.createTableIndexExpression(table, updatedAccessExpression, node);
 };
 
 export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAccessExpression> = (node, context) => {

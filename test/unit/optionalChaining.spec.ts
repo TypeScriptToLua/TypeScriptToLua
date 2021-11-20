@@ -71,8 +71,9 @@ test("optional element function calls", () => {
     `.expectToMatchJsResult();
 });
 
-test("optional element access method calls", () => {
-    util.testFunction`
+describe("optional access method calls", () => {
+    test("element access call", () => {
+        util.testFunction`
         const obj: { value: string; foo?(prefix: string): string; bar?(prefix: string): string; } = {
             value: "foobar",
             foo(prefix: string) { return prefix + this.value; }
@@ -81,6 +82,39 @@ test("optional element access method calls", () => {
         const barKey = "bar";
         return obj[barKey]?.("bar?") ?? obj[fooKey]?.("foo?");
     `.expectToMatchJsResult();
+    });
+
+    test("optional access call", () => {
+        util.testFunction`
+        const obj: { value: string; foo?(prefix: string): string; bar?(prefix: string): string; } = {
+            value: "foobar",
+            foo(prefix: string) { return prefix + this.value; }
+        }
+        return obj.foo?.("bar?") ?? obj.bar?.("foo?");
+    `.expectToMatchJsResult();
+    });
+
+    test("nested optional element access call", () => {
+        util.testFunction`
+        const obj: { value: string; foo?(prefix: string): string; bar?(prefix: string): string; } = {
+            value: "foobar",
+            foo(prefix: string) { return prefix + this.value; }
+        }
+        const fooKey = "foo";
+        const barKey = "bar";
+        return obj?.[barKey]?.("bar?") ?? obj?.[fooKey]?.("foo?");
+    `.expectToMatchJsResult();
+    });
+
+    test("nested optional property access call", () => {
+        util.testFunction`
+        const obj: { value: string; foo?(prefix: string): string; bar?(prefix: string): string; } = {
+            value: "foobar",
+            foo(prefix: string) { return prefix + this.value; }
+        }
+        return obj?.foo?.("bar?") ?? obj?.bar?.("foo?");
+    `.expectToMatchJsResult();
+    });
 });
 
 test("no side effects", () => {

@@ -4,6 +4,7 @@ import { TransformationContext, tempSymbolId } from "../context";
 import { assert, assertNever } from "../../utils";
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
 import { transformPropertyAccessExpressionWithCapture, transformElementAccessExpressionWithCapture } from "./access";
+import { shouldMoveToTemp } from "./expression-list";
 
 function flattenChain(chain: ts.OptionalChain) {
     assert(!ts.isNonNullChain(chain));
@@ -20,6 +21,7 @@ function flattenChain(chain: ts.OptionalChain) {
 export interface ExpressionWithThisValue {
     expression: lua.Expression;
     thisValue?: lua.Expression;
+    isNewTemp?: boolean;
 }
 
 function transformAndCaptureThisValue(context: TransformationContext, node: ts.Expression): ExpressionWithThisValue {
@@ -33,6 +35,20 @@ function transformAndCaptureThisValue(context: TransformationContext, node: ts.E
         return transformElementAccessExpressionWithCapture(context, node, true);
     }
     return { expression: context.transformExpression(node) };
+}
+
+export function captureThisValue(
+    context: TransformationContext,
+    expression: lua.Expression,
+    tsOriginal: ts.Node
+): { thisValue: lua.Expression; isNewTemp?: boolean } {
+    if (!shouldMoveToTemp(context, expression, tsOriginal) && !isOptionalContinuation(tsOriginal)) {
+        return { thisValue: expression };
+    }
+    const tempIdentifier = context.createTempNameForLuaExpression(expression);
+    const tempAssignment = lua.createAssignmentStatement(tempIdentifier, expression, tsOriginal);
+    context.addPrecedingStatements(tempAssignment);
+    return { thisValue: lua.cloneIdentifier(tempIdentifier, tsOriginal), isNewTemp: true };
 }
 
 export interface OptionalContinuation {
@@ -51,7 +67,7 @@ function createOptionalContinuationIdentifier(text: string, tsOriginal: ts.Expre
 export function isOptionalContinuation(node: ts.Node): boolean {
     return ts.isIdentifier(node) && optionalContinuations.has(node);
 }
-export function getOptionalContinuation(identifier: ts.Identifier): OptionalContinuation | undefined {
+export function getOptionalContinuationData(identifier: ts.Identifier): OptionalContinuation | undefined {
     return optionalContinuations.get(identifier);
 }
 
@@ -95,32 +111,48 @@ export function transformOptionalChainWithCapture(
 
     // transform temp.b.d.c
     let returnThisValue: lua.Expression | undefined;
-    const [precedingStatements, resultAssignment] = transformInPrecedingStatementScope(context, () => {
+    let returnIsNewTemp: boolean | undefined;
+
+    const [rightPrecedingStatements, rightAssignment] = transformInPrecedingStatementScope(context, () => {
         let result: lua.Expression;
         if (captureThisValue) {
-            ({ expression: result, thisValue: returnThisValue } = transformAndCaptureThisValue(
-                context,
-                rightExpression
-            ));
+            ({
+                expression: result,
+                thisValue: returnThisValue,
+                isNewTemp: returnIsNewTemp,
+            } = transformAndCaptureThisValue(context, rightExpression));
         } else {
             result = context.transformExpression(rightExpression);
         }
         return lua.createAssignmentStatement(temp, result);
     });
 
-    const contextualCall = getOptionalContinuation(baseExpression)?.contextualCall;
-
+    let capturedThisValue: lua.Identifier | undefined;
+    const contextualCall = getOptionalContinuationData(baseExpression)?.contextualCall;
     // transform left expression, set contextual call if exists
-    let leftExpr: lua.Expression;
-    if (contextualCall) {
-        const { expression: transformedExpression, thisValue } = transformAndCaptureThisValue(context, expression);
-        leftExpr = transformedExpression;
-        if (thisValue) {
-            contextualCall.params[0] = thisValue;
+    const [leftPrecedingStatements, leftExpression] = transformInPrecedingStatementScope(context, () => {
+        if (contextualCall) {
+            const {
+                expression: transformedExpression,
+                thisValue,
+                isNewTemp,
+            } = transformAndCaptureThisValue(context, expression);
+            if (thisValue) {
+                contextualCall.params[0] = thisValue;
+                if (isNewTemp) {
+                    assert(lua.isIdentifier(thisValue));
+                    capturedThisValue = thisValue;
+                }
+            }
+            return transformedExpression;
+        } else {
+            return context.transformExpression(expression);
         }
-    } else {
-        leftExpr = context.transformExpression(expression);
+    });
+    if (capturedThisValue) {
+        context.addPrecedingStatements(lua.createVariableDeclarationStatement(capturedThisValue));
     }
+    context.addPrecedingStatements(leftPrecedingStatements);
 
     // local temp = <left>
     // if temp ~= nil then
@@ -130,15 +162,16 @@ export function transformOptionalChainWithCapture(
     // return temp
 
     context.addPrecedingStatements([
-        lua.createVariableDeclarationStatement(temp, leftExpr),
+        lua.createVariableDeclarationStatement(temp, leftExpression),
         lua.createIfStatement(
             lua.createBinaryExpression(temp, lua.createNilLiteral(), lua.SyntaxKind.InequalityOperator),
-            lua.createBlock([...precedingStatements, resultAssignment])
+            lua.createBlock([...rightPrecedingStatements, rightAssignment])
         ),
     ]);
     return {
         expression: temp,
         thisValue: returnThisValue,
+        isNewTemp: returnIsNewTemp,
     };
 }
 

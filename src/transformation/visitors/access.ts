@@ -12,12 +12,13 @@ import { addToNumericExpression } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isArrayType, isNumberType, isStringType } from "../utils/typescript";
 import { tryGetConstEnumValue } from "./enum";
-import { transformOrderedExpressions, moveToPrecedingTemp } from "./expression-list";
+import { transformOrderedExpressions } from "./expression-list";
 import { isMultiReturnCall, returnsMultiType } from "./language-extensions/multi";
 import {
     transformOptionalChainWithCapture,
     ExpressionWithThisValue,
     isOptionalContinuation,
+    captureThisValue,
 } from "./optional-chaining";
 
 function addOneToArrayAccessArgument(
@@ -46,7 +47,7 @@ export const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessE
 export function transformElementAccessExpressionWithCapture(
     context: TransformationContext,
     node: ts.ElementAccessExpression,
-    captureThisValue: boolean
+    shouldCaptureThisValue: boolean
 ): ExpressionWithThisValue {
     const constEnumValue = tryGetConstEnumValue(context, node);
     if (constEnumValue) {
@@ -54,15 +55,15 @@ export function transformElementAccessExpressionWithCapture(
     }
 
     if (ts.isOptionalChain(node)) {
-        return transformOptionalChainWithCapture(context, node, captureThisValue);
+        return transformOptionalChainWithCapture(context, node, shouldCaptureThisValue);
     }
 
-    let [table, accessExpression] = transformOrderedExpressions(context, [node.expression, node.argumentExpression]);
+    const [table, accessExpression] = transformOrderedExpressions(context, [node.expression, node.argumentExpression]);
 
     const type = context.checker.getTypeAtLocation(node.expression);
     const argumentType = context.checker.getTypeAtLocation(node.argumentExpression);
     if (isStringType(context, type) && isNumberType(context, argumentType)) {
-        // strings are not callable, so ignore captureThisValue
+        // strings are not callable, so ignore shouldCaptureThisValue
         return {
             expression: transformLuaLibFunction(context, LuaLibFeature.StringAccess, node, table, accessExpression),
         };
@@ -85,12 +86,15 @@ export function transformElementAccessExpressionWithCapture(
         }
     }
 
-    if (captureThisValue) {
-        table = moveToPrecedingTemp(context, table, node.expression);
+    if (shouldCaptureThisValue) {
+        const { thisValue, isNewTemp } = captureThisValue(context, table, node.expression);
+        return {
+            expression: lua.createTableIndexExpression(thisValue, updatedAccessExpression, node),
+            thisValue,
+            isNewTemp,
+        };
     }
-    const thisValue = captureThisValue ? table : undefined;
-    const expression = lua.createTableIndexExpression(table, updatedAccessExpression, node);
-    return { expression, thisValue };
+    return { expression: lua.createTableIndexExpression(table, updatedAccessExpression, node) };
 }
 
 export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAccessExpression> = (node, context) =>
@@ -98,7 +102,7 @@ export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAcces
 export function transformPropertyAccessExpressionWithCapture(
     context: TransformationContext,
     node: ts.PropertyAccessExpression,
-    captureThisValue: boolean
+    shouldCaptureThisValue: boolean
 ): ExpressionWithThisValue {
     const property = node.name.text;
     const type = context.checker.getTypeAtLocation(node.expression);
@@ -120,7 +124,7 @@ export function transformPropertyAccessExpressionWithCapture(
     }
 
     if (ts.isOptionalChain(node)) {
-        return transformOptionalChainWithCapture(context, node, captureThisValue);
+        return transformOptionalChainWithCapture(context, node, shouldCaptureThisValue);
     }
 
     // Do not output path for member only enums
@@ -143,19 +147,24 @@ export function transformPropertyAccessExpressionWithCapture(
 
     const builtinResult = transformBuiltinPropertyAccessExpression(context, node);
     if (builtinResult) {
-        // Ignore captureThisValue.
+        // Ignore shouldCaptureThisValue.
         // This assumes that nothing returned by builtin property accesses are callable.
         // If this assumption is no longer true, this may need to be updated.
         return { expression: builtinResult };
     }
 
-    let table = context.transformExpression(node.expression);
-    if (captureThisValue) {
-        table = moveToPrecedingTemp(context, table, node.expression);
+    const table = context.transformExpression(node.expression);
+
+    if (shouldCaptureThisValue) {
+        const { thisValue, isNewTemp } = captureThisValue(context, table, node.expression);
+        const expression = lua.createTableIndexExpression(thisValue, lua.createStringLiteral(property), node);
+        return {
+            expression,
+            thisValue,
+            isNewTemp,
+        };
     }
-    const thisValue = captureThisValue ? table : undefined;
-    const expression = lua.createTableIndexExpression(table, lua.createStringLiteral(property), node);
-    return { expression, thisValue };
+    return { expression: lua.createTableIndexExpression(table, lua.createStringLiteral(property), node) };
 }
 
 export const transformQualifiedName: FunctionVisitor<ts.QualifiedName> = (node, context) => {

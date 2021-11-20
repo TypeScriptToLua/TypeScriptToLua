@@ -30,7 +30,7 @@ import {
 } from "../utils/diagnostics";
 import { moveToPrecedingTemp, transformExpressionList } from "./expression-list";
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
-import { transformOptionalChain, getOptionalContinuation } from "./optional-chaining";
+import { transformOptionalChain, getOptionalContinuationData } from "./optional-chaining";
 
 export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
 
@@ -235,7 +235,7 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     }
 
     const optionalContinuation = ts.isIdentifier(node.expression)
-        ? getOptionalContinuation(node.expression)
+        ? getOptionalContinuationData(node.expression)
         : undefined;
     const wrapResultInTable = isMultiReturnCall(context, node) && shouldMultiReturnCallBeWrapped(context, node);
 

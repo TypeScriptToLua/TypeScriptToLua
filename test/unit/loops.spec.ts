@@ -279,6 +279,18 @@ test("forof destructing", () => {
     `.expectToMatchJsResult();
 });
 
+test("forof nested destructing", () => {
+    util.testFunction`
+        const obj = { a: [0], b: [1] };
+        const result = [];
+
+        for(const [k, [v]] of Object.entries(obj)){
+            result.push(k, v);
+        }
+        return result;
+    `.expectToMatchJsResult();
+});
+
 test("forof destructing with existing variables", () => {
     const input = [
         [1, 2],

@@ -21,10 +21,14 @@ export function transformArrayBindingElement(
     } else if (ts.isIdentifier(name)) {
         return transformIdentifier(context, name);
     } else if (ts.isBindingElement(name)) {
-        // TODO: It should always be true when called from `transformVariableDeclaration`,
-        // but could be false from `transformForOfLuaIteratorStatement`.
-        assert(ts.isIdentifier(name.name));
-        return transformIdentifier(context, name.name);
+        if (ts.isIdentifier(name.name)) {
+            return transformIdentifier(context, name.name);
+        } else {
+            // ts.isBindingPattern(name.name)
+            const tempName = context.createTempNameForNode(name.name);
+            context.addPrecedingStatements(transformBindingPattern(context, name.name, tempName));
+            return tempName;
+        }
     } else {
         assertNever(name);
     }

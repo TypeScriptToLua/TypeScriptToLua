@@ -216,8 +216,3 @@ export const createNaN = (tsOriginal?: ts.Node) =>
         lua.SyntaxKind.DivisionOperator,
         tsOriginal
     );
-
-export interface ExpressionWithThisValue {
-    expression: lua.Expression;
-    thisValue?: lua.Expression;
-}

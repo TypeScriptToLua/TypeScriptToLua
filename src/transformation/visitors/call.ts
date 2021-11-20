@@ -26,12 +26,11 @@ import {
     annotationRemoved,
     invalidTableDeleteExpression,
     invalidTableSetExpression,
-    notAllowedBuiltinOptionalCall,
+    unsupportedBuiltinOptionalCall,
 } from "../utils/diagnostics";
 import { moveToPrecedingTemp, transformExpressionList } from "./expression-list";
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
-import { transformOptionalChain } from "./optional-chaining";
-import { getInternalIdentifierData } from "../utils/typescript/internal-identifier";
+import { transformOptionalChain, getOptionalContinuation } from "./optional-chaining";
 
 export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
 
@@ -235,16 +234,15 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
         return transformOptionalChain(context, node);
     }
 
-    const internalIdentifierData = ts.isIdentifier(node.expression)
-        ? getInternalIdentifierData(node.expression)
+    const optionalContinuation = ts.isIdentifier(node.expression)
+        ? getOptionalContinuation(node.expression)
         : undefined;
-    const isOptionalBaseCall = internalIdentifierData?.isTransformedOptionalBase;
-
     const wrapResultInTable = isMultiReturnCall(context, node) && shouldMultiReturnCallBeWrapped(context, node);
-    const builtinResult = transformBuiltinCallExpression(context, node);
+
+    const builtinResult = transformBuiltinCallExpression(context, node, optionalContinuation !== undefined);
     if (builtinResult) {
-        if (isOptionalBaseCall) {
-            context.diagnostics.push(notAllowedBuiltinOptionalCall(node));
+        if (optionalContinuation) {
+            context.diagnostics.push(unsupportedBuiltinOptionalCall(node));
         }
         return wrapResultInTable ? wrapInTable(builtinResult) : builtinResult;
     }
@@ -254,8 +252,9 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     }
 
     if (isOperatorMapping(context, node)) {
-        if (isOptionalBaseCall) {
-            context.diagnostics.push(notAllowedBuiltinOptionalCall(node));
+        if (optionalContinuation) {
+            context.diagnostics.push(unsupportedBuiltinOptionalCall(node));
+            return lua.createNilLiteral();
         }
         return transformOperatorMappingExpression(context, node);
     }
@@ -267,15 +266,17 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     }
 
     if (isTableGetCall(context, node)) {
-        if (isOptionalBaseCall) {
-            context.diagnostics.push(notAllowedBuiltinOptionalCall(node));
+        if (optionalContinuation) {
+            context.diagnostics.push(unsupportedBuiltinOptionalCall(node));
+            return lua.createNilLiteral();
         }
         return transformTableGetExpression(context, node);
     }
 
     if (isTableHasCall(context, node)) {
-        if (isOptionalBaseCall) {
-            context.diagnostics.push(notAllowedBuiltinOptionalCall(node));
+        if (optionalContinuation) {
+            context.diagnostics.push(unsupportedBuiltinOptionalCall(node));
+            return lua.createNilLiteral();
         }
         return transformTableHasExpression(context, node);
     }
@@ -321,12 +322,12 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
 
     let callPath: lua.Expression;
     let parameters: lua.Expression[];
-    let thisValueUsed = false;
-    if (signatureDeclaration && getDeclarationContextType(context, signatureDeclaration) === ContextType.Void) {
+    const isContextualCall =
+        !signatureDeclaration || getDeclarationContextType(context, signatureDeclaration) !== ContextType.Void;
+    if (!isContextualCall) {
         [callPath, parameters] = transformCallAndArguments(context, node.expression, node.arguments, signature);
     } else {
         const callContext = context.isStrict ? ts.factory.createNull() : ts.factory.createIdentifier("_G");
-        thisValueUsed = true;
         [callPath, parameters] = transformCallAndArguments(
             context,
             node.expression,
@@ -337,8 +338,8 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     }
 
     const callExpression = lua.createCallExpression(callPath, parameters, node);
-    if (isOptionalBaseCall && thisValueUsed) {
-        internalIdentifierData.optionalBaseContextualCall = callExpression;
+    if (optionalContinuation && isContextualCall) {
+        optionalContinuation.contextualCall = callExpression;
     }
     return wrapResultInTable ? wrapInTable(callExpression) : callExpression;
 };

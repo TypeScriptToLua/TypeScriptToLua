@@ -3,20 +3,23 @@ import * as lua from "../../LuaAST";
 import { TransformationContext, tempSymbolId } from "../context";
 import { assert, assertNever } from "../../utils";
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
-import { createInternalIdentifier, getInternalIdentifierData } from "../utils/typescript/internal-identifier";
 import { transformPropertyAccessExpressionWithCapture, transformElementAccessExpressionWithCapture } from "./access";
-import { ExpressionWithThisValue } from "../utils/lua-ast";
 
 function flattenChain(chain: ts.OptionalChain) {
     assert(!ts.isNonNullChain(chain));
     const links: ts.OptionalChain[] = [chain];
     while (!chain.questionDotToken && !ts.isTaggedTemplateExpression(chain)) {
-        const nextLink: ts.Expression = ts.skipPartiallyEmittedExpressions(chain.expression);
+        const nextLink: ts.Expression = chain.expression;
         assert(ts.isOptionalChain(nextLink) && !ts.isNonNullChain(nextLink));
         chain = nextLink;
         links.unshift(chain);
     }
     return { expression: chain.expression, chain: links };
+}
+
+export interface ExpressionWithThisValue {
+    expression: lua.Expression;
+    thisValue?: lua.Expression;
 }
 
 function transformAndCaptureThisValue(context: TransformationContext, node: ts.Expression): ExpressionWithThisValue {
@@ -30,6 +33,26 @@ function transformAndCaptureThisValue(context: TransformationContext, node: ts.E
         return transformElementAccessExpressionWithCapture(context, node, true);
     }
     return { expression: context.transformExpression(node) };
+}
+
+export interface OptionalContinuation {
+    contextualCall?: lua.CallExpression;
+}
+
+const optionalContinuations = new WeakMap<ts.Identifier, OptionalContinuation>();
+
+// an internal identifier will be transformed verbatim to lua
+function createOptionalContinuationIdentifier(text: string, tsOriginal: ts.Expression): ts.Identifier {
+    const identifier = ts.factory.createIdentifier(text);
+    ts.setOriginalNode(identifier, tsOriginal);
+    optionalContinuations.set(identifier, {});
+    return identifier;
+}
+export function isOptionalContinuation(node: ts.Node): boolean {
+    return ts.isIdentifier(node) && optionalContinuations.has(node);
+}
+export function getOptionalContinuation(identifier: ts.Identifier): OptionalContinuation | undefined {
+    return optionalContinuations.get(identifier);
 }
 
 export function transformOptionalChain(context: TransformationContext, node: ts.OptionalChain): lua.Expression {
@@ -47,25 +70,24 @@ export function transformOptionalChainWithCapture(
     // (a)?.b.c.d -> { (a), [?.b, .c, .d] }
     const { expression, chain } = flattenChain(node);
 
-    // build temp.b.c.d (typescript)
-    const baseExpression = createInternalIdentifier(tempName, expression, { isTransformedOptionalBase: true });
-
+    // build temp.b.c.d
+    const baseExpression = createOptionalContinuationIdentifier(tempName, expression);
     let rightExpression: ts.Expression = baseExpression;
-    for (const segment of chain) {
-        if (ts.isPropertyAccessExpression(segment) || ts.isElementAccessExpression(segment)) {
-            rightExpression = ts.isPropertyAccessExpression(segment)
-                ? ts.factory.createPropertyAccessExpression(rightExpression, segment.name)
-                : ts.factory.createElementAccessExpression(rightExpression, segment.argumentExpression);
-        } else if (ts.isCallExpression(segment)) {
-            rightExpression = ts.factory.createCallExpression(rightExpression, undefined, segment.arguments);
+    for (const link of chain) {
+        if (ts.isPropertyAccessExpression(link)) {
+            rightExpression = ts.factory.createPropertyAccessExpression(rightExpression, link.name);
+        } else if (ts.isElementAccessExpression(link)) {
+            rightExpression = ts.factory.createElementAccessExpression(rightExpression, link.argumentExpression);
+        } else if (ts.isCallExpression(link)) {
+            rightExpression = ts.factory.createCallExpression(rightExpression, undefined, link.arguments);
         } else {
-            assert(!ts.isNonNullChain(segment));
-            assertNever(segment);
+            assert(!ts.isNonNullChain(link));
+            assertNever(link);
         }
-        ts.setOriginalNode(rightExpression, segment);
+        ts.setOriginalNode(rightExpression, link);
     }
 
-    // transform chain
+    // transform temp.b.d.c
     let returnThisValue: lua.Expression | undefined;
     const [precedingStatements, resultAssignment] = transformInPrecedingStatementScope(context, () => {
         let result: lua.Expression;
@@ -80,14 +102,15 @@ export function transformOptionalChainWithCapture(
         return lua.createAssignmentStatement(temp, result);
     });
 
-    const baseContextualCall = getInternalIdentifierData(baseExpression)?.optionalBaseContextualCall;
+    const contextualCall = getOptionalContinuation(baseExpression)?.contextualCall;
 
+    // transform left expression, set contextual call if exists
     let leftExpr: lua.Expression;
-    if (baseContextualCall) {
+    if (contextualCall) {
         const { expression: transformedExpression, thisValue } = transformAndCaptureThisValue(context, expression);
         leftExpr = transformedExpression;
         if (thisValue) {
-            baseContextualCall.params[0] = thisValue;
+            contextualCall.params[0] = thisValue;
         }
     } else {
         leftExpr = context.transformExpression(expression);
@@ -100,8 +123,8 @@ export function transformOptionalChainWithCapture(
     // end
     // return temp
 
-    context.addPrecedingStatements(lua.createVariableDeclarationStatement(temp, leftExpr));
     context.addPrecedingStatements([
+        lua.createVariableDeclarationStatement(temp, leftExpr),
         lua.createIfStatement(
             lua.createBinaryExpression(temp, lua.createNilLiteral(), lua.SyntaxKind.InequalityOperator),
             lua.createBlock([...precedingStatements, resultAssignment])

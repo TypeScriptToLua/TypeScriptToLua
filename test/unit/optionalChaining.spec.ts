@@ -175,4 +175,82 @@ describe("optional chaining function calls", () => {
             obj?.foo();
         `.expectToEqual(new util.ExecutionError("attempt to call a nil value (method 'foo')"));
     });
+
+    describe("builtins", () => {
+        test.each([
+            ["undefined", undefined],
+            ["{foo: 0}", true],
+        ])("LuaTable: %p", (expr, value) => {
+            util.testFunction`
+            const table: LuaTable = ${expr} as any
+            const bar = table?.has("foo")
+            return bar
+        `
+                .withLanguageExtensions()
+                .expectToEqual(value);
+        });
+
+        test.each(["undefined", "foo"])("Function call: %p", e => {
+            util.testFunction`
+            const result = []
+            function foo(this: unknown, arg: unknown) {
+                return [this, arg]
+            }
+            const bar = ${e} as typeof foo | undefined
+            return bar?.call(1, 2)
+        `.expectToMatchJsResult();
+        });
+
+        test.each([undefined, "[1, 2, 3, 4]"])("Array: %p", expr => {
+            util.testFunction`
+            const value: any[] | undefined = ${expr}
+            return value?.map(x=>x+1)
+        `.expectToMatchJsResult();
+        });
+    });
+});
+
+describe("Unsupported optional chains", () => {
+    test("Language extensions", () => {
+        util.testModule`
+                new LuaTable().has?.(3)
+            `
+            .withLanguageExtensions()
+            .expectDiagnosticsToMatchSnapshot();
+    });
+
+    test("Builtin prototype method", () => {
+        util.testModule`
+                [1,2,3,4].forEach?.(()=>{})
+            `.expectDiagnosticsToMatchSnapshot();
+    });
+
+    test("Builtin global method", () => {
+        util.testModule`
+                Number?.("3")
+            `.expectDiagnosticsToMatchSnapshot();
+    });
+    test("Builtin global property", () => {
+        util.testModule`
+                console?.log("3")
+            `
+            .setOptions({
+                lib: ["lib.esnext.d.ts", "lib.dom.d.ts"],
+            })
+            .expectDiagnosticsToMatchSnapshot();
+    });
+
+    test("Compile members only", () => {
+        util.testFunction`
+                /** @compileMembersOnly */
+                enum TestEnum {
+                    A = 0,
+                    B = 2,
+                    C,
+                    D = "D",
+                }
+
+                TestEnum?.B
+            `.expectDiagnosticsToMatchSnapshot();
+    });
 });

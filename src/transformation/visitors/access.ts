@@ -3,14 +3,22 @@ import * as lua from "../../LuaAST";
 import { transformBuiltinPropertyAccessExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
-import { annotationRemoved, invalidMultiReturnAccess } from "../utils/diagnostics";
-import { addToNumericExpression, ExpressionWithThisValue } from "../utils/lua-ast";
+import {
+    annotationRemoved,
+    invalidMultiReturnAccess,
+    unsupportedOptionalCompileMembersOnly,
+} from "../utils/diagnostics";
+import { addToNumericExpression } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isArrayType, isNumberType, isStringType } from "../utils/typescript";
 import { tryGetConstEnumValue } from "./enum";
 import { transformOrderedExpressions, moveToPrecedingTemp } from "./expression-list";
 import { isMultiReturnCall, returnsMultiType } from "./language-extensions/multi";
-import { transformOptionalChainWithCapture } from "./optional-chaining";
+import {
+    transformOptionalChainWithCapture,
+    ExpressionWithThisValue,
+    isOptionalContinuation,
+} from "./optional-chaining";
 
 function addOneToArrayAccessArgument(
     context: TransformationContext,
@@ -54,10 +62,10 @@ export function transformElementAccessExpressionWithCapture(
     const type = context.checker.getTypeAtLocation(node.expression);
     const argumentType = context.checker.getTypeAtLocation(node.argumentExpression);
     if (isStringType(context, type) && isNumberType(context, argumentType)) {
-        // strings are not callable, but metatable overload possible
-        const thisValue = captureThisValue ? moveToPrecedingTemp(context, table, node.expression) : undefined;
-        const expression = transformLuaLibFunction(context, LuaLibFeature.StringAccess, node, table, accessExpression);
-        return { expression, thisValue };
+        // strings are not callable, so ignore captureThisValue
+        return {
+            expression: transformLuaLibFunction(context, LuaLibFeature.StringAccess, node, table, accessExpression),
+        };
     }
 
     const updatedAccessExpression = addOneToArrayAccessArgument(context, node, accessExpression);
@@ -94,6 +102,7 @@ export function transformPropertyAccessExpressionWithCapture(
 ): ExpressionWithThisValue {
     const property = node.name.text;
     const type = context.checker.getTypeAtLocation(node.expression);
+    const isOptionalLeft = isOptionalContinuation(node.expression);
 
     const annotations = getTypeAnnotations(type);
 
@@ -110,8 +119,15 @@ export function transformPropertyAccessExpressionWithCapture(
         context.diagnostics.push(invalidMultiReturnAccess(node));
     }
 
+    if (ts.isOptionalChain(node)) {
+        return transformOptionalChainWithCapture(context, node, captureThisValue);
+    }
+
     // Do not output path for member only enums
     if (annotations.has(AnnotationKind.CompileMembersOnly)) {
+        if (isOptionalLeft) {
+            context.diagnostics.push(unsupportedOptionalCompileMembersOnly(node));
+        }
         if (ts.isPropertyAccessExpression(node.expression)) {
             // in case of ...x.enum.y transform to ...x.y
             const expression = lua.createTableIndexExpression(
@@ -123,10 +139,6 @@ export function transformPropertyAccessExpressionWithCapture(
         } else {
             return { expression: lua.createIdentifier(property, node) };
         }
-    }
-
-    if (ts.isOptionalChain(node)) {
-        return transformOptionalChainWithCapture(context, node, captureThisValue);
     }
 
     const builtinResult = transformBuiltinPropertyAccessExpression(context, node);

@@ -21,10 +21,10 @@ import { isOperatorMapping } from "./language-extensions/operators";
 import { isRangeFunctionNode } from "./language-extensions/range";
 import { isTableExtensionIdentifier } from "./language-extensions/table";
 import { isVarargConstantNode } from "./language-extensions/vararg";
-import { isInternalIdentifier } from "../utils/typescript/internal-identifier";
+import { isOptionalContinuation } from "./optional-chaining";
 
 export function transformIdentifier(context: TransformationContext, identifier: ts.Identifier): lua.Identifier {
-    if (isInternalIdentifier(identifier)) {
+    if (isOptionalContinuation(identifier)) {
         return lua.createIdentifier(identifier.text);
     }
 

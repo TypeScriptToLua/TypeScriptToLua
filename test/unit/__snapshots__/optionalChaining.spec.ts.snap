@@ -1,0 +1,60 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Unsupported optional chains Builtin global method: code 1`] = `
+"require(\\"lualib_bundle\\");
+local ____optional_0 = Number
+if ____optional_0 ~= nil then
+    ____optional_0 = __TS__Number(\\"3\\")
+end
+local ____ = ____optional_0"
+`;
+
+exports[`Unsupported optional chains Builtin global method: diagnostics 1`] = `"main.ts(2,17): error TSTL: Optional calls are not supported for builtin or language extension functions."`;
+
+exports[`Unsupported optional chains Builtin global property: code 1`] = `
+"local ____optional_0 = console
+if ____optional_0 ~= nil then
+    ____optional_0 = nil
+end
+local ____ = ____optional_0"
+`;
+
+exports[`Unsupported optional chains Builtin global property: diagnostics 1`] = `"main.ts(2,17): error TSTL: Optional calls are not supported for builtin or language extension functions."`;
+
+exports[`Unsupported optional chains Builtin prototype method: code 1`] = `
+"local ____optional_0 = ({1, 2, 3, 4}).forEach
+if ____optional_0 ~= nil then
+    ____optional_0 = nil
+end
+local ____ = ____optional_0"
+`;
+
+exports[`Unsupported optional chains Builtin prototype method: diagnostics 1`] = `"main.ts(2,17): error TSTL: Optional calls are not supported for builtin or language extension functions."`;
+
+exports[`Unsupported optional chains Compile members only: code 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local A = 0
+    local B = 2
+    local C = 3
+    local D = \\"D\\"
+    local ____optional_0 = TestEnum
+    if ____optional_0 ~= nil then
+        ____optional_0 = B
+    end
+    local ____ = ____optional_0
+end
+return ____exports"
+`;
+
+exports[`Unsupported optional chains Compile members only: diagnostics 1`] = `"main.ts(10,17): error TSTL: Optional calls are not supported on enums marked with @compileMembersOnly."`;
+
+exports[`Unsupported optional chains Language extensions: code 1`] = `
+"local ____optional_0 = ({}).has
+if ____optional_0 ~= nil then
+    ____optional_0 = nil
+end
+local ____ = ____optional_0"
+`;
+
+exports[`Unsupported optional chains Language extensions: diagnostics 1`] = `"main.ts(2,17): error TSTL: Optional calls are not supported for builtin or language extension functions."`;

@@ -5,26 +5,27 @@ import { transformLuaLibFunction, LuaLibFeature } from "../utils/lualib";
 import { unsupportedProperty } from "../utils/diagnostics";
 import { isArrayType, isNumberType } from "../utils/typescript";
 import { addToNumericExpression } from "../utils/lua-ast";
+import { transformOptionalDeleteExpression } from "./optional-chaining";
 
 export const transformDeleteExpression: FunctionVisitor<ts.DeleteExpression> = (node, context) => {
-    // const innerExpression = ts.skipParentheses(node.expression);
-    // if (ts.isOptionalChain(innerExpression)) {
-    //     return transformOptionalDelete(context, innerExpression);
-    // }
+    const innerExpression = ts.skipParentheses(node.expression);
+    if (ts.isOptionalChain(innerExpression)) {
+        return transformOptionalDeleteExpression(context, node, innerExpression);
+    }
 
     let ownerExpression: lua.Expression | undefined;
     let propertyExpression: lua.Expression | undefined;
 
-    if (ts.isPropertyAccessExpression(node.expression)) {
-        if (ts.isPrivateIdentifier(node.expression.name)) throw new Error("PrivateIdentifier is not supported");
-        ownerExpression = context.transformExpression(node.expression.expression);
-        propertyExpression = lua.createStringLiteral(node.expression.name.text);
-    } else if (ts.isElementAccessExpression(node.expression)) {
-        ownerExpression = context.transformExpression(node.expression.expression);
-        propertyExpression = context.transformExpression(node.expression.argumentExpression);
+    if (ts.isPropertyAccessExpression(innerExpression)) {
+        if (ts.isPrivateIdentifier(innerExpression.name)) throw new Error("PrivateIdentifier is not supported");
+        ownerExpression = context.transformExpression(innerExpression.expression);
+        propertyExpression = lua.createStringLiteral(innerExpression.name.text);
+    } else if (ts.isElementAccessExpression(innerExpression)) {
+        ownerExpression = context.transformExpression(innerExpression.expression);
+        propertyExpression = context.transformExpression(innerExpression.argumentExpression);
 
-        const type = context.checker.getTypeAtLocation(node.expression.expression);
-        const argumentType = context.checker.getTypeAtLocation(node.expression.argumentExpression);
+        const type = context.checker.getTypeAtLocation(innerExpression.expression);
+        const argumentType = context.checker.getTypeAtLocation(innerExpression.argumentExpression);
 
         if (isArrayType(context, type) && isNumberType(context, argumentType)) {
             propertyExpression = addToNumericExpression(propertyExpression, 1);

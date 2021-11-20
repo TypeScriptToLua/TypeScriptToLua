@@ -254,3 +254,31 @@ describe("Unsupported optional chains", () => {
             `.expectDiagnosticsToMatchSnapshot();
     });
 });
+
+describe("optional delete", () => {
+    test("successful", () => {
+        util.testFunction`
+            const table = {
+                bar: 3
+            }
+            return [delete table?.bar, table]
+        `.expectToMatchJsResult();
+    });
+    test("unsuccessful", () => {
+        util.testFunction`
+            const table : {
+                bar?: number
+            } = {}
+            return [delete table?.bar, table]
+       `.expectToMatchJsResult();
+    });
+
+    test("delete on undefined", () => {
+        util.testFunction`
+            const table : {
+                bar: number
+            } | undefined = undefined
+            return [delete table?.bar, table ?? "nil"]
+        `.expectToMatchJsResult();
+    });
+});

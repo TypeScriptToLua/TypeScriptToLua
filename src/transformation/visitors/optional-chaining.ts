@@ -62,7 +62,8 @@ export function transformOptionalChain(context: TransformationContext, node: ts.
 export function transformOptionalChainWithCapture(
     context: TransformationContext,
     node: ts.OptionalChain,
-    captureThisValue: boolean
+    captureThisValue: boolean,
+    isDelete?: ts.DeleteExpression
 ): ExpressionWithThisValue {
     const tempName = context.createTempName("optional");
     const temp = lua.createIdentifier(tempName, undefined, tempSymbolId);
@@ -85,6 +86,11 @@ export function transformOptionalChainWithCapture(
             assertNever(link);
         }
         ts.setOriginalNode(rightExpression, link);
+    }
+
+    if (isDelete) {
+        rightExpression = ts.factory.createDeleteExpression(rightExpression);
+        ts.setOriginalNode(rightExpression, isDelete);
     }
 
     // transform temp.b.d.c
@@ -134,4 +140,13 @@ export function transformOptionalChainWithCapture(
         expression: temp,
         thisValue: returnThisValue,
     };
+}
+
+export function transformOptionalDeleteExpression(
+    context: TransformationContext,
+    node: ts.DeleteExpression,
+    innerExpression: ts.OptionalChain
+) {
+    transformOptionalChainWithCapture(context, innerExpression, false, node);
+    return lua.createBooleanLiteral(true, node);
 }

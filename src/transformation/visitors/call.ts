@@ -22,9 +22,16 @@ import {
     transformTableHasExpression,
     transformTableSetExpression,
 } from "./language-extensions/table";
-import { annotationRemoved, invalidTableDeleteExpression, invalidTableSetExpression } from "../utils/diagnostics";
+import {
+    annotationRemoved,
+    invalidTableDeleteExpression,
+    invalidTableSetExpression,
+    notAllowedBuiltinOptionalCall,
+} from "../utils/diagnostics";
 import { moveToPrecedingTemp, transformExpressionList } from "./expression-list";
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
+import { transformOptionalChain } from "./optional-chaining";
+import { getInternalIdentifierData } from "../utils/typescript/internal-identifier";
 
 export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
 
@@ -131,7 +138,10 @@ export function transformContextualCallExpression(
     node: ts.CallExpression | ts.TaggedTemplateExpression,
     args: ts.Expression[] | ts.NodeArray<ts.Expression>,
     signature?: ts.Signature
-): lua.CallExpression | lua.MethodCallExpression {
+): lua.Expression {
+    if (ts.isOptionalChain(node)) {
+        return transformOptionalChain(context, node);
+    }
     const left = ts.isCallExpression(node) ? node.expression : node.tag;
 
     let [argPrecedingStatements, transformedArguments] = transformInPrecedingStatementScope(context, () =>
@@ -146,24 +156,12 @@ export function transformContextualCallExpression(
     ) {
         // table:name()
         const table = context.transformExpression(left.expression);
-        if (ts.isOptionalChain(node)) {
-            return transformLuaLibFunction(
-                context,
-                LuaLibFeature.OptionalMethodCall,
-                node,
-                table,
-                lua.createStringLiteral(left.name.text, left.name),
-                lua.createBooleanLiteral(node.questionDotToken !== undefined), // Require method is present if no ?.() call
-                ...transformedArguments
-            );
-        } else {
-            return lua.createMethodCallExpression(
-                table,
-                lua.createIdentifier(left.name.text, left.name),
-                transformedArguments,
-                node
-            );
-        }
+        return lua.createMethodCallExpression(
+            table,
+            lua.createIdentifier(left.name.text, left.name),
+            transformedArguments,
+            node
+        );
     } else if (ts.isElementAccessExpression(left) || ts.isPropertyAccessExpression(left)) {
         if (isExpressionWithEvaluationEffect(left.expression)) {
             return transformElementAccessCall(context, left, transformedArguments, argPrecedingStatements);
@@ -194,10 +192,7 @@ export function transformContextualCallExpression(
     }
 }
 
-function transformPropertyCall(
-    context: TransformationContext,
-    node: PropertyCallExpression
-): lua.CallExpression | lua.MethodCallExpression {
+function transformPropertyCall(context: TransformationContext, node: PropertyCallExpression): lua.Expression {
     const signature = context.checker.getResolvedSignature(node);
 
     if (node.expression.expression.kind === ts.SyntaxKind.SuperKeyword) {
@@ -222,10 +217,7 @@ function transformPropertyCall(
     }
 }
 
-function transformElementCall(
-    context: TransformationContext,
-    node: ts.CallExpression
-): lua.CallExpression | lua.MethodCallExpression {
+function transformElementCall(context: TransformationContext, node: ts.CallExpression): lua.Expression {
     const signature = context.checker.getResolvedSignature(node);
     const signatureDeclaration = signature?.getDeclaration();
     if (!signatureDeclaration || getDeclarationContextType(context, signatureDeclaration) !== ContextType.Void) {
@@ -239,11 +231,21 @@ function transformElementCall(
 }
 
 export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node, context) => {
-    const wrapResultInTable = isMultiReturnCall(context, node) && shouldMultiReturnCallBeWrapped(context, node);
-    const wrapResultInOptional = ts.isOptionalChain(node);
+    if (ts.isOptionalChain(node)) {
+        return transformOptionalChain(context, node);
+    }
 
+    const internalIdentifierData = ts.isIdentifier(node.expression)
+        ? getInternalIdentifierData(node.expression)
+        : undefined;
+    const isOptionalBaseCall = internalIdentifierData?.isTransformedOptionalBase;
+
+    const wrapResultInTable = isMultiReturnCall(context, node) && shouldMultiReturnCallBeWrapped(context, node);
     const builtinResult = transformBuiltinCallExpression(context, node);
     if (builtinResult) {
+        if (isOptionalBaseCall) {
+            context.diagnostics.push(notAllowedBuiltinOptionalCall(node));
+        }
         return wrapResultInTable ? wrapInTable(builtinResult) : builtinResult;
     }
 
@@ -252,6 +254,9 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     }
 
     if (isOperatorMapping(context, node)) {
+        if (isOptionalBaseCall) {
+            context.diagnostics.push(notAllowedBuiltinOptionalCall(node));
+        }
         return transformOperatorMappingExpression(context, node);
     }
 
@@ -262,10 +267,16 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     }
 
     if (isTableGetCall(context, node)) {
+        if (isOptionalBaseCall) {
+            context.diagnostics.push(notAllowedBuiltinOptionalCall(node));
+        }
         return transformTableGetExpression(context, node);
     }
 
     if (isTableHasCall(context, node)) {
+        if (isOptionalBaseCall) {
+            context.diagnostics.push(notAllowedBuiltinOptionalCall(node));
+        }
         return transformTableHasExpression(context, node);
     }
 
@@ -283,13 +294,12 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
         }
 
         const result = transformPropertyCall(context, node as PropertyCallExpression);
-        // transformPropertyCall already wraps optional so no need to do so here
         return wrapResultInTable ? wrapInTable(result) : result;
     }
 
     if (ts.isElementAccessExpression(node.expression)) {
         const result = transformElementCall(context, node);
-        return wrapIfRequired(context, wrapResultInTable, wrapResultInOptional, result, node);
+        return wrapResultInTable ? wrapInTable(result) : result;
     }
 
     const signature = context.checker.getResolvedSignature(node);
@@ -310,11 +320,13 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     const signatureDeclaration = signature?.getDeclaration();
 
     let callPath: lua.Expression;
-    let parameters: lua.Expression[] = [];
+    let parameters: lua.Expression[];
+    let thisValueUsed = false;
     if (signatureDeclaration && getDeclarationContextType(context, signatureDeclaration) === ContextType.Void) {
         [callPath, parameters] = transformCallAndArguments(context, node.expression, node.arguments, signature);
     } else {
         const callContext = context.isStrict ? ts.factory.createNull() : ts.factory.createIdentifier("_G");
+        thisValueUsed = true;
         [callPath, parameters] = transformCallAndArguments(
             context,
             node.expression,
@@ -325,42 +337,8 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     }
 
     const callExpression = lua.createCallExpression(callPath, parameters, node);
-    return wrapIfRequired(context, wrapResultInTable, wrapResultInOptional, callExpression, node);
-};
-
-function wrapIfRequired(
-    context: TransformationContext,
-    shouldWrapInTable: boolean,
-    shouldWrapOptional: boolean,
-    call: lua.CallExpression | lua.MethodCallExpression,
-    node: ts.CallExpression
-): lua.Expression {
-    const wrappedOptional = shouldWrapOptional ? wrapOptionalCall(context, call, node) : call;
-    return shouldWrapInTable ? wrapInTable(wrappedOptional) : wrappedOptional;
-}
-
-function wrapOptionalCall(
-    context: TransformationContext,
-    call: lua.CallExpression | lua.MethodCallExpression,
-    node: ts.CallExpression
-): lua.CallExpression {
-    if (lua.isMethodCallExpression(call)) {
-        return transformLuaLibFunction(
-            context,
-            LuaLibFeature.OptionalMethodCall,
-            node,
-            call.prefixExpression,
-            lua.createStringLiteral(call.name.text),
-            lua.createBooleanLiteral(node.questionDotToken !== undefined), // Require method is present if no ?.() call
-            ...call.params
-        );
-    } else {
-        return transformLuaLibFunction(
-            context,
-            LuaLibFeature.OptionalFunctionCall,
-            node,
-            call.expression,
-            ...call.params
-        );
+    if (isOptionalBaseCall && thisValueUsed) {
+        internalIdentifierData.optionalBaseContextualCall = callExpression;
     }
-}
+    return wrapResultInTable ? wrapInTable(callExpression) : callExpression;
+};

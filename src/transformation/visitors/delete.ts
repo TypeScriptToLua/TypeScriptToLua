@@ -7,6 +7,11 @@ import { isArrayType, isNumberType } from "../utils/typescript";
 import { addToNumericExpression } from "../utils/lua-ast";
 
 export const transformDeleteExpression: FunctionVisitor<ts.DeleteExpression> = (node, context) => {
+    // const innerExpression = ts.skipParentheses(node.expression);
+    // if (ts.isOptionalChain(innerExpression)) {
+    //     return transformOptionalDelete(context, innerExpression);
+    // }
+
     let ownerExpression: lua.Expression | undefined;
     let propertyExpression: lua.Expression | undefined;
 

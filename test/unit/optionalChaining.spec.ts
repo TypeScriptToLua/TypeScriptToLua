@@ -173,6 +173,6 @@ describe("optional chaining function calls", () => {
         util.testFunction`
             const obj: any = {};
             obj?.foo();
-        `.expectToEqual(new util.ExecutionError("foo is not a function"));
+        `.expectToEqual(new util.ExecutionError("attempt to call a nil value (method 'foo')"));
     });
 });

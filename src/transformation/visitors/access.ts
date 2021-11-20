@@ -4,12 +4,13 @@ import { transformBuiltinPropertyAccessExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
 import { annotationRemoved, invalidMultiReturnAccess } from "../utils/diagnostics";
-import { addToNumericExpression } from "../utils/lua-ast";
+import { addToNumericExpression, ExpressionWithThisValue } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isArrayType, isNumberType, isStringType } from "../utils/typescript";
 import { tryGetConstEnumValue } from "./enum";
-import { transformOrderedExpressions } from "./expression-list";
+import { transformOrderedExpressions, moveToPrecedingTemp } from "./expression-list";
 import { isMultiReturnCall, returnsMultiType } from "./language-extensions/multi";
+import { transformOptionalChainWithCapture } from "./optional-chaining";
 
 function addOneToArrayAccessArgument(
     context: TransformationContext,
@@ -32,18 +33,31 @@ export function transformElementAccessArgument(
     return addOneToArrayAccessArgument(context, node, index);
 }
 
-export const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessExpression> = (node, context) => {
+export const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessExpression> = (node, context) =>
+    transformElementAccessExpressionWithCapture(context, node, false).expression;
+export function transformElementAccessExpressionWithCapture(
+    context: TransformationContext,
+    node: ts.ElementAccessExpression,
+    captureThisValue: boolean
+): ExpressionWithThisValue {
     const constEnumValue = tryGetConstEnumValue(context, node);
     if (constEnumValue) {
-        return constEnumValue;
+        return { expression: constEnumValue };
     }
 
-    const [table, accessExpression] = transformOrderedExpressions(context, [node.expression, node.argumentExpression]);
+    if (ts.isOptionalChain(node)) {
+        return transformOptionalChainWithCapture(context, node, captureThisValue);
+    }
+
+    let [table, accessExpression] = transformOrderedExpressions(context, [node.expression, node.argumentExpression]);
 
     const type = context.checker.getTypeAtLocation(node.expression);
     const argumentType = context.checker.getTypeAtLocation(node.argumentExpression);
     if (isStringType(context, type) && isNumberType(context, argumentType)) {
-        return transformLuaLibFunction(context, LuaLibFeature.StringAccess, node, table, accessExpression);
+        // strings are not callable, but metatable overload possible
+        const thisValue = captureThisValue ? moveToPrecedingTemp(context, table, node.expression) : undefined;
+        const expression = transformLuaLibFunction(context, LuaLibFeature.StringAccess, node, table, accessExpression);
+        return { expression, thisValue };
     }
 
     const updatedAccessExpression = addOneToArrayAccessArgument(context, node, accessExpression);
@@ -56,28 +70,28 @@ export const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessE
 
         // When selecting the first element, we can shortcut
         if (ts.isNumericLiteral(node.argumentExpression) && node.argumentExpression.text === "0") {
-            return table;
+            return { expression: table };
         } else {
             const selectIdentifier = lua.createIdentifier("select");
-            const selectCall = lua.createCallExpression(selectIdentifier, [updatedAccessExpression, table]);
-            return selectCall;
+            return { expression: lua.createCallExpression(selectIdentifier, [updatedAccessExpression, table]) };
         }
     }
 
-    if (ts.isOptionalChain(node)) {
-        return transformLuaLibFunction(
-            context,
-            LuaLibFeature.OptionalChainAccess,
-            node,
-            table,
-            updatedAccessExpression
-        );
+    if (captureThisValue) {
+        table = moveToPrecedingTemp(context, table, node.expression);
     }
+    const thisValue = captureThisValue ? table : undefined;
+    const expression = lua.createTableIndexExpression(table, updatedAccessExpression, node);
+    return { expression, thisValue };
+}
 
-    return lua.createTableIndexExpression(table, updatedAccessExpression, node);
-};
-
-export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAccessExpression> = (node, context) => {
+export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAccessExpression> = (node, context) =>
+    transformPropertyAccessExpressionWithCapture(context, node, false).expression;
+export function transformPropertyAccessExpressionWithCapture(
+    context: TransformationContext,
+    node: ts.PropertyAccessExpression,
+    captureThisValue: boolean
+): ExpressionWithThisValue {
     const property = node.name.text;
     const type = context.checker.getTypeAtLocation(node.expression);
 
@@ -89,12 +103,7 @@ export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAcces
 
     const constEnumValue = tryGetConstEnumValue(context, node);
     if (constEnumValue) {
-        return constEnumValue;
-    }
-
-    const builtinResult = transformBuiltinPropertyAccessExpression(context, node);
-    if (builtinResult) {
-        return builtinResult;
+        return { expression: constEnumValue };
     }
 
     if (ts.isCallExpression(node.expression) && returnsMultiType(context, node.expression)) {
@@ -105,33 +114,36 @@ export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAcces
     if (annotations.has(AnnotationKind.CompileMembersOnly)) {
         if (ts.isPropertyAccessExpression(node.expression)) {
             // in case of ...x.enum.y transform to ...x.y
-            return lua.createTableIndexExpression(
+            const expression = lua.createTableIndexExpression(
                 context.transformExpression(node.expression.expression),
                 lua.createStringLiteral(property),
                 node
             );
+            return { expression };
         } else {
-            return lua.createIdentifier(property, node);
+            return { expression: lua.createIdentifier(property, node) };
         }
     }
 
     if (ts.isOptionalChain(node)) {
-        // Only handle full optional chains separately, not partial ones
-        return transformOptionalChain(context, node);
+        return transformOptionalChainWithCapture(context, node, captureThisValue);
     }
 
-    const callPath = context.transformExpression(node.expression);
-    return lua.createTableIndexExpression(callPath, lua.createStringLiteral(property), node);
-};
+    const builtinResult = transformBuiltinPropertyAccessExpression(context, node);
+    if (builtinResult) {
+        // Ignore captureThisValue.
+        // This assumes that nothing returned by builtin property accesses are callable.
+        // If this assumption is no longer true, this may need to be updated.
+        return { expression: builtinResult };
+    }
 
-function transformOptionalChain(
-    context: TransformationContext,
-    node: ts.OptionalChain & ts.PropertyAccessExpression
-): lua.CallExpression {
-    const left = context.transformExpression(node.expression);
-    const right = lua.createStringLiteral(node.name.text, node.name);
-
-    return transformLuaLibFunction(context, LuaLibFeature.OptionalChainAccess, node, left, right);
+    let table = context.transformExpression(node.expression);
+    if (captureThisValue) {
+        table = moveToPrecedingTemp(context, table, node.expression);
+    }
+    const thisValue = captureThisValue ? table : undefined;
+    const expression = lua.createTableIndexExpression(table, lua.createStringLiteral(property), node);
+    return { expression, thisValue };
 }
 
 export const transformQualifiedName: FunctionVisitor<ts.QualifiedName> = (node, context) => {

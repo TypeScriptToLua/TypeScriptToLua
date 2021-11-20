@@ -151,3 +151,7 @@ export const notAllowedOptionalAssignment = createErrorDiagnosticFactory(
 export const awaitMustBeInAsyncFunction = createErrorDiagnosticFactory(
     "Await can only be used inside async functions."
 );
+
+export const notAllowedBuiltinOptionalCall = createErrorDiagnosticFactory(
+    "Optional calls are not supported on builtins or language extensions. "
+);

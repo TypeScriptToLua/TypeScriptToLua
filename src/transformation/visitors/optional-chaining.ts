@@ -24,9 +24,12 @@ export interface ExpressionWithThisValue {
     isNewTemp?: boolean;
 }
 
-function transformWithCapturedThisValue(context: TransformationContext, node: ts.Expression): ExpressionWithThisValue {
+function transformExpressionWithThisValueCapture(
+    context: TransformationContext,
+    node: ts.Expression
+): ExpressionWithThisValue {
     if (ts.isParenthesizedExpression(node)) {
-        return transformWithCapturedThisValue(context, node.expression);
+        return transformExpressionWithThisValueCapture(context, node.expression);
     }
     if (ts.isPropertyAccessExpression(node)) {
         return transformPropertyAccessExpressionWithCapture(context, node, true);
@@ -37,6 +40,8 @@ function transformWithCapturedThisValue(context: TransformationContext, node: ts
     return { expression: context.transformExpression(node) };
 }
 
+// similar to moveToPrecedingTemp, except creates an assignment instead of a variable declaration.
+// the assignment is "manually hoisted" in transformOptionalChain so that the variable can be accessed in a later scope.
 export function captureThisValue(
     context: TransformationContext,
     expression: lua.Expression,
@@ -81,15 +86,13 @@ export function transformOptionalChainWithCapture(
     captureThisValue: boolean,
     isDelete?: ts.DeleteExpression
 ): ExpressionWithThisValue {
-    const tempId = context.createTempNameForNode(node);
-    const tempName = tempId.text;
+    const luaTemp = context.createTempNameForNode(node);
 
-    // (a)?.b.c.d -> { (a), [?.b, .c, .d] }
-    const { expression, chain } = flattenChain(node);
+    const { expression: tsLeftExpression, chain } = flattenChain(node);
 
     // build temp.b.c.d
-    const tsTempId = createOptionalContinuationIdentifier(tempName, expression);
-    let tsRightExpression: ts.Expression = tsTempId;
+    const tsTemp = createOptionalContinuationIdentifier(luaTemp.text, tsLeftExpression);
+    let tsRightExpression: ts.Expression = tsTemp;
     for (const link of chain) {
         if (ts.isPropertyAccessExpression(link)) {
             tsRightExpression = ts.factory.createPropertyAccessExpression(tsRightExpression, link.name);
@@ -103,7 +106,6 @@ export function transformOptionalChainWithCapture(
         }
         ts.setOriginalNode(tsRightExpression, link);
     }
-
     if (isDelete) {
         tsRightExpression = ts.factory.createDeleteExpression(tsRightExpression);
         ts.setOriginalNode(tsRightExpression, isDelete);
@@ -120,17 +122,17 @@ export function transformOptionalChainWithCapture(
                 expression: result,
                 thisValue: returnThisValue,
                 isNewTemp: returnIsNewTemp,
-            } = transformWithCapturedThisValue(context, tsRightExpression));
+            } = transformExpressionWithThisValueCapture(context, tsRightExpression));
         } else {
             result = context.transformExpression(tsRightExpression);
         }
-        return lua.createAssignmentStatement(tempId, result);
+        return lua.createAssignmentStatement(luaTemp, result);
     });
 
     // transform left expression, handle thisValue if needed by rightExpression
     let capturedThisValue: lua.Expression | undefined;
     let capturedIsNewTemp: boolean | undefined;
-    const rightContextualCall = getOptionalContinuationData(tsTempId)?.contextualCall;
+    const rightContextualCall = getOptionalContinuationData(tsTemp)?.contextualCall;
     const [leftPrecedingStatements, leftExpression] = transformInPrecedingStatementScope(context, () => {
         let result: lua.Expression;
         if (rightContextualCall) {
@@ -138,9 +140,9 @@ export function transformOptionalChainWithCapture(
                 expression: result,
                 thisValue: capturedThisValue,
                 isNewTemp: capturedIsNewTemp,
-            } = transformWithCapturedThisValue(context, expression));
+            } = transformExpressionWithThisValueCapture(context, tsLeftExpression));
         } else {
-            result = context.transformExpression(expression);
+            result = context.transformExpression(tsLeftExpression);
         }
         return result;
     });
@@ -162,14 +164,14 @@ export function transformOptionalChainWithCapture(
 
     context.addPrecedingStatements([
         ...leftPrecedingStatements,
-        lua.createVariableDeclarationStatement(tempId, leftExpression),
+        lua.createVariableDeclarationStatement(luaTemp, leftExpression),
         lua.createIfStatement(
-            lua.createBinaryExpression(tempId, lua.createNilLiteral(), lua.SyntaxKind.InequalityOperator),
+            lua.createBinaryExpression(luaTemp, lua.createNilLiteral(), lua.SyntaxKind.InequalityOperator),
             lua.createBlock([...rightPrecedingStatements, rightAssignment])
         ),
     ]);
     return {
-        expression: tempId,
+        expression: luaTemp,
         thisValue: returnThisValue,
         isNewTemp: returnIsNewTemp,
     };

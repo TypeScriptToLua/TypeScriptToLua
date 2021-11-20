@@ -281,11 +281,11 @@ test("forof destructing", () => {
 
 test("forof nested destructing", () => {
     util.testFunction`
-        const obj = { a: [0], b: [1] };
-        const result = [];
+        const obj = { a: [3], b: [5] };
+        const result = 0;
 
         for(const [k, [v]] of Object.entries(obj)){
-            result.push(k, v);
+            result += v;
         }
         return result;
     `.expectToMatchJsResult();

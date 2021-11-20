@@ -6,7 +6,6 @@ import { AnnotationKind, getTypeAnnotations, isTupleReturnCall } from "../utils/
 import { validateAssignment } from "../utils/assignment-validation";
 import { ContextType, getDeclarationContextType } from "../utils/function-context";
 import { wrapInTable } from "../utils/lua-ast";
-import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isValidLuaIdentifier } from "../utils/safe-names";
 import { isExpressionWithEvaluationEffect } from "../utils/typescript";
 import { transformElementAccessArgument } from "./access";
@@ -208,11 +207,7 @@ function transformPropertyCall(context: TransformationContext, node: PropertyCal
         // table.name()
         const [callPath, parameters] = transformCallAndArguments(context, node.expression, node.arguments, signature);
 
-        if (ts.isOptionalChain(node)) {
-            return transformLuaLibFunction(context, LuaLibFeature.OptionalFunctionCall, node, callPath, ...parameters);
-        } else {
-            return lua.createCallExpression(callPath, parameters, node);
-        }
+        return lua.createCallExpression(callPath, parameters, node);
     }
 }
 

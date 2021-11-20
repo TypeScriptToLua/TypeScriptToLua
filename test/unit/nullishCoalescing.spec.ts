@@ -40,3 +40,17 @@ test("nullish-coalescing operator with side effect rhs", () => {
         return [i, undefined ?? incI(), i];
     `.expectToMatchJsResult();
 });
+
+test("nullish-coalescing operator with vararg", () => {
+    util.testFunction`
+        
+        function foo(...args: any[]){
+            return args
+        }
+        function bar(...args: any[]) {
+            let x: boolean | undefined = false
+            const y = x ?? foo(...args)
+        }
+        return bar(1, 2)
+    `.expectToMatchJsResult();
+});

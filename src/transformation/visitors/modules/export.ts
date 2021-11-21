@@ -132,7 +132,7 @@ function transformExportSpecifiersFrom(
         false,
         undefined,
         ts.factory.createNamedImports(
-            exportSpecifiers.map(s => ts.factory.createImportSpecifier(s.propertyName, s.name))
+            exportSpecifiers.map(s => ts.factory.createImportSpecifier(statement.isTypeOnly, s.propertyName, s.name))
         )
     );
 

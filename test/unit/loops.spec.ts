@@ -282,7 +282,7 @@ test("forof destructing", () => {
 test("forof nested destructing", () => {
     util.testFunction`
         const obj = { a: [3], b: [5] };
-        const result = 0;
+        let result = 0;
 
         for(const [k, [v]] of Object.entries(obj)){
             result += v;

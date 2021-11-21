@@ -65,7 +65,7 @@ function transformBinaryOperationWithNoPrecedingStatements(
 
     if (operator === ts.SyntaxKind.QuestionQuestionToken) {
         assert(ts.isBinaryExpression(node));
-        return transformNullishCoalescingExpression(context, node, left, right);
+        return transformNullishCoalescingOperationNoPrecedingStatements(context, node, left, right);
     }
 
     let luaOperator = simpleOperatorsToLua[operator];
@@ -138,21 +138,7 @@ function transformShortCircuitBinaryExpression(
     const [rightPrecedingStatements, rhs] = transformInPrecedingStatementScope(context, () =>
         context.transformExpression(node.right)
     );
-    if (rightPrecedingStatements.length > 0) {
-        return createShortCircuitBinaryExpressionPrecedingStatements(
-            context,
-            lhs,
-            rhs,
-            rightPrecedingStatements,
-            operator,
-            node
-        );
-    } else {
-        return [
-            rightPrecedingStatements,
-            transformBinaryOperationWithNoPrecedingStatements(context, lhs, rhs, operator, node),
-        ];
-    }
+    return transformBinaryOperation(context, lhs, rhs, rightPrecedingStatements, operator, node);
 }
 
 export function transformBinaryOperation(
@@ -274,7 +260,7 @@ export function transformBinaryExpressionStatement(
     }
 }
 
-function transformNullishCoalescingExpression(
+function transformNullishCoalescingOperationNoPrecedingStatements(
     context: TransformationContext,
     node: ts.BinaryExpression,
     transformedLeft: lua.Expression,
@@ -287,23 +273,17 @@ function transformNullishCoalescingExpression(
         (type.flags & (ts.TypeFlags.Any | ts.TypeFlags.Unknown | ts.TypeFlags.Boolean)) !== 0 ||
         (type.flags & ts.TypeFlags.BooleanLiteral & ts.TypeFlags.PossiblyFalsy) !== 0;
     if (typeCanSatisfy(context, lhsType, typeCanBeFalse)) {
-        // lhs can be false, transform to IIFE
-        const lhsIdentifier = lua.createIdentifier("____lhs");
-        const nilComparison = lua.createBinaryExpression(
-            lua.cloneIdentifier(lhsIdentifier),
-            lua.createNilLiteral(),
-            lua.SyntaxKind.EqualityOperator
-        );
-        // if ____ == nil then return rhs else return ____ end
-        const ifStatement = lua.createIfStatement(
-            nilComparison,
-            lua.createBlock([lua.createReturnStatement([transformedRight])]),
-            lua.createBlock([lua.createReturnStatement([lua.cloneIdentifier(lhsIdentifier)])])
-        );
-        // (function(lhs') if lhs' == nil then return rhs else return lhs' end)(lhs)
-        return lua.createCallExpression(lua.createFunctionExpression(lua.createBlock([ifStatement]), [lhsIdentifier]), [
+        // reuse logic from case with preceding statements
+        const [precedingStatements, result] = createShortCircuitBinaryExpressionPrecedingStatements(
+            context,
             transformedLeft,
-        ]);
+            transformedRight,
+            [],
+            ts.SyntaxKind.QuestionQuestionToken,
+            node
+        );
+        context.addPrecedingStatements(precedingStatements);
+        return result;
     } else {
         // lhs or rhs
         return lua.createBinaryExpression(transformedLeft, transformedRight, lua.SyntaxKind.OrOperator, node);

@@ -158,9 +158,9 @@ export class LuaPrinter {
     private static rightAssociativeOperators = new Set([lua.SyntaxKind.ConcatOperator, lua.SyntaxKind.PowerOperator]);
 
     private currentIndent = "";
-    private luaFile: string;
-    private relativeSourcePath: string;
-    private options: CompilerOptions;
+    protected luaFile: string;
+    protected relativeSourcePath: string;
+    protected options: CompilerOptions;
 
     public static readonly sourceMapTracebackPlaceholder = "{#SourceMapTraceback}";
 
@@ -226,7 +226,7 @@ export class LuaPrinter {
         return `__TS__SourceMapTraceBack(debug.getinfo(1).short_src, ${mapString});`;
     }
 
-    private printFile(file: lua.File): SourceNode {
+    protected printFile(file: lua.File): SourceNode {
         let header = file.trivia;
 
         if (!this.options.noHeader) {

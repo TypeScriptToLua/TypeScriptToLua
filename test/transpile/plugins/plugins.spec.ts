@@ -4,7 +4,30 @@ import * as util from "../../util";
 test("printer", () => {
     util.testModule``
         .setOptions({ luaPlugins: [{ name: path.join(__dirname, "printer.ts") }] })
-        .tap(builder => expect(builder.getMainLuaCodeChunk()).toMatch("Plugin"));
+        .tap(builder => expect(builder.getMainLuaCodeChunk()).toMatch("-- Custom printer plugin:"));
+});
+
+test("printer in bundle", () => {
+    const { transpiledFiles } = util.testBundle`
+        import "./otherfile";
+
+        const foo = "foo";
+    `
+        .addExtraFile(
+            "otherfile.ts",
+            `
+                const bar = "bar";
+            `
+        )
+        .setOptions({ luaPlugins: [{ name: path.join(__dirname, "printer.ts") }] })
+        .expectToHaveNoDiagnostics()
+        .getLuaResult();
+
+    expect(transpiledFiles).toHaveLength(1);
+    const lua = transpiledFiles[0].lua!;
+
+    expect(lua).toContain("-- Custom printer plugin: main.lua");
+    expect(lua).toContain("-- Custom printer plugin: otherfile.lua");
 });
 
 test("visitor", () => {

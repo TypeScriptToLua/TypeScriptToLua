@@ -17,7 +17,7 @@ import { annotationRemoved } from "../utils/diagnostics";
 import { isGlobalVarargConstant } from "./language-extensions/vararg";
 
 export function isOptimizedVarArgSpread(context: TransformationContext, symbol: ts.Symbol, identifier: ts.Identifier) {
-    if (identifier.parent && !ts.isSpreadElement(identifier.parent)) {
+    if (!ts.isSpreadElement(identifier.parent)) {
         return false;
     }
 

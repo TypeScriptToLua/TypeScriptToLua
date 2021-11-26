@@ -43,11 +43,11 @@ export function transformElementAccessArgument(
 }
 
 export const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessExpression> = (node, context) =>
-    transformElementAccessExpressionWithCapture(context, node, false).expression;
+    transformElementAccessExpressionWithCapture(context, node, undefined).expression;
 export function transformElementAccessExpressionWithCapture(
     context: TransformationContext,
     node: ts.ElementAccessExpression,
-    shouldCaptureThisValue: boolean
+    thisValueCapture: lua.Identifier | undefined
 ): ExpressionWithThisValue {
     const constEnumValue = tryGetConstEnumValue(context, node);
     if (constEnumValue) {
@@ -55,7 +55,7 @@ export function transformElementAccessExpressionWithCapture(
     }
 
     if (ts.isOptionalChain(node)) {
-        return transformOptionalChainWithCapture(context, node, shouldCaptureThisValue);
+        return transformOptionalChainWithCapture(context, node, thisValueCapture);
     }
 
     const [table, accessExpression] = transformOrderedExpressions(context, [node.expression, node.argumentExpression]);
@@ -86,23 +86,22 @@ export function transformElementAccessExpressionWithCapture(
         }
     }
 
-    if (shouldCaptureThisValue) {
-        const { thisValue, isNewTemp } = captureThisValue(context, table, node.expression);
+    if (thisValueCapture) {
+        const thisValue = captureThisValue(context, table, thisValueCapture, node.expression);
         return {
             expression: lua.createTableIndexExpression(thisValue, updatedAccessExpression, node),
             thisValue,
-            isNewTemp,
         };
     }
     return { expression: lua.createTableIndexExpression(table, updatedAccessExpression, node) };
 }
 
 export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAccessExpression> = (node, context) =>
-    transformPropertyAccessExpressionWithCapture(context, node, false).expression;
+    transformPropertyAccessExpressionWithCapture(context, node, undefined).expression;
 export function transformPropertyAccessExpressionWithCapture(
     context: TransformationContext,
     node: ts.PropertyAccessExpression,
-    shouldCaptureThisValue: boolean
+    thisValueCapture: lua.Identifier | undefined
 ): ExpressionWithThisValue {
     const property = node.name.text;
     const type = context.checker.getTypeAtLocation(node.expression);
@@ -124,7 +123,7 @@ export function transformPropertyAccessExpressionWithCapture(
     }
 
     if (ts.isOptionalChain(node)) {
-        return transformOptionalChainWithCapture(context, node, shouldCaptureThisValue);
+        return transformOptionalChainWithCapture(context, node, thisValueCapture);
     }
 
     // Do not output path for member only enums
@@ -155,13 +154,12 @@ export function transformPropertyAccessExpressionWithCapture(
 
     const table = context.transformExpression(node.expression);
 
-    if (shouldCaptureThisValue) {
-        const { thisValue, isNewTemp } = captureThisValue(context, table, node.expression);
+    if (thisValueCapture) {
+        const thisValue = captureThisValue(context, table, thisValueCapture, node.expression);
         const expression = lua.createTableIndexExpression(thisValue, lua.createStringLiteral(property), node);
         return {
             expression,
             thisValue,
-            isNewTemp,
         };
     }
     return { expression: lua.createTableIndexExpression(table, lua.createStringLiteral(property), node) };

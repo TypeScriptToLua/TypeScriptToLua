@@ -63,7 +63,7 @@ export function transformElementAccessExpressionWithCapture(
     const type = context.checker.getTypeAtLocation(node.expression);
     const argumentType = context.checker.getTypeAtLocation(node.argumentExpression);
     if (isStringType(context, type) && isNumberType(context, argumentType)) {
-        // strings are not callable, so ignore shouldCaptureThisValue
+        // strings are not callable, so ignore thisValueCapture
         return {
             expression: transformLuaLibFunction(context, LuaLibFeature.StringAccess, node, table, accessExpression),
         };
@@ -146,7 +146,7 @@ export function transformPropertyAccessExpressionWithCapture(
 
     const builtinResult = transformBuiltinPropertyAccessExpression(context, node);
     if (builtinResult) {
-        // Ignore shouldCaptureThisValue.
+        // Ignore thisValueCapture.
         // This assumes that nothing returned by builtin property accesses are callable.
         // If this assumption is no longer true, this may need to be updated.
         return { expression: builtinResult };

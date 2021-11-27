@@ -264,6 +264,7 @@ describe("Unsupported optional chains", () => {
                 Number?.("3")
             `.expectDiagnosticsToMatchSnapshot();
     });
+
     test("Builtin global property", () => {
         util.testModule`
                 console?.log("3")
@@ -298,6 +299,7 @@ describe("optional delete", () => {
             return [delete table?.bar, table]
         `.expectToMatchJsResult();
     });
+
     test("unsuccessful", () => {
         util.testFunction`
             const table : {

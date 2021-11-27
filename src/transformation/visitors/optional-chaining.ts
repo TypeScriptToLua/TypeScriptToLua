@@ -6,13 +6,22 @@ import { transformInPrecedingStatementScope } from "../utils/preceding-statement
 import { transformPropertyAccessExpressionWithCapture, transformElementAccessExpressionWithCapture } from "./access";
 import { shouldMoveToTemp } from "./expression-list";
 
+type NormalOptionalChain = ts.PropertyAccessChain | ts.ElementAccessChain | ts.CallChain;
+
+function skipNonNullChains(chain: ts.OptionalChain): NormalOptionalChain {
+    while (ts.isNonNullChain(chain)) {
+        chain = chain.expression as ts.OptionalChain;
+    }
+    return chain;
+}
+
 function flattenChain(chain: ts.OptionalChain) {
-    assert(!ts.isNonNullChain(chain));
-    const links: ts.OptionalChain[] = [chain];
+    chain = skipNonNullChains(chain);
+    const links: NormalOptionalChain[] = [chain];
     while (!chain.questionDotToken && !ts.isTaggedTemplateExpression(chain)) {
         const nextLink: ts.Expression = chain.expression;
-        assert(ts.isOptionalChain(nextLink) && !ts.isNonNullChain(nextLink));
-        chain = nextLink;
+        assert(ts.isOptionalChain(nextLink));
+        chain = skipNonNullChains(nextLink);
         links.unshift(chain);
     }
     return { expression: chain.expression, chain: links };
@@ -100,7 +109,6 @@ export function transformOptionalChainWithCapture(
         } else if (ts.isCallExpression(link)) {
             tsRightExpression = ts.factory.createCallExpression(tsRightExpression, undefined, link.arguments);
         } else {
-            assert(!ts.isNonNullChain(link));
             assertNever(link);
         }
         ts.setOriginalNode(tsRightExpression, link);

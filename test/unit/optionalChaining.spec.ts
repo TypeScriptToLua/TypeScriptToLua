@@ -316,3 +316,19 @@ describe("optional delete", () => {
         `.expectToMatchJsResult();
     });
 });
+
+describe("Non-null chain", () => {
+    test("Single non-null chain", () => {
+        util.testFunction`
+            const foo = {a: { b: 3} }
+            return foo?.a!.b
+        `.expectToMatchJsResult();
+    });
+
+    test("Many non-null chains", () => {
+        util.testFunction`
+            const foo = {a: { b: 3} }
+            return foo?.a!!!.b!!!
+        `.expectToMatchJsResult();
+    });
+});

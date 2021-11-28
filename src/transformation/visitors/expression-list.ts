@@ -5,12 +5,13 @@ import { TransformationContext, tempSymbolId } from "../context";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
 import { isConstIdentifier } from "../utils/typescript";
+import { isOptionalContinuation } from "./optional-chaining";
 
-function shouldMoveToTemp(context: TransformationContext, expression: lua.Expression, tsOriginal?: ts.Node) {
+export function shouldMoveToTemp(context: TransformationContext, expression: lua.Expression, tsOriginal?: ts.Node) {
     return (
         !lua.isLiteral(expression) &&
         !(lua.isIdentifier(expression) && expression.symbolId === tempSymbolId) && // Treat generated temps as consts
-        !(tsOriginal && isConstIdentifier(context, tsOriginal))
+        !(tsOriginal && (isConstIdentifier(context, tsOriginal) || isOptionalContinuation(tsOriginal)))
     );
 }
 

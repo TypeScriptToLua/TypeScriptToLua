@@ -25,6 +25,7 @@ import { transformObjectConstructorCall, transformObjectPrototypeCall } from "./
 import { transformPromiseConstructorCall } from "./promise";
 import { transformStringConstructorCall, transformStringProperty, transformStringPrototypeCall } from "./string";
 import { transformSymbolConstructorCall } from "./symbol";
+import { unsupportedBuiltinOptionalCall } from "../utils/diagnostics";
 
 export function transformBuiltinPropertyAccessExpression(
     context: TransformationContext,
@@ -56,7 +57,8 @@ export function transformBuiltinPropertyAccessExpression(
 
 export function transformBuiltinCallExpression(
     context: TransformationContext,
-    node: ts.CallExpression
+    node: ts.CallExpression,
+    isOptionalCall: boolean
 ): lua.Expression | undefined {
     const expressionType = context.checker.getTypeAtLocation(node.expression);
     if (ts.isIdentifier(node.expression) && isStandardLibraryType(context, expressionType, undefined)) {
@@ -68,55 +70,75 @@ export function transformBuiltinCallExpression(
         }
     }
 
-    if (!ts.isPropertyAccessExpression(node.expression)) {
+    const expression = ts.getOriginalNode(node.expression);
+    if (!ts.isPropertyAccessExpression(expression)) {
         return;
     }
 
     assume<PropertyCallExpression>(node);
 
+    const isOptionalAccess = expression.questionDotToken;
+    const unsupportedOptionalCall = () => {
+        context.diagnostics.push(unsupportedBuiltinOptionalCall(node));
+        return lua.createNilLiteral();
+    };
+
     // If the function being called is of type owner.func, get the type of owner
-    const ownerType = context.checker.getTypeAtLocation(node.expression.expression);
+    const ownerType = context.checker.getTypeAtLocation(expression.expression);
 
     if (isStandardLibraryType(context, ownerType, undefined)) {
         const symbol = ownerType.getSymbol();
         switch (symbol?.name) {
             case "ArrayConstructor":
+                if (isOptionalCall || isOptionalAccess) return unsupportedOptionalCall();
                 return transformArrayConstructorCall(context, node);
             case "Console":
+                if (isOptionalCall || isOptionalAccess) return unsupportedOptionalCall();
                 return transformConsoleCall(context, node);
             case "Math":
+                if (isOptionalCall || isOptionalAccess) return unsupportedOptionalCall();
                 return transformMathCall(context, node);
             case "StringConstructor":
+                if (isOptionalCall || isOptionalAccess) return unsupportedOptionalCall();
                 return transformStringConstructorCall(context, node);
             case "ObjectConstructor":
+                if (isOptionalCall || isOptionalAccess) return unsupportedOptionalCall();
                 return transformObjectConstructorCall(context, node);
             case "SymbolConstructor":
+                if (isOptionalCall || isOptionalAccess) return unsupportedOptionalCall();
                 return transformSymbolConstructorCall(context, node);
             case "NumberConstructor":
+                if (isOptionalCall || isOptionalAccess) return unsupportedOptionalCall();
                 return transformNumberConstructorCall(context, node);
             case "PromiseConstructor":
+                if (isOptionalCall || isOptionalAccess) return unsupportedOptionalCall();
                 return transformPromiseConstructorCall(context, node);
         }
     }
 
     if (isStringType(context, ownerType) && hasStandardLibrarySignature(context, node)) {
+        if (isOptionalCall) return unsupportedOptionalCall();
         return transformStringPrototypeCall(context, node);
     }
 
     if (isNumberType(context, ownerType) && hasStandardLibrarySignature(context, node)) {
+        if (isOptionalCall) return unsupportedOptionalCall();
         return transformNumberPrototypeCall(context, node);
     }
 
     if (isArrayType(context, ownerType) && hasStandardLibrarySignature(context, node)) {
+        if (isOptionalCall) return unsupportedOptionalCall();
         return transformArrayPrototypeCall(context, node);
     }
 
     if (isFunctionType(context, ownerType) && hasStandardLibrarySignature(context, node)) {
+        if (isOptionalCall) return unsupportedOptionalCall();
         return transformFunctionPrototypeCall(context, node);
     }
 
-    const objectResult = transformObjectPrototypeCall(context, node);
+    const objectResult = transformObjectPrototypeCall(context, node, expression);
     if (objectResult) {
+        if (isOptionalCall) return unsupportedOptionalCall();
         return objectResult;
     }
 }

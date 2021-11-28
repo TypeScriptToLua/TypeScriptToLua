@@ -1,5 +1,6 @@
 import { notAllowedOptionalAssignment } from "../../src/transformation/utils/diagnostics";
 import * as util from "../util";
+import { ScriptTarget } from "typescript";
 
 test.each(["null", "undefined", '{ foo: "foo" }'])("optional chaining (%p)", value => {
     util.testFunction`
@@ -71,8 +72,9 @@ test("optional element function calls", () => {
     `.expectToMatchJsResult();
 });
 
-test("optional element access method calls", () => {
-    util.testFunction`
+describe("optional access method calls", () => {
+    test("element access call", () => {
+        util.testFunction`
         const obj: { value: string; foo?(prefix: string): string; bar?(prefix: string): string; } = {
             value: "foobar",
             foo(prefix: string) { return prefix + this.value; }
@@ -81,6 +83,39 @@ test("optional element access method calls", () => {
         const barKey = "bar";
         return obj[barKey]?.("bar?") ?? obj[fooKey]?.("foo?");
     `.expectToMatchJsResult();
+    });
+
+    test("optional access call", () => {
+        util.testFunction`
+        const obj: { value: string; foo?(prefix: string): string; bar?(prefix: string): string; } = {
+            value: "foobar",
+            foo(prefix: string) { return prefix + this.value; }
+        }
+        return obj.foo?.("bar?") ?? obj.bar?.("foo?");
+    `.expectToMatchJsResult();
+    });
+
+    test("nested optional element access call", () => {
+        util.testFunction`
+        const obj: { value: string; foo?(prefix: string): string; bar?(prefix: string): string; } = {
+            value: "foobar",
+            foo(prefix: string) { return prefix + this.value; }
+        }
+        const fooKey = "foo";
+        const barKey = "bar";
+        return obj?.[barKey]?.("bar?") ?? obj?.[fooKey]?.("foo?");
+    `.expectToMatchJsResult();
+    });
+
+    test("nested optional property access call", () => {
+        util.testFunction`
+        const obj: { value: string; foo?(prefix: string): string; bar?(prefix: string): string; } = {
+            value: "foobar",
+            foo(prefix: string) { return prefix + this.value; }
+        }
+        return obj?.foo?.("bar?") ?? obj?.bar?.("foo?");
+    `.expectToMatchJsResult();
+    });
 });
 
 test("no side effects", () => {
@@ -173,6 +208,145 @@ describe("optional chaining function calls", () => {
         util.testFunction`
             const obj: any = {};
             obj?.foo();
-        `.expectToEqual(new util.ExecutionError("foo is not a function"));
+        `.expectToEqual(new util.ExecutionError("attempt to call a nil value (method 'foo')"));
+    });
+
+    describe("builtins", () => {
+        test.each([
+            ["undefined", undefined],
+            ["{foo: 0}", true],
+        ])("LuaTable: %p", (expr, value) => {
+            util.testFunction`
+            const table: LuaTable = ${expr} as any
+            const bar = table?.has("foo")
+            return bar
+        `
+                .withLanguageExtensions()
+                .expectToEqual(value);
+        });
+
+        test.each(["undefined", "foo"])("Function call: %p", e => {
+            util.testFunction`
+            const result = []
+            function foo(this: unknown, arg: unknown) {
+                return [this, arg]
+            }
+            const bar = ${e} as typeof foo | undefined
+            return bar?.call(1, 2)
+        `.expectToMatchJsResult();
+        });
+
+        test.each([undefined, "[1, 2, 3, 4]"])("Array: %p", expr => {
+            util.testFunction`
+            const value: any[] | undefined = ${expr}
+            return value?.map(x=>x+1)
+        `.expectToMatchJsResult();
+        });
+    });
+
+    test.each([true, false])("Default call context, strict %s", strict => {
+        util.testFunction`
+                function func(this: unknown, arg: unknown) {
+                    return [this === globalThis ? "_G" : this === undefined ? "nil" : "neither", arg];
+                }
+                let i = 0
+                const result = func?.(i++);
+        `
+            .setOptions({
+                alwaysStrict: strict,
+                target: ScriptTarget.ES5,
+            })
+            .expectToMatchJsResult();
+    });
+});
+
+describe("Unsupported optional chains", () => {
+    test("Language extensions", () => {
+        util.testModule`
+                new LuaTable().has?.(3)
+            `
+            .withLanguageExtensions()
+            .expectDiagnosticsToMatchSnapshot();
+    });
+
+    test("Builtin prototype method", () => {
+        util.testModule`
+                [1,2,3,4].forEach?.(()=>{})
+            `.expectDiagnosticsToMatchSnapshot();
+    });
+
+    test("Builtin global method", () => {
+        util.testModule`
+                Number?.("3")
+            `.expectDiagnosticsToMatchSnapshot();
+    });
+
+    test("Builtin global property", () => {
+        util.testModule`
+                console?.log("3")
+            `
+            .setOptions({
+                lib: ["lib.esnext.d.ts", "lib.dom.d.ts"],
+            })
+            .expectDiagnosticsToMatchSnapshot();
+    });
+
+    test("Compile members only", () => {
+        util.testFunction`
+                /** @compileMembersOnly */
+                enum TestEnum {
+                    A = 0,
+                    B = 2,
+                    C,
+                    D = "D",
+                }
+
+                TestEnum?.B
+            `.expectDiagnosticsToMatchSnapshot();
+    });
+});
+
+describe("optional delete", () => {
+    test("successful", () => {
+        util.testFunction`
+            const table = {
+                bar: 3
+            }
+            return [delete table?.bar, table]
+        `.expectToMatchJsResult();
+    });
+
+    test("unsuccessful", () => {
+        util.testFunction`
+            const table : {
+                bar?: number
+            } = {}
+            return [delete table?.bar, table]
+       `.expectToMatchJsResult();
+    });
+
+    test("delete on undefined", () => {
+        util.testFunction`
+            const table : {
+                bar: number
+            } | undefined = undefined
+            return [delete table?.bar, table ?? "nil"]
+        `.expectToMatchJsResult();
+    });
+});
+
+describe("Non-null chain", () => {
+    test("Single non-null chain", () => {
+        util.testFunction`
+            const foo = {a: { b: 3} }
+            return foo?.a!.b
+        `.expectToMatchJsResult();
+    });
+
+    test("Many non-null chains", () => {
+        util.testFunction`
+            const foo = {a: { b: 3} }
+            return foo?.a!!!.b!!!
+        `.expectToMatchJsResult();
     });
 });

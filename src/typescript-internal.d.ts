@@ -30,4 +30,7 @@ declare module "typescript" {
     }
 
     function transformJsx(context: TransformationContext): (x: SourceFile) => SourceFile;
+
+    function skipParentheses(node: Expression): Expression;
+    function skipParentheses(node: Node): Node;
 }

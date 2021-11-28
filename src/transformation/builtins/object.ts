@@ -1,4 +1,5 @@
 import * as lua from "../../LuaAST";
+import * as ts from "typescript";
 import { TransformationContext } from "../context";
 import { unsupportedProperty } from "../utils/diagnostics";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
@@ -36,9 +37,9 @@ export function transformObjectConstructorCall(
 
 export function transformObjectPrototypeCall(
     context: TransformationContext,
-    node: PropertyCallExpression
+    node: ts.CallExpression,
+    expression: ts.PropertyAccessExpression
 ): lua.Expression | undefined {
-    const expression = node.expression;
     const signature = context.checker.getResolvedSignature(node);
 
     const name = expression.name.text;

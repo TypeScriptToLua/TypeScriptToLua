@@ -5,8 +5,13 @@ import { transformLuaLibFunction, LuaLibFeature } from "../utils/lualib";
 import { unsupportedProperty } from "../utils/diagnostics";
 import { isArrayType, isNumberType } from "../utils/typescript";
 import { addToNumericExpression } from "../utils/lua-ast";
+import { transformOptionalDeleteExpression } from "./optional-chaining";
 
 export const transformDeleteExpression: FunctionVisitor<ts.DeleteExpression> = (node, context) => {
+    if (ts.isOptionalChain(node.expression)) {
+        return transformOptionalDeleteExpression(context, node, node.expression);
+    }
+
     let ownerExpression: lua.Expression | undefined;
     let propertyExpression: lua.Expression | undefined;
 

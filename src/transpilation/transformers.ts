@@ -57,7 +57,7 @@ export const noImplicitSelfTransformer: ts.TransformerFactory<ts.SourceFile | ts
 export const stripParenthesisExpressionsTransformer: ts.TransformerFactory<ts.SourceFile> = context => sourceFile => {
     // Remove parenthesis expressions before transforming to Lua, so transpiler is not hindered by extra ParenthesizedExpression nodes
     function unwrapParentheses(node: ts.Expression) {
-        while (ts.isParenthesizedExpression(node)) {
+        while (ts.isParenthesizedExpression(node) && !ts.isOptionalChain(node.expression)) {
             node = node.expression;
         }
         return node;
@@ -73,6 +73,8 @@ export const stripParenthesisExpressionsTransformer: ts.TransformerFactory<ts.So
             );
         } else if (ts.isVoidExpression(node)) {
             return ts.factory.updateVoidExpression(node, unwrapParentheses(node.expression));
+        } else if (ts.isDeleteExpression(node)) {
+            return ts.factory.updateDeleteExpression(node, unwrapParentheses(node.expression));
         }
 
         return ts.visitEachChild(node, visit, context);

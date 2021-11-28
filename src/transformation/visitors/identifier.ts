@@ -21,8 +21,13 @@ import { isOperatorMapping } from "./language-extensions/operators";
 import { isRangeFunctionNode } from "./language-extensions/range";
 import { isTableExtensionIdentifier } from "./language-extensions/table";
 import { isVarargConstantNode } from "./language-extensions/vararg";
+import { isOptionalContinuation } from "./optional-chaining";
 
 export function transformIdentifier(context: TransformationContext, identifier: ts.Identifier): lua.Identifier {
+    if (isOptionalContinuation(identifier)) {
+        return lua.createIdentifier(identifier.text);
+    }
+
     if (isMultiFunctionNode(context, identifier)) {
         context.diagnostics.push(invalidMultiFunctionUse(identifier));
         return lua.createAnonymousIdentifier(identifier);

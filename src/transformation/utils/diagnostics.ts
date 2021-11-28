@@ -151,3 +151,11 @@ export const notAllowedOptionalAssignment = createErrorDiagnosticFactory(
 export const awaitMustBeInAsyncFunction = createErrorDiagnosticFactory(
     "Await can only be used inside async functions."
 );
+
+export const unsupportedBuiltinOptionalCall = createErrorDiagnosticFactory(
+    "Optional calls are not supported for builtin or language extension functions."
+);
+
+export const unsupportedOptionalCompileMembersOnly = createErrorDiagnosticFactory(
+    "Optional calls are not supported on enums marked with @compileMembersOnly."
+);

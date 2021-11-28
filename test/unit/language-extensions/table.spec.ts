@@ -325,4 +325,20 @@ describe("LuaTable extension interface", () => {
             util.testFunction(statement).withLanguageExtensions().expectToHaveNoDiagnostics();
         }
     );
+
+    test("table pairs iterate", () => {
+        util.testFunction`
+            const tbl = new LuaTable<string, number>();
+            tbl.set("foo", 1);
+            tbl.set("bar", 3);
+            tbl.set("baz", 5);
+            const results: Record<string, number> = {};
+            for (const [k, v] of tbl) {
+                results[k] = v;
+            }
+            return results;
+        `
+            .withLanguageExtensions()
+            .expectToEqual({ foo: 1, bar: 3, baz: 5 });
+    });
 });

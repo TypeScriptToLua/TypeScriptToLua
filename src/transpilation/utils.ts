@@ -35,6 +35,8 @@ export interface EmitFile extends BaseFile {
 export const getConfigDirectory = (options: ts.CompilerOptions) =>
     options.configFilePath ? path.dirname(options.configFilePath) : process.cwd();
 
+const getTstlDirectory = () => path.dirname(__dirname);
+
 export function resolvePlugin(
     kind: string,
     optionName: string,
@@ -59,7 +61,7 @@ export function resolvePlugin(
     const hasNoRequireHook = require.extensions[".ts"] === undefined;
     if (hasNoRequireHook && (resolved.endsWith(".ts") || resolved.endsWith(".tsx"))) {
         try {
-            const tsNodePath = resolve.sync("ts-node", { basedir });
+            const tsNodePath = resolve.sync("ts-node", { basedir: getTstlDirectory() });
             const tsNode: typeof import("ts-node") = require(tsNodePath);
             tsNode.register({ transpileOnly: true });
         } catch (err) {

@@ -1,5 +1,6 @@
 import { notAllowedOptionalAssignment } from "../../src/transformation/utils/diagnostics";
 import * as util from "../util";
+import { ScriptTarget } from "typescript";
 
 test.each(["null", "undefined", '{ foo: "foo" }'])("optional chaining (%p)", value => {
     util.testFunction`
@@ -241,6 +242,21 @@ describe("optional chaining function calls", () => {
             return value?.map(x=>x+1)
         `.expectToMatchJsResult();
         });
+    });
+
+    test.each([true, false])("Default call context, strict %s", strict => {
+        util.testFunction`
+                function func(this: unknown, arg: unknown) {
+                    return [this === globalThis ? "_G" : this === undefined ? "nil" : "neither", arg];
+                }
+                let i = 0
+                const result = func?.(i++);
+        `
+            .setOptions({
+                alwaysStrict: strict,
+                target: ScriptTarget.ES5,
+            })
+            .expectToMatchJsResult();
     });
 });
 

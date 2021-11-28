@@ -322,7 +322,9 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     if (!isContextualCall) {
         [callPath, parameters] = transformCallAndArguments(context, node.expression, node.arguments, signature);
     } else {
-        const callContext = context.isStrict ? ts.factory.createNull() : ts.factory.createIdentifier("_G");
+        // if is optionalContinuation, context will be handled by transformOptionalChain.
+        const callContext =
+            optionalContinuation || context.isStrict ? ts.factory.createNull() : ts.factory.createIdentifier("_G");
         [callPath, parameters] = transformCallAndArguments(
             context,
             node.expression,

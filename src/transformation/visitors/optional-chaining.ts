@@ -154,10 +154,26 @@ export function transformOptionalChainWithCapture(
         }
         return result;
     });
-    if (capturedThisValue) {
-        rightContextualCall!.params[0] = capturedThisValue;
-        if (capturedThisValue === leftThisValueTemp) {
-            context.addPrecedingStatements(lua.createVariableDeclarationStatement(leftThisValueTemp));
+    // handle context
+    if (rightContextualCall) {
+        if (capturedThisValue) {
+            rightContextualCall.params[0] = capturedThisValue;
+            if (capturedThisValue === leftThisValueTemp) {
+                context.addPrecedingStatements(lua.createVariableDeclarationStatement(leftThisValueTemp));
+            }
+        } else {
+            if (context.isStrict) {
+                rightContextualCall.params[0] = lua.createNilLiteral();
+            } else {
+                const identifier = lua.createIdentifier("_G");
+                if (rightPrecedingStatements.length === 0) {
+                    rightContextualCall.params[0] = identifier;
+                } else {
+                    const tempContext = context.createTempNameForLuaExpression(identifier);
+                    rightPrecedingStatements.unshift(lua.createVariableDeclarationStatement(tempContext, identifier));
+                    rightContextualCall.params[0] = tempContext;
+                }
+            }
         }
     }
 

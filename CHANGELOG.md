@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.2.0
+
+- Upgraded to TypeScript 4.5.x.
+- Improved general output formatting.
+- Added support for more complicated (nested) destructuring patterns, also fixing an exception they caused before.
+- Fixed incorrect interactions between standard library functionality and optional chaining, e.g. `myArray?.forEach()`.
+- Fixed rejected promises sometimes not getting the correct rejection reason.
+- Fixed some `delete` behavior that was different in Lua compared to JS.
+- Fixed a bug causing exported classes to lose their decorators.
+- Fixed plugins checking for ts-node from the wrong location (tsconfig directory), plugins will now check for ts-node relative to the tstl directory.
+
+Under the hood:
+
+- We can now transform using preceding statements, allowing all kinds of optimizations and improvements to output Lua.
+- Updated various language constructs to use preceding statements instead of inline immediately-invoked functions.
+
 ## 1.1.0
 
 - **[Breaking]** We now use TypeScript's JSX transformer instead of maintaining our own. As a result, `React.createElement` now requires a self parameter, so remove `@noSelf`, `this: void` if necessary.

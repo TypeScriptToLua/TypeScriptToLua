@@ -118,6 +118,12 @@ export function isExtensionType(type: ts.Type, extensionKind: ExtensionKind): bo
     return typeBrand !== undefined && type.getProperty(typeBrand) !== undefined;
 }
 
+export function getExtensionKinds(type: ts.Type): ExtensionKind[] {
+    return (Object.keys(extensionKindToTypeBrand) as Array<keyof typeof extensionKindToTypeBrand>).filter(
+        e => type.getProperty(extensionKindToTypeBrand[e]) !== undefined
+    );
+}
+
 export function isExtensionValue(
     context: TransformationContext,
     symbol: ts.Symbol,

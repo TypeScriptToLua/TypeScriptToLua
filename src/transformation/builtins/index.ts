@@ -41,7 +41,7 @@ export function transformBuiltinPropertyAccessExpression(
         return transformArrayProperty(context, node);
     }
 
-    if (isFunctionType(context, ownerType)) {
+    if (isFunctionType(ownerType)) {
         return transformFunctionProperty(context, node);
     }
 
@@ -131,7 +131,7 @@ export function transformBuiltinCallExpression(
         return transformArrayPrototypeCall(context, node);
     }
 
-    if (isFunctionType(context, ownerType) && hasStandardLibrarySignature(context, node)) {
+    if (isFunctionType(ownerType) && hasStandardLibrarySignature(context, node)) {
         if (isOptionalCall) return unsupportedOptionalCall();
         return transformFunctionPrototypeCall(context, node);
     }

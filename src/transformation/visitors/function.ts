@@ -85,7 +85,11 @@ export function transformFunctionBodyHeader(
             }
 
             // Binding pattern
-            bindingPatternDeclarations.push(...transformBindingPattern(context, declaration.name, identifier));
+            const name = declaration.name;
+            const [precedingStatements, bindings] = transformInPrecedingStatementScope(context, () =>
+                transformBindingPattern(context, name, identifier)
+            );
+            bindingPatternDeclarations.push(...precedingStatements, ...bindings);
         } else if (declaration.initializer !== undefined) {
             // Default parameter
             headerStatements.push(

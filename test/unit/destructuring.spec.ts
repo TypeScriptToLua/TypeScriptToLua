@@ -53,6 +53,17 @@ test("in function parameter creates local variables", () => {
     expect(code).toContain("local b =");
 });
 
+test("in function parameter creates local variables in correct scope", () => {
+    util.testFunction`
+        let x = 7;
+        function foo([x]: [number]) {
+            x *= 2;
+        }
+        foo([1]);
+        return x;
+    `.expectToMatchJsResult();
+});
+
 test.each(testCases)("in variable declaration (%p)", ({ binding, value }) => {
     util.testFunction`
         let ${allBindings};

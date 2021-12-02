@@ -279,6 +279,27 @@ test("forof destructing", () => {
     `.expectToMatchJsResult();
 });
 
+test("forof destructing scope", () => {
+    util.testFunction`
+        let x = 7;
+        for (let [x] of [[1], [2], [3]]) {
+            x *= 2;
+        }
+        return x;
+    `.expectToMatchJsResult();
+});
+
+// This catches the case where x is falsely seen as globally scoped and the 'local' is stripped out
+test("forof destructing scope (global)", () => {
+    util.testModule`
+        let x = 7;
+        for (let [x] of [[1], [2], [3]]) {
+            x *= 2;
+        }
+        if (x !== 7) throw x;
+    `.expectNoExecutionError();
+});
+
 test("forof nested destructing", () => {
     util.testFunction`
         const obj = { a: [3], b: [5] };

@@ -32,7 +32,7 @@ export function transformFunctionPrototypeCall(
             return transformLuaLibFunction(context, LuaLibFeature.FunctionBind, node, caller, ...params);
         case "call":
             return lua.createCallExpression(caller, params, node);
-        default:
+        case "toString":
             context.diagnostics.push(unsupportedProperty(expression.name, "function", expressionName));
     }
 }
@@ -60,7 +60,10 @@ export function transformFunctionProperty(
                 ? lua.createBinaryExpression(nparams, lua.createNumericLiteral(1), lua.SyntaxKind.SubtractionOperator)
                 : nparams;
 
-        default:
+        case "arguments":
+        case "caller":
+        case "displayName":
+        case "name":
             context.diagnostics.push(unsupportedProperty(node.name, "function", node.name.text));
     }
 }

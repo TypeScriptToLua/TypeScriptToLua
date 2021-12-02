@@ -8,6 +8,7 @@ import { addExportToIdentifier } from "../utils/export";
 import { createLocalOrExportedOrGlobalDeclaration, createUnpackCall, wrapInTable } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
+import { createCallableTable, isFunctionTypeWithProperties } from "./function";
 import { transformIdentifier } from "./identifier";
 import { isMultiReturnCall } from "./language-extensions/multi";
 import { transformPropertyName } from "./literal";
@@ -257,7 +258,18 @@ export function transformVariableDeclaration(
         // Find variable identifier
         const identifierName = transformIdentifier(context, statement.name);
         const value = statement.initializer && context.transformExpression(statement.initializer);
-        return createLocalOrExportedOrGlobalDeclaration(context, identifierName, value, statement);
+
+        // Wrap functions being assigned to a type that contains additional properties in a callable table
+        // This catches 'const foo = function() {}; foo.bar = "FOOBAR";'
+        const wrappedValue =
+            value &&
+            // Skip named function expressions because they will have been wrapped already
+            !(statement.initializer && ts.isFunctionExpression(statement.initializer) && statement.initializer.name) &&
+            isFunctionTypeWithProperties(context.checker.getTypeAtLocation(statement.name))
+                ? createCallableTable(value)
+                : value;
+
+        return createLocalOrExportedOrGlobalDeclaration(context, identifierName, wrappedValue, statement);
     } else if (ts.isArrayBindingPattern(statement.name) || ts.isObjectBindingPattern(statement.name)) {
         return transformBindingVariableDeclaration(context, statement.name, statement.initializer);
     } else {

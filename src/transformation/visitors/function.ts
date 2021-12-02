@@ -6,6 +6,7 @@ import { AnnotationKind, getNodeAnnotations } from "../utils/annotations";
 import { annotationRemoved } from "../utils/diagnostics";
 import { createDefaultExportStringLiteral, hasDefaultExportModifier } from "../utils/export";
 import { ContextType, getFunctionContextType } from "../utils/function-context";
+import { getExtensionKinds } from "../utils/language-extensions";
 import {
     createExportsIdentifier,
     createLocalOrExportedOrGlobalDeclaration,
@@ -15,6 +16,7 @@ import {
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
 import { peekScope, performHoisting, popScope, pushScope, Scope, ScopeType } from "../utils/scope";
+import { isFunctionType } from "../utils/typescript";
 import { isAsyncFunction, wrapInAsyncAwaiter } from "./async-await";
 import { transformIdentifier } from "./identifier";
 import { transformExpressionBodyToReturnStatement } from "./return";
@@ -49,6 +51,42 @@ function isRestParameterReferenced(identifier: lua.Identifier, scope: Scope): bo
     }
     const references = scope.referencedSymbols.get(identifier.symbolId);
     return references !== undefined && references.length > 0;
+}
+
+export function createCallableTable(functionExpression: lua.Expression): lua.Expression {
+    // __call metamethod receives the table as the first argument, so we need to add a dummy parameter
+    if (lua.isFunctionExpression(functionExpression)) {
+        functionExpression.params?.unshift(lua.createAnonymousIdentifier());
+    } else {
+        // functionExpression may have been replaced (lib functions, etc...),
+        // so we create a forwarding function to eat the extra argument
+        functionExpression = lua.createFunctionExpression(
+            lua.createBlock([
+                lua.createReturnStatement([lua.createCallExpression(functionExpression, [lua.createDotsLiteral()])]),
+            ]),
+            [lua.createAnonymousIdentifier()],
+            lua.createDotsLiteral(),
+            lua.FunctionExpressionFlags.Inline
+        );
+    }
+    return lua.createCallExpression(lua.createIdentifier("setmetatable"), [
+        lua.createTableExpression(),
+        lua.createTableExpression([
+            lua.createTableFieldExpression(functionExpression, lua.createStringLiteral("__call")),
+        ]),
+    ]);
+}
+
+export function isFunctionTypeWithProperties(functionType: ts.Type) {
+    if (functionType.isUnion()) {
+        return functionType.types.some(isFunctionTypeWithProperties);
+    } else {
+        return (
+            isFunctionType(functionType) &&
+            functionType.getProperties().length > 0 &&
+            getExtensionKinds(functionType).length === 0 // ignore TSTL extension functions like $range
+        );
+    }
 }
 
 export function transformFunctionBodyContent(context: TransformationContext, body: ts.ConciseBody): lua.Statement[] {
@@ -251,9 +289,16 @@ export function transformFunctionLikeDeclaration(
             // Only handle if the name is actually referenced inside the function
             if (isReferenced) {
                 const nameIdentifier = transformIdentifier(context, node.name);
-                context.addPrecedingStatements(
-                    lua.createVariableDeclarationStatement(nameIdentifier, functionExpression)
-                );
+                if (isFunctionTypeWithProperties(context.checker.getTypeAtLocation(node))) {
+                    context.addPrecedingStatements([
+                        lua.createVariableDeclarationStatement(nameIdentifier),
+                        lua.createAssignmentStatement(nameIdentifier, createCallableTable(functionExpression)),
+                    ]);
+                } else {
+                    context.addPrecedingStatements(
+                        lua.createVariableDeclarationStatement(nameIdentifier, functionExpression)
+                    );
+                }
                 return lua.cloneIdentifier(nameIdentifier);
             }
         }
@@ -295,7 +340,13 @@ export const transformFunctionDeclaration: FunctionVisitor<ts.FunctionDeclaratio
         scope.functionDefinitions.set(name.symbolId, functionInfo);
     }
 
-    return createLocalOrExportedOrGlobalDeclaration(context, name, functionExpression, node);
+    // Wrap functions with properties into a callable table
+    const wrappedFunction =
+        node.name && isFunctionTypeWithProperties(context.checker.getTypeAtLocation(node.name))
+            ? createCallableTable(functionExpression)
+            : functionExpression;
+
+    return createLocalOrExportedOrGlobalDeclaration(context, name, wrappedFunction, node);
 };
 
 export const transformYieldExpression: FunctionVisitor<ts.YieldExpression> = (expression, context) => {

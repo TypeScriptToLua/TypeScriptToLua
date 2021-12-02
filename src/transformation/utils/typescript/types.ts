@@ -107,7 +107,6 @@ export function isArrayType(context: TransformationContext, type: ts.Type): bool
     return forTypeOrAnySupertype(context, type, t => isExplicitArrayType(context, t));
 }
 
-export function isFunctionType(context: TransformationContext, type: ts.Type): boolean {
-    const typeNode = context.checker.typeToTypeNode(type, undefined, ts.NodeBuilderFlags.InTypeAlias);
-    return typeNode !== undefined && ts.isFunctionTypeNode(typeNode);
+export function isFunctionType(type: ts.Type): boolean {
+    return type.getCallSignatures().length > 0;
 }

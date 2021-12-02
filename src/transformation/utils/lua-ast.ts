@@ -157,7 +157,9 @@ export function createLocalOrExportedOrGlobalDeclaration(
         const isTopLevelVariable = scope.type === ScopeType.File;
 
         if (context.isModule || !isTopLevelVariable) {
-            if (!isFunctionDeclaration && hasMultipleReferences(scope, lhs)) {
+            const isLuaFunctionExpression = rhs && !Array.isArray(rhs) && lua.isFunctionExpression(rhs);
+            const isSafeRecursiveFunctionDeclaration = isFunctionDeclaration && isLuaFunctionExpression;
+            if (!isSafeRecursiveFunctionDeclaration && hasMultipleReferences(scope, lhs)) {
                 // Split declaration and assignment of identifiers that reference themselves in their declaration.
                 // Put declaration above preceding statements in case the identifier is referenced in those.
                 const precedingDeclaration = lua.createVariableDeclarationStatement(lhs, undefined, tsOriginal);
@@ -166,10 +168,8 @@ export function createLocalOrExportedOrGlobalDeclaration(
                     assignment = lua.createAssignmentStatement(lhs, rhs, tsOriginal);
                 }
 
-                if (!isFunctionDeclaration) {
-                    // Remember local variable declarations for hoisting later
-                    addScopeVariableDeclaration(scope, precedingDeclaration);
-                }
+                // Remember local variable declarations for hoisting later
+                addScopeVariableDeclaration(scope, precedingDeclaration);
             } else {
                 declaration = lua.createVariableDeclarationStatement(lhs, rhs, tsOriginal);
 

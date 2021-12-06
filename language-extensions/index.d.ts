@@ -79,6 +79,16 @@ declare type LuaIterable<TValue, TState = undefined> = Iterable<TValue> &
     LuaExtension<"__luaIterableBrand">;
 
 /**
+ * Represents an object that can be iterated with pairs()
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TKey The type of the key returned each iteration.
+ * @param TValue The type of the value returned each iteration.
+ */
+declare type LuaPairsIterable<TKey extends AnyNotNil, TValue> = Iterable<[TKey, TValue]> &
+    LuaExtension<"__luaPairsIterableBrand">;
+
+/**
  * Calls to functions with this type are translated to `left + right`.
  * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
  *
@@ -535,7 +545,7 @@ declare type LuaTableDeleteMethod<TKey extends AnyNotNil> = ((key: TKey) => bool
  * @param TKey The type of the keys used to access the table.
  * @param TValue The type of the values stored in the table.
  */
-declare interface LuaTable<TKey extends AnyNotNil = AnyNotNil, TValue = any> {
+declare interface LuaTable<TKey extends AnyNotNil = AnyNotNil, TValue = any> extends LuaPairsIterable<TKey, TValue> {
     length: LuaLengthMethod<number>;
     get: LuaTableGetMethod<TKey, TValue>;
     set: LuaTableSetMethod<TKey, TValue>;

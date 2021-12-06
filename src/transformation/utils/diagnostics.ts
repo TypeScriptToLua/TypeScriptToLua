@@ -72,6 +72,10 @@ export const invalidMultiIterableWithoutDestructuring = createErrorDiagnosticFac
     "LuaIterable with a LuaMultiReturn return value type must be destructured."
 );
 
+export const invalidPairsIterableWithoutDestructuring = createErrorDiagnosticFactory(
+    "LuaPairsIterable type must be destructured in a for...of statement."
+);
+
 export const unsupportedAccessorInObjectLiteral = createErrorDiagnosticFactory(
     "Accessors in object literal are not supported."
 );

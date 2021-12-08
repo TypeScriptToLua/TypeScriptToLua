@@ -99,7 +99,7 @@ function transformClassLikeDeclaration(
     const result: lua.Statement[] = [];
 
     let localClassName: lua.Identifier;
-    if (isUnsafeName(className.text)) {
+    if (isUnsafeName(className.text, context.options)) {
         localClassName = lua.createIdentifier(
             createSafeName(className.text),
             undefined,

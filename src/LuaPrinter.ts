@@ -5,7 +5,7 @@ import * as ts from "typescript";
 import { CompilerOptions, isBundleEnabled, LuaLibImportKind } from "./CompilerOptions";
 import * as lua from "./LuaAST";
 import { loadLuaLibFeatures, LuaLibFeature } from "./LuaLib";
-import { isValidLuaIdentifier } from "./transformation/utils/safe-names";
+import { isValidLuaIdentifier, shouldAllowUnicode } from "./transformation/utils/safe-names";
 import { EmitHost } from "./transpilation";
 import { intersperse, normalizeSlashes } from "./utils";
 
@@ -34,7 +34,8 @@ export const tstlHeader = "--[[ Generated with https://github.com/TypeScriptToLu
  * `foo.bar` => passes (`function foo.bar()` is valid)
  * `getFoo().bar` => fails (`function getFoo().bar()` would be illegal)
  */
-const isValidLuaFunctionDeclarationName = (str: string) => /^[a-zA-Z0-9_.]+$/.test(str);
+const isValidLuaFunctionDeclarationName = (str: string, options: CompilerOptions) =>
+    (shouldAllowUnicode(options) ? /^[a-zA-Z0-9_\u00FF-\uFFFD.]+$/ : /^[a-zA-Z0-9_.]+$/).test(str);
 
 /**
  * Returns true if expression contains no function calls.
@@ -439,7 +440,7 @@ export class LuaPrinter {
         ) {
             // Use `function foo()` instead of `foo = function()`
             const name = this.printExpression(statement.left[0]);
-            if (isValidLuaFunctionDeclarationName(name.toString())) {
+            if (isValidLuaFunctionDeclarationName(name.toString(), this.options)) {
                 chunks.push(this.printFunctionDefinition(statement));
                 return this.createSourceNode(statement, chunks);
             }
@@ -692,7 +693,7 @@ export class LuaPrinter {
         const value = this.printExpression(expression.value);
 
         if (expression.key) {
-            if (lua.isStringLiteral(expression.key) && isValidLuaIdentifier(expression.key.value)) {
+            if (lua.isStringLiteral(expression.key) && isValidLuaIdentifier(expression.key.value, this.options)) {
                 chunks.push(expression.key.value, " = ", value);
             } else {
                 chunks.push("[", this.printExpression(expression.key), "] = ", value);
@@ -804,7 +805,7 @@ export class LuaPrinter {
         const chunks: SourceChunk[] = [];
 
         chunks.push(this.printExpressionInParenthesesIfNeeded(expression.table));
-        if (lua.isStringLiteral(expression.index) && isValidLuaIdentifier(expression.index.value)) {
+        if (lua.isStringLiteral(expression.index) && isValidLuaIdentifier(expression.index.value, this.options)) {
             chunks.push(".", this.createSourceNode(expression.index, expression.index.value));
         } else {
             chunks.push("[", this.printExpression(expression.index), "]");

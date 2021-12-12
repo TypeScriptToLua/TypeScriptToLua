@@ -794,6 +794,23 @@ test("resolving promise with pending promise will keep pending until promise2 re
         .expectToEqual(["promise 2", "result", "promise 1", "result"]);
 });
 
+test("resolving promise with pending promise will keep pending until promise2 rejects", () => {
+    util.testFunction`
+        const { promise, resolve } = defer<string>();
+        promise.catch(v => log("promise 1", v));
+
+        const { promise: promise2, reject: reject2 } = defer<string>();
+        promise2.catch(v => log("promise 2", v));
+
+        resolve(promise2);
+        reject2("rejection");
+
+        return allLogs;
+    `
+        .setTsHeader(promiseTestLib)
+        .expectToEqual(["promise 2", "rejection", "promise 1", "rejection"]);
+});
+
 describe("Promise.all", () => {
     test("resolves once all arguments are resolved", () => {
         util.testFunction`

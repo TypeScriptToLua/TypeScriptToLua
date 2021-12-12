@@ -247,3 +247,183 @@ exports[`undeclared identifier must be a valid lua identifier (object literal sh
 exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("ɥɣɎɌͼƛಠ"): code 1`] = `"foo = {[\\"ɥɣɎɌͼƛಠ\\"] = _____265_263_24E_24C_37C_19B_CA0}"`;
 
 exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("ɥɣɎɌͼƛಠ"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'ɥɣɎɌͼƛಠ'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`unicode identifiers in supporting environments (luajit) destructuring property name ("_̀ः٠‿") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local ____temp_0 = {foo = \\"foobar\\"}
+    local _̀ः٠‿ = ____temp_0.foo
+    return _̀ः٠‿
+end
+return ____exports"
+`;
+
+exports[`unicode identifiers in supporting environments (luajit) destructuring property name ("ɥɣɎɌͼƛಠ") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local ____temp_0 = {foo = \\"foobar\\"}
+    local ɥɣɎɌͼƛಠ = ____temp_0.foo
+    return ɥɣɎɌͼƛಠ
+end
+return ____exports"
+`;
+
+exports[`unicode identifiers in supporting environments (luajit) destructuring property name ("𝛼𝛽𝚫") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local ____temp_0 = {foo = \\"foobar\\"}
+    local 𝛼𝛽𝚫 = ____temp_0.foo
+    return 𝛼𝛽𝚫
+end
+return ____exports"
+`;
+
+exports[`unicode identifiers in supporting environments (luajit) destructuring shorthand ("_̀ः٠‿") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local ____temp_0 = {_̀ः٠‿ = \\"foobar\\"}
+    local _̀ः٠‿ = ____temp_0._̀ः٠‿
+    return _̀ः٠‿
+end
+return ____exports"
+`;
+
+exports[`unicode identifiers in supporting environments (luajit) destructuring shorthand ("ɥɣɎɌͼƛಠ") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local ____temp_0 = {ɥɣɎɌͼƛಠ = \\"foobar\\"}
+    local ɥɣɎɌͼƛಠ = ____temp_0.ɥɣɎɌͼƛಠ
+    return ɥɣɎɌͼƛಠ
+end
+return ____exports"
+`;
+
+exports[`unicode identifiers in supporting environments (luajit) destructuring shorthand ("𝛼𝛽𝚫") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local ____temp_0 = {𝛼𝛽𝚫 = \\"foobar\\"}
+    local 𝛼𝛽𝚫 = ____temp_0.𝛼𝛽𝚫
+    return 𝛼𝛽𝚫
+end
+return ____exports"
+`;
+
+exports[`unicode identifiers in supporting environments (luajit) function ("_̀ः٠‿") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local function _̀ः٠‿(self, arg)
+        return \\"foo\\" .. arg
+    end
+    return _̀ः٠‿(nil, \\"bar\\")
+end
+return ____exports"
+`;
+
+exports[`unicode identifiers in supporting environments (luajit) function ("ɥɣɎɌͼƛಠ") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local function ɥɣɎɌͼƛಠ(self, arg)
+        return \\"foo\\" .. arg
+    end
+    return ɥɣɎɌͼƛಠ(nil, \\"bar\\")
+end
+return ____exports"
+`;
+
+exports[`unicode identifiers in supporting environments (luajit) function ("𝛼𝛽𝚫") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local function 𝛼𝛽𝚫(self, arg)
+        return \\"foo\\" .. arg
+    end
+    return 𝛼𝛽𝚫(nil, \\"bar\\")
+end
+return ____exports"
+`;
+
+exports[`unicode identifiers in supporting environments (luajit) identifier name ("_̀ः٠‿") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local _̀ः٠‿ = \\"foobar\\"
+    return _̀ः٠‿
+end
+return ____exports"
+`;
+
+exports[`unicode identifiers in supporting environments (luajit) identifier name ("ɥɣɎɌͼƛಠ") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local ɥɣɎɌͼƛಠ = \\"foobar\\"
+    return ɥɣɎɌͼƛಠ
+end
+return ____exports"
+`;
+
+exports[`unicode identifiers in supporting environments (luajit) identifier name ("𝛼𝛽𝚫") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local 𝛼𝛽𝚫 = \\"foobar\\"
+    return 𝛼𝛽𝚫
+end
+return ____exports"
+`;
+
+exports[`unicode identifiers in supporting environments (luajit) method ("_̀ः٠‿") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local foo = {_̀ः٠‿ = function(self, arg)
+        return \\"foo\\" .. arg
+    end}
+    return foo:_̀ः٠‿(\\"bar\\")
+end
+return ____exports"
+`;
+
+exports[`unicode identifiers in supporting environments (luajit) method ("ɥɣɎɌͼƛಠ") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local foo = {ɥɣɎɌͼƛಠ = function(self, arg)
+        return \\"foo\\" .. arg
+    end}
+    return foo:ɥɣɎɌͼƛಠ(\\"bar\\")
+end
+return ____exports"
+`;
+
+exports[`unicode identifiers in supporting environments (luajit) method ("𝛼𝛽𝚫") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local foo = {𝛼𝛽𝚫 = function(self, arg)
+        return \\"foo\\" .. arg
+    end}
+    return foo:𝛼𝛽𝚫(\\"bar\\")
+end
+return ____exports"
+`;
+
+exports[`unicode identifiers in supporting environments (luajit) property name ("_̀ः٠‿") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local x = {_̀ः٠‿ = \\"foobar\\"}
+    return x._̀ः٠‿
+end
+return ____exports"
+`;
+
+exports[`unicode identifiers in supporting environments (luajit) property name ("ɥɣɎɌͼƛಠ") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local x = {ɥɣɎɌͼƛಠ = \\"foobar\\"}
+    return x.ɥɣɎɌͼƛಠ
+end
+return ____exports"
+`;
+
+exports[`unicode identifiers in supporting environments (luajit) property name ("𝛼𝛽𝚫") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local x = {𝛼𝛽𝚫 = \\"foobar\\"}
+    return x.𝛼𝛽𝚫
+end
+return ____exports"
+`;

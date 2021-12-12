@@ -1,10 +1,19 @@
 import * as ts from "typescript";
+import { CompilerOptions, LuaTarget } from "../..";
 import { TransformationContext } from "../context";
 import { invalidAmbientIdentifierName } from "./diagnostics";
 import { isSymbolExported } from "./export";
 import { isAmbientNode } from "./typescript";
 
-export const isValidLuaIdentifier = (name: string) => !luaKeywords.has(name) && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name);
+export const shouldAllowUnicode = (options: CompilerOptions) => options.luaTarget === LuaTarget.LuaJIT;
+
+export const isValidLuaIdentifier = (name: string, options: CompilerOptions) =>
+    !luaKeywords.has(name) &&
+    (shouldAllowUnicode(options)
+        ? /^[a-zA-Z_\u007F-\uFFFD][a-zA-Z0-9_\u007F-\uFFFD]*$/
+        : /^[a-zA-Z_][a-zA-Z0-9_]*$/
+    ).test(name);
+
 export const luaKeywords: ReadonlySet<string> = new Set([
     "and",
     "break",
@@ -52,10 +61,11 @@ const luaBuiltins: ReadonlySet<string> = new Set([
     "unpack",
 ]);
 
-export const isUnsafeName = (name: string) => !isValidLuaIdentifier(name) || luaBuiltins.has(name);
+export const isUnsafeName = (name: string, options: CompilerOptions) =>
+    !isValidLuaIdentifier(name, options) || luaBuiltins.has(name);
 
 function checkName(context: TransformationContext, name: string, node: ts.Node): boolean {
-    const isInvalid = !isValidLuaIdentifier(name);
+    const isInvalid = !isValidLuaIdentifier(name, context.options);
 
     if (isInvalid) {
         // Empty identifier is a TypeScript error
@@ -80,7 +90,7 @@ export function hasUnsafeSymbolName(
     }
 
     // only unsafe when non-ambient and not exported
-    return isUnsafeName(symbol.name) && !isAmbient && !isSymbolExported(context, symbol);
+    return isUnsafeName(symbol.name, context.options) && !isAmbient && !isSymbolExported(context, symbol);
 }
 
 export function hasUnsafeIdentifierName(

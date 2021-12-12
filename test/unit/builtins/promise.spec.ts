@@ -751,6 +751,49 @@ test("catch after then catches rejected promise", () => {
         .expectToEqual(["catch", "test error"]);
 });
 
+test("promise unwraps resolved promise result", () => {
+    util.testFunction`
+        const { promise, resolve } = defer<string>();
+        promise.then(v => log(v));
+
+        resolve(Promise.resolve("result"));
+
+        return allLogs;
+    `
+        .setTsHeader(promiseTestLib)
+        .expectToEqual(["result"]);
+});
+
+test("resolving promise with rejected promise rejects the promise", () => {
+    util.testFunction`
+        const { promise, resolve } = defer<string>();
+        promise.catch(err => log(err));
+
+        resolve(Promise.reject("reject"));
+
+        return allLogs;
+    `
+        .setTsHeader(promiseTestLib)
+        .expectToEqual(["reject"]);
+});
+
+test("resolving promise with pending promise will keep pending until promise2 resolved", () => {
+    util.testFunction`
+        const { promise, resolve } = defer<string>();
+        promise.then(v => log("promise 1", v));
+
+        const { promise: promise2, resolve: resolve2 } = defer<string>();
+        promise2.then(v => log("promise 2", v));
+
+        resolve(promise2);
+        resolve2("result");
+
+        return allLogs;
+    `
+        .setTsHeader(promiseTestLib)
+        .expectToEqual(["promise 2", "result", "promise 1", "result"]);
+});
+
 describe("Promise.all", () => {
     test("resolves once all arguments are resolved", () => {
         util.testFunction`

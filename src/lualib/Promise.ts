@@ -128,6 +128,14 @@ class __TS__Promise<T> implements Promise<T> {
     }
 
     private resolve(data: T): void {
+        if (data instanceof __TS__Promise) {
+            data.then(
+                v => this.resolve(v),
+                err => this.reject(err)
+            );
+            return;
+        }
+
         // Resolve this promise, if it is still pending. This function is passed to the constructor function.
         if (this.state === __TS__PromiseState.Pending) {
             this.state = __TS__PromiseState.Fulfilled;

@@ -16,8 +16,15 @@ import { isMultiReturnCall } from "./language-extensions/multi";
 import { annotationRemoved } from "../utils/diagnostics";
 import { isGlobalVarargConstant } from "./language-extensions/vararg";
 
+function skipOuterExpressionParents(node: ts.Node) {
+    while (ts.isOuterExpression(node)) {
+        node = node.parent;
+    }
+    return node;
+}
+
 export function isOptimizedVarArgSpread(context: TransformationContext, symbol: ts.Symbol, identifier: ts.Identifier) {
-    if (!ts.isSpreadElement(identifier.parent)) {
+    if (!ts.isSpreadElement(skipOuterExpressionParents(identifier.parent))) {
         return false;
     }
 
@@ -63,20 +70,21 @@ export function isOptimizedVarArgSpread(context: TransformationContext, symbol: 
 
 // TODO: Currently it's also used as an array member
 export const transformSpreadElement: FunctionVisitor<ts.SpreadElement> = (node, context) => {
-    if (ts.isIdentifier(node.expression)) {
-        if (isVarargType(context, node.expression)) {
+    const tsInnerExpression = ts.skipOuterExpressions(node.expression);
+    if (ts.isIdentifier(tsInnerExpression)) {
+        if (isVarargType(context, tsInnerExpression)) {
             context.diagnostics.push(annotationRemoved(node, AnnotationKind.Vararg));
         }
-        const symbol = context.checker.getSymbolAtLocation(node.expression);
-        if (symbol && isOptimizedVarArgSpread(context, symbol, node.expression)) {
+        const symbol = context.checker.getSymbolAtLocation(tsInnerExpression);
+        if (symbol && isOptimizedVarArgSpread(context, symbol, tsInnerExpression)) {
             return lua.createDotsLiteral(node);
         }
     }
 
     const innerExpression = context.transformExpression(node.expression);
-    if (isMultiReturnCall(context, node.expression)) return innerExpression;
+    if (isMultiReturnCall(context, tsInnerExpression)) return innerExpression;
 
-    const type = context.checker.getTypeAtLocation(node.expression);
+    const type = context.checker.getTypeAtLocation(node.expression); // not ts-inner expression, in case of casts
     if (isArrayType(context, type)) {
         return createUnpackCall(context, innerExpression, node);
     }

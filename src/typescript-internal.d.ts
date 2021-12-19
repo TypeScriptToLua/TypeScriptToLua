@@ -1,5 +1,4 @@
 import { DiagnosticsProducingTypeChecker } from "./transformation/context";
-
 export {};
 
 declare module "typescript" {
@@ -31,6 +30,13 @@ declare module "typescript" {
 
     function transformJsx(context: TransformationContext): (x: SourceFile) => SourceFile;
 
-    function skipParentheses(node: Expression): Expression;
-    function skipParentheses(node: Node): Node;
+    export type OuterExpression =
+        | ParenthesizedExpression
+        | TypeAssertion
+        | AsExpression
+        | NonNullExpression
+        | PartiallyEmittedExpression;
+
+    function skipOuterExpressions(node: Expression, kinds?: OuterExpressionKinds): Expression;
+    export function isOuterExpression(node: Node, kinds?: OuterExpressionKinds): node is OuterExpression;
 }

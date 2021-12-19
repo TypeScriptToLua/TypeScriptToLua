@@ -43,7 +43,7 @@ test("nullish-coalescing operator with side effect rhs", () => {
 
 test("nullish-coalescing operator with vararg", () => {
     util.testFunction`
-        
+
         function foo(...args: any[]){
             return args
         }
@@ -52,5 +52,14 @@ test("nullish-coalescing operator with vararg", () => {
             const y = x ?? foo(...args)
         }
         return bar(1, 2)
+    `.expectToMatchJsResult();
+});
+
+test.each([true, false, null])("nullish-coalescing with generic lhs (%p)", lhs => {
+    util.testFunction`
+        function coalesce<A, B>(a: A, b: B) {
+            return a ?? b
+        }
+        return coalesce(${lhs}, "wasNull")
     `.expectToMatchJsResult();
 });

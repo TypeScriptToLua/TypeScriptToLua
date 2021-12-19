@@ -2,15 +2,7 @@ import * as ts from "typescript";
 import { TransformationContext } from "../../context";
 
 export function isTypeWithFlags(context: TransformationContext, type: ts.Type, flags: ts.TypeFlags): boolean {
-    const predicate = (type: ts.Type) => {
-        if (type.symbol) {
-            const baseConstraint = context.checker.getBaseConstraintOfType(type);
-            if (baseConstraint && baseConstraint !== type) {
-                return isTypeWithFlags(context, baseConstraint, flags);
-            }
-        }
-        return (type.flags & flags) !== 0;
-    };
+    const predicate = (type: ts.Type) => (type.flags & flags) !== 0;
 
     return typeAlwaysSatisfies(context, type, predicate);
 }
@@ -20,6 +12,11 @@ export function typeAlwaysSatisfies(
     type: ts.Type,
     predicate: (type: ts.Type) => boolean
 ): boolean {
+    const baseConstraint = context.checker.getBaseConstraintOfType(type);
+    if (baseConstraint) {
+        type = baseConstraint;
+    }
+
     if (predicate(type)) {
         return true;
     }
@@ -40,6 +37,14 @@ export function typeCanSatisfy(
     type: ts.Type,
     predicate: (type: ts.Type) => boolean
 ): boolean {
+    const baseConstraint = context.checker.getBaseConstraintOfType(type);
+    if (!baseConstraint) {
+        // type parameter with no constraint can be anything, assume it might satisfy predicate
+        if (type.isTypeParameter()) return true;
+    } else {
+        type = baseConstraint;
+    }
+
     if (predicate(type)) {
         return true;
     }
@@ -109,4 +114,33 @@ export function isArrayType(context: TransformationContext, type: ts.Type): bool
 
 export function isFunctionType(type: ts.Type): boolean {
     return type.getCallSignatures().length > 0;
+}
+
+export function canBeFalsy(context: TransformationContext, type: ts.Type): boolean {
+    const strictNullChecks = context.options.strict === true || context.options.strictNullChecks === true;
+    const falsyFlags =
+        ts.TypeFlags.Boolean |
+        ts.TypeFlags.BooleanLiteral |
+        ts.TypeFlags.Never |
+        ts.TypeFlags.Void |
+        ts.TypeFlags.Unknown |
+        ts.TypeFlags.Any |
+        ts.TypeFlags.Undefined |
+        ts.TypeFlags.Null;
+    return typeCanSatisfy(
+        context,
+        type,
+        type => (type.flags & falsyFlags) !== 0 || (!strictNullChecks && !type.isLiteral())
+    );
+}
+
+export function canBeFalsyWhenNotNull(context: TransformationContext, type: ts.Type): boolean {
+    const falsyFlags =
+        ts.TypeFlags.Boolean |
+        ts.TypeFlags.BooleanLiteral |
+        ts.TypeFlags.Never |
+        ts.TypeFlags.Void |
+        ts.TypeFlags.Unknown |
+        ts.TypeFlags.Any;
+    return typeCanSatisfy(context, type, type => (type.flags & falsyFlags) !== 0);
 }

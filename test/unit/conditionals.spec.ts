@@ -99,3 +99,16 @@ test.each(["true", "false", "a < 4", "a == 8"])("Ternary Conditional Delayed (%p
         return delay();
     `.expectToMatchJsResult();
 });
+
+test.each([false, true, null])("Ternary conditional with generic whenTrue branch (%p)", trueVal => {
+    util.testFunction`
+        function ternary<B, C>(a: boolean, b: B, c: C) {
+            return a ? b : c
+        }
+        return ternary(true, ${trueVal}, "wasFalse")
+    `
+        .setOptions({
+            strict: true,
+        })
+        .expectToMatchJsResult();
+});

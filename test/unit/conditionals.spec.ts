@@ -108,7 +108,7 @@ test.each([false, true, null])("Ternary conditional with generic whenTrue branch
         return ternary(true, ${trueVal}, "wasFalse")
     `
         .setOptions({
-            strict: true,
+            strictNullChecks: true,
         })
         .expectToMatchJsResult();
 });

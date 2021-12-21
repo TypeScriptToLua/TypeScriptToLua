@@ -441,6 +441,27 @@ test("async function adopts rejected promise", () => {
         .expectToEqual(["rejected"]);
 });
 
+test("return in catch aborts async method", () => {
+    util.testFunction`
+        async function asyncFunc() {
+            try {
+                await Promise.reject("rejection");
+                log("Should not be seen");
+            } catch {
+                log("C");
+                return "result";
+            }
+            log("Should also not be seen");
+        }
+
+        asyncFunc().then(v => log("resolved", v));
+
+        return allLogs;
+    `
+        .setTsHeader(promiseTestLib)
+        .expectToEqual(["C", "resolved", "result"]);
+});
+
 test.each(["async function abc() {", "const abc = async () => {"])(
     "can throw error after await in async function (%p)",
     functionHeader => {

@@ -17,6 +17,21 @@ end
 return ____exports"
 `;
 
+exports[`vararg spread optimization With cast 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local function pick(self, ...)
+        local args = {...}
+        return args[2]
+    end
+    local function test(self, ...)
+        return pick(nil, ...)
+    end
+    return test(nil, \\"a\\", \\"b\\", \\"c\\")
+end
+return ____exports"
+`;
+
 exports[`vararg spread optimization basic use 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)

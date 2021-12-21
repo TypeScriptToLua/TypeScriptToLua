@@ -149,7 +149,7 @@ export function transformContextualCallExpression(
     if (
         ts.isPropertyAccessExpression(left) &&
         ts.isIdentifier(left.name) &&
-        isValidLuaIdentifier(left.name.text) &&
+        isValidLuaIdentifier(left.name.text, context.options) &&
         argPrecedingStatements.length === 0
     ) {
         // table:name()

@@ -265,6 +265,18 @@ describe("vararg spread optimization", () => {
             .expectLuaToMatchSnapshot()
             .expectToMatchJsResult();
     });
+
+    test("With cast", () => {
+        util.testFunction`
+            function pick(...args: any[]) { return args[1]; }
+            function test<F extends (...args: any)=>any>(...args: Parameters<F>) {
+                return pick(...(args as any[]));
+            }
+            return test<(...args: string[])=>void>("a", "b", "c");
+        `
+            .expectLuaToMatchSnapshot()
+            .expectToMatchJsResult();
+    });
 });
 
 describe("vararg spread de-optimization", () => {

@@ -18,7 +18,7 @@ export function createModuleLocalNameIdentifier(
     declaration: ts.ModuleDeclaration
 ): lua.Identifier {
     const moduleSymbol = context.checker.getSymbolAtLocation(declaration.name);
-    if (moduleSymbol !== undefined && isUnsafeName(moduleSymbol.name)) {
+    if (moduleSymbol !== undefined && isUnsafeName(moduleSymbol.name, context.options)) {
         return lua.createIdentifier(
             createSafeName(declaration.name.text),
             declaration.name,

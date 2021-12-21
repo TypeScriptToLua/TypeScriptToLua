@@ -1,3 +1,4 @@
+import { LuaTarget } from "../../src";
 import { invalidAmbientIdentifierName } from "../../src/transformation/utils/diagnostics";
 import { luaKeywords } from "../../src/transformation/utils/safe-names";
 import * as util from "../util";
@@ -220,6 +221,68 @@ test.each(validTsInvalidLuaNames)("exported decorated class with invalid lua nam
     `
         .setReturnExport(name, "bar")
         .expectToMatchJsResult();
+});
+
+describe("unicode identifiers in supporting environments (luajit)", () => {
+    const unicodeNames = ["𝛼𝛽𝚫", "ɥɣɎɌͼƛಠ", "_̀ः٠‿"];
+
+    test.each(unicodeNames)("identifier name (%p)", name => {
+        util.testFunction`
+            const ${name} = "foobar";
+            return ${name};
+        `
+            .setOptions({ luaTarget: LuaTarget.LuaJIT })
+            .expectLuaToMatchSnapshot();
+    });
+
+    test.each(unicodeNames)("property name (%p)", name => {
+        util.testFunction`
+            const x = { ${name}: "foobar" };
+            return x.${name};
+        `
+            .setOptions({ luaTarget: LuaTarget.LuaJIT })
+            .expectLuaToMatchSnapshot();
+    });
+
+    test.each(unicodeNames)("destructuring property name (%p)", name => {
+        util.testFunction`
+            const { foo: ${name} } = { foo: "foobar" };
+            return ${name};
+        `
+            .setOptions({ luaTarget: LuaTarget.LuaJIT })
+            .expectLuaToMatchSnapshot();
+    });
+
+    test.each(unicodeNames)("destructuring shorthand (%p)", name => {
+        util.testFunction`
+            const { ${name} } = { ${name}: "foobar" };
+            return ${name};
+        `
+            .setOptions({ luaTarget: LuaTarget.LuaJIT })
+            .expectLuaToMatchSnapshot();
+    });
+
+    test.each(unicodeNames)("function (%p)", name => {
+        util.testFunction`
+            function ${name}(arg: string) {
+                return "foo" + arg;
+            }
+            return ${name}("bar");
+        `
+            .setOptions({ luaTarget: LuaTarget.LuaJIT })
+            .expectLuaToMatchSnapshot();
+    });
+
+    test.each(unicodeNames)("method (%p)", name => {
+        util.testFunction`
+            const foo = {
+                ${name}(arg: string) { return "foo" + arg; }
+            };
+            return foo.${name}("bar");
+        `
+            .setOptions({ luaTarget: LuaTarget.LuaJIT })
+            .expectLuaToMatchSnapshot();
+    });
 });
 
 describe("lua keyword as identifier doesn't interfere with lua's value", () => {

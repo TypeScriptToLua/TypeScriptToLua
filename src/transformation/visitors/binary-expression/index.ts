@@ -3,7 +3,7 @@ import * as lua from "../../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { wrapInToStringForConcat } from "../../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
-import { isStandardLibraryType, isStringType, typeCanSatisfy } from "../../utils/typescript";
+import { canBeFalsyWhenNotNull, isStandardLibraryType, isStringType } from "../../utils/typescript";
 import { transformTypeOfBinaryExpression } from "../typeof";
 import { transformAssignmentExpression, transformAssignmentStatement } from "./assignments";
 import { BitOperator, isBitOperator, transformBinaryBitOperation } from "./bit";
@@ -269,10 +269,7 @@ function transformNullishCoalescingOperationNoPrecedingStatements(
     const lhsType = context.checker.getTypeAtLocation(node.left);
 
     // Check if we can take a shortcut to 'lhs or rhs' if the left-hand side cannot be 'false'.
-    const typeCanBeFalse = (type: ts.Type) =>
-        (type.flags & (ts.TypeFlags.Any | ts.TypeFlags.Unknown | ts.TypeFlags.Boolean)) !== 0 ||
-        (type.flags & ts.TypeFlags.BooleanLiteral & ts.TypeFlags.PossiblyFalsy) !== 0;
-    if (typeCanSatisfy(context, lhsType, typeCanBeFalse)) {
+    if (canBeFalsyWhenNotNull(context, lhsType)) {
         // reuse logic from case with preceding statements
         const [precedingStatements, result] = createShortCircuitBinaryExpressionPrecedingStatements(
             context,

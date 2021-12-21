@@ -4,29 +4,7 @@ import { FunctionVisitor, TransformationContext } from "../context";
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
 import { performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
 import { transformBlockOrStatement } from "./block";
-
-function canBeFalsy(context: TransformationContext, type: ts.Type): boolean {
-    const strictNullChecks = context.options.strict === true || context.options.strictNullChecks === true;
-
-    const falsyFlags =
-        ts.TypeFlags.Boolean |
-        ts.TypeFlags.BooleanLiteral |
-        ts.TypeFlags.Undefined |
-        ts.TypeFlags.Null |
-        ts.TypeFlags.Never |
-        ts.TypeFlags.Void |
-        ts.TypeFlags.Any;
-
-    if (type.flags & falsyFlags) {
-        return true;
-    } else if (!strictNullChecks && !type.isLiteral()) {
-        return true;
-    } else if (type.isUnion()) {
-        return type.types.some(subType => canBeFalsy(context, subType));
-    } else {
-        return false;
-    }
-}
+import { canBeFalsy } from "../utils/typescript";
 
 function transformProtectedConditionalExpression(
     context: TransformationContext,

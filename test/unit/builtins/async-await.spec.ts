@@ -384,6 +384,63 @@ test("async function can forward varargs", () => {
         .expectToEqual(["resolved", "A", "B", "C"]);
 });
 
+test("async function adopts pending promise", () => {
+    util.testFunction`
+        let resolve: (v: string) => void = () => {};
+        async function receive(): Promise<string> {
+            return new Promise(res => {
+                resolve = res;
+            });
+        }
+
+        receive().then(v => {
+            log(v);
+        });
+
+        resolve("delayed resolve");
+
+        return allLogs;
+    `
+        .setTsHeader(promiseTestLib)
+        .expectToEqual(["delayed resolve"]);
+});
+
+test("async function adopts resolved promise", () => {
+    util.testFunction`
+        async function receive(): Promise<string> {
+            return new Promise(resolve => {
+                resolve("resolved!");
+            });
+        }
+
+        receive().then(v => {
+            log(v);
+        });
+
+        return allLogs;
+    `
+        .setTsHeader(promiseTestLib)
+        .expectToEqual(["resolved!"]);
+});
+
+test("async function adopts rejected promise", () => {
+    util.testFunction`
+        async function receive(): Promise<string> {
+            return new Promise((_, reject) => {
+                reject("rejected");
+            });
+        }
+
+        receive().catch(err => {
+            log(err);
+        });
+
+        return allLogs;
+    `
+        .setTsHeader(promiseTestLib)
+        .expectToEqual(["rejected"]);
+});
+
 test.each(["async function abc() {", "const abc = async () => {"])(
     "can throw error after await in async function (%p)",
     functionHeader => {

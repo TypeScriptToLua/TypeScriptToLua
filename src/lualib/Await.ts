@@ -36,11 +36,15 @@ function __TS__AsyncAwaiter(this: void, generator: (this: void) => void) {
         function rejected(handler: ErrorHandler | undefined) {
             if (handler) {
                 return (value: unknown) => {
-                    const [success, valueOrError] = pcall(handler, value);
+                    const [success, hasReturnedOrError, returnedValue] = pcall(handler, value);
                     if (success) {
-                        step(valueOrError, handler);
+                        if (hasReturnedOrError) {
+                            resolve(returnedValue);
+                        } else {
+                            step(hasReturnedOrError, handler);
+                        }
                     } else {
-                        reject(valueOrError);
+                        reject(hasReturnedOrError);
                     }
                 };
             } else {

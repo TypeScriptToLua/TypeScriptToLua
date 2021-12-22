@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.3.0
+
+- Added `LuaPairsIterable` language extension to mark objects as iterable with Lua's `pairs`.
+- Added support for properties on functions.
+- Unicode is no longer escaped and used as-is for `"luaTarget": "JIT"`.
+- Fixed some bugs related to destructuring in loops and function parameters.
+- Fixed incorrect global being generated for some `try` statements.
+- Fixed some incorrect behavior for `??` and `? :` when generic types were involved.
+- Added missing `...` optimization in cases where casts or parentheses are used.
+- Fixed a bug for `Promise` when resolving with another Promise. This also fixes some unexpected behavior with `async` which is built with Promises.
+- Fixed `async` functions not aborting after returning from a `catch` block.
+
 ## 1.2.0
 
 - Upgraded to TypeScript 4.5.x.

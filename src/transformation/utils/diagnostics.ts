@@ -128,14 +128,6 @@ export const invalidTableExtensionUse = createErrorDiagnosticFactory(
     "This function must be called directly and cannot be referred to."
 );
 
-export const invalidTableDeleteExpression = createErrorDiagnosticFactory(
-    "Table delete extension can only be called as a stand-alone statement. It cannot be used as an expression in another statement."
-);
-
-export const invalidTableSetExpression = createErrorDiagnosticFactory(
-    "Table set extension can only be called as a stand-alone statement. It cannot be used as an expression in another statement."
-);
-
 export const annotationRemoved = createErrorDiagnosticFactory(
     (kind: AnnotationKind) =>
         `'@${kind}' has been removed and will no longer have any effect.` +

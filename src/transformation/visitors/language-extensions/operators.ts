@@ -5,7 +5,7 @@ import * as extensions from "../../utils/language-extensions";
 import { assert } from "../../../utils";
 import { getFunctionTypeForCall } from "../../utils/typescript";
 import { LuaTarget } from "../../../CompilerOptions";
-import { unsupportedForTarget } from "../../utils/diagnostics";
+import { unsupportedBuiltinOptionalCall, unsupportedForTarget } from "../../utils/diagnostics";
 
 const binaryOperatorMappings = new Map<extensions.ExtensionKind, lua.BinaryOperator>([
     [extensions.ExtensionKind.AdditionOperatorType, lua.SyntaxKind.AdditionOperator],
@@ -82,10 +82,15 @@ export function isOperatorMapping(context: TransformationContext, node: ts.CallE
 
 export function transformOperatorMappingExpression(
     context: TransformationContext,
-    node: ts.CallExpression
-): lua.Expression {
+    node: ts.CallExpression,
+    isOptionalCall: boolean
+): lua.Expression | undefined {
     const extensionKind = getOperatorMapExtensionKindForCall(context, node);
-    assert(extensionKind);
+    if (!extensionKind) return undefined;
+    if (isOptionalCall) {
+        context.diagnostics.push(unsupportedBuiltinOptionalCall(node));
+        return lua.createNilLiteral();
+    }
 
     const isBefore53 =
         context.luaTarget === LuaTarget.Lua51 ||

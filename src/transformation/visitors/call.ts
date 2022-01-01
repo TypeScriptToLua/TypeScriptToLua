@@ -10,26 +10,11 @@ import { isValidLuaIdentifier } from "../utils/safe-names";
 import { isExpressionWithEvaluationEffect } from "../utils/typescript";
 import { transformElementAccessArgument } from "./access";
 import { isMultiReturnCall, shouldMultiReturnCallBeWrapped } from "./language-extensions/multi";
-import { isOperatorMapping, transformOperatorMappingExpression } from "./language-extensions/operators";
-import {
-    isTableDeleteCall,
-    isTableGetCall,
-    isTableHasCall,
-    isTableSetCall,
-    transformTableDeleteExpression,
-    transformTableGetExpression,
-    transformTableHasExpression,
-    transformTableSetExpression,
-} from "./language-extensions/table";
-import {
-    annotationRemoved,
-    invalidTableDeleteExpression,
-    invalidTableSetExpression,
-    unsupportedBuiltinOptionalCall,
-} from "../utils/diagnostics";
+import { annotationRemoved } from "../utils/diagnostics";
 import { moveToPrecedingTemp, transformExpressionList } from "./expression-list";
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
-import { transformOptionalChain, getOptionalContinuationData } from "./optional-chaining";
+import { getOptionalContinuationData, transformOptionalChain } from "./optional-chaining";
+import { transformLanguageExtensionCallExpression } from "./language-extensions";
 
 export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
 
@@ -234,52 +219,16 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
         : undefined;
     const wrapResultInTable = isMultiReturnCall(context, node) && shouldMultiReturnCallBeWrapped(context, node);
 
-    const builtinResult = transformBuiltinCallExpression(context, node, optionalContinuation !== undefined);
-    if (builtinResult) {
-        if (optionalContinuation) {
-            context.diagnostics.push(unsupportedBuiltinOptionalCall(node));
-        }
-        return wrapResultInTable ? wrapInTable(builtinResult) : builtinResult;
-    }
-
     if (isTupleReturnCall(context, node)) {
         context.diagnostics.push(annotationRemoved(node, AnnotationKind.TupleReturn));
     }
 
-    if (isOperatorMapping(context, node)) {
-        if (optionalContinuation) {
-            context.diagnostics.push(unsupportedBuiltinOptionalCall(node));
-            return lua.createNilLiteral();
-        }
-        return transformOperatorMappingExpression(context, node);
-    }
-
-    if (isTableDeleteCall(context, node)) {
-        context.diagnostics.push(invalidTableDeleteExpression(node));
-        context.addPrecedingStatements(transformTableDeleteExpression(context, node));
-        return lua.createNilLiteral();
-    }
-
-    if (isTableGetCall(context, node)) {
-        if (optionalContinuation) {
-            context.diagnostics.push(unsupportedBuiltinOptionalCall(node));
-            return lua.createNilLiteral();
-        }
-        return transformTableGetExpression(context, node);
-    }
-
-    if (isTableHasCall(context, node)) {
-        if (optionalContinuation) {
-            context.diagnostics.push(unsupportedBuiltinOptionalCall(node));
-            return lua.createNilLiteral();
-        }
-        return transformTableHasExpression(context, node);
-    }
-
-    if (isTableSetCall(context, node)) {
-        context.diagnostics.push(invalidTableSetExpression(node));
-        context.addPrecedingStatements(transformTableSetExpression(context, node));
-        return lua.createNilLiteral();
+    const builtinOrExtensionResult =
+        transformBuiltinCallExpression(context, node, optionalContinuation !== undefined) ??
+        transformLanguageExtensionCallExpression(context, node, optionalContinuation !== undefined);
+    if (builtinOrExtensionResult) {
+        // unsupportedOptionalCall diagnostic already present
+        return wrapResultInTable ? wrapInTable(builtinOrExtensionResult) : builtinOrExtensionResult;
     }
 
     if (ts.isPropertyAccessExpression(node.expression)) {

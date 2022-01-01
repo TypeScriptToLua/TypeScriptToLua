@@ -1,9 +1,5 @@
 import * as util from "../../util";
-import {
-    invalidTableDeleteExpression,
-    invalidTableExtensionUse,
-    invalidTableSetExpression,
-} from "../../../src/transformation/utils/diagnostics";
+import { invalidTableExtensionUse } from "../../../src/transformation/utils/diagnostics";
 
 describe("LuaTableGet & LuaTableSet extensions", () => {
     test("stand-alone function", () => {
@@ -18,6 +14,24 @@ describe("LuaTableGet & LuaTableSet extensions", () => {
             .withLanguageExtensions()
             .setReturnExport("result")
             .expectToEqual(3);
+    });
+
+    test("stand-alone function with preceding statements", () => {
+        util.testModule`
+            declare const setTable: LuaTableSet<{}, string, string>;
+            const values: any[] = []
+            const tbl: any = {};
+            const get = (value: any) => {
+                values.push(value)
+                return value
+            }
+            let x = "a"
+            setTable(tbl, x += "b", x += "c")
+            export const result = tbl.ab
+        `
+            .withLanguageExtensions()
+            .setReturnExport("result")
+            .expectToEqual("abc");
     });
 
     test("namespace function", () => {
@@ -65,20 +79,6 @@ describe("LuaTableGet & LuaTableSet extensions", () => {
         `
             .withLanguageExtensions()
             .expectDiagnosticsToMatchSnapshot([invalidTableExtensionUse.code]);
-    });
-
-    test.each([
-        'const foo = setTable({}, "foo", 3);',
-        'const foo = `${setTable({}, "foo", 3)}`;',
-        'declare function foo(arg: any): void; foo(setTable({}, "foo", 3));',
-        'const foo = [setTable({}, "foo", 3)];',
-    ])("LuaTableSet invalid use as expression (%p)", expression => {
-        util.testModule`
-            declare const setTable: LuaTableSet<{}, string, number>;
-            ${expression}
-        `
-            .withLanguageExtensions()
-            .expectDiagnosticsToMatchSnapshot([invalidTableSetExpression.code]);
     });
 });
 
@@ -212,18 +212,14 @@ describe("LuaTableDelete extension", () => {
             .expectToEqual({ table: { bar: 12 } });
     });
 
-    test.each([
-        'const foo = tableDelete({}, "foo");',
-        'const foo = `${tableDelete({}, "foo")}`;',
-        'declare function foo(arg: any): void; foo(tableDelete({}, "foo"));',
-        'const foo = [tableDelete({}, "foo")];',
-    ])("LuaTableDelete invalid use as expression (%p)", expression => {
+    test("LUaTableDelete use as expression", () => {
         util.testModule`
             declare const tableDelete: LuaTableDelete<{}, string>;
-            ${expression}
+            export const result = tableDelete({}, "foo")
         `
             .withLanguageExtensions()
-            .expectDiagnosticsToMatchSnapshot([invalidTableDeleteExpression.code]);
+            .setReturnExport("result")
+            .expectToEqual(true);
     });
 });
 

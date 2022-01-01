@@ -3,26 +3,21 @@ import * as lua from "../../../LuaAST";
 import { TransformationContext } from "../../context";
 import * as extensions from "../../utils/language-extensions";
 import { getFunctionTypeForCall } from "../../utils/typescript";
-import { assert } from "../../../utils";
+import { transformExpressionList } from "../expression-list";
+import { unsupportedBuiltinOptionalCall } from "../../utils/diagnostics";
 
-const tableDeleteExtensions = [
+const tableCallExtensions = [
     extensions.ExtensionKind.TableDeleteType,
     extensions.ExtensionKind.TableDeleteMethodType,
+    extensions.ExtensionKind.TableGetType,
+    extensions.ExtensionKind.TableGetMethodType,
+    extensions.ExtensionKind.TableHasType,
+    extensions.ExtensionKind.TableHasMethodType,
+    extensions.ExtensionKind.TableSetType,
+    extensions.ExtensionKind.TableSetMethodType,
 ];
 
-const tableGetExtensions = [extensions.ExtensionKind.TableGetType, extensions.ExtensionKind.TableGetMethodType];
-
-const tableHasExtensions = [extensions.ExtensionKind.TableHasType, extensions.ExtensionKind.TableHasMethodType];
-
-const tableSetExtensions = [extensions.ExtensionKind.TableSetType, extensions.ExtensionKind.TableSetMethodType];
-
-const tableExtensions = [
-    extensions.ExtensionKind.TableNewType,
-    ...tableDeleteExtensions,
-    ...tableGetExtensions,
-    ...tableHasExtensions,
-    ...tableSetExtensions,
-];
+const tableExtensions = [extensions.ExtensionKind.TableNewType, ...tableCallExtensions];
 
 function getTableExtensionKindForCall(
     context: TransformationContext,
@@ -38,34 +33,60 @@ export function isTableExtensionIdentifier(context: TransformationContext, node:
     return tableExtensions.some(extensionKind => extensions.isExtensionType(type, extensionKind));
 }
 
-export function isTableDeleteCall(context: TransformationContext, node: ts.CallExpression) {
-    return getTableExtensionKindForCall(context, node, tableDeleteExtensions) !== undefined;
-}
-
-export function isTableGetCall(context: TransformationContext, node: ts.CallExpression) {
-    return getTableExtensionKindForCall(context, node, tableGetExtensions) !== undefined;
-}
-
-export function isTableHasCall(context: TransformationContext, node: ts.CallExpression) {
-    return getTableExtensionKindForCall(context, node, tableHasExtensions) !== undefined;
-}
-
-export function isTableSetCall(context: TransformationContext, node: ts.CallExpression) {
-    return getTableExtensionKindForCall(context, node, tableSetExtensions) !== undefined;
-}
-
 export function isTableNewCall(context: TransformationContext, node: ts.NewExpression) {
     const type = context.checker.getTypeAtLocation(node.expression);
     return extensions.isExtensionType(type, extensions.ExtensionKind.TableNewType);
 }
 
-export function transformTableDeleteExpression(context: TransformationContext, node: ts.CallExpression): lua.Statement {
-    const extensionKind = getTableExtensionKindForCall(context, node, tableDeleteExtensions);
-    assert(extensionKind);
+export function transformTableExtensionCall(
+    context: TransformationContext,
+    node: ts.CallExpression,
+    isOptionalCall: boolean
+): lua.Expression | undefined {
+    const extensionType = getTableExtensionKindForCall(context, node, tableCallExtensions);
+    if (!extensionType) return;
+    if (isOptionalCall) {
+        context.diagnostics.push(unsupportedBuiltinOptionalCall(node));
+        return lua.createNilLiteral();
+    }
 
+    if (
+        extensionType === extensions.ExtensionKind.TableDeleteType ||
+        extensionType === extensions.ExtensionKind.TableDeleteMethodType
+    ) {
+        return transformTableDeleteExpression(context, node, extensionType);
+    }
+
+    if (
+        extensionType === extensions.ExtensionKind.TableGetType ||
+        extensionType === extensions.ExtensionKind.TableGetMethodType
+    ) {
+        return transformTableGetExpression(context, node, extensionType);
+    }
+
+    if (
+        extensionType === extensions.ExtensionKind.TableHasType ||
+        extensionType === extensions.ExtensionKind.TableHasMethodType
+    ) {
+        return transformTableHasExpression(context, node, extensionType);
+    }
+
+    if (
+        extensionType === extensions.ExtensionKind.TableSetType ||
+        extensionType === extensions.ExtensionKind.TableSetMethodType
+    ) {
+        return transformTableSetExpression(context, node, extensionType);
+    }
+}
+
+function transformTableDeleteExpression(
+    context: TransformationContext,
+    node: ts.CallExpression,
+    extensionKind: extensions.ExtensionKind
+): lua.Expression {
     const args = node.arguments.slice();
     if (
-        args.length === 1 &&
+        extensionKind === extensions.ExtensionKind.TableDeleteMethodType &&
         (ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression))
     ) {
         // In case of method (no table argument), push method owner to front of args list
@@ -73,20 +94,44 @@ export function transformTableDeleteExpression(context: TransformationContext, n
     }
 
     // arg0[arg1] = nil
-    return lua.createAssignmentStatement(
-        lua.createTableIndexExpression(context.transformExpression(args[0]), context.transformExpression(args[1])),
-        lua.createNilLiteral(),
-        node
+    const [table, accessExpression] = transformExpressionList(context, args);
+    context.addPrecedingStatements(
+        lua.createAssignmentStatement(
+            lua.createTableIndexExpression(table, accessExpression),
+            lua.createNilLiteral(),
+            node
+        )
     );
+    return lua.createBooleanLiteral(true);
 }
 
-export function transformTableGetExpression(context: TransformationContext, node: ts.CallExpression): lua.Expression {
-    const extensionKind = getTableExtensionKindForCall(context, node, tableGetExtensions);
-    assert(extensionKind);
-
+function transformTableGetExpression(
+    context: TransformationContext,
+    node: ts.CallExpression,
+    extensionKind: extensions.ExtensionKind
+): lua.Expression {
     const args = node.arguments.slice();
     if (
-        args.length === 1 &&
+        extensionKind === extensions.ExtensionKind.TableGetMethodType &&
+        (ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression))
+    ) {
+        // In case of method (no table argument), push method owner to front of args list
+        args.unshift(node.expression.expression);
+    }
+
+    const [table, accessExpression] = transformExpressionList(context, args);
+    // arg0[arg1]
+    return lua.createTableIndexExpression(table, accessExpression, node);
+}
+
+function transformTableHasExpression(
+    context: TransformationContext,
+    node: ts.CallExpression,
+    extensionKind: extensions.ExtensionKind
+): lua.Expression {
+    const args = node.arguments.slice();
+    if (
+        extensionKind === extensions.ExtensionKind.TableHasMethodType &&
         (ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression))
     ) {
         // In case of method (no table argument), push method owner to front of args list
@@ -94,31 +139,8 @@ export function transformTableGetExpression(context: TransformationContext, node
     }
 
     // arg0[arg1]
-    return lua.createTableIndexExpression(
-        context.transformExpression(args[0]),
-        context.transformExpression(args[1]),
-        node
-    );
-}
-
-export function transformTableHasExpression(context: TransformationContext, node: ts.CallExpression): lua.Expression {
-    const extensionKind = getTableExtensionKindForCall(context, node, tableHasExtensions);
-    assert(extensionKind);
-
-    const args = node.arguments.slice();
-    if (
-        args.length === 1 &&
-        (ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression))
-    ) {
-        // In case of method (no table argument), push method owner to front of args list
-        args.unshift(node.expression.expression);
-    }
-
-    // arg0[arg1]
-    const tableIndexExpression = lua.createTableIndexExpression(
-        context.transformExpression(args[0]),
-        context.transformExpression(args[1])
-    );
+    const [table, accessExpression] = transformExpressionList(context, args);
+    const tableIndexExpression = lua.createTableIndexExpression(table, accessExpression);
 
     // arg0[arg1] ~= nil
     return lua.createBinaryExpression(
@@ -129,13 +151,14 @@ export function transformTableHasExpression(context: TransformationContext, node
     );
 }
 
-export function transformTableSetExpression(context: TransformationContext, node: ts.CallExpression): lua.Statement {
-    const extensionKind = getTableExtensionKindForCall(context, node, tableSetExtensions);
-    assert(extensionKind);
-
+function transformTableSetExpression(
+    context: TransformationContext,
+    node: ts.CallExpression,
+    extensionKind: extensions.ExtensionKind
+): lua.Expression {
     const args = node.arguments.slice();
     if (
-        args.length === 2 &&
+        extensionKind === extensions.ExtensionKind.TableSetMethodType &&
         (ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression))
     ) {
         // In case of method (no table argument), push method owner to front of args list
@@ -143,9 +166,9 @@ export function transformTableSetExpression(context: TransformationContext, node
     }
 
     // arg0[arg1] = arg2
-    return lua.createAssignmentStatement(
-        lua.createTableIndexExpression(context.transformExpression(args[0]), context.transformExpression(args[1])),
-        context.transformExpression(args[2]),
-        node
+    const [table, accessExpression, value] = transformExpressionList(context, args);
+    context.addPrecedingStatements(
+        lua.createAssignmentStatement(lua.createTableIndexExpression(table, accessExpression), value, node)
     );
+    return lua.createNilLiteral();
 }

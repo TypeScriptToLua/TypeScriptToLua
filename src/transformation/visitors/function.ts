@@ -277,8 +277,9 @@ export function transformFunctionLikeDeclaration(
 
     const [functionExpression, functionScope] = transformFunctionToExpression(context, node);
 
+    const isNamedFunctionExpression = ts.isFunctionExpression(node) && node.name;
     // Handle named function expressions which reference themselves
-    if (ts.isFunctionExpression(node) && node.name && functionScope.referencedSymbols) {
+    if (isNamedFunctionExpression && functionScope.referencedSymbols) {
         const symbol = context.checker.getSymbolAtLocation(node.name);
         if (symbol) {
             // TODO: Not using symbol ids because of https://github.com/microsoft/TypeScript/issues/37131
@@ -304,7 +305,9 @@ export function transformFunctionLikeDeclaration(
         }
     }
 
-    return functionExpression;
+    return isNamedFunctionExpression && isFunctionTypeWithProperties(context.checker.getTypeAtLocation(node))
+        ? createCallableTable(functionExpression)
+        : functionExpression;
 }
 
 export const transformFunctionDeclaration: FunctionVisitor<ts.FunctionDeclaration> = (node, context) => {

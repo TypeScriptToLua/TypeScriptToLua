@@ -60,6 +60,14 @@ test("void function with property assigned to variable", () => {
     `.expectToMatchJsResult();
 });
 
+test("named function with property assigned to variable", () => {
+    util.testFunction`
+        const foo = function baz(s: string) { return s; }
+        foo.bar = "bar";
+        return foo("foo") + foo.bar;
+    `.expectToMatchJsResult();
+});
+
 test("recursively referenced function with property assigned to variable", () => {
     util.testFunction`
         const foo = function(s: string) { return s + foo.bar; };
@@ -171,5 +179,24 @@ test("call function with property using bind method", () => {
         function foo(s: string) { return this + s; }
         foo.baz = "baz";
         return foo.bind("foo", "bar")() + foo.baz;
+    `.expectToMatchJsResult();
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1196
+test("Does not wrap simple variable declaration", () => {
+    util.testFunction`
+        function foo(s: string) { return s; }
+        foo.bar = "bar";
+        const foo2 = foo;
+        return foo2("foo") + foo2.bar;
+    `.expectToMatchJsResult();
+});
+
+test("Wraps function in inner expression", () => {
+    util.testFunction`
+        type Foo = { (s: string): string; bar: string; }
+        const foo = (s => s)! as Foo
+        foo.bar = "bar";
+        return foo("foo") + foo.bar;
     `.expectToMatchJsResult();
 });

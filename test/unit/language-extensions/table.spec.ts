@@ -212,7 +212,7 @@ describe("LuaTableDelete extension", () => {
             .expectToEqual({ table: { bar: 12 } });
     });
 
-    test("LUaTableDelete use as expression", () => {
+    test("LuaTableDelete use as expression", () => {
         util.testModule`
             declare const tableDelete: LuaTableDelete<{}, string>;
             export const result = tableDelete({}, "foo")

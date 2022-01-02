@@ -21,19 +21,21 @@ export const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatemen
 export function transformExpressionToStatement(
     context: TransformationContext,
     expression: ts.Expression
-): lua.Statement[] | lua.Statement | undefined {
+): lua.Statement | undefined {
     const result = context.transformExpression(expression);
 
-    // omit temp identifiers, and non-side effect expressions without source map position
-    if (
-        (lua.isIdentifier(result) && result.symbolId === tempSymbolId) ||
-        ((lua.isIdentifier(result) || lua.isLiteral(result)) && result.line === undefined)
-    ) {
+    const isTempVariable = lua.isIdentifier(result) && result.symbolId === tempSymbolId;
+    if (isTempVariable) {
         return undefined;
     }
-
-    return lua.isCallExpression(result) || lua.isMethodCallExpression(result)
-        ? lua.createExpressionStatement(result)
-        : // Assign expression statements to dummy to make sure they're legal Lua
-          lua.createVariableDeclarationStatement(lua.createAnonymousIdentifier(), result);
+    // "synthetic": no side effects and no original source
+    const isSyntheticExpression = (lua.isIdentifier(result) || lua.isLiteral(result)) && result.line === undefined;
+    if (isSyntheticExpression) {
+        return undefined;
+    }
+    if (lua.isCallExpression(result) || lua.isMethodCallExpression(result)) {
+        return lua.createExpressionStatement(result);
+    }
+    // Assign expression statements to dummy to make sure they're legal Lua
+    return lua.createVariableDeclarationStatement(lua.createAnonymousIdentifier(), result);
 }

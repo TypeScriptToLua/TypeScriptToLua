@@ -212,14 +212,31 @@ describe("LuaTableDelete extension", () => {
             .expectToEqual({ table: { bar: 12 } });
     });
 
-    test("LuaTableDelete use as expression", () => {
+    test.each([
+        ["LuaTableDelete<{}, string>", 'func({}, "foo")', true],
+        ["LuaTableDelete<{}, string>", '"truthy" && func({}, "foo")', true],
+        ["LuaTableSet<{}, string, number>", 'func({}, "foo", 3)', undefined],
+    ])("Table functions used as expression", (funcType, expression, value) => {
         util.testModule`
-            declare const tableDelete: LuaTableDelete<{}, string>;
-            export const result = tableDelete({}, "foo")
+            declare const func: ${funcType}
+            export const result = ${expression}
         `
             .withLanguageExtensions()
             .setReturnExport("result")
-            .expectToEqual(true);
+            .expectToEqual(value);
+    });
+
+    test.each([
+        ["LuaTableDeleteMethod<string>", 'tbl.func("foo")', true],
+        ["LuaTableSetMethod<string, number>", 'tbl.func("foo", 3)', undefined],
+    ])("Table methods used as expression", (funcType, expression, value) => {
+        util.testModule`
+            const tbl = {} as { func: ${funcType} }
+            export const result = ${expression}
+        `
+            .withLanguageExtensions()
+            .setReturnExport("result")
+            .expectToEqual(value);
     });
 });
 

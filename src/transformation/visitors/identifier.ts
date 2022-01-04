@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { transformBuiltinIdentifierExpression } from "../builtins";
 import { createPromiseIdentifier, isPromiseClass } from "../builtins/promise";
-import { FunctionVisitor, TransformationContext } from "../context";
+import { FunctionVisitor, tempSymbolId, TransformationContext } from "../context";
 import { AnnotationKind, isForRangeType } from "../utils/annotations";
 import {
     invalidMultiFunctionUse,
@@ -25,7 +25,7 @@ import { isOptionalContinuation } from "./optional-chaining";
 
 export function transformIdentifier(context: TransformationContext, identifier: ts.Identifier): lua.Identifier {
     if (isOptionalContinuation(identifier)) {
-        return lua.createIdentifier(identifier.text);
+        return lua.createIdentifier(identifier.text, undefined, tempSymbolId);
     }
 
     if (isMultiFunctionNode(context, identifier)) {

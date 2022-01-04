@@ -60,12 +60,17 @@ export function transformBuiltinCallExpression(
     node: ts.CallExpression,
     isOptionalCall: boolean
 ): lua.Expression | undefined {
+    const unsupportedOptionalCall = () => {
+        context.diagnostics.push(unsupportedBuiltinOptionalCall(node));
+        return lua.createNilLiteral();
+    };
     const expressionType = context.checker.getTypeAtLocation(node.expression);
     if (ts.isIdentifier(node.expression) && isStandardLibraryType(context, expressionType, undefined)) {
         // TODO:
         checkForLuaLibType(context, expressionType);
         const result = transformGlobalCall(context, node);
         if (result) {
+            if (isOptionalCall) return unsupportedOptionalCall();
             return result;
         }
     }
@@ -75,14 +80,8 @@ export function transformBuiltinCallExpression(
         return;
     }
 
-    assume<PropertyCallExpression>(node);
-
     const isOptionalAccess = expression.questionDotToken;
-    const unsupportedOptionalCall = () => {
-        context.diagnostics.push(unsupportedBuiltinOptionalCall(node));
-        return lua.createNilLiteral();
-    };
-
+    assume<PropertyCallExpression>(node);
     // If the function being called is of type owner.func, get the type of owner
     const ownerType = context.checker.getTypeAtLocation(expression.expression);
 

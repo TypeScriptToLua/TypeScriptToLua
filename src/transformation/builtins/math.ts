@@ -78,6 +78,10 @@ export function transformMathCall(
             return lua.createCallExpression(lua.createTableIndexExpression(math, floor), [add], node);
         }
 
+        case "sign": {
+            return transformLuaLibFunction(context, LuaLibFeature.MathSign, node, ...params);
+        }
+
         case "abs":
         case "acos":
         case "asin":

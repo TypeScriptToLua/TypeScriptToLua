@@ -6,7 +6,7 @@ import * as util from "../../util";
 // and not test Lua's built in math functions.
 // Differences in math implementations between JS & Lua cause inaccuracies
 // therefore test input numbers are "carefully" selected to always match accuratly.
-// Lualib implementations are tested seperatly.
+// Lualib implementations are tested separately.
 test.each([
     // log
     "Math.log(42)",

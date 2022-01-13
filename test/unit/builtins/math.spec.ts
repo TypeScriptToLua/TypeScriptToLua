@@ -84,11 +84,14 @@ util.testEachVersion("Math.atan2", () => util.testExpression`Math.atan2(4, 5)`, 
     [tstl.LuaTarget.Lua54]: builder => builder.tap(expectMathAtan2),
 });
 
-util.testEachVersion("Math.atan2(4, 5)", () => util.testExpression`Math.atan2(4, 5)`, {
-    [tstl.LuaTarget.Universal]: builder => builder.expectToMatchJsResult(),
-    [tstl.LuaTarget.LuaJIT]: false,
-    [tstl.LuaTarget.Lua51]: builder => builder.expectToMatchJsResult(),
-    [tstl.LuaTarget.Lua52]: builder => builder.expectToMatchJsResult(),
-    [tstl.LuaTarget.Lua53]: builder => builder.expectToMatchJsResult(),
-    [tstl.LuaTarget.Lua54]: builder => builder.expectToMatchJsResult(),
-});
+util.testEachVersion(
+    "Math.atan2(4, 5)",
+    () => util.testExpression`Math.atan2(4, 5)`,
+    util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+);
+
+util.testEachVersion(
+    "Math.pow(3, 5)",
+    () => util.testExpression`Math.pow(3, 5)`,
+    util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+);

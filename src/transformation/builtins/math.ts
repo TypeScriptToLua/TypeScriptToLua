@@ -71,17 +71,7 @@ export function transformMathCall(
         }
 
         case "pow": {
-            if (
-                context.luaTarget === LuaTarget.Universal ||
-                context.luaTarget === LuaTarget.Lua51 ||
-                context.luaTarget === LuaTarget.Lua52
-            ) {
-                // Translate to to math.pow(base, power)
-                const method = lua.createStringLiteral(expressionName);
-                return lua.createCallExpression(lua.createTableIndexExpression(math, method), params, node);
-            }
-
-            // In newer versions translate to base ^ power instead
+            // Translate to base ^ power
             return lua.createBinaryExpression(params[0], params[1], lua.SyntaxKind.PowerOperator, node);
         }
 

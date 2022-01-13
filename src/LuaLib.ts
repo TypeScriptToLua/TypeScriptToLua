@@ -44,6 +44,7 @@ export enum LuaLibFeature {
     Iterator = "Iterator",
     Map = "Map",
     MathAtan2 = "MathAtan2",
+    MathSign = "MathSign",
     New = "New",
     Number = "Number",
     NumberIsFinite = "NumberIsFinite",

@@ -623,3 +623,15 @@ test("else if", () => {
         return i;
     `.expectToMatchJsResult();
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1208
+test("class member initializers", () => {
+    util.testFunction`
+        class MyClass {
+            myField = false ?? true;
+            constructor(public foo: number = 0 ?? 5) {}
+        }
+        const inst = new MyClass();
+        return [inst.myField, inst.foo];
+    `.expectToMatchJsResult();
+});

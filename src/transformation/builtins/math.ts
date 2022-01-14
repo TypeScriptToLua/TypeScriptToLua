@@ -70,6 +70,11 @@ export function transformMathCall(
             return lua.createCallExpression(lua.createTableIndexExpression(math, log), [add], node);
         }
 
+        case "pow": {
+            // Translate to base ^ power
+            return lua.createBinaryExpression(params[0], params[1], lua.SyntaxKind.PowerOperator, node);
+        }
+
         // math.floor(x + 0.5)
         case "round": {
             const floor = lua.createStringLiteral("floor");
@@ -93,7 +98,6 @@ export function transformMathCall(
         case "log":
         case "max":
         case "min":
-        case "pow":
         case "random":
         case "sin":
         case "sqrt":

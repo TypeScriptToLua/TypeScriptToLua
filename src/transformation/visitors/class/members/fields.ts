@@ -2,6 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../../../LuaAST";
 import { TransformationContext } from "../../../context";
 import { createSelfIdentifier } from "../../../utils/lua-ast";
+import { transformInPrecedingStatementScope } from "../../../utils/preceding-statements";
 import { transformPropertyName } from "../../literal";
 import { createDecoratingExpression, transformDecoratorExpression } from "../decorators";
 import { transformMemberExpressionOwnerName } from "./method";
@@ -30,18 +31,22 @@ export function transformClassInstanceFields(
     const statements: lua.Statement[] = [];
 
     for (const f of instanceFields) {
-        // Get identifier
-        const fieldName = transformPropertyName(context, f.name);
+        const [precedingStatements, statement] = transformInPrecedingStatementScope(context, () => {
+            // Get identifier
+            const fieldName = transformPropertyName(context, f.name);
 
-        const value = f.initializer ? context.transformExpression(f.initializer) : undefined;
+            const value = f.initializer ? context.transformExpression(f.initializer) : undefined;
 
-        // self[fieldName]
-        const selfIndex = lua.createTableIndexExpression(createSelfIdentifier(), fieldName);
+            // self[fieldName]
+            const selfIndex = lua.createTableIndexExpression(createSelfIdentifier(), fieldName);
 
-        // self[fieldName] = value
-        const assignClassField = lua.createAssignmentStatement(selfIndex, value, f);
+            // self[fieldName] = value
+            const assignClassField = lua.createAssignmentStatement(selfIndex, value, f);
 
-        statements.push(assignClassField);
+            return assignClassField;
+        });
+
+        statements.push(...precedingStatements, statement);
     }
 
     return statements;

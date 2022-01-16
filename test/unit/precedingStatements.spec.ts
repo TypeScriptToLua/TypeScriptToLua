@@ -635,3 +635,14 @@ test("class member initializers", () => {
         return [inst.myField, inst.foo];
     `.expectToMatchJsResult();
 });
+
+test("class member initializers in extended class", () => {
+    util.testFunction`
+        class A {}
+        class MyClass extends A {
+            myField = false ?? true;
+        }
+        const inst = new MyClass();
+        return inst.myField;
+    `.expectToMatchJsResult();
+});

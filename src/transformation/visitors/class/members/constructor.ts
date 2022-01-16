@@ -2,7 +2,6 @@ import * as ts from "typescript";
 import * as lua from "../../../../LuaAST";
 import { TransformationContext } from "../../../context";
 import { createSelfIdentifier } from "../../../utils/lua-ast";
-import { transformInPrecedingStatementScope } from "../../../utils/preceding-statements";
 import { popScope, pushScope, ScopeType } from "../../../utils/scope";
 import { transformFunctionBodyContent, transformFunctionBodyHeader, transformParameters } from "../../function";
 import { transformIdentifier } from "../../identifier";
@@ -44,9 +43,7 @@ export function transformConstructorDeclaration(
     // Check for field declarations in constructor
     const constructorFieldsDeclarations = statement.parameters.filter(p => p.modifiers !== undefined);
 
-    const [fieldsPrecedingStatements, classInstanceFields] = transformInPrecedingStatementScope(context, () =>
-        transformClassInstanceFields(context, instanceFields)
-    );
+    const classInstanceFields = transformClassInstanceFields(context, instanceFields);
 
     // If there are field initializers and the first statement is a super call,
     // move super call between default assignments and initializers
@@ -81,7 +78,6 @@ export function transformConstructorDeclaration(
         // else { TypeScript error: A parameter property may not be declared using a binding pattern }
     }
 
-    bodyWithFieldInitializers.push(...fieldsPrecedingStatements);
     bodyWithFieldInitializers.push(...classInstanceFields);
 
     bodyWithFieldInitializers.push(...body);

@@ -23,6 +23,7 @@ import { isTableExtensionIdentifier } from "./language-extensions/table";
 import { isVarargConstantNode } from "./language-extensions/vararg";
 import { isOptionalContinuation } from "./optional-chaining";
 import { isErrorClass } from "../builtins/error";
+import { BuildMode } from "../../CompilerOptions";
 
 export function transformIdentifier(context: TransformationContext, identifier: ts.Identifier): lua.Identifier {
     if (isOptionalContinuation(identifier)) {
@@ -73,7 +74,7 @@ export function transformIdentifier(context: TransformationContext, identifier: 
 
 export const transformIdentifierExpression: FunctionVisitor<ts.Identifier> = (node, context) => {
     const symbol = context.checker.getSymbolAtLocation(node);
-    if (symbol && !context.options.luaLibProject) {
+    if (symbol && context.options.buildMode !== BuildMode.LuaLib) {
         const exportScope = getSymbolExportScope(context, symbol);
         if (exportScope) {
             const name = symbol.name;

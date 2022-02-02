@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as ts from "typescript";
-import { CompilerOptions, validateOptions } from "../CompilerOptions";
+import { CompilerOptions, validateOptions, BuildMode } from "../CompilerOptions";
 import { createPrinter } from "../LuaPrinter";
 import { createVisitorMap, transformSourceFile } from "../transformation";
 import { isNonNull } from "../utils";
@@ -124,7 +124,7 @@ export function getProgramTranspileResult(
         program.getSourceFiles().filter(isEmittableJsonFile).forEach(processSourceFile);
     }
 
-    if (options.luaLibProject) {
+    if (options.buildMode === BuildMode.LuaLib) {
         // add lualib dependencies json file
         transpiledFiles.push(...generateExtraLualibFiles(emitHost, program, transpiledFiles));
     }

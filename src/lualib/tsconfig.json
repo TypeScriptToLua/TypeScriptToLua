@@ -10,8 +10,8 @@
         "noUnusedParameters": true
     },
     "tstl": {
+        "buildMode": "lualib",
         "luaLibImport": "none",
-        "noHeader": true,
-        "luaLibProject": true
+        "noHeader": true
     }
 }

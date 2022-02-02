@@ -27,7 +27,6 @@ export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> & {
     luaBundleEntry?: string;
     luaTarget?: LuaTarget;
     luaLibImport?: LuaLibImportKind;
-    luaLibProject?: boolean;
     luaPlugins?: LuaPluginImport[];
     noImplicitSelf?: boolean;
     noHeader?: boolean;
@@ -57,6 +56,7 @@ export enum LuaTarget {
 export enum BuildMode {
     Default = "default",
     Library = "library",
+    LuaLib = "lualib",
 }
 
 export const isBundleEnabled = (options: CompilerOptions) =>

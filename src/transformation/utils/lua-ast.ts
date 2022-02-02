@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import { LuaTarget } from "../../CompilerOptions";
+import { LuaTarget, BuildMode } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { assert, castArray } from "../../utils";
 import { TransformationContext } from "../context";
@@ -146,7 +146,7 @@ export function createLocalOrExportedOrGlobalDeclaration(
         if (!rhs) {
             return [];
         } else {
-            if (context.options.luaLibProject) {
+            if (context.options.buildMode === BuildMode.LuaLib) {
                 // assignment to a local variable defined elsewhere
                 // see sourceFile.ts
                 assignment = lua.createAssignmentStatement(lhs, rhs, tsOriginal);

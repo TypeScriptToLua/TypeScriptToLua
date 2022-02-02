@@ -12,6 +12,7 @@ import { transformIdentifier } from "../identifier";
 import { transformPropertyName } from "../literal";
 import { LuaLibFeature } from "../../../LuaLib";
 import { importLuaLibFeature } from "../../utils/lualib";
+import { BuildMode } from "../../../CompilerOptions";
 
 function isNoResolutionPath(context: TransformationContext, moduleSpecifier: ts.Expression): boolean {
     const moduleOwnerSymbol = context.checker.getSymbolAtLocation(moduleSpecifier);
@@ -61,7 +62,7 @@ function transformImportSpecifier(
 }
 
 export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> = (statement, context) => {
-    if (context.options.luaLibProject) {
+    if (context.options.buildMode === BuildMode.LuaLib) {
         // in lualib project, imports declare dependencies
         // Assume that relevant imports are in the form `import "./module"`
 

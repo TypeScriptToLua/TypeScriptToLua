@@ -2,12 +2,16 @@ import { ProcessedFile, EmitHost } from "./utils";
 import { LuaLibFeature, LuaLibModulesInfo, loadInlineLualibFeatures } from "../LuaLib";
 import * as path from "path";
 import { LuaPrinter } from "../LuaPrinter";
-import * as ts from "typescript";
 import * as lua from "../LuaAST";
+import { assume } from "../utils";
+import * as ts from "typescript";
 
-export function createLuaLibModuleInfo(files: ProcessedFile[]): LuaLibModulesInfo {
+export function generateExtraLualibFiles(
+    emitHost: EmitHost,
+    program: ts.Program,
+    files: ProcessedFile[]
+): ProcessedFile[] {
     const luaLibFiles: Map<LuaLibFeature, ProcessedFile> = new Map();
-
     for (const file of files) {
         if (!file.luaAst) continue;
         const fileName = path.basename(file.fileName, ".ts");
@@ -24,7 +28,8 @@ export function createLuaLibModuleInfo(files: ProcessedFile[]): LuaLibModulesInf
         }
     }
 
-    const result: Partial<LuaLibModulesInfo> = {};
+    // lualibModulesInfo
+    const lualibModulesInfo: Partial<LuaLibModulesInfo> = {};
     for (const [feature, file] of luaLibFiles) {
         let dependencies: LuaLibFeature[] | undefined;
         const dependenciesForFeature = file.luaAst!.luaLibFeatures;
@@ -35,33 +40,40 @@ export function createLuaLibModuleInfo(files: ProcessedFile[]): LuaLibModulesInf
 
         const exports = file.luaAst!.exports!;
         if (dependencies || exports) {
-            result[feature] = {
+            lualibModulesInfo[feature] = {
                 dependencies,
                 exports,
             };
         }
     }
+    assume<LuaLibModulesInfo>(lualibModulesInfo);
 
-    return result as LuaLibModulesInfo;
-}
-
-export function createLuaLibBundle(
-    emitHost: EmitHost,
-    program: ts.Program,
-    luaLibModuleInfo: LuaLibModulesInfo
-): string {
-    const allFeatures = Object.values(LuaLibFeature) as LuaLibFeature[];
-
-    let result = loadInlineLualibFeatures(allFeatures, emitHost);
-
-    const exports = allFeatures.flatMap(feature => luaLibModuleInfo[feature].exports);
+    // lua bundle
+    const allFeatures = Array.from(luaLibFiles.keys());
+    let lualibBundle = loadInlineLualibFeatures(
+        allFeatures,
+        emitHost,
+        lualibModulesInfo,
+        feature => luaLibFiles.get(feature)?.code ?? ""
+    );
+    const exports = allFeatures.flatMap(feature => lualibModulesInfo[feature].exports);
     const statements: lua.TableFieldExpression[] = exports.map(exportName =>
         lua.createTableFieldExpression(lua.createIdentifier(exportName), lua.createStringLiteral(exportName))
     );
     const moduleReturn = lua.createReturnStatement([lua.createTableExpression(statements)]);
-
     const printer = new LuaPrinter(emitHost, program, "lualib_bundle.lua");
-    result += `\n${printer.printReturnStatement(moduleReturn)}\n`;
+    lualibBundle += `\n${printer.printStatement(moduleReturn)}\n`;
 
-    return result;
+    return [
+        {
+            code: lualibBundle,
+            fileName: "lualib_bundle.lua",
+            isRawFile: true,
+        },
+        {
+            code: JSON.stringify(lualibModulesInfo, null, 2),
+            fileName: "lualib_dependencies.json",
+            isRawFile: true,
+        },
+    ];
 }

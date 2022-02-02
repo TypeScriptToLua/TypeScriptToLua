@@ -1,5 +1,5 @@
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/allSettled
-import { __TS__Promise, __TS__PromiseState } from "./Promise";
+import { __TS__Promise, PromiseState } from "./Promise";
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 export function __TS__PromiseAllSettled<T>(
@@ -14,10 +14,10 @@ export function __TS__PromiseAllSettled<T>(
     let i = 0;
     for (const item of iterable) {
         if (item instanceof __TS__Promise) {
-            if (item.state === __TS__PromiseState.Fulfilled) {
+            if (item.state === PromiseState.Fulfilled) {
                 // If value is a resolved promise, add a fulfilled PromiseSettledResult
                 results[i] = { status: "fulfilled", value: item.value };
-            } else if (item.state === __TS__PromiseState.Rejected) {
+            } else if (item.state === PromiseState.Rejected) {
                 // If value is a rejected promise, add a rejected PromiseSettledResult
                 results[i] = { status: "rejected", reason: item.rejectionReason };
             } else {

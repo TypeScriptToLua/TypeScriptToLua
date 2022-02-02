@@ -7,7 +7,7 @@ import { isNonNull } from "../utils";
 import { getPlugins, Plugin } from "./plugins";
 import { getTransformers } from "./transformers";
 import { EmitHost, ProcessedFile } from "./utils";
-import { createLuaLibModuleInfo, createLuaLibBundle } from "./lualib";
+import { generateExtraLualibFiles } from "./lualib";
 
 export interface TranspileOptions {
     program: ts.Program;
@@ -126,20 +126,7 @@ export function getProgramTranspileResult(
 
     if (options.luaLibProject) {
         // add lualib dependencies json file
-        const dependencyInfo = createLuaLibModuleInfo(transpiledFiles);
-        transpiledFiles.push({
-            code: JSON.stringify(dependencyInfo, null, 2),
-            fileName: "lualib_dependencies.json",
-            isRawFile: true,
-        });
-
-        // add lualib bundle file
-        const bundle = createLuaLibBundle(emitHost, program, dependencyInfo);
-        transpiledFiles.push({
-            code: bundle,
-            fileName: "lualib_bundle.lua",
-            isRawFile: true,
-        });
+        transpiledFiles.push(...generateExtraLualibFiles(emitHost, program, transpiledFiles));
     }
 
     options.noEmit = oldNoEmit;

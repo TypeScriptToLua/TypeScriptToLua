@@ -3,7 +3,7 @@
 // Promises implemented based on https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise
 // and https://promisesaplus.com/
 
-enum __TS__PromiseState {
+export enum __TS__PromiseState {
     Pending,
     Fulfilled,
     Rejected,
@@ -12,7 +12,7 @@ enum __TS__PromiseState {
 type FulfillCallback<TData, TResult> = (value: TData) => TResult | PromiseLike<TResult>;
 type RejectCallback<TResult> = (reason: any) => TResult | PromiseLike<TResult>;
 
-function __TS__PromiseDeferred<T>() {
+function promiseDeferred<T>() {
     let resolve: FulfillCallback<T, unknown>;
     let reject: RejectCallback<unknown>;
     const promise = new Promise<T>((res, rej) => {
@@ -23,11 +23,11 @@ function __TS__PromiseDeferred<T>() {
     return { promise, resolve, reject };
 }
 
-function __TS__IsPromiseLike<T>(thing: unknown): thing is PromiseLike<T> {
+function isPromiseLike<T>(thing: unknown): thing is PromiseLike<T> {
     return thing instanceof __TS__Promise;
 }
 
-class __TS__Promise<T> implements Promise<T> {
+export class __TS__Promise<T> implements Promise<T> {
     public state = __TS__PromiseState.Pending;
     public value?: T;
     public rejectionReason?: any;
@@ -70,7 +70,7 @@ class __TS__Promise<T> implements Promise<T> {
         onFulfilled?: FulfillCallback<T, TResult1>,
         onRejected?: RejectCallback<TResult2>
     ): Promise<TResult1 | TResult2> {
-        const { promise, resolve, reject } = __TS__PromiseDeferred<T | TResult1 | TResult2>();
+        const { promise, resolve, reject } = promiseDeferred<T | TResult1 | TResult2>();
 
         const isFulfilled = this.state === __TS__PromiseState.Fulfilled;
         const isRejected = this.state === __TS__PromiseState.Rejected;
@@ -110,10 +110,12 @@ class __TS__Promise<T> implements Promise<T> {
 
         return promise as Promise<TResult1 | TResult2>;
     }
+
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/catch
     public catch<TResult = never>(onRejected?: (reason: any) => TResult | PromiseLike<TResult>): Promise<T | TResult> {
         return this.then(undefined, onRejected);
     }
+
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/finally
     public finally(onFinally?: () => void): Promise<T> {
         if (onFinally) {
@@ -179,12 +181,13 @@ class __TS__Promise<T> implements Promise<T> {
             }
         };
     }
+
     private handleCallbackData<TResult1, TResult2, TResult extends TResult1 | TResult2>(
         data: TResult | PromiseLike<TResult>,
         resolve: FulfillCallback<TResult1 | TResult2, unknown>,
         reject: RejectCallback<unknown>
     ) {
-        if (__TS__IsPromiseLike<TResult>(data)) {
+        if (isPromiseLike<TResult>(data)) {
             const nextpromise = data as __TS__Promise<TResult>;
             if (nextpromise.state === __TS__PromiseState.Fulfilled) {
                 // If a handler function returns an already fulfilled promise,

@@ -1,6 +1,6 @@
-const __TS__parseInt_base_pattern = "0123456789aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTvVwWxXyYzZ";
+const parseIntBasePattern = "0123456789aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTvVwWxXyYzZ";
 
-function __TS__ParseInt(this: void, numberString: string, base?: number): number {
+export function __TS__ParseInt(this: void, numberString: string, base?: number): number {
     // Check which base to use if none specified
     if (base === undefined) {
         base = 10;
@@ -20,9 +20,7 @@ function __TS__ParseInt(this: void, numberString: string, base?: number): number
 
     // Calculate string match pattern to use
     const allowedDigits =
-        base <= 10
-            ? __TS__parseInt_base_pattern.substring(0, base)
-            : __TS__parseInt_base_pattern.substr(0, 10 + 2 * (base - 10));
+        base <= 10 ? parseIntBasePattern.substring(0, base) : parseIntBasePattern.substr(0, 10 + 2 * (base - 10));
     const pattern = `^%s*(-?[${allowedDigits}]*)`;
 
     // Try to parse with Lua tonumber

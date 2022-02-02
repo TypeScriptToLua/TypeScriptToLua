@@ -1,4 +1,4 @@
-function __TS__ArrayFlatMap<T, U>(
+export function __TS__ArrayFlatMap<T, U>(
     this: void,
     array: T[],
     callback: (value: T, index: number, array: T[]) => U | readonly U[]

@@ -33,6 +33,15 @@ export function transformBuiltinPropertyAccessExpression(
 ): lua.Expression | undefined {
     const ownerType = context.checker.getTypeAtLocation(node.expression);
 
+    if (ts.isIdentifier(node.expression) && isStandardLibraryType(context, ownerType, undefined)) {
+        switch (node.expression.text) {
+            case "Math":
+                return transformMathProperty(context, node);
+            case "Symbol":
+                importLuaLibFeature(context, LuaLibFeature.Symbol);
+        }
+    }
+
     if (isStringType(context, ownerType)) {
         return transformStringProperty(context, node);
     }
@@ -43,15 +52,6 @@ export function transformBuiltinPropertyAccessExpression(
 
     if (isFunctionType(ownerType)) {
         return transformFunctionProperty(context, node);
-    }
-
-    if (ts.isIdentifier(node.expression) && isStandardLibraryType(context, ownerType, undefined)) {
-        switch (node.expression.text) {
-            case "Math":
-                return transformMathProperty(context, node);
-            case "Symbol":
-                importLuaLibFeature(context, LuaLibFeature.Symbol);
-        }
     }
 }
 

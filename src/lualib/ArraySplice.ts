@@ -1,5 +1,5 @@
 // https://www.ecma-international.org/ecma-262/9.0/index.html#sec-array.prototype.splice
-function __TS__ArraySplice<T>(this: void, list: T[], ...args: T[]): T[] {
+export function __TS__ArraySplice<T>(this: void, list: T[], ...args: T[]): T[] {
     const len = list.length;
 
     const actualArgumentCount = select("#", ...args);

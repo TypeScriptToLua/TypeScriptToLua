@@ -146,11 +146,17 @@ export function createLocalOrExportedOrGlobalDeclaration(
         if (!rhs) {
             return [];
         } else {
-            assignment = lua.createAssignmentStatement(
-                identifiers.map(identifier => createExportedIdentifier(context, identifier, exportScope)),
-                rhs,
-                tsOriginal
-            );
+            if (context.options.luaLibProject) {
+                // assignment to a local variable defined elsewhere
+                // see sourceFile.ts
+                assignment = lua.createAssignmentStatement(lhs, rhs, tsOriginal);
+            } else {
+                assignment = lua.createAssignmentStatement(
+                    identifiers.map(identifier => createExportedIdentifier(context, identifier, exportScope)),
+                    rhs,
+                    tsOriginal
+                );
+            }
         }
     } else {
         const scope = peekScope(context);

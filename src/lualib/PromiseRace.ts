@@ -1,6 +1,8 @@
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/race
+import { __TS__PromiseState, __TS__Promise } from "./Promise";
+
 // eslint-disable-next-line @typescript-eslint/promise-function-async
-function __TS__PromiseRace<T>(this: void, iterable: Iterable<T | PromiseLike<T>>): Promise<T> {
+export function __TS__PromiseRace<T>(this: void, iterable: Iterable<T | PromiseLike<T>>): Promise<T> {
     const pending: Array<PromiseLike<T>> = [];
 
     for (const item of iterable) {

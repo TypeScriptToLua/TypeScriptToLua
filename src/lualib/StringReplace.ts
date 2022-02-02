@@ -1,4 +1,4 @@
-function __TS__StringReplace(
+export function __TS__StringReplace(
     this: void,
     source: string,
     searchValue: string,

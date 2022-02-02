@@ -1,6 +1,7 @@
 import * as path from "path";
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
+import { assert } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getSymbolAnnotations } from "../../utils/annotations";
 import { createDefaultExportStringLiteral } from "../../utils/export";
@@ -9,6 +10,8 @@ import { createSafeName } from "../../utils/safe-names";
 import { peekScope } from "../../utils/scope";
 import { transformIdentifier } from "../identifier";
 import { transformPropertyName } from "../literal";
+import { LuaLibFeature } from "../../../LuaLib";
+import { importLuaLibFeature } from "../../utils/lualib";
 
 function isNoResolutionPath(context: TransformationContext, moduleSpecifier: ts.Expression): boolean {
     const moduleOwnerSymbol = context.checker.getSymbolAtLocation(moduleSpecifier);
@@ -58,6 +61,19 @@ function transformImportSpecifier(
 }
 
 export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> = (statement, context) => {
+    if (context.options.luaLibProject) {
+        // in lualib project, imports declare dependencies
+        // Assume that relevant imports are in the form `import "./module"`
+
+        const moduleSpecifier = statement.moduleSpecifier;
+        assert(ts.isStringLiteral(moduleSpecifier));
+        const moduleName = moduleSpecifier.text.match(/\.\/(.*)$/)?.[1];
+        if (moduleName && moduleName in LuaLibFeature) {
+            importLuaLibFeature(context, moduleName as LuaLibFeature);
+        }
+        return undefined;
+    }
+
     const scope = peekScope(context);
 
     if (!scope.importStatements) {
@@ -72,12 +88,8 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
     if (statement.importClause === undefined) {
         result.push(lua.createExpressionStatement(requireCall));
 
-        if (scope.importStatements) {
-            scope.importStatements.push(...result);
-            return undefined;
-        } else {
-            return result;
-        }
+        scope.importStatements.push(...result);
+        return undefined;
     }
 
     const importPath = ts.isStringLiteral(statement.moduleSpecifier)
@@ -144,12 +156,8 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
         result.unshift(lua.createVariableDeclarationStatement(importUniqueName, requireCall, statement));
     }
 
-    if (scope.importStatements) {
-        scope.importStatements.push(...result);
-        return undefined;
-    } else {
-        return result;
-    }
+    scope.importStatements.push(...result);
+    return undefined;
 };
 
 export const transformExternalModuleReference: FunctionVisitor<ts.ExternalModuleReference> = (node, context) =>

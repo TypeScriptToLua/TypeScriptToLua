@@ -1,4 +1,4 @@
-WeakMap = class WeakMap<K, V> {
+export class WeakMap<K, V> {
     public static [Symbol.species] = WeakMap;
     public [Symbol.toStringTag] = "WeakMap";
 
@@ -46,4 +46,4 @@ WeakMap = class WeakMap<K, V> {
         this.items.set(key, value);
         return this;
     }
-};
+}

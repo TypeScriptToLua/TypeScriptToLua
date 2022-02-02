@@ -19,6 +19,7 @@ interface BaseFile {
     code: string;
     sourceMap?: string;
     sourceFiles?: ts.SourceFile[];
+    isRawFile?: boolean;
 }
 
 export interface ProcessedFile extends BaseFile {

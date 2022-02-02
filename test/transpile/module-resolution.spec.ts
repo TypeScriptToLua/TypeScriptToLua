@@ -490,7 +490,7 @@ test("includes lualib_bundle when external lua requests it", () => {
         .addExtraFile(
             "lualibuser.lua",
             `
-                require("lualib_bundle")
+                local __TS__ArrayPush = require("lualib_bundle").__TS__ArrayPush
 
                 local result = {}
                 __TS__ArrayPush(result, "foo")

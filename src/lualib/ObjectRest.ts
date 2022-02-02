@@ -1,4 +1,4 @@
-function __TS__ObjectRest<K extends keyof any, V>(
+export function __TS__ObjectRest<K extends keyof any, V>(
     this: void,
     target: Record<K, V>,
     usedProperties: Partial<Record<K, true>>

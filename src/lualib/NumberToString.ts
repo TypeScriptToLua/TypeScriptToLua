@@ -1,7 +1,7 @@
-const ____radixChars = "0123456789abcdefghijklmnopqrstuvwxyz";
+const radixChars = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 // https://www.ecma-international.org/ecma-262/10.0/index.html#sec-number.prototype.tostring
-function __TS__NumberToString(this: number, radix?: number): string {
+export function __TS__NumberToString(this: number, radix?: number): string {
     if (radix === undefined || radix === 10 || this === Infinity || this === -Infinity || this !== this) {
         return this.toString();
     }
@@ -20,7 +20,7 @@ function __TS__NumberToString(this: number, radix?: number): string {
         result = string.format("%x", integer);
     } else {
         do {
-            result = ____radixChars[integer % radix] + result;
+            result = radixChars[integer % radix] + result;
             integer = Math.floor(integer / radix);
         } while (integer !== 0);
     }
@@ -33,7 +33,7 @@ function __TS__NumberToString(this: number, radix?: number): string {
             fraction *= radix;
             delta *= radix;
             const digit = Math.floor(fraction);
-            result += ____radixChars[digit];
+            result += radixChars[digit];
             fraction -= digit;
             // TODO: Round to even
         } while (fraction >= delta);

@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { transformBuiltinIdentifierExpression } from "../builtins";
-import { createPromiseIdentifier, isPromiseClass } from "../builtins/promise";
+import { isPromiseClass } from "../builtins/promise";
 import { FunctionVisitor, tempSymbolId, TransformationContext } from "../context";
 import { AnnotationKind, isForRangeType } from "../utils/annotations";
 import {
@@ -57,7 +57,11 @@ export function transformIdentifier(context: TransformationContext, identifier: 
 
     if (isPromiseClass(context, identifier)) {
         importLuaLibFeature(context, LuaLibFeature.Promise);
-        return createPromiseIdentifier(identifier);
+        return lua.createIdentifier("__TS__Promise", identifier);
+    }
+    if (isPromiseClass(context, identifier)) {
+        importLuaLibFeature(context, LuaLibFeature.Promise);
+        return lua.createIdentifier("__TS__Promise", identifier);
     }
 
     const text = hasUnsafeIdentifierName(context, identifier) ? createSafeName(identifier.text) : identifier.text;
@@ -68,7 +72,7 @@ export function transformIdentifier(context: TransformationContext, identifier: 
 
 export const transformIdentifierExpression: FunctionVisitor<ts.Identifier> = (node, context) => {
     const symbol = context.checker.getSymbolAtLocation(node);
-    if (symbol) {
+    if (symbol && !context.options.luaLibProject) {
         const exportScope = getSymbolExportScope(context, symbol);
         if (exportScope) {
             const name = symbol.name;

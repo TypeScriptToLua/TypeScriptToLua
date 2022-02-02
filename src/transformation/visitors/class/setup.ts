@@ -40,7 +40,7 @@ export function createClassSetup(
         result.push(lua.createVariableDeclarationStatement(localClassName, defaultExportLeftHandSide));
     } else {
         const exportScope = getIdentifierExportScope(context, className);
-        if (exportScope) {
+        if (exportScope && !context.options.luaLibProject) {
             // local localClassName = ____exports.className
             result.push(
                 lua.createVariableDeclarationStatement(

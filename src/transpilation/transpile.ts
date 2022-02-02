@@ -7,6 +7,7 @@ import { isNonNull } from "../utils";
 import { getPlugins, Plugin } from "./plugins";
 import { getTransformers } from "./transformers";
 import { EmitHost, ProcessedFile } from "./utils";
+import { createLuaLibModuleInfo, createLuaLibBundle } from "./lualib";
 
 export interface TranspileOptions {
     program: ts.Program;
@@ -121,6 +122,24 @@ export function getProgramTranspileResult(
 
         // JSON files don't get through transformers and aren't written when outDir is the same as rootDir
         program.getSourceFiles().filter(isEmittableJsonFile).forEach(processSourceFile);
+    }
+
+    if (options.luaLibProject) {
+        // add lualib dependencies json file
+        const dependencyInfo = createLuaLibModuleInfo(transpiledFiles);
+        transpiledFiles.push({
+            code: JSON.stringify(dependencyInfo, null, 2),
+            fileName: "lualib_dependencies.json",
+            isRawFile: true,
+        });
+
+        // add lualib bundle file
+        const bundle = createLuaLibBundle(emitHost, program, dependencyInfo);
+        transpiledFiles.push({
+            code: bundle,
+            fileName: "lualib_bundle.lua",
+            isRawFile: true,
+        });
     }
 
     options.noEmit = oldNoEmit;

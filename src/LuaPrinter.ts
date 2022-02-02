@@ -1,12 +1,11 @@
 import * as path from "path";
 import { Mapping, SourceMapGenerator, SourceNode } from "source-map";
-import { getEmitPath } from ".";
 import * as ts from "typescript";
 import { CompilerOptions, isBundleEnabled, LuaLibImportKind } from "./CompilerOptions";
 import * as lua from "./LuaAST";
-import { loadLuaLibFeatures, LuaLibFeature } from "./LuaLib";
+import { loadInlineLualibFeatures, LuaLibFeature, loadImportedLualibFeatures } from "./LuaLib";
 import { isValidLuaIdentifier, shouldAllowUnicode } from "./transformation/utils/safe-names";
-import { EmitHost } from "./transpilation";
+import { EmitHost, getEmitPath } from "./transpilation";
 import { intersperse, normalizeSlashes } from "./utils";
 
 // https://www.lua.org/pil/2.4.html
@@ -239,12 +238,17 @@ export class LuaPrinter {
             luaLibImport === LuaLibImportKind.Always ||
             (luaLibImport === LuaLibImportKind.Require && file.luaLibFeatures.size > 0)
         ) {
-            // Require lualib bundle
-            header += 'require("lualib_bundle");\n';
+            // Import lualib features
+            const importStatements = loadImportedLualibFeatures(
+                file.luaLibFeatures,
+                this.emitHost,
+                luaLibImport === LuaLibImportKind.Always
+            );
+            header += this.concatNodes(...this.printStatementArray(importStatements)).toString();
         } else if (luaLibImport === LuaLibImportKind.Inline && file.luaLibFeatures.size > 0) {
             // Inline lualib features
             header += "-- Lua Library inline imports\n";
-            header += loadLuaLibFeatures(file.luaLibFeatures, this.emitHost);
+            header += loadInlineLualibFeatures(file.luaLibFeatures, this.emitHost);
         }
 
         if (this.options.sourceMapTraceback && !isBundleEnabled(this.options)) {

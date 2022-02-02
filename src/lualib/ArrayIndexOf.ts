@@ -1,4 +1,4 @@
-function __TS__ArrayIndexOf<T>(this: void, arr: T[], searchElement: T, fromIndex?: number): number {
+export function __TS__ArrayIndexOf<T>(this: void, arr: T[], searchElement: T, fromIndex?: number): number {
     const len = arr.length;
     if (len === 0) {
         return -1;

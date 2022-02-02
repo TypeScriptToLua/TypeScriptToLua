@@ -1,4 +1,4 @@
-function __TS__StringEndsWith(this: string, searchString: string, endPosition?: number): boolean {
+export function __TS__StringEndsWith(this: string, searchString: string, endPosition?: number): boolean {
     if (endPosition === undefined || endPosition > this.length) {
         endPosition = this.length;
     }

@@ -11,10 +11,6 @@ export function isPromiseClass(context: TransformationContext, node: ts.Identifi
     return isStandardLibraryType(context, type, undefined) && node.text === "Promise";
 }
 
-export function createPromiseIdentifier(original: ts.Node) {
-    return lua.createIdentifier("__TS__Promise", original);
-}
-
 export function transformPromiseConstructorCall(
     context: TransformationContext,
     node: PropertyCallExpression

@@ -1,14 +1,14 @@
-const ____symbolMetatable = {
+const symbolMetatable = {
     __tostring(this: symbol): string {
         return `Symbol(${this.description || ""})`;
     },
 };
 
-function __TS__Symbol(this: void, description?: string | number): symbol {
-    return setmetatable({ description }, ____symbolMetatable) as unknown as symbol;
+export function __TS__Symbol(this: void, description?: string | number): symbol {
+    return setmetatable({ description }, symbolMetatable) as unknown as symbol;
 }
 
-Symbol = {
+export const Symbol = {
     iterator: __TS__Symbol("Symbol.iterator"),
     hasInstance: __TS__Symbol("Symbol.hasInstance"),
 

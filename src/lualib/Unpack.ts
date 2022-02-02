@@ -1,1 +1,1 @@
-const __TS__Unpack = table.unpack || unpack;
+export const __TS__Unpack = table.unpack || unpack;

@@ -1,6 +1,8 @@
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/allSettled
+import { __TS__Promise, __TS__PromiseState } from "./Promise";
+
 // eslint-disable-next-line @typescript-eslint/promise-function-async
-function __TS__PromiseAllSettled<T>(
+export function __TS__PromiseAllSettled<T>(
     this: void,
     iterable: Iterable<T>
 ): Promise<Array<PromiseSettledResult<T extends PromiseLike<infer U> ? U : T>>> {

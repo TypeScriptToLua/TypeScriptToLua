@@ -1,4 +1,4 @@
-WeakSet = class WeakSet<T> {
+export class WeakSet<T> {
     public static [Symbol.species] = WeakSet;
     public [Symbol.toStringTag] = "WeakSet";
 
@@ -40,4 +40,4 @@ WeakSet = class WeakSet<T> {
     public has(value: T): boolean {
         return this.items.get(value) === true;
     }
-};
+}

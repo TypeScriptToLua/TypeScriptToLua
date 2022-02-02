@@ -5,7 +5,7 @@
 // because we don't create the AST from text
 
 import * as ts from "typescript";
-import { LuaLibFeature } from "./transformation/utils/lualib";
+import { LuaLibFeature } from "./LuaLib";
 import { castArray } from "./utils";
 
 export enum SyntaxKind {
@@ -195,6 +195,8 @@ export interface File extends Node {
     statements: Statement[];
     luaLibFeatures: Set<LuaLibFeature>;
     trivia: string;
+    // Only used in lualibCompile, this is the values the lua lib feature exports/loaded when imported
+    exports?: string[];
 }
 
 export function isFile(node: Node): node is File {
@@ -205,12 +207,14 @@ export function createFile(
     statements: Statement[],
     luaLibFeatures: Set<LuaLibFeature>,
     trivia: string,
-    tsOriginal?: ts.Node
+    tsOriginal?: ts.Node,
+    exports?: string[]
 ): File {
     const file = createNode(SyntaxKind.File, tsOriginal) as File;
     file.statements = statements;
     file.luaLibFeatures = luaLibFeatures;
     file.trivia = trivia;
+    file.exports = exports;
     return file;
 }
 

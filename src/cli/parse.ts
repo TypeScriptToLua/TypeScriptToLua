@@ -47,6 +47,11 @@ export const optionDeclarations: CommandLineOption[] = [
         choices: Object.values(LuaLibImportKind),
     },
     {
+        name: "luaLibProject",
+        description: "If this project is lualib source.",
+        type: "boolean",
+    },
+    {
         name: "luaTarget",
         aliases: ["lt"],
         description: "Specify Lua target version.",

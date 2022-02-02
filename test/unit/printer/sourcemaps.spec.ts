@@ -88,7 +88,7 @@ test.each([
         assertPatterns: [
             { luaPattern: "Bar = __TS__Class()", typeScriptPattern: "class Bar" },
             { luaPattern: "Bar.name =", typeScriptPattern: "class Bar" },
-            { luaPattern: "__TS__ClassExtends", typeScriptPattern: "extends" },
+            { luaPattern: "__TS__ClassExtends(", typeScriptPattern: "extends" }, // find use of function, not import
             { luaPattern: "Foo", typeScriptPattern: "Foo" },
             { luaPattern: "function Bar.prototype.____constructor", typeScriptPattern: "constructor" },
         ],

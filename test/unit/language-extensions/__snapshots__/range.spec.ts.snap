@@ -33,7 +33,8 @@ return ____exports"
 exports[`$range invalid use ("const x = $range(1, 10);"): diagnostics 1`] = `"main.ts(2,19): error TSTL: $range can only be used in a for...of loop."`;
 
 exports[`$range invalid use ("const y = [...$range(1, 10)];"): code 1`] = `
-"require(\\"lualib_bundle\\");
+"local ____lualib = require(\\"lualib_bundle\\")
+local __TS__Spread = ____lualib.__TS__Spread
 local ____exports = {}
 function ____exports.__main(self)
     local y = {__TS__Spread(____(nil, 1, 10))}
@@ -66,7 +67,8 @@ return ____exports"
 exports[`$range invalid use ("for (const i of $range(1, 10, 2) as number[]) {}"): diagnostics 1`] = `"main.ts(2,25): error TSTL: $range can only be used in a for...of loop."`;
 
 exports[`$range invalid use ("for (const i of ($range(1, 10, 2))) {}"): code 1`] = `
-"require(\\"lualib_bundle\\");
+"local ____lualib = require(\\"lualib_bundle\\")
+local __TS__Iterator = ____lualib.__TS__Iterator
 local ____exports = {}
 function ____exports.__main(self)
     for ____, i in __TS__Iterator(____(nil, 1, 10, 2)) do

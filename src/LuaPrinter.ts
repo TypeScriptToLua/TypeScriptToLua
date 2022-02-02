@@ -173,7 +173,7 @@ export class LuaPrinter {
 
     public print(file: lua.File): PrintResult {
         // Add traceback lualib if sourcemap traceback option is enabled
-        if (this.options.sourceMapTraceback) {
+        if (this.options.sourceMapTraceback && !isBundleEnabled(this.options)) {
             file.luaLibFeatures.add(LuaLibFeature.SourceMapTraceBack);
         }
 
@@ -232,6 +232,7 @@ export class LuaPrinter {
         if (!this.options.noHeader) {
             header += tstlHeader;
         }
+        let statements = file.statements;
 
         const luaLibImport = this.options.luaLibImport ?? LuaLibImportKind.Require;
         if (
@@ -244,7 +245,8 @@ export class LuaPrinter {
                 this.emitHost,
                 luaLibImport === LuaLibImportKind.Always
             );
-            header += this.concatNodes(...this.printStatementArray(importStatements)).toString();
+
+            statements = importStatements.concat(statements);
         } else if (luaLibImport === LuaLibImportKind.Inline && file.luaLibFeatures.size > 0) {
             // Inline lualib features
             header += "-- Lua Library inline imports\n";
@@ -257,7 +259,7 @@ export class LuaPrinter {
             header += `${LuaPrinter.sourceMapTracebackPlaceholder}\n`;
         }
 
-        return this.concatNodes(header, ...this.printStatementArray(file.statements));
+        return this.concatNodes(header, ...this.printStatementArray(statements));
     }
 
     protected pushIndent(): void {

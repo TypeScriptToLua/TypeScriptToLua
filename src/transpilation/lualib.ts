@@ -1,5 +1,5 @@
 import { ProcessedFile, EmitHost } from "./utils";
-import { LuaLibFeature, LuaLibModulesInfo, loadInlineLualibFeatures } from "../LuaLib";
+import { LuaLibFeature, LuaLibModulesInfo, loadInlineLualibFeatures, luaLibModulesInfoFileName } from "../LuaLib";
 import * as path from "path";
 import { LuaPrinter } from "../LuaPrinter";
 import * as lua from "../LuaAST";
@@ -72,7 +72,7 @@ export function generateExtraLualibFiles(
         },
         {
             code: JSON.stringify(lualibModulesInfo, null, 2),
-            fileName: "lualib_dependencies.json",
+            fileName: luaLibModulesInfoFileName,
             isRawFile: true,
         },
     ];

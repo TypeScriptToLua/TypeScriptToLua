@@ -106,18 +106,19 @@ export interface LuaLibFeatureInfo {
 }
 export type LuaLibModulesInfo = Record<LuaLibFeature, LuaLibFeatureInfo>;
 
-let luaLibModuleInfo: LuaLibModulesInfo | undefined;
-export function getLuaLibModuleInfo(emitHost: EmitHost): LuaLibModulesInfo {
-    if (luaLibModuleInfo === undefined) {
-        const lualibPath = path.resolve(__dirname, "../dist/lualib/lualib_dependencies.json");
+export const luaLibModulesInfoFileName = "lualib_module_info.json";
+let luaLibModulesInfo: LuaLibModulesInfo | undefined;
+export function getLuaLibModulesInfo(emitHost: EmitHost): LuaLibModulesInfo {
+    if (luaLibModulesInfo === undefined) {
+        const lualibPath = path.resolve(__dirname, `../dist/lualib/${luaLibModulesInfoFileName}`);
         const result = emitHost.readFile(lualibPath);
         if (result !== undefined) {
-            luaLibModuleInfo = JSON.parse(result) as LuaLibModulesInfo;
+            luaLibModulesInfo = JSON.parse(result) as LuaLibModulesInfo;
         } else {
             throw new Error(`Could not load lualib dependencies from '${lualibPath}'`);
         }
     }
-    return luaLibModuleInfo;
+    return luaLibModulesInfo;
 }
 
 export function readLuaLibFeature(feature: LuaLibFeature, emitHost: EmitHost): string {
@@ -132,7 +133,7 @@ export function readLuaLibFeature(feature: LuaLibFeature, emitHost: EmitHost): s
 export function loadInlineLualibFeatures(
     features: Iterable<LuaLibFeature>,
     emitHost: EmitHost,
-    luaLibModulesInfo: LuaLibModulesInfo = getLuaLibModuleInfo(emitHost),
+    luaLibModulesInfo: LuaLibModulesInfo = getLuaLibModulesInfo(emitHost),
     readFeature: (feature: LuaLibFeature) => string = feature => readLuaLibFeature(feature, emitHost)
 ): string {
     let result = "";
@@ -163,7 +164,7 @@ export function loadImportedLualibFeatures(
     emitHost: EmitHost,
     alwaysRequire = false
 ): lua.Statement[] {
-    const luaLibModuleInfo = getLuaLibModuleInfo(emitHost);
+    const luaLibModuleInfo = getLuaLibModulesInfo(emitHost);
 
     const imports = Array.from(features).flatMap(feature => luaLibModuleInfo[feature].exports);
 

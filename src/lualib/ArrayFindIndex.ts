@@ -1,11 +1,11 @@
 export function __TS__ArrayFindIndex<T>(
-    this: void,
-    arr: T[],
-    callbackFn: (element: T, index?: number, array?: T[]) => boolean
+    this: T[],
+    callbackFn: (element: T, index?: number, array?: T[]) => boolean,
+    thisArg?: any
 ): number {
-    for (let i = 0, len = arr.length; i < len; i++) {
-        if (callbackFn(arr[i], i, arr)) {
-            return i;
+    for (const i of $range(1, this.length)) {
+        if (callbackFn.call(thisArg, this[i - 1], i - 1, this)) {
+            return i - 1;
         }
     }
     return -1;

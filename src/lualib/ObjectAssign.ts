@@ -1,15 +1,12 @@
 // https://tc39.github.io/ecma262/#sec-object.assign
 // eslint-disable-next-line @typescript-eslint/ban-types
-export function __TS__ObjectAssign<T extends object>(this: void, to: T, ...sources: object[]): T {
-    if (to === undefined) {
-        return to;
-    }
-
-    for (const source of sources) {
+export function __TS__ObjectAssign<T extends object>(this: void, target: T, ...sources: T[]): T {
+    for (const i of $range(1, sources.length)) {
+        const source = sources[i - 1];
         for (const key in source) {
-            to[key] = source[key];
+            target[key] = source[key];
         }
     }
 
-    return to;
+    return target;
 }

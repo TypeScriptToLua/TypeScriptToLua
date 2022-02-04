@@ -24,6 +24,14 @@ export function findFirstNodeAbove<T extends ts.Node>(node: ts.Node, callback: (
     }
 }
 
+export function findFirstNonOuterParent(node: ts.Node): ts.Node {
+    let current = node.parent;
+    while (ts.isOuterExpression(current)) {
+        current = current.parent;
+    }
+    return current;
+}
+
 export function getFirstDeclarationInFile(symbol: ts.Symbol, sourceFile: ts.SourceFile): ts.Declaration | undefined {
     const originalSourceFile = ts.getParseTreeNode(sourceFile) ?? sourceFile;
     const declarations = (symbol.getDeclarations() ?? []).filter(d => d.getSourceFile() === originalSourceFile);

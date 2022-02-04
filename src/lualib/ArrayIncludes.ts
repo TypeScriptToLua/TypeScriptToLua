@@ -11,8 +11,8 @@ export function __TS__ArrayIncludes<T>(this: T[], searchElement: T, fromIndex = 
         k = 0;
     }
 
-    for (const i of $range(k, len)) {
-        if (this[i] === searchElement) {
+    for (const i of $range(k + 1, len)) {
+        if (this[i - 1] === searchElement) {
             return true;
         }
     }

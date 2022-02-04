@@ -1,11 +1,11 @@
 export function __TS__ArrayMap<T, U>(
-    this: void,
-    arr: T[],
-    callbackfn: (value: T, index?: number, array?: T[]) => U
+    this: T[],
+    callbackfn: (value: T, index?: number, array?: T[]) => U,
+    thisArg?: any
 ): U[] {
-    const newArray: U[] = [];
-    for (let i = 0; i < arr.length; i++) {
-        newArray[i] = callbackfn(arr[i], i, arr);
+    const result: U[] = [];
+    for (const i of $range(1, this.length)) {
+        result[i - 1] = callbackfn.call(thisArg, this[i - 1], i - 1, this);
     }
-    return newArray;
+    return result;
 }

@@ -1,3 +1,4 @@
+const sub = string.sub;
 export function __TS__StringReplace(
     this: void,
     source: string,
@@ -8,7 +9,6 @@ export function __TS__StringReplace(
     if (!startPos) {
         return source;
     }
-    const sub = string.sub;
     const before = sub(source, 1, startPos - 1);
     const replacement =
         typeof replaceValue === "string" ? replaceValue : replaceValue(searchValue, startPos - 1, source);

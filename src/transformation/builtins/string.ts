@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { unsupportedProperty } from "../utils/diagnostics";
-import { addToNumericExpression, createNaN, getNumberLiteralValue } from "../utils/lua-ast";
+import { addToNumericExpression, createNaN, getNumberLiteralValue, wrapInTable } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { PropertyCallExpression, transformArguments, transformCallAndArguments } from "../visitors/call";
 
@@ -30,7 +30,11 @@ export function transformStringPrototypeCall(
         case "replaceAll":
             return transformLuaLibFunction(context, LuaLibFeature.StringReplaceAll, node, caller, ...params);
         case "concat":
-            return transformLuaLibFunction(context, LuaLibFeature.StringConcat, node, caller, ...params);
+            return lua.createCallExpression(
+                lua.createTableIndexExpression(lua.createIdentifier("table"), lua.createStringLiteral("concat")),
+                [wrapInTable(caller, ...params)],
+                node
+            );
 
         case "indexOf": {
             const stringExpression = createStringCall(

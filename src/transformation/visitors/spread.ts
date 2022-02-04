@@ -11,20 +11,13 @@ import {
     isFunctionScopeWithDefinition,
     ScopeType,
 } from "../utils/scope";
-import { isArrayType } from "../utils/typescript";
+import { isArrayType, findFirstNonOuterParent } from "../utils/typescript";
 import { isMultiReturnCall } from "./language-extensions/multi";
 import { annotationRemoved } from "../utils/diagnostics";
 import { isGlobalVarargConstant } from "./language-extensions/vararg";
 
-function skipOuterExpressionParents(node: ts.Node) {
-    while (ts.isOuterExpression(node)) {
-        node = node.parent;
-    }
-    return node;
-}
-
 export function isOptimizedVarArgSpread(context: TransformationContext, symbol: ts.Symbol, identifier: ts.Identifier) {
-    if (!ts.isSpreadElement(skipOuterExpressionParents(identifier.parent))) {
+    if (!ts.isSpreadElement(findFirstNonOuterParent(identifier))) {
         return false;
     }
 

@@ -472,10 +472,10 @@ test.each([
     util.testExpression`${util.formatCode(array)}.indexOf(${util.formatCode(...args)})`.expectToMatchJsResult();
 });
 
-test.each([{ args: [1] }, { args: [1, 2, 3] }])("array.push (%p)", ({ args }) => {
+test.each([{ args: "1" }, { args: "1, 2, 3" }, { args: "...[1, 2, 3]" }])("array.push (%p)", ({ args }) => {
     util.testFunction`
         const array = [0];
-        const value = array.push(${util.formatCode(...args)});
+        const value = array.push(${args});
         return { array, value };
     `.expectToMatchJsResult();
 });

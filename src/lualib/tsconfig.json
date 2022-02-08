@@ -5,13 +5,12 @@
         "lib": ["esnext"],
         "types": ["lua-types/5.4"],
         "skipLibCheck": true,
-
         "noUnusedLocals": true,
         "noUnusedParameters": true
     },
     "tstl": {
-        "buildMode": "lualib",
         "luaLibImport": "none",
-        "noHeader": true
+        "noHeader": true,
+        "luaLibCompilation": true
     }
 }

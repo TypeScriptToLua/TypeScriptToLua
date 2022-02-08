@@ -11,7 +11,6 @@ import {
 import { createExportsIdentifier, createLocalOrExportedOrGlobalDeclaration } from "../../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { getExtendedNode, getExtendsClause } from "./utils";
-import { BuildMode } from "../../../CompilerOptions";
 
 export function createClassSetup(
     context: TransformationContext,
@@ -41,7 +40,7 @@ export function createClassSetup(
         result.push(lua.createVariableDeclarationStatement(localClassName, defaultExportLeftHandSide));
     } else {
         const exportScope = getIdentifierExportScope(context, className);
-        if (exportScope && context.options.buildMode !== BuildMode.LuaLib) {
+        if (exportScope && !context.options.luaLibCompilation) {
             // local localClassName = ____exports.className
             result.push(
                 lua.createVariableDeclarationStatement(

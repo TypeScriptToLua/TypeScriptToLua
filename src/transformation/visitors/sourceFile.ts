@@ -10,7 +10,6 @@ import { performHoisting, popScope, pushScope, ScopeType } from "../utils/scope"
 import { hasExportEquals } from "../utils/typescript";
 import { getSymbolIdOfSymbol, getSymbolInfo } from "../utils/symbols";
 import { getExportedSymbolsFromScope } from "../utils/export";
-import { BuildMode } from "../../CompilerOptions";
 
 export const transformSourceFileNode: FunctionVisitor<ts.SourceFile> = (node, context) => {
     let statements: lua.Statement[] = [];
@@ -36,7 +35,7 @@ export const transformSourceFileNode: FunctionVisitor<ts.SourceFile> = (node, co
         statements = performHoisting(context, context.transformStatements(node.statements));
         popScope(context);
 
-        if (context.options.buildMode === BuildMode.LuaLib) {
+        if (context.options.luaLibCompilation) {
             // Exports are currently assignment statements
             const exportedSymbolIds = getExportedSymbolsFromScope(context, context.sourceFile)
                 .map(symbol => getSymbolIdOfSymbol(context, symbol))

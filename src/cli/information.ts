@@ -19,6 +19,7 @@ export function getHelpString(): string {
 
     result += "Options:\n";
     for (const option of optionDeclarations) {
+        if (option.internal) continue;
         const aliasStrings = (option.aliases ?? []).map(a => "-" + a);
         const optionString = [...aliasStrings, "--" + option.name].join("|");
 

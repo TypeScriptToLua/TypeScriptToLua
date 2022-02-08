@@ -14,7 +14,6 @@ import {
     isStringType,
 } from "../utils/typescript";
 import { PropertyCallExpression } from "../visitors/call";
-import { checkForLuaLibType } from "../visitors/class/new";
 import { transformArrayConstructorCall, transformArrayProperty, transformArrayPrototypeCall } from "./array";
 import { transformConsoleCall } from "./console";
 import { transformFunctionPrototypeCall, transformFunctionProperty } from "./function";
@@ -67,7 +66,6 @@ export function transformBuiltinCallExpression(
     const expressionType = context.checker.getTypeAtLocation(node.expression);
     if (ts.isIdentifier(node.expression) && isStandardLibraryType(context, expressionType, undefined)) {
         // TODO:
-        checkForLuaLibType(context, expressionType);
         const result = transformGlobalCall(context, node);
         if (result) {
             if (isOptionalCall) return unsupportedOptionalCall();
@@ -157,5 +155,48 @@ export function transformBuiltinIdentifierExpression(
 
         case "globalThis":
             return lua.createIdentifier("_G", node, getIdentifierSymbolId(context, node), "globalThis");
+    }
+}
+
+const builtinErrorTypeNames = new Set([
+    "Error",
+    "ErrorConstructor",
+    "RangeError",
+    "RangeErrorConstructor",
+    "ReferenceError",
+    "ReferenceErrorConstructor",
+    "SyntaxError",
+    "SyntaxErrorConstructor",
+    "TypeError",
+    "TypeErrorConstructor",
+    "URIError",
+    "URIErrorConstructor",
+]);
+
+export function checkForLuaLibType(context: TransformationContext, type: ts.Type): void {
+    if (!type.symbol) return;
+
+    const name = context.checker.getFullyQualifiedName(type.symbol);
+    switch (name) {
+        case "Map":
+        case "MapConstructor":
+            importLuaLibFeature(context, LuaLibFeature.Map);
+            return;
+        case "Set":
+        case "SetConstructor":
+            importLuaLibFeature(context, LuaLibFeature.Set);
+            return;
+        case "WeakMap":
+        case "WeakMapConstructor":
+            importLuaLibFeature(context, LuaLibFeature.WeakMap);
+            return;
+        case "WeakSet":
+        case "WeakSetConstructor":
+            importLuaLibFeature(context, LuaLibFeature.WeakSet);
+            return;
+    }
+
+    if (builtinErrorTypeNames.has(name)) {
+        importLuaLibFeature(context, LuaLibFeature.Error);
     }
 }

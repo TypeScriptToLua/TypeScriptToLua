@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
-import { transformBuiltinIdentifierExpression } from "../builtins";
+import { transformBuiltinIdentifierExpression, checkForLuaLibType } from "../builtins";
 import { isPromiseClass } from "../builtins/promise";
 import { FunctionVisitor, tempSymbolId, TransformationContext } from "../context";
 import { AnnotationKind, isForRangeType } from "../utils/annotations";
@@ -22,7 +22,7 @@ import { isRangeFunctionNode } from "./language-extensions/range";
 import { isTableExtensionIdentifier } from "./language-extensions/table";
 import { isVarargConstantNode } from "./language-extensions/vararg";
 import { isOptionalContinuation } from "./optional-chaining";
-import { isErrorClass } from "../builtins/error";
+import { isStandardLibraryType } from "../utils/typescript";
 
 export function transformIdentifier(context: TransformationContext, identifier: ts.Identifier): lua.Identifier {
     if (isOptionalContinuation(identifier)) {
@@ -60,9 +60,9 @@ export function transformIdentifier(context: TransformationContext, identifier: 
         importLuaLibFeature(context, LuaLibFeature.Promise);
         return lua.createIdentifier("__TS__Promise", identifier);
     }
-
-    if (isErrorClass(context, identifier)) {
-        importLuaLibFeature(context, LuaLibFeature.Error);
+    const type = context.checker.getTypeAtLocation(identifier);
+    if (isStandardLibraryType(context, type, undefined)) {
+        checkForLuaLibType(context, type);
     }
 
     const text = hasUnsafeIdentifierName(context, identifier) ? createSafeName(identifier.text) : identifier.text;

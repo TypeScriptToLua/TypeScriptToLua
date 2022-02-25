@@ -472,12 +472,33 @@ test.each([
     util.testExpression`${util.formatCode(array)}.indexOf(${util.formatCode(...args)})`.expectToMatchJsResult();
 });
 
-test.each([{ args: "1" }, { args: "1, 2, 3" }, { args: "...[1, 2, 3]" }])("array.push (%p)", ({ args }) => {
+test.each([
+    { args: "1" },
+    { args: "1, 2, 3" },
+    { args: "...[1, 2, 3]" },
+    { args: "1, 2, ...[3, 4]" },
+    { args: "1, 2, ...[3, 4], 5" },
+])("array.push (%p)", ({ args }) => {
     util.testFunction`
         const array = [0];
         const value = array.push(${args});
         return { array, value };
-    `.expectToMatchJsResult();
+    `
+        .debug()
+        .expectToMatchJsResult();
+});
+
+test("array.push(...)", () => {
+    util.testFunction`
+        const array = [0];
+        function push(...args: any[]) {
+            return array.push(...args);
+        }
+        const value = push(1, 2, 3);
+        return { array, value };
+    `
+        .debug()
+        .expectToMatchJsResult();
 });
 
 test.each([

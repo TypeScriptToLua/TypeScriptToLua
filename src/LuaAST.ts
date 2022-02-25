@@ -129,6 +129,7 @@ export enum NodeFlags {
     None = 0,
     Inline = 1 << 0, // Keep function body on same line
     Declaration = 1 << 1, // Prefer declaration syntax `function foo()` over assignment syntax `foo = function()`
+    TableUnpackCall = 1 << 2, // This is a table.unpack call
 }
 
 export interface TextRange {
@@ -195,6 +196,11 @@ function getSourcePosition(sourceNode: ts.Node): TextRange | undefined {
 
 export function getOriginalPos(node: Node): TextRange {
     return { line: node.line, column: node.column };
+}
+
+export function setNodeFlags<T extends Node>(node: T, flags: NodeFlags): T {
+    node.flags = flags;
+    return node;
 }
 
 export interface File extends Node {

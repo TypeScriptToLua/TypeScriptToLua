@@ -6,6 +6,7 @@ import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { PropertyCallExpression, transformArguments, transformCallAndArguments } from "../visitors/call";
 import { isStringType, isNumberType, findFirstNonOuterParent } from "../utils/typescript";
 import { moveToPrecedingTemp } from "../visitors/expression-list";
+import { isUnpackCall } from "../utils/lua-ast";
 
 export function transformArrayConstructorCall(
     context: TransformationContext,
@@ -76,8 +77,20 @@ export function transformArrayPrototypeCall(
         case "entries":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayEntries, node, caller);
         case "push":
-            if (node.arguments.length === 1 && !ts.isSpreadElement(node.arguments[0])) {
-                return transformSingleElementArrayPush(context, node, caller, params[0]);
+            if (node.arguments.length === 1) {
+                const param = params[0];
+                if (isUnpackCall(param)) {
+                    return transformLuaLibFunction(
+                        context,
+                        LuaLibFeature.ArrayPushArray,
+                        node,
+                        caller,
+                        (param as lua.CallExpression).params[0]
+                    );
+                }
+                if (!lua.isDotsLiteral(param)) {
+                    return transformSingleElementArrayPush(context, node, caller, param);
+                }
             }
 
             return transformLuaLibFunction(context, LuaLibFeature.ArrayPush, node, caller, ...params);

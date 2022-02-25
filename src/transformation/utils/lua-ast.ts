@@ -76,7 +76,11 @@ export function createUnpackCall(
             ? lua.createIdentifier("unpack")
             : lua.createTableIndexExpression(lua.createIdentifier("table"), lua.createStringLiteral("unpack"));
 
-    return lua.createCallExpression(unpack, [expression], tsOriginal);
+    return lua.setNodeFlags(lua.createCallExpression(unpack, [expression], tsOriginal), lua.NodeFlags.TableUnpackCall);
+}
+
+export function isUnpackCall(node: lua.Node): boolean {
+    return lua.isCallExpression(node) && (node.flags & lua.NodeFlags.TableUnpackCall) !== 0;
 }
 
 export function wrapInTable(...expressions: lua.Expression[]): lua.TableExpression {

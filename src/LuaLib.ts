@@ -16,6 +16,7 @@ export enum LuaLibFeature {
     ArrayJoin = "ArrayJoin",
     ArrayMap = "ArrayMap",
     ArrayPush = "ArrayPush",
+    ArrayPushArray = "ArrayPushArray",
     ArrayReduce = "ArrayReduce",
     ArrayReduceRight = "ArrayReduceRight",
     ArrayReverse = "ArrayReverse",

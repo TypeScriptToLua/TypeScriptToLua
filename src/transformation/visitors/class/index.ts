@@ -155,7 +155,7 @@ function transformClassLikeDeclaration(
             lua.createBlock(constructorBody),
             [createSelfIdentifier()],
             lua.createDotsLiteral(),
-            lua.FunctionExpressionFlags.Declaration
+            lua.NodeFlags.Declaration
         );
         result.push(
             lua.createAssignmentStatement(createConstructorName(localClassName), constructorFunction, classDeclaration)

@@ -40,6 +40,17 @@ export function transpileProject(
     return transpileFiles(parseResult.fileNames, parseResult.options, writeFile);
 }
 
+/** @internal */
+export function transpileLuaLibProject(configFileName: string): EmitResult {
+    const parseResult = parseConfigFileWithSystem(configFileName);
+    if (parseResult.errors.length > 0) {
+        return { diagnostics: parseResult.errors, emitSkipped: true };
+    }
+    parseResult.options.luaLibCompilation = true;
+
+    return transpileFiles(parseResult.fileNames, parseResult.options);
+}
+
 const libCache: { [key: string]: ts.SourceFile } = {};
 
 /** @internal */

@@ -10,7 +10,6 @@
     },
     "tstl": {
         "luaLibImport": "none",
-        "noHeader": true,
-        "luaLibCompilation": true
+        "noHeader": true
     }
 }

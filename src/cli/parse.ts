@@ -10,7 +10,6 @@ interface CommandLineOptionBase {
     name: string;
     aliases?: string[];
     description: string;
-    internal?: boolean;
 }
 
 interface CommandLineOptionOfEnum extends CommandLineOptionBase {
@@ -84,12 +83,6 @@ export const optionDeclarations: CommandLineOption[] = [
         description: "An array of paths that tstl should not resolve and keep as-is.",
         type: "array",
     },
-    {
-        name: "luaLibCompilation",
-        description: "Internal. Specifies if this project is lualib source.",
-        type: "boolean",
-        internal: true,
-    },
 ];
 
 export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): ParsedCommandLine {
@@ -110,7 +103,7 @@ export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): 
 
         for (const [name, rawValue] of Object.entries(parsedConfigFile.raw.tstl)) {
             const option = optionDeclarations.find(option => option.name === name);
-            if (!option && option !== "lualibCompilation") {
+            if (!option) {
                 parsedConfigFile.errors.push(cliDiagnostics.unknownCompilerOption(name));
                 continue;
             }

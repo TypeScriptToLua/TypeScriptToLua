@@ -34,6 +34,7 @@ export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> & {
     plugins?: Array<ts.PluginImport | TransformerImport>;
     sourceMapTraceback?: boolean;
     tstlVerbose?: boolean;
+    /** @internal */
     luaLibCompilation?: boolean;
     [option: string]: any;
 };

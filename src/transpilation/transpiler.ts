@@ -100,7 +100,9 @@ export class Transpiler {
         } else {
             emitPlan = resolutionResult.resolvedFiles.map(file => ({
                 ...file,
-                outputPath: getEmitPath(file, program),
+                outputPath: file.isRawFile
+                    ? path.join(getEmitOutDir(program), file.fileName)
+                    : getEmitPath(file.fileName, program),
             }));
         }
 
@@ -108,14 +110,9 @@ export class Transpiler {
     }
 }
 
-export function getEmitPath(file: string | ProcessedFile, program: ts.Program): string {
+export function getEmitPath(file: string, program: ts.Program): string {
     const outDir = getEmitOutDir(program);
-    if (typeof file !== "string" && file.isRawFile) {
-        return path.join(outDir, file.fileName);
-    }
-    const fileName = typeof file === "string" ? file : file.fileName;
-    const relativeOutputPath = getEmitPathRelativeToOutDir(fileName, program);
-
+    const relativeOutputPath = getEmitPathRelativeToOutDir(file, program);
     return path.join(outDir, relativeOutputPath);
 }
 

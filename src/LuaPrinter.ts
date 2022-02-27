@@ -173,7 +173,7 @@ export class LuaPrinter {
 
     public print(file: lua.File): PrintResult {
         // Add traceback lualib if sourcemap traceback option is enabled
-        if (this.options.sourceMapTraceback && !isBundleEnabled(this.options)) {
+        if (this.options.sourceMapTraceback) {
             file.luaLibFeatures.add(LuaLibFeature.SourceMapTraceBack);
         }
 

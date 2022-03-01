@@ -1,6 +1,10 @@
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all
+
+import { __TS__Promise } from "./Promise";
+import { __TS__PromiseState } from "./PromiseState";
+
 // eslint-disable-next-line @typescript-eslint/promise-function-async
-function __TS__PromiseAll<T>(this: void, iterable: Iterable<T | PromiseLike<T>>): Promise<T[]> {
+export function __TS__PromiseAll<T>(this: void, iterable: Iterable<T | PromiseLike<T>>): Promise<T[]> {
     const results: T[] = [];
 
     const toResolve = new LuaTable<number, PromiseLike<T>>();

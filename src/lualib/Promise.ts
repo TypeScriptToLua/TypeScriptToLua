@@ -1,13 +1,9 @@
 /* eslint-disable @typescript-eslint/promise-function-async */
 
+import { __TS__PromiseState } from "./PromiseState";
+
 // Promises implemented based on https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise
 // and https://promisesaplus.com/
-
-enum __TS__PromiseState {
-    Pending,
-    Fulfilled,
-    Rejected,
-}
 
 type FulfillCallback<TData, TResult> = (value: TData) => TResult | PromiseLike<TResult>;
 type RejectCallback<TResult> = (reason: any) => TResult | PromiseLike<TResult>;
@@ -27,7 +23,7 @@ function __TS__IsPromiseLike<T>(thing: unknown): thing is PromiseLike<T> {
     return thing instanceof __TS__Promise;
 }
 
-class __TS__Promise<T> implements Promise<T> {
+export class __TS__Promise<T> implements Promise<T> {
     public state = __TS__PromiseState.Pending;
     public value?: T;
     public rejectionReason?: any;

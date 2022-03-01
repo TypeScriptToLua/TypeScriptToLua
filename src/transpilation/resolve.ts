@@ -161,7 +161,7 @@ function resolveFileDependencies(file: ProcessedFile, context: ResolutionContext
         dependencies.push(...resolvedDependency.resolvedFiles);
         diagnostics.push(...resolvedDependency.diagnostics);
     }
-    return { resolvedFiles: dependencies, diagnostics };
+    return { resolvedFiles: deduplicateResolvedFiles(dependencies), diagnostics };
 }
 
 function resolveDependency(
@@ -174,7 +174,7 @@ function resolveDependency(
 
     const fileDirectory = path.dirname(requiringFile.fileName);
     if (options.tstlVerbose) {
-        console.log(`Resolving "${dependency}" from ${normalizeSlashes(fileDirectory)}`);
+        console.log(`Resolving "${dependency}" from ${normalizeSlashes(requiringFile.fileName)}`);
     }
 
     // Check if the import is relative

@@ -11,7 +11,7 @@ Array [
   "Constructing emit plan",
   "Resolving dependencies for <cwd>/test/transpile/project/otherFile.ts",
   "Resolving dependencies for <cwd>/test/transpile/project/index.ts",
-  "Resolving \\"./otherFile\\" from <cwd>/test/transpile/project",
+  "Resolving \\"./otherFile\\" from <cwd>/test/transpile/project/index.ts",
   "Resolved ./otherFile to <cwd>/test/transpile/project/otherFile.ts",
   "Emitting output",
   "Emitting <cwd>/test/transpile/project/otherFile.lua",

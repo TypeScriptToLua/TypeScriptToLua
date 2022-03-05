@@ -1,4 +1,4 @@
-function __TS__StringSubstring(this: string, start: number, end?: number): string {
+export function __TS__StringSubstring(this: string, start: number, end?: number): string {
     if (end !== end) end = 0;
 
     if (end !== undefined && start > end) {

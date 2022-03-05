@@ -1,4 +1,6 @@
-function __TS__DelegatedYield<T>(this: void, iterable: string | GeneratorIterator | Iterable<T> | readonly T[]) {
+import { GeneratorIterator } from "./GeneratorIterator";
+
+export function __TS__DelegatedYield<T>(this: void, iterable: string | GeneratorIterator | Iterable<T> | readonly T[]) {
     if (typeof iterable === "string") {
         for (const index of $range(0, iterable.length - 1)) {
             coroutine.yield(iterable[index]);

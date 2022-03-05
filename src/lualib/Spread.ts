@@ -1,4 +1,4 @@
-function __TS__Spread<T>(this: void, iterable: string | Iterable<T>): LuaMultiReturn<T[]> {
+export function __TS__Spread<T>(this: void, iterable: string | Iterable<T>): LuaMultiReturn<T[]> {
     const arr = [];
     if (typeof iterable === "string") {
         // eslint-disable-next-line @typescript-eslint/prefer-for-of

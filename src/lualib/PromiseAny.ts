@@ -1,15 +1,17 @@
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/any
+import { __TS__Promise, PromiseState } from "./Promise";
+
 // eslint-disable-next-line @typescript-eslint/promise-function-async
-function __TS__PromiseAny<T>(this: void, iterable: Iterable<T | PromiseLike<T>>): Promise<T> {
+export function __TS__PromiseAny<T>(this: void, iterable: Iterable<T | PromiseLike<T>>): Promise<T> {
     const rejections: string[] = [];
     const pending: Array<PromiseLike<T>> = [];
 
     for (const item of iterable) {
         if (item instanceof __TS__Promise) {
-            if (item.state === __TS__PromiseState.Fulfilled) {
+            if (item.state === PromiseState.Fulfilled) {
                 // If value is a resolved promise, return a new resolved promise with its value
                 return Promise.resolve(item.value);
-            } else if (item.state === __TS__PromiseState.Rejected) {
+            } else if (item.state === PromiseState.Rejected) {
                 // If value is a rejected promise, add its value to our list of rejections
                 rejections.push(item.rejectionReason);
             } else {

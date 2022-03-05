@@ -1,5 +1,5 @@
 // https://www.ecma-international.org/ecma-262/10.0/index.html#sec-array.prototype.find
-function __TS__ArrayFind<T>(
+export function __TS__ArrayFind<T>(
     this: void,
     arr: T[],
     predicate: (value: T, index: number, obj: T[]) => unknown

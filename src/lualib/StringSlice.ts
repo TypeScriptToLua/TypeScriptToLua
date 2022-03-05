@@ -1,4 +1,4 @@
-function __TS__StringSlice(this: string, start?: number, end?: number): string {
+export function __TS__StringSlice(this: string, start?: number, end?: number): string {
     if (start === undefined || start !== start) start = 0;
     if (end !== end) end = 0;
 

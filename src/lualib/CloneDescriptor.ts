@@ -1,4 +1,4 @@
-function __TS__CloneDescriptor(
+export function __TS__CloneDescriptor(
     this: void,
     { enumerable, configurable, get, set, writable, value }: PropertyDescriptor
 ): PropertyDescriptor {

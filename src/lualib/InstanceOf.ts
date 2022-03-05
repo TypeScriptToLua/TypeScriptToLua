@@ -1,4 +1,4 @@
-function __TS__InstanceOf(this: void, obj: LuaClassInstance, classTbl: LuaClass): boolean {
+export function __TS__InstanceOf(this: void, obj: LuaClassInstance, classTbl: LuaClass): boolean {
     if (typeof classTbl !== "object") {
         throw "Right-hand side of 'instanceof' is not an object";
     }

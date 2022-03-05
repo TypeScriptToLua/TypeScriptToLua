@@ -14,10 +14,12 @@
 // };
 //
 
+import { __TS__Promise } from "./Promise";
+
 type ErrorHandler = (this: void, error: unknown) => unknown;
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
-function __TS__AsyncAwaiter(this: void, generator: (this: void) => void) {
+export function __TS__AsyncAwaiter(this: void, generator: (this: void) => void) {
     return new Promise((resolve, reject) => {
         const asyncCoroutine = coroutine.create(generator);
 
@@ -70,6 +72,6 @@ function __TS__AsyncAwaiter(this: void, generator: (this: void) => void) {
     });
 }
 
-function __TS__Await(this: void, errorHandler: ErrorHandler, thing: unknown) {
+export function __TS__Await(this: void, errorHandler: ErrorHandler, thing: unknown) {
     return coroutine.yield(errorHandler, thing);
 }

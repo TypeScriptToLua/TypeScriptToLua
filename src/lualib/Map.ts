@@ -1,4 +1,4 @@
-Map = class Map<K, V> {
+export class Map<K, V> {
     public static [Symbol.species] = Map;
     public [Symbol.toStringTag] = "Map";
 
@@ -156,4 +156,4 @@ Map = class Map<K, V> {
             },
         };
     }
-};
+}

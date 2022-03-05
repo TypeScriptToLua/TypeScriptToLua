@@ -1,4 +1,4 @@
-function __TS__ArrayConcat(this: void, arr1: any[], ...args: any[]): any[] {
+export function __TS__ArrayConcat(this: void, arr1: any[], ...args: any[]): any[] {
     const out: any[] = [];
     for (const val of arr1) {
         out[out.length] = val;

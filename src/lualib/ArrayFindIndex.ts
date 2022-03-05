@@ -1,4 +1,4 @@
-function __TS__ArrayFindIndex<T>(
+export function __TS__ArrayFindIndex<T>(
     this: void,
     arr: T[],
     callbackFn: (element: T, index?: number, array?: T[]) => boolean

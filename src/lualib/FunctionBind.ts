@@ -1,4 +1,4 @@
-function __TS__FunctionBind(
+export function __TS__FunctionBind(
     this: void,
     fn: (this: void, ...argArray: any[]) => any,
     thisArg: any,

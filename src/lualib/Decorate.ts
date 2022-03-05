@@ -1,12 +1,11 @@
 /**
  * SEE: https://github.com/Microsoft/TypeScript/blob/master/src/compiler/transformers/ts.ts#L3598
  */
-type Decorator<TTarget extends AnyTable, TKey extends keyof TTarget> = (
-    target: TTarget,
-    key?: TKey,
-    descriptor?: PropertyDescriptor
-) => TTarget;
-function __TS__Decorate<TTarget extends AnyTable, TKey extends keyof TTarget>(
+import { __TS__ObjectGetOwnPropertyDescriptor } from "./ObjectGetOwnPropertyDescriptor";
+import { __TS__SetDescriptor } from "./SetDescriptor";
+import { Decorator } from "./Decorator";
+
+export function __TS__Decorate<TTarget extends AnyTable, TKey extends keyof TTarget>(
     this: void,
     decorators: Array<Decorator<TTarget, TKey>>,
     target: TTarget,

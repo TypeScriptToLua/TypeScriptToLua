@@ -1,15 +1,16 @@
-const ____symbolRegistry: Record<string, symbol> = {};
+import { __TS__Symbol } from "./Symbol";
 
-function __TS__SymbolRegistryFor(this: void, key: string): symbol {
-    if (!____symbolRegistry[key]) {
-        ____symbolRegistry[key] = __TS__Symbol(key);
+const symbolRegistry: Record<string, symbol> = {};
+export function __TS__SymbolRegistryFor(this: void, key: string): symbol {
+    if (!symbolRegistry[key]) {
+        symbolRegistry[key] = __TS__Symbol(key);
     }
 
-    return ____symbolRegistry[key];
+    return symbolRegistry[key];
 }
 
-function __TS__SymbolRegistryKeyFor(this: void, sym: symbol): string {
-    for (const key in ____symbolRegistry) {
-        if (____symbolRegistry[key] === sym) return key;
+export function __TS__SymbolRegistryKeyFor(this: void, sym: symbol): string {
+    for (const key in symbolRegistry) {
+        if (symbolRegistry[key] === sym) return key;
     }
 }

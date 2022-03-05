@@ -1,5 +1,5 @@
 // https://www.ecma-international.org/ecma-262/9.0/index.html#sec-array.prototype.slice
-function __TS__ArraySlice<T>(this: void, list: T[], first: number, last: number): T[] {
+export function __TS__ArraySlice<T>(this: void, list: T[], first: number, last: number): T[] {
     const len = list.length;
 
     const relativeStart = first || 0;

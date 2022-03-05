@@ -49,7 +49,7 @@ describe("basic module resolution", () => {
 
     test("can resolve package depencency with a dependency on another package", () => {
         // Declarations in the node_modules directory
-        expect(projectWithNodeModules.getLuaExecutionResult().moduleWithDependencyResult).toEqual(
+        expect(projectWithNodeModules.getLuaExecutionResult().moduleWithDependencyResult).toBe(
             "Calling dependency: foo from lua module with decls"
         );
     });

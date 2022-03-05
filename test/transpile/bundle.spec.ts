@@ -52,7 +52,7 @@ describe("bundle with source maps", () => {
     // See https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1109
     test('the result file should not contain "{#SourceMapTraceback}" macro-string', () => {
         const { lua } = transpileResult.transpiledFiles[0];
-        expect(lua).not.toBeUndefined();
+        expect(lua).toBeDefined();
         expect(lua!).not.toContain("{#SourceMapTraceback}");
     });
 
@@ -126,7 +126,7 @@ describe("bundle with source maps", () => {
 
             const typescriptPosition = lineAndColumnOf(code[currentFile], typeScriptPattern);
             expect(mappedLine.line).toEqual(typescriptPosition.line);
-            expect(mappedLine.file).toEqual(`${currentFile}.ts`);
+            expect(mappedLine.file).toBe(`${currentFile}.ts`);
         }
     });
 });

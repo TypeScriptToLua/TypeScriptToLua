@@ -1,4 +1,4 @@
-function __TS__ObjectFromEntries<T>(
+export function __TS__ObjectFromEntries<T>(
     this: void,
     entries: ReadonlyArray<[string, T]> | Iterable<[string, T]>
 ): Record<string, T> {

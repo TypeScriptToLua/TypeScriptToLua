@@ -7,18 +7,19 @@ interface SourceMap {
 
 declare function __TS__originalTraceback(this: void, thread?: LuaThread, message?: string, level?: number);
 
-function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap: SourceMap): void {
+export function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap: SourceMap): void {
     globalThis.__TS__sourcemap = globalThis.__TS__sourcemap || {};
     globalThis.__TS__sourcemap[fileName] = sourceMap;
 
     if (globalThis.__TS__originalTraceback === undefined) {
-        globalThis.__TS__originalTraceback = debug.traceback;
+        const originalTraceback = debug.traceback;
+        globalThis.__TS__originalTraceback = originalTraceback;
         debug.traceback = ((thread, message, level) => {
             let trace: string;
             if (thread === undefined && message === undefined && level === undefined) {
-                trace = globalThis.__TS__originalTraceback();
+                trace = originalTraceback();
             } else {
-                trace = globalThis.__TS__originalTraceback(thread, message, level);
+                trace = originalTraceback(thread, message, level);
             }
 
             if (typeof trace !== "string") {

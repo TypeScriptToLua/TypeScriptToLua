@@ -1,4 +1,4 @@
-Set = class Set<T> {
+export class Set<T> {
     public static [Symbol.species] = Set;
     public [Symbol.toStringTag] = "Set";
 
@@ -145,4 +145,4 @@ Set = class Set<T> {
             },
         };
     }
-};
+}

@@ -1,4 +1,4 @@
-function __TS__ArrayFlat(this: void, array: any[], depth = 1): any[] {
+export function __TS__ArrayFlat(this: void, array: any[], depth = 1): any[] {
     let result: any[] = [];
     for (const value of array) {
         if (depth > 0 && Array.isArray(value)) {

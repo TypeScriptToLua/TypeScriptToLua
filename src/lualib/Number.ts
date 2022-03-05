@@ -1,4 +1,4 @@
-function __TS__Number(this: void, value: unknown): number {
+export function __TS__Number(this: void, value: unknown): number {
     const valueType = type(value);
     if (valueType === "number") {
         return value as number;

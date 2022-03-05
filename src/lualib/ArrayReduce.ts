@@ -1,5 +1,5 @@
 // https://www.ecma-international.org/ecma-262/9.0/index.html#sec-array.prototype.reduce
-function __TS__ArrayReduce<TElement, TAccumulator>(
+export function __TS__ArrayReduce<TElement, TAccumulator>(
     this: void,
     arr: TElement[],
     callbackFn: (accumulator: TAccumulator, currentValue: TElement, index: number, array: TElement[]) => TAccumulator,

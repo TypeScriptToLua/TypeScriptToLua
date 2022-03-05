@@ -1,4 +1,4 @@
-function __TS__ArraySetLength<T>(this: void, arr: T[], length: number): number {
+export function __TS__ArraySetLength<T>(this: void, arr: T[], length: number): number {
     if (
         length < 0 ||
         length !== length || // NaN

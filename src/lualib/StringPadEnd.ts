@@ -1,4 +1,4 @@
-function __TS__StringPadEnd(this: string, maxLength: number, fillString = " "): string {
+export function __TS__StringPadEnd(this: string, maxLength: number, fillString = " "): string {
     if (maxLength !== maxLength) maxLength = 0;
     if (maxLength === -Infinity || maxLength === Infinity) {
         throw "Invalid string length";

@@ -3,7 +3,7 @@ interface ErrorType {
     new (...args: any[]): Error;
 }
 
-function __TS__GetErrorStack(constructor: () => any): string {
+function getErrorStack(constructor: () => any): string {
     let level = 1;
     while (true) {
         const info = debug.getinfo(level, "f");
@@ -20,7 +20,7 @@ function __TS__GetErrorStack(constructor: () => any): string {
     return debug.traceback(undefined, level);
 }
 
-function __TS__WrapErrorToString<T extends Error>(getDescription: (this: T) => string): (this: T) => string {
+function wrapErrorToString<T extends Error>(getDescription: (this: T) => string): (this: T) => string {
     return function (this: Error): string {
         const description = getDescription.call(this);
         const caller = debug.getinfo(3, "f");
@@ -32,24 +32,24 @@ function __TS__WrapErrorToString<T extends Error>(getDescription: (this: T) => s
     };
 }
 
-function __TS__InitErrorClass(Type: ErrorType, name: string): any {
+function initErrorClass(Type: ErrorType, name: string): any {
     Type.name = name;
     return setmetatable(Type, {
         __call: (_self: any, message: string) => new Type(message),
     });
 }
 
-Error = __TS__InitErrorClass(
+export const Error: ErrorConstructor = initErrorClass(
     class implements Error {
         public name = "Error";
         public stack: string;
 
         constructor(public message = "") {
-            this.stack = __TS__GetErrorStack((this.constructor as any).new);
+            this.stack = getErrorStack((this.constructor as any).new);
             const metatable = getmetatable(this);
             if (!metatable.__errorToStringPatched) {
                 metatable.__errorToStringPatched = true;
-                metatable.__tostring = __TS__WrapErrorToString(metatable.__tostring);
+                metatable.__tostring = wrapErrorToString(metatable.__tostring);
             }
         }
 
@@ -60,11 +60,17 @@ Error = __TS__InitErrorClass(
     "Error"
 );
 
-for (const errorName of ["RangeError", "ReferenceError", "SyntaxError", "TypeError", "URIError"]) {
-    globalThis[errorName] = __TS__InitErrorClass(
+function createErrorClass(name: string) {
+    return initErrorClass(
         class extends Error {
-            public name = errorName;
+            public name = name;
         },
-        errorName
+        name
     );
 }
+
+export const RangeError = createErrorClass("RangeError");
+export const ReferenceError = createErrorClass("ReferenceError");
+export const SyntaxError = createErrorClass("SyntaxError");
+export const TypeError = createErrorClass("TypeError");
+export const URIError = createErrorClass("URIError");

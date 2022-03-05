@@ -1,4 +1,4 @@
-function __TS__ArrayForEach<T>(
+export function __TS__ArrayForEach<T>(
     this: void,
     arr: T[],
     callbackFn: (value: T, index?: number, array?: any[]) => any

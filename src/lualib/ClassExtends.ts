@@ -1,4 +1,4 @@
-function __TS__ClassExtends(this: void, target: LuaClass, base: LuaClass): void {
+export function __TS__ClassExtends(this: void, target: LuaClass, base: LuaClass): void {
     target.____super = base;
 
     // Set base class as a metatable, because descriptors use `getmetatable` to get extended prototype

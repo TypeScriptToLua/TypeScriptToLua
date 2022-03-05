@@ -1,4 +1,4 @@
-function __TS__ArrayFilter<T>(
+export function __TS__ArrayFilter<T>(
     this: void,
     arr: T[],
     callbackfn: (value: T, index?: number, array?: any[]) => boolean

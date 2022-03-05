@@ -503,7 +503,8 @@ return ____exports"
 `;
 
 exports[`Unary expressions basic ("delete tbl.test") 1`] = `
-"require(\\"lualib_bundle\\");
+"local ____lualib = require(\\"lualib_bundle\\")
+local __TS__Delete = ____lualib.__TS__Delete
 local ____exports = {}
 function ____exports.__main(self)
     __TS__Delete(tbl, \\"test\\")
@@ -512,7 +513,8 @@ return ____exports"
 `;
 
 exports[`Unary expressions basic ("delete tbl['test']") 1`] = `
-"require(\\"lualib_bundle\\");
+"local ____lualib = require(\\"lualib_bundle\\")
+local __TS__Delete = ____lualib.__TS__Delete
 local ____exports = {}
 function ____exports.__main(self)
     __TS__Delete(tbl, \\"test\\")
@@ -537,7 +539,8 @@ return ____exports"
 `;
 
 exports[`Unary expressions basic ("let a = delete tbl.test") 1`] = `
-"require(\\"lualib_bundle\\");
+"local ____lualib = require(\\"lualib_bundle\\")
+local __TS__Delete = ____lualib.__TS__Delete
 local ____exports = {}
 function ____exports.__main(self)
     local a = __TS__Delete(tbl, \\"test\\")
@@ -546,7 +549,8 @@ return ____exports"
 `;
 
 exports[`Unary expressions basic ("let a = delete tbl['test']") 1`] = `
-"require(\\"lualib_bundle\\");
+"local ____lualib = require(\\"lualib_bundle\\")
+local __TS__Delete = ____lualib.__TS__Delete
 local ____exports = {}
 function ____exports.__main(self)
     local a = __TS__Delete(tbl, \\"test\\")

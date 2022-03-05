@@ -1,7 +1,9 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Throws error if decorator function has void context: code 1`] = `
-"require(\\"lualib_bundle\\");
+"local ____lualib = require(\\"lualib_bundle\\")
+local __TS__Class = ____lualib.__TS__Class
+local __TS__Decorate = ____lualib.__TS__Decorate
 local ____exports = {}
 function ____exports.__main(self)
     local function decorator(constructor)

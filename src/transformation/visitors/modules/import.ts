@@ -72,12 +72,8 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
     if (statement.importClause === undefined) {
         result.push(lua.createExpressionStatement(requireCall));
 
-        if (scope.importStatements) {
-            scope.importStatements.push(...result);
-            return undefined;
-        } else {
-            return result;
-        }
+        scope.importStatements.push(...result);
+        return undefined;
     }
 
     const importPath = ts.isStringLiteral(statement.moduleSpecifier)
@@ -144,12 +140,8 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
         result.unshift(lua.createVariableDeclarationStatement(importUniqueName, requireCall, statement));
     }
 
-    if (scope.importStatements) {
-        scope.importStatements.push(...result);
-        return undefined;
-    } else {
-        return result;
-    }
+    scope.importStatements.push(...result);
+    return undefined;
 };
 
 export const transformExternalModuleReference: FunctionVisitor<ts.ExternalModuleReference> = (node, context) =>

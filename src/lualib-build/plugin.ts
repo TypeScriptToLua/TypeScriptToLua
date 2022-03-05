@@ -1,63 +1,122 @@
 import { SourceNode } from "source-map";
 import * as ts from "typescript";
 import * as tstl from "..";
+import * as path from "path";
+import { createDiagnosticFactoryWithCode } from "../utils";
+import { getUsedLuaLibFeatures } from "../transformation/utils/lualib";
+import { LuaLibModulesInfo } from "../LuaLib";
 
-function lualibFileVisitor(file: ts.SourceFile, context: tstl.TransformationContext): tstl.File {
-    // Get all imports in file
-    const imports = file.statements.filter(ts.isImportDeclaration);
+const lualibDiagnostic = createDiagnosticFactoryWithCode(200000, (message: string, file?: ts.SourceFile) => ({
+    messageText: message,
+    file,
+    start: file && 0,
+    length: file && 0,
+}));
 
-    const importNames = new Set<string>();
-    for (const { importClause } of imports) {
-        if (importClause?.namedBindings && ts.isNamedImports(importClause.namedBindings)) {
-            for (const { name } of importClause.namedBindings.elements) {
-                importNames.add(name.text);
+class LuaLibPlugin implements tstl.Plugin {
+    public visitors = {
+        [ts.SyntaxKind.SourceFile]: this.lualibFileVisitor.bind(this),
+    };
+    public printer: tstl.Printer = (program, emitHost, fileName, file) =>
+        new LuaLibPrinter(emitHost, program, fileName).print(file);
+
+    public featureExports: Map<tstl.LuaLibFeature, Set<string>> = new Map();
+    public featureDependencies: Map<tstl.LuaLibFeature, Set<tstl.LuaLibFeature>> = new Map();
+
+    public lualibFileVisitor(file: ts.SourceFile, context: tstl.TransformationContext): tstl.File {
+        const featureName = path.basename(file.fileName, ".ts") as tstl.LuaLibFeature;
+        if (!(featureName in tstl.LuaLibFeature)) {
+            context.diagnostics.push(lualibDiagnostic(`File is not a lualib feature: ${featureName}`, file));
+        }
+
+        // Transpile file as normal with tstl
+        const fileResult = context.superTransformNode(file)[0] as tstl.File;
+
+        const usedFeatures = new Set<tstl.LuaLibFeature>(getUsedLuaLibFeatures(context));
+
+        // Get all imports in file
+        const importNames = new Set<string>();
+        const imports = file.statements.filter(ts.isImportDeclaration);
+        for (const { importClause, moduleSpecifier } of imports) {
+            if (importClause?.namedBindings && ts.isNamedImports(importClause.namedBindings)) {
+                for (const { name } of importClause.namedBindings.elements) {
+                    importNames.add(name.text);
+                }
+            }
+            // track lualib imports
+            if (ts.isStringLiteral(moduleSpecifier)) {
+                const featureName = path.basename(moduleSpecifier.text, ".ts") as tstl.LuaLibFeature;
+                if (featureName in tstl.LuaLibFeature) {
+                    usedFeatures.add(featureName);
+                }
             }
         }
+
+        const filteredStatements = fileResult.statements
+            .map(statement => {
+                if (
+                    isExportTableDeclaration(statement) ||
+                    isRequire(statement) ||
+                    isImport(statement, importNames) ||
+                    isExportsReturn(statement)
+                ) {
+                    return undefined;
+                }
+                if (isExportAlias(statement)) {
+                    const name = statement.left[0];
+                    const exportName = statement.right[0].index.value;
+                    if (name.text === exportName) return undefined; // Remove "x = x" statements
+                    return tstl.createAssignmentStatement(name, tstl.createIdentifier(exportName));
+                }
+                return statement;
+            })
+            .filter(statement => statement !== undefined) as tstl.Statement[];
+
+        const exportNames = filteredStatements.filter(isExportAssignment).map(s => s.left[0].index.value);
+        if (!filteredStatements.every(isExportAssignment)) {
+            // If there are local statements, wrap them in a do ... end with exports outside
+            const exports = tstl.createVariableDeclarationStatement(exportNames.map(k => tstl.createIdentifier(k)));
+            // transform export assignments to local assignments
+            const bodyStatements = filteredStatements.map(s =>
+                isExportAssignment(s)
+                    ? tstl.createAssignmentStatement(tstl.createIdentifier(s.left[0].index.value), s.right[0])
+                    : s
+            );
+
+            fileResult.statements = [exports, tstl.createDoStatement(bodyStatements)];
+        } else {
+            // transform export assignments to local variable declarations
+            fileResult.statements = filteredStatements.map(s =>
+                tstl.createVariableDeclarationStatement(tstl.createIdentifier(s.left[0].index.value), s.right[0])
+            );
+        }
+
+        this.featureExports.set(featureName, new Set(exportNames));
+        if (usedFeatures.size > 0) {
+            this.featureDependencies.set(featureName, usedFeatures);
+        }
+
+        return fileResult;
     }
 
-    // Transpile file as normal with tstl
-    const fileResult = context.superTransformNode(file)[0] as tstl.File;
-
-    const filteredStatements = fileResult.statements
-        .map(statement => {
-            if (
-                isExportTableDeclaration(statement) ||
-                isRequire(statement) ||
-                isImport(statement, importNames) ||
-                isExportsReturn(statement)
-            ) {
-                return undefined;
+    public createLuaLibModulesInfo(): { result: LuaLibModulesInfo; diagnostics: ts.Diagnostic[] } {
+        const result: Partial<LuaLibModulesInfo> = {};
+        const diagnostics: ts.Diagnostic[] = [];
+        for (const feature of Object.values(tstl.LuaLibFeature)) {
+            const exports = this.featureExports.get(feature);
+            if (!exports) {
+                diagnostics.push(lualibDiagnostic(`Missing file for lualib feature: ${feature}`));
+                console.error(`Missing file for lualib feature: ${feature}`);
+                continue;
             }
-            if (isExportAlias(statement)) {
-                const name = statement.left[0];
-                const exportName = statement.right[0].index.value;
-                if (name.text === exportName) return undefined; // Remove "x = x" statements
-                return tstl.createAssignmentStatement(name, tstl.createIdentifier(exportName));
-            }
-            return statement;
-        })
-        .filter(statement => statement !== undefined) as tstl.Statement[];
-
-    if (!filteredStatements.every(isExportAssignment)) {
-        const exportInitializers = filteredStatements.filter(isExportAssignment).map(s => s.left[0].index.value);
-        // If there are local statements, wrap them in a do ... end with exports outside
-        const exports = tstl.createVariableDeclarationStatement(exportInitializers.map(k => tstl.createIdentifier(k)));
-        // transform export assignments to local assignments
-        const bodyStatements = filteredStatements.map(s =>
-            isExportAssignment(s)
-                ? tstl.createAssignmentStatement(tstl.createIdentifier(s.left[0].index.value), s.right[0])
-                : s
-        );
-
-        fileResult.statements = [exports, tstl.createDoStatement(bodyStatements)];
-    } else {
-        // transform export assignments to local variable declarations
-        fileResult.statements = filteredStatements.map(s =>
-            tstl.createVariableDeclarationStatement(tstl.createIdentifier(s.left[0].index.value), s.right[0])
-        );
+            const dependencies = this.featureDependencies.get(feature);
+            result[feature] = {
+                exports: Array.from(exports),
+                dependencies: dependencies ? Array.from(dependencies) : undefined,
+            };
+        }
+        return { result: result as LuaLibModulesInfo, diagnostics };
     }
-
-    return fileResult;
 }
 
 class LuaLibPrinter extends tstl.LuaPrinter {
@@ -74,15 +133,9 @@ class LuaLibPrinter extends tstl.LuaPrinter {
     }
 }
 
-const plugin: tstl.Plugin = {
-    visitors: {
-        [ts.SyntaxKind.SourceFile]: lualibFileVisitor,
-    },
-    printer: (program, emitHost, fileName, file) => new LuaLibPrinter(emitHost, program, fileName).print(file),
-};
-
+const pluginInstance = new LuaLibPlugin();
 // eslint-disable-next-line import/no-default-export
-export default plugin;
+export default pluginInstance;
 
 function isExportTableDeclaration(node: tstl.Node): node is tstl.VariableDeclarationStatement & { left: [] } {
     return tstl.isVariableDeclarationStatement(node) && isExportTable(node.left[0]);

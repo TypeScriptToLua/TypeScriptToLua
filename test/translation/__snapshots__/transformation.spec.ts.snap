@@ -58,7 +58,8 @@ return ____exports"
 `;
 
 exports[`Transformation (methodRestArguments) 1`] = `
-"require(\\"lualib_bundle\\");
+"local ____lualib = require(\\"lualib_bundle\\")
+local __TS__Class = ____lualib.__TS__Class
 MyClass = __TS__Class()
 MyClass.name = \\"MyClass\\"
 function MyClass.prototype.____constructor(self)
@@ -74,7 +75,8 @@ return ____exports"
 `;
 
 exports[`Transformation (modulesClassExport) 1`] = `
-"require(\\"lualib_bundle\\");
+"local ____lualib = require(\\"lualib_bundle\\")
+local __TS__Class = ____lualib.__TS__Class
 local ____exports = {}
 ____exports.TestClass = __TS__Class()
 local TestClass = ____exports.TestClass
@@ -85,7 +87,8 @@ return ____exports"
 `;
 
 exports[`Transformation (modulesClassWithMemberExport) 1`] = `
-"require(\\"lualib_bundle\\");
+"local ____lualib = require(\\"lualib_bundle\\")
+local __TS__Class = ____lualib.__TS__Class
 local ____exports = {}
 ____exports.TestClass = __TS__Class()
 local TestClass = ____exports.TestClass

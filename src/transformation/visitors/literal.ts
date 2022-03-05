@@ -229,7 +229,11 @@ function checkForUndefinedOrNullInArrayLiteral(array: ts.ArrayLiteralExpression,
 }
 
 function isUndefinedOrNull(node: ts.Node) {
-    return node.kind === ts.SyntaxKind.UndefinedKeyword || node.kind === ts.SyntaxKind.NullKeyword || (ts.isIdentifier(node) && node.text === "undefined");
+    return (
+        node.kind === ts.SyntaxKind.UndefinedKeyword ||
+        node.kind === ts.SyntaxKind.NullKeyword ||
+        (ts.isIdentifier(node) && node.text === "undefined")
+    );
 }
 
 export const literalVisitors: Visitors = {

@@ -155,3 +155,7 @@ export const unsupportedBuiltinOptionalCall = createErrorDiagnosticFactory(
 export const unsupportedOptionalCompileMembersOnly = createErrorDiagnosticFactory(
     "Optional calls are not supported on enums marked with @compileMembersOnly."
 );
+
+export const undefinedInArrayLiteral = createErrorDiagnosticFactory(
+    "Array literals may not contain undefined or null."
+);

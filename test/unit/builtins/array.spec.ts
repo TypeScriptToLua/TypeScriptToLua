@@ -1,3 +1,4 @@
+import { undefinedInArrayLiteral } from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
 test("omitted expression", () => {
@@ -673,4 +674,29 @@ test("Array.isArray returns true for empty objects", () => {
 // Test fix for https://github.com/TypeScriptToLua/TypeScriptToLua/issues/738
 test("array.prototype.concat issue #738", () => {
     util.testExpression`([] as any[]).concat(13, 323, {x: 3}, [2, 3])`.expectToMatchJsResult();
+});
+
+test.each(["[1, undefined, 3]", "[1, null, 3]", "[1, undefined, 2, null]"])(
+    "not allowed to use null or undefined in array literals (%p)",
+    literal => {
+        util.testExpression(literal).expectToHaveDiagnostics([undefinedInArrayLiteral.code]);
+    }
+);
+
+test("not allowed to use null or undefined in array literals ([undefined, null, 1])", () => {
+    util.testExpression`[undefined, null, 1]`.expectToHaveDiagnostics([
+        undefinedInArrayLiteral.code,
+        undefinedInArrayLiteral.code,
+    ]);
+});
+
+test.each([
+    "[]",
+    "[1, 2, undefined]",
+    "[1, 2, null]",
+    "[1, undefined, undefined, null]",
+    "[undefined]",
+    "[undefined, null]",
+])("trailing undefined or null are allowed in array literal (%p)", literal => {
+    util.testExpression(literal).expectToHaveNoDiagnostics();
 });

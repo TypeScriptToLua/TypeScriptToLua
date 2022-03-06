@@ -147,6 +147,10 @@ export const annotationDeprecated = createWarningDiagnosticFactory(
         `See https://typescripttolua.github.io/docs/advanced/compiler-annotations#${kind.toLowerCase()} for more information.`
 );
 
+export const truthyOnlyConditionalValue = createWarningDiagnosticFactory(
+    "Numbers and strings will always evaluate to true in Lua. Explicitly check the value with ===."
+);
+
 export const notAllowedOptionalAssignment = createErrorDiagnosticFactory(
     "The left-hand side of an assignment expression may not be an optional property access."
 );

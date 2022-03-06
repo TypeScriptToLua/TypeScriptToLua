@@ -1,7 +1,8 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Unsupported optional chains Builtin global method: code 1`] = `
-"require(\\"lualib_bundle\\");
+"local ____lualib = require(\\"lualib_bundle\\")
+local __TS__Number = ____lualib.__TS__Number
 local ____Number_result_0 = Number
 if ____Number_result_0 ~= nil then
     ____Number_result_0 = nil

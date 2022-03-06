@@ -23,9 +23,8 @@ import {
     transformStaticPropertyDeclaration,
 } from "./members/fields";
 import { createMethodDecoratingExpression, transformMethodDeclaration } from "./members/method";
-import { checkForLuaLibType } from "./new";
-import { createClassSetup } from "./setup";
 import { getExtendedNode, getExtendedType, isStaticNode } from "./utils";
+import { createClassSetup } from "./setup";
 
 export const transformClassDeclaration: FunctionVisitor<ts.ClassLikeDeclaration> = (declaration, context) => {
     // If declaration is a default export, transform to export variable assignment instead
@@ -85,10 +84,6 @@ function transformClassLikeDeclaration(
 
     const superInfo = getOrUpdate(classSuperInfos, context, () => []);
     superInfo.push({ className, extendedTypeNode });
-
-    if (extendedType) {
-        checkForLuaLibType(context, extendedType);
-    }
 
     // Get all properties with value
     const properties = classDeclaration.members.filter(ts.isPropertyDeclaration).filter(member => member.initializer);

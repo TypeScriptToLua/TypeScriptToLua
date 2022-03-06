@@ -18,6 +18,7 @@
         "dist/**/*.js",
         "dist/**/*.lua",
         "dist/**/*.ts",
+        "dist/lualib/*.json",
         "language-extensions/**/*.ts"
     ],
     "main": "dist/index.js",

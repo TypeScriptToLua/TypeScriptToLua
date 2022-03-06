@@ -1,84 +1,141 @@
 import { SourceNode } from "source-map";
 import * as ts from "typescript";
 import * as tstl from "..";
+import * as path from "path";
+import { createDiagnosticFactoryWithCode } from "../utils";
+import { getUsedLuaLibFeatures } from "../transformation/utils/lualib";
+import { LuaLibModulesInfo } from "../LuaLib";
 
-function lualibFileVisitor(file: ts.SourceFile, context: tstl.TransformationContext): tstl.File {
-    // Get all imports in file
-    const imports = file.statements.filter(ts.isImportDeclaration);
+const lualibDiagnostic = createDiagnosticFactoryWithCode(200000, (message: string, file?: ts.SourceFile) => ({
+    messageText: message,
+    file,
+    start: file && 0,
+    length: file && 0,
+}));
 
-    const importNames = new Set<string>();
-    for (const { importClause } of imports) {
-        if (importClause?.namedBindings && ts.isNamedImports(importClause.namedBindings)) {
-            for (const { name } of importClause.namedBindings.elements) {
-                importNames.add(name.text);
+class LuaLibPlugin implements tstl.Plugin {
+    public visitors = {
+        [ts.SyntaxKind.SourceFile]: this.lualibFileVisitor.bind(this),
+    };
+    public printer: tstl.Printer = (program, emitHost, fileName, file) =>
+        new LuaLibPrinter(emitHost, program, fileName).print(file);
+
+    public featureExports: Map<tstl.LuaLibFeature, Set<string>> = new Map();
+    public featureDependencies: Map<tstl.LuaLibFeature, Set<tstl.LuaLibFeature>> = new Map();
+
+    public lualibFileVisitor(file: ts.SourceFile, context: tstl.TransformationContext): tstl.File {
+        const featureName = path.basename(file.fileName, ".ts") as tstl.LuaLibFeature;
+        if (!(featureName in tstl.LuaLibFeature)) {
+            context.diagnostics.push(lualibDiagnostic(`File is not a lualib feature: ${featureName}`, file));
+        }
+
+        // Transpile file as normal with tstl
+        const fileResult = context.superTransformNode(file)[0] as tstl.File;
+
+        const usedFeatures = new Set<tstl.LuaLibFeature>(getUsedLuaLibFeatures(context));
+
+        // Get all imports in file
+        const importNames = new Set<string>();
+        const imports = file.statements.filter(ts.isImportDeclaration);
+        for (const { importClause, moduleSpecifier } of imports) {
+            if (importClause?.namedBindings && ts.isNamedImports(importClause.namedBindings)) {
+                for (const { name } of importClause.namedBindings.elements) {
+                    importNames.add(name.text);
+                }
+            }
+            // track lualib imports
+            if (ts.isStringLiteral(moduleSpecifier)) {
+                const featureName = path.basename(moduleSpecifier.text, ".ts") as tstl.LuaLibFeature;
+                if (featureName in tstl.LuaLibFeature) {
+                    usedFeatures.add(featureName);
+                }
             }
         }
-    }
 
-    // Transpile file as normal with tstl
-    const fileResult = context.superTransformNode(file)[0] as tstl.File;
+        const filteredStatements = fileResult.statements
+            .map(statement => {
+                if (
+                    isExportTableDeclaration(statement) ||
+                    isRequire(statement) ||
+                    isImport(statement, importNames) ||
+                    isExportsReturn(statement)
+                ) {
+                    return undefined;
+                }
+                if (isExportAlias(statement)) {
+                    const name = statement.left[0];
+                    const exportName = statement.right[0].index.value;
+                    if (name.text === exportName) return undefined; // Remove "x = x" statements
+                    return tstl.createAssignmentStatement(name, tstl.createIdentifier(exportName));
+                }
+                return statement;
+            })
+            .filter(statement => statement !== undefined) as tstl.Statement[];
 
-    // Find all exports assignments
-    const exportInitializers = new Map<string, tstl.Expression>();
-    for (const s of fileResult.statements) {
-        if (tstl.isAssignmentStatement(s) && isExportTableIndex(s.left[0])) {
-            exportInitializers.set(s.left[0].index.value, s.right[0]);
+        const exportNames = filteredStatements.filter(isExportAssignment).map(s => s.left[0].index.value);
+        if (!filteredStatements.every(isExportAssignment)) {
+            // If there are local statements, wrap them in a do ... end with exports outside
+            const exports = tstl.createVariableDeclarationStatement(exportNames.map(k => tstl.createIdentifier(k)));
+            // transform export assignments to local assignments
+            const bodyStatements = filteredStatements.map(s =>
+                isExportAssignment(s)
+                    ? tstl.createAssignmentStatement(tstl.createIdentifier(s.left[0].index.value), s.right[0])
+                    : s
+            );
+
+            fileResult.statements = [exports, tstl.createDoStatement(bodyStatements)];
+        } else {
+            // transform export assignments to local variable declarations
+            fileResult.statements = filteredStatements.map(s =>
+                tstl.createVariableDeclarationStatement(tstl.createIdentifier(s.left[0].index.value), s.right[0])
+            );
         }
-    }
 
-    // Replace export aliases with initializers
-    for (let i = 0; i < fileResult.statements.length; i++) {
-        const statement = fileResult.statements[i];
-        if (isExportAlias(statement)) {
-            const name = statement.left[0];
-            fileResult.statements[i] = tstl.createAssignmentStatement(name, exportInitializers.get(name.text));
+        this.featureExports.set(featureName, new Set(exportNames));
+        if (usedFeatures.size > 0) {
+            this.featureDependencies.set(featureName, usedFeatures);
         }
+
+        return fileResult;
     }
 
-    // Filter out import/export statements
-    const shouldIgnoreImportsExports = (node: tstl.Node) =>
-        !isExportTableDeclaration(node) &&
-        !isRequire(node) &&
-        !isImport(node, importNames) &&
-        !isExportAssignment(node) &&
-        !isExportsReturn(node);
-    const filteredStatements = fileResult.statements.filter(shouldIgnoreImportsExports);
-
-    if (filteredStatements.length > 0) {
-        // If there are local statements, wrap them in a do ... end with exports outside
-        const exports = tstl.createVariableDeclarationStatement([...exportInitializers.keys()].map(k => tstl.createIdentifier(k)));
-
-        fileResult.statements = [exports, tstl.createDoStatement(filteredStatements)];
-    } else {
-        const newStatements = [];
-        for (const [exportName, initializer] of exportInitializers) {
-            newStatements.push(tstl.createVariableDeclarationStatement(tstl.createIdentifier(exportName), initializer));
+    public createLuaLibModulesInfo(): { result: LuaLibModulesInfo; diagnostics: ts.Diagnostic[] } {
+        const result: Partial<LuaLibModulesInfo> = {};
+        const diagnostics: ts.Diagnostic[] = [];
+        for (const feature of Object.values(tstl.LuaLibFeature)) {
+            const exports = this.featureExports.get(feature);
+            if (!exports) {
+                diagnostics.push(lualibDiagnostic(`Missing file for lualib feature: ${feature}`));
+                console.error(`Missing file for lualib feature: ${feature}`);
+                continue;
+            }
+            const dependencies = this.featureDependencies.get(feature);
+            result[feature] = {
+                exports: Array.from(exports),
+                dependencies: dependencies ? Array.from(dependencies) : undefined,
+            };
         }
-        fileResult.statements = newStatements;
+        return { result: result as LuaLibModulesInfo, diagnostics };
     }
-
-    return fileResult;
 }
 
 class LuaLibPrinter extends tstl.LuaPrinter {
     // Strip all exports during print
     public printTableIndexExpression(expression: tstl.TableIndexExpression): SourceNode {
-        if (tstl.isIdentifier(expression.table) && expression.table.text === "____exports" && tstl.isStringLiteral(expression.index)) {
+        if (
+            tstl.isIdentifier(expression.table) &&
+            expression.table.text === "____exports" &&
+            tstl.isStringLiteral(expression.index)
+        ) {
             return super.printExpression(tstl.createIdentifier(expression.index.value));
         }
         return super.printTableIndexExpression(expression);
     }
 }
 
-const plugin: tstl.Plugin = {
-    visitors: {
-        [ts.SyntaxKind.SourceFile]: lualibFileVisitor,
-    },
-    printer: (program, emitHost, fileName, file) => new LuaLibPrinter(emitHost, program, fileName).print(file),
-};
-
+const pluginInstance = new LuaLibPlugin();
 // eslint-disable-next-line import/no-default-export
-export default plugin;
+export default pluginInstance;
 
 function isExportTableDeclaration(node: tstl.Node): node is tstl.VariableDeclarationStatement & { left: [] } {
     return tstl.isVariableDeclarationStatement(node) && isExportTable(node.left[0]);
@@ -88,15 +145,17 @@ function isExportTable(node: tstl.Node): node is tstl.Identifier {
     return tstl.isIdentifier(node) && node.text === "____exports";
 }
 
-function isExportTableIndex(node: tstl.Node): node is tstl.TableIndexExpression & { index: tstl.StringLiteral } {
+type ExportTableIndex = tstl.TableIndexExpression & { index: tstl.StringLiteral };
+function isExportTableIndex(node: tstl.Node): node is ExportTableIndex {
     return tstl.isTableIndexExpression(node) && isExportTable(node.table) && tstl.isStringLiteral(node.index);
 }
 
-function isExportAlias(node: tstl.Node): node is tstl.VariableDeclarationStatement {
+function isExportAlias(node: tstl.Node): node is tstl.VariableDeclarationStatement & { right: [ExportTableIndex] } {
     return tstl.isVariableDeclarationStatement(node) && node.right !== undefined && isExportTableIndex(node.right[0]);
 }
 
-function isExportAssignment(node: tstl.Node) {
+type ExportAssignment = tstl.AssignmentStatement & { left: [ExportTableIndex] };
+function isExportAssignment(node: tstl.Node): node is ExportAssignment {
     return tstl.isAssignmentStatement(node) && isExportTableIndex(node.left[0]);
 }
 

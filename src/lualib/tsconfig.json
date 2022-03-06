@@ -12,8 +12,6 @@
     "tstl": {
         "luaLibImport": "none",
         "noHeader": true,
-        "luaPlugins": [
-            { "name": "../lualib-build/plugin.ts" }
-        ]
+        "luaPlugins": [{ "name": "../lualib-build/plugin.ts" }]
     }
 }

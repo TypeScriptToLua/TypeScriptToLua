@@ -104,7 +104,7 @@ export function getBundleResult(program: ts.Program, files: ProcessedFile[]): [t
     const footers: string[] = [];
     if (options.sourceMapTraceback) {
         // Generates SourceMapTraceback for the entire file
-        footers.push('require("lualib_bundle")\n');
+        footers.push('local __TS__SourceMapTraceBack = require("lualib_bundle").__TS__SourceMapTraceBack\n');
         footers.push(`${sourceMapTracebackBundlePlaceholder}\n`);
     }
 

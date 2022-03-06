@@ -1,26 +1,31 @@
 import * as ts from "typescript";
 import { LuaLibFeature } from "../../src";
-import { loadLuaLibFeatures } from "../../src/LuaLib";
+import { readLuaLibFeature } from "../../src/LuaLib";
+import * as util from "../util";
 
-test.each(Object.entries(LuaLibFeature))("Lualib feature has correct dependencies (%p)", (_, feature) => {
-    const lualibCode = loadLuaLibFeatures([feature], ts.sys);
+test.each(Object.entries(LuaLibFeature))("Lualib does not use ____exports (%p)", (_, feature) => {
+    const lualibCode = readLuaLibFeature(feature, ts.sys);
 
-    // Find all used lualib features
-    const luaLibReferences = lualibCode.match(/__TS__[a-zA-Z_]+\(/g);
+    const exportsOccurrences = lualibCode.match(/____exports/g);
+    expect(exportsOccurrences).toBeNull();
+});
 
-    // For every reference lualib function, check if its definition is also included
-    const missingReferences = [];
-
-    if (luaLibReferences !== null) {
-        for (const reference of luaLibReferences) {
-            if (
-                !lualibCode.includes(`function ${reference}`) &&
-                !lualibCode.includes(`${reference.substring(0, reference.length - 1)} =`)
-            ) {
-                missingReferences.push(reference);
+test("Lualib bundle does not assign globals", () => {
+    // language=TypeScript
+    util.testModule`
+        declare const _G: LuaTable;
+        declare const require: (this: void, module: string) => any;
+        const globalKeys = new LuaTable();
+        for (const [key] of _G) {
+            globalKeys[key] = true;
+        }
+        require("lualib_bundle");
+        for (const [key] of _G) {
+            if (!globalKeys[key]) {
+                error("Global was assigned: " + key);
             }
         }
-    }
-
-    expect(missingReferences).toHaveLength(0);
+    `
+        .withLanguageExtensions()
+        .expectNoExecutionError();
 });

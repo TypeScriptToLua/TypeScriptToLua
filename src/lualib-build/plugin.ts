@@ -35,7 +35,7 @@ class LuaLibPlugin implements tstl.Plugin {
         void options;
 
         // Write lualib dependency json
-        const { result: luaLibModuleInfo, diagnostics } = pluginInstance.createLuaLibModulesInfo();
+        const { result: luaLibModuleInfo, diagnostics } = this.createLuaLibModulesInfo();
         const emitBOM = options.emitBOM ?? false;
         emitHost.writeFile(
             path.join(tstl.getEmitOutDir(program), luaLibModulesInfoFileName),

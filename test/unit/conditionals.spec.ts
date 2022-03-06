@@ -1,4 +1,5 @@
 import * as tstl from "../../src";
+import { truthyOnlyConditionalValue } from "../../src/transformation/utils/diagnostics";
 import * as util from "../util";
 
 test.each([0, 1])("if (%p)", inp => {
@@ -112,3 +113,45 @@ test.each([false, true, null])("Ternary conditional with generic whenTrue branch
         })
         .expectToMatchJsResult();
 });
+
+test.each(["string", "number", "string | number"])(
+    "Warning when using if statement that cannot evaluate to false undefined or null (%p)",
+    type => {
+        util.testFunction`
+            if (condition) {}
+        `
+            .setTsHeader(`declare var condition: ${type};`)
+            .expectToHaveDiagnostics([truthyOnlyConditionalValue.code]);
+    }
+);
+
+test.each(["string", "number", "string | number"])(
+    "Warning when using while statement that cannot evaluate to false undefined or null (%p)",
+    type => {
+        util.testFunction`
+            while (condition) {}
+        `
+            .setTsHeader(`declare var condition: ${type};`)
+            .expectToHaveDiagnostics([truthyOnlyConditionalValue.code]);
+    }
+);
+
+test.each(["string", "number", "string | number"])(
+    "Warning when using do while statement that cannot evaluate to false undefined or null (%p)",
+    type => {
+        util.testFunction`
+            do {} while (condition)
+        `
+            .setTsHeader(`declare var condition: ${type};`)
+            .expectToHaveDiagnostics([truthyOnlyConditionalValue.code]);
+    }
+);
+
+test.each(["string", "number", "string | number"])(
+    "Warning when using ternary that cannot evaluate to false undefined or null (%p)",
+    type => {
+        util.testExpression`condition ? 1 : 0`
+            .setTsHeader(`declare var condition: ${type};`)
+            .expectToHaveDiagnostics([truthyOnlyConditionalValue.code]);
+    }
+);

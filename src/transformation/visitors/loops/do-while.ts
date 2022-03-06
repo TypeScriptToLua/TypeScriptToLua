@@ -2,9 +2,13 @@ import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { FunctionVisitor } from "../../context";
 import { transformInPrecedingStatementScope } from "../../utils/preceding-statements";
+import { checkOnlyTruthyCondition } from "../conditional";
 import { invertCondition, transformLoopBody } from "./utils";
 
 export const transformWhileStatement: FunctionVisitor<ts.WhileStatement> = (statement, context) => {
+    // Check if we need to add diagnostic about Lua truthiness
+    checkOnlyTruthyCondition(statement.expression, context);
+
     const body = transformLoopBody(context, statement);
 
     let [conditionPrecedingStatements, condition] = transformInPrecedingStatementScope(context, () =>
@@ -37,6 +41,9 @@ export const transformWhileStatement: FunctionVisitor<ts.WhileStatement> = (stat
 };
 
 export const transformDoStatement: FunctionVisitor<ts.DoStatement> = (statement, context) => {
+    // Check if we need to add diagnostic about Lua truthiness
+    checkOnlyTruthyCondition(statement.expression, context);
+
     const body = lua.createDoStatement(transformLoopBody(context, statement));
 
     let [conditionPrecedingStatements, condition] = transformInPrecedingStatementScope(context, () =>

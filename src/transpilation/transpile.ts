@@ -66,6 +66,13 @@ export function getProgramTranspileResult(
         console.log(`Successfully loaded ${plugins.length} plugins`);
     }
 
+    for (const plugin of plugins) {
+        if (plugin.beforeTransform) {
+            const pluginDiagnostics = plugin.beforeTransform(program, options, emitHost) ?? [];
+            diagnostics.push(...pluginDiagnostics);
+        }
+    }
+
     const visitorMap = createVisitorMap(plugins.map(p => p.visitors).filter(isNonNull));
     const printer = createPrinter(plugins.map(p => p.printer).filter(isNonNull));
     const processSourceFile = (sourceFile: ts.SourceFile) => {
@@ -127,6 +134,13 @@ export function getProgramTranspileResult(
 
     if (options.noEmit || (options.noEmitOnError && diagnostics.length > 0)) {
         transpiledFiles = [];
+    }
+
+    for (const plugin of plugins) {
+        if (plugin.afterPrint) {
+            const pluginDiagnostics = plugin.afterPrint(program, options, emitHost, transpiledFiles) ?? [];
+            diagnostics.push(...pluginDiagnostics);
+        }
     }
 
     return { diagnostics, transpiledFiles };

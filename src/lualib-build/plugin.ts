@@ -3,7 +3,7 @@ import * as ts from "typescript";
 import * as tstl from "..";
 import * as path from "path";
 import { getUsedLuaLibFeatures } from "../transformation/utils/lualib";
-import { loadInlineLualibFeatures, LuaLibFeature, LuaLibModulesInfo, luaLibModulesInfoFileName } from "../LuaLib";
+import { LuaLibFeature, LuaLibModulesInfo, luaLibModulesInfoFileName } from "../LuaLib";
 import { EmitHost, ProcessedFile } from "../transpilation/utils";
 import {
     isExportAlias,
@@ -44,8 +44,9 @@ class LuaLibPlugin implements tstl.Plugin {
         );
 
         // Create lualib bundle by inlining all lualib features into one file
+        const exportedLualibFeatures = result.filter(f => path.basename(f.fileName).split(".")[0] in LuaLibFeature);
         const allFeatures = Object.values(LuaLibFeature) as LuaLibFeature[];
-        let lualibBundle = loadInlineLualibFeatures(allFeatures, emitHost);
+        let lualibBundle = exportedLualibFeatures.map(f => f.code).join("\n");
         const exports = allFeatures.flatMap(feature => luaLibModuleInfo[feature].exports);
         lualibBundle += `\nreturn {\n${exports.map(exportName => `  ${exportName} = ${exportName}`).join(",\n")}\n}\n`;
         result.push({ fileName: "lualib_bundle.lua", code: lualibBundle });

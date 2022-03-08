@@ -130,11 +130,10 @@ export function readLuaLibFeature(feature: LuaLibFeature, emitHost: EmitHost): s
     return luaLibFeature;
 }
 
-export function loadInlineLualibFeatures(features: Iterable<LuaLibFeature>, emitHost: EmitHost): string {
-    let result = "";
-
+export function resolveRecursiveLualibFeatures(features: Iterable<LuaLibFeature>, emitHost: EmitHost): LuaLibFeature[] {
     const luaLibModulesInfo = getLuaLibModulesInfo(emitHost);
     const loadedFeatures = new Set<LuaLibFeature>();
+    const result: LuaLibFeature[] = [];
 
     function load(feature: LuaLibFeature): void {
         if (loadedFeatures.has(feature)) return;
@@ -144,12 +143,23 @@ export function loadInlineLualibFeatures(features: Iterable<LuaLibFeature>, emit
         if (dependencies) {
             dependencies.forEach(load);
         }
-        const luaLibFeature = readLuaLibFeature(feature, emitHost);
-        result += luaLibFeature + "\n";
+
+        result.push(feature);
     }
 
     for (const feature of features) {
         load(feature);
+    }
+
+    return result;
+}
+
+export function loadInlineLualibFeatures(features: Iterable<LuaLibFeature>, emitHost: EmitHost): string {
+    let result = "";
+
+    for (const feature of resolveRecursiveLualibFeatures(features, emitHost)) {
+        const luaLibFeature = readLuaLibFeature(feature, emitHost);
+        result += luaLibFeature + "\n";
     }
 
     return result;

@@ -3,7 +3,7 @@ import * as ts from "typescript";
 import * as tstl from "..";
 import * as path from "path";
 import { getUsedLuaLibFeatures } from "../transformation/utils/lualib";
-import { LuaLibFeature, LuaLibModulesInfo, luaLibModulesInfoFileName } from "../LuaLib";
+import { LuaLibFeature, LuaLibModulesInfo, luaLibModulesInfoFileName, resolveRecursiveLualibFeatures } from "../LuaLib";
 import { EmitHost, ProcessedFile } from "../transpilation/utils";
 import {
     isExportAlias,
@@ -43,10 +43,15 @@ class LuaLibPlugin implements tstl.Plugin {
             emitBOM
         );
 
-        // Create lualib bundle by inlining all lualib features into one file
-        const exportedLualibFeatures = result.filter(f => path.basename(f.fileName).split(".")[0] in LuaLibFeature);
+        // Create map of result files keyed by their 'lualib name'
+        const exportedLualibFeatures = new Map(result.map(f => [path.basename(f.fileName).split(".")[0], f.code]));
+
+        // Figure out the order required in the bundle by recursively resolving all dependency features
         const allFeatures = Object.values(LuaLibFeature) as LuaLibFeature[];
-        let lualibBundle = exportedLualibFeatures.map(f => f.code).join("\n");
+        const orderedFeatures = resolveRecursiveLualibFeatures(allFeatures, emitHost);
+
+        // Concatenate lualib files into bundle with exports table and add lualib_bundle.lua to results
+        let lualibBundle = orderedFeatures.map(f => exportedLualibFeatures.get(LuaLibFeature[f])).join("\n");
         const exports = allFeatures.flatMap(feature => luaLibModuleInfo[feature].exports);
         lualibBundle += `\nreturn {\n${exports.map(exportName => `  ${exportName} = ${exportName}`).join(",\n")}\n}\n`;
         result.push({ fileName: "lualib_bundle.lua", code: lualibBundle });

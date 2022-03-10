@@ -78,8 +78,40 @@ test.each(["namespace", "module"])("%s with TS transformer plugin", moduleOrName
                     return false;
                 }
             }
-        `
+            `
         )
         .setOptions({ plugins: [{ transform: path.join(__dirname, "transformer-plugin.ts") }] })
         .expectNoExecutionError();
+});
+
+test("beforeTransform plugin", () => {
+    const { transpiledFiles } = util.testModule`
+        console.log("Hello, World!");
+    `
+        .setOptions({ luaPlugins: [{ name: path.join(__dirname, "beforeTransform.ts") }] })
+        .getLuaResult();
+
+    expect(transpiledFiles).toHaveLength(1);
+    // Expect emitted to output path set by the plugin
+    expect(transpiledFiles[0].outPath).toContain(path.join("plugin", "beforeTransform", "outdir"));
+});
+
+test("afterPrint plugin", () => {
+    const { transpiledFiles } = util.testModule`
+        console.log("Hello, World!");
+    `
+        .addExtraFile(
+            "extrafile.ts",
+            `
+                console.log("Hello, Mars!");
+            `
+        )
+        .setOptions({ luaPlugins: [{ name: path.join(__dirname, "afterPrint.ts") }] })
+        .getLuaResult();
+
+    expect(transpiledFiles).toHaveLength(2);
+    for (const f of transpiledFiles) {
+        // Expect plugin inserted extra lua at start of file
+        expect(f.lua).toContain("-- Commented added by afterPrint plugin");
+    }
 });

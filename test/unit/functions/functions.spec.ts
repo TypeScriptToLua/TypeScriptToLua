@@ -173,6 +173,14 @@ test("Function apply", () => {
     `.expectToMatchJsResult();
 });
 
+// Fix #1226: https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1226
+test("function apply without arguments should not lead to exception", () => {
+    util.testFunction`
+        const f = function (this: number) { return this + 3; }
+        return f.apply(4);
+    `.expectToMatchJsResult();
+});
+
 test("Function call", () => {
     util.testFunction`
         const abc = function (this: { a: number }, a: string) { return this.a + a; }

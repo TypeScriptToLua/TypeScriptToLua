@@ -31,6 +31,11 @@ export const optionDeclarations: CommandLineOption[] = [
         choices: Object.values(BuildMode),
     },
     {
+        name: "extension",
+        description: 'File extension for the resulting Lua files. Defaults to ".lua"',
+        type: "string",
+    },
+    {
         name: "luaBundle",
         description: "The name of the lua file to bundle output lua to. Requires luaBundleEntry.",
         type: "string",

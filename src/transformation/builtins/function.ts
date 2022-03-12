@@ -23,11 +23,8 @@ export function transformFunctionPrototypeCall(
     const expressionName = expression.name.text;
     switch (expressionName) {
         case "apply":
-            return lua.createCallExpression(
-                caller,
-                [params[0], createUnpackCall(context, params[1], node.arguments[1])],
-                node
-            );
+            const nonContextArgs = params.length > 1 ? [createUnpackCall(context, params[1], node.arguments[1])] : [];
+            return lua.createCallExpression(caller, [params[0], ...nonContextArgs], node);
         case "bind":
             return transformLuaLibFunction(context, LuaLibFeature.FunctionBind, node, caller, ...params);
         case "call":

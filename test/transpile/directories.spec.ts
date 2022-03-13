@@ -19,7 +19,7 @@ test.each<DirectoryTestCase>([
 
     const config = {
         compilerOptions: { ...compilerOptions, types: [], skipLibCheck: true },
-        tstl: { luaTarget: tstl.LuaTarget.LuaJIT, luaLibImport: tstl.LuaLibImportKind.Always },
+        tstl: { luaTarget: tstl.LuaTarget.LuaJIT },
     };
 
     const { fileNames, options } = tstl.updateParsedConfigFile(

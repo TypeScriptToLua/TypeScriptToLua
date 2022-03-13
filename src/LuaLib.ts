@@ -165,11 +165,7 @@ export function loadInlineLualibFeatures(features: Iterable<LuaLibFeature>, emit
     return result;
 }
 
-export function loadImportedLualibFeatures(
-    features: Iterable<LuaLibFeature>,
-    emitHost: EmitHost,
-    alwaysRequire = false
-): lua.Statement[] {
+export function loadImportedLualibFeatures(features: Iterable<LuaLibFeature>, emitHost: EmitHost): lua.Statement[] {
     const luaLibModuleInfo = getLuaLibModulesInfo(emitHost);
 
     const imports = Array.from(features).flatMap(feature => luaLibModuleInfo[feature].exports);
@@ -178,9 +174,6 @@ export function loadImportedLualibFeatures(
         lua.createStringLiteral("lualib_bundle"),
     ]);
     if (imports.length === 0) {
-        if (alwaysRequire) {
-            return [lua.createExpressionStatement(requireCall)];
-        }
         return [];
     }
 

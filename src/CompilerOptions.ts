@@ -39,7 +39,6 @@ export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> & {
 
 export enum LuaLibImportKind {
     None = "none",
-    Always = "always",
     Inline = "inline",
     Require = "require",
 }

@@ -235,16 +235,9 @@ export class LuaPrinter {
         let statements = file.statements;
 
         const luaLibImport = this.options.luaLibImport ?? LuaLibImportKind.Require;
-        if (
-            luaLibImport === LuaLibImportKind.Always ||
-            (luaLibImport === LuaLibImportKind.Require && file.luaLibFeatures.size > 0)
-        ) {
+        if (luaLibImport === LuaLibImportKind.Require && file.luaLibFeatures.size > 0) {
             // Import lualib features
-            const importStatements = loadImportedLualibFeatures(
-                file.luaLibFeatures,
-                this.emitHost,
-                luaLibImport === LuaLibImportKind.Always
-            );
+            const importStatements = loadImportedLualibFeatures(file.luaLibFeatures, this.emitHost);
 
             statements = importStatements.concat(statements);
         } else if (luaLibImport === LuaLibImportKind.Inline && file.luaLibFeatures.size > 0) {

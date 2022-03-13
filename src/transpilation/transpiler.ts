@@ -127,8 +127,11 @@ export function getEmitPathRelativeToOutDir(fileName: string, program: ts.Progra
         emitPathSplits[0] = "lua_modules";
     }
 
-    // Make extension lua
-    emitPathSplits[emitPathSplits.length - 1] = trimExtension(emitPathSplits[emitPathSplits.length - 1]) + ".lua";
+    // Set extension
+    const extension = ((program.getCompilerOptions() as CompilerOptions).extension ?? "lua").trim();
+    const trimmedExtension = extension.startsWith(".") ? extension.substring(1) : extension;
+    emitPathSplits[emitPathSplits.length - 1] =
+        trimExtension(emitPathSplits[emitPathSplits.length - 1]) + "." + trimmedExtension;
 
     return path.join(...emitPathSplits);
 }

@@ -113,6 +113,38 @@ describe("getEmitPath", () => {
         expect(fileNames).toHaveLength(1);
         expect(fileNames).toContain(path.join(cwd, "out1", "out2", "bundle.lua"));
     });
+
+    test.each([".scar", "scar"])("uses config extension (%p)", extension => {
+        const { transpiledFiles } = util.testModule``
+            .setMainFileName("main.ts")
+            .addExtraFile("dir/extra.ts", "")
+            .setOptions({ extension })
+            .expectToHaveNoDiagnostics()
+            .getLuaResult();
+
+        const fileNames = transpiledFiles.map(f => f.outPath);
+        expect(fileNames).toContain("main.scar");
+        expect(fileNames).toContain(path.join("dir", "extra.scar"));
+    });
+
+    test("bundle with different extension", () => {
+        const { transpiledFiles } = util.testModule``
+            .setMainFileName("src/main.ts")
+            .addExtraFile("src/extra.ts", "")
+            .setOptions({
+                configFilePath,
+                rootDir: "src",
+                outDir: "out1",
+                luaBundle: "out2/bundle.scar",
+                luaBundleEntry: "src/main.ts",
+            })
+            .expectToHaveNoDiagnostics()
+            .getLuaResult();
+
+        const fileNames = transpiledFiles.map(f => f.outPath);
+        expect(fileNames).toHaveLength(1);
+        expect(fileNames).toContain(path.join(cwd, "out1", "out2", "bundle.scar"));
+    });
 });
 
 function normalize(path: string) {

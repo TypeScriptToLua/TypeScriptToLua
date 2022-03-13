@@ -2,7 +2,11 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { assertNever } from "../../utils";
 import { FunctionVisitor, TransformationContext, Visitors } from "../context";
-import { invalidMultiFunctionUse, unsupportedAccessorInObjectLiteral } from "../utils/diagnostics";
+import {
+    invalidMultiFunctionUse,
+    undefinedInArrayLiteral,
+    unsupportedAccessorInObjectLiteral,
+} from "../utils/diagnostics";
 import { createExportedIdentifier, getSymbolExportScope } from "../utils/export";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { createSafeName, hasUnsafeIdentifierName, hasUnsafeSymbolName } from "../utils/safe-names";
@@ -196,6 +200,9 @@ const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpressi
 };
 
 const transformArrayLiteralExpression: FunctionVisitor<ts.ArrayLiteralExpression> = (expression, context) => {
+    // Disallow using undefined/null in array literals
+    checkForUndefinedOrNullInArrayLiteral(expression, context);
+
     const filteredElements = expression.elements.map(e =>
         ts.isOmittedExpression(e) ? ts.factory.createIdentifier("undefined") : e
     );
@@ -203,6 +210,31 @@ const transformArrayLiteralExpression: FunctionVisitor<ts.ArrayLiteralExpression
 
     return lua.createTableExpression(values, expression);
 };
+
+function checkForUndefinedOrNullInArrayLiteral(array: ts.ArrayLiteralExpression, context: TransformationContext) {
+    // Look for last non-nil element in literal
+    let lastNonUndefinedIndex = array.elements.length - 1;
+    for (; lastNonUndefinedIndex >= 0; lastNonUndefinedIndex--) {
+        if (!isUndefinedOrNull(array.elements[lastNonUndefinedIndex])) {
+            break;
+        }
+    }
+
+    // Add diagnostics for non-trailing nil elements in array literal
+    for (let i = 0; i < array.elements.length; i++) {
+        if (i < lastNonUndefinedIndex && isUndefinedOrNull(array.elements[i])) {
+            context.diagnostics.push(undefinedInArrayLiteral(array.elements[i]));
+        }
+    }
+}
+
+function isUndefinedOrNull(node: ts.Node) {
+    return (
+        node.kind === ts.SyntaxKind.UndefinedKeyword ||
+        node.kind === ts.SyntaxKind.NullKeyword ||
+        (ts.isIdentifier(node) && node.text === "undefined")
+    );
+}
 
 export const literalVisitors: Visitors = {
     [ts.SyntaxKind.NullKeyword]: node => lua.createNilLiteral(node),

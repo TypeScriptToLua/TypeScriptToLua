@@ -122,6 +122,9 @@ describe("command line", () => {
 
             ["luaBundle", "foo", { luaBundle: "foo" }],
             ["luaBundleEntry", "bar", { luaBundleEntry: "bar" }],
+
+            ["extension", ".lua", { extension: ".lua" }],
+            ["extension", "scar", { extension: "scar" }],
         ])("--%s %s", (optionName, value, expected) => {
             const result = tstl.parseCommandLine([`--${optionName}`, value]);
 

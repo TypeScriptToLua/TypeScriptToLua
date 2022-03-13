@@ -60,12 +60,27 @@ export function typeCanSatisfy(
     return false;
 }
 
+export function isNullishType(context: TransformationContext, type: ts.Type): boolean {
+    return isTypeWithFlags(context, type, ts.TypeFlags.Undefined | ts.TypeFlags.Null | ts.TypeFlags.VoidLike);
+}
+
 export function isStringType(context: TransformationContext, type: ts.Type): boolean {
     return isTypeWithFlags(context, type, ts.TypeFlags.String | ts.TypeFlags.StringLike | ts.TypeFlags.StringLiteral);
 }
 
 export function isNumberType(context: TransformationContext, type: ts.Type): boolean {
     return isTypeWithFlags(context, type, ts.TypeFlags.Number | ts.TypeFlags.NumberLike | ts.TypeFlags.NumberLiteral);
+}
+
+export function isNullableType(
+    context: TransformationContext,
+    type: ts.Type,
+    isType: (c: TransformationContext, t: ts.Type) => boolean
+): boolean {
+    return (
+        typeCanSatisfy(context, type, t => isType(context, t)) &&
+        typeAlwaysSatisfies(context, type, t => isType(context, t) || isNullishType(context, t))
+    );
 }
 
 function isExplicitArrayType(context: TransformationContext, type: ts.Type): boolean {

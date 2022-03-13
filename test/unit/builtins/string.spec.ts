@@ -367,3 +367,15 @@ test("string intersected method", () => {
         return ({ abc: () => "a" } as Vector).abc();
     `.expectToMatchJsResult();
 });
+
+// Issue #1218: https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1218
+test.each(['"foo"', "undefined"])("prototype call on nullable string (%p)", value => {
+    util.testFunction`
+        function toUpper(str?: string) {
+            return str?.toUpperCase();
+        }
+        return toUpper(${value});
+    `
+        .setOptions({ strictNullChecks: true })
+        .expectToMatchJsResult();
+});

@@ -143,3 +143,15 @@ test.each([
 ])("parseInt with base and trailing text (%p)", ({ numberString, base }) => {
     util.testExpression`parseInt("${numberString}", ${base})`.expectToMatchJsResult();
 });
+
+// Issue #1218: https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1218
+test.each(["42", "undefined"])("prototype call on nullable number (%p)", value => {
+    util.testFunction`
+        function toString(n?: number) {
+            return n?.toString();
+        }
+        return toString(${value});
+    `
+        .setOptions({ strictNullChecks: true })
+        .expectToMatchJsResult();
+});

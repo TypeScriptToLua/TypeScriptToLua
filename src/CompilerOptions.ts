@@ -23,6 +23,7 @@ export interface LuaPluginImport {
 
 export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> & {
     buildMode?: BuildMode;
+    extension?: string;
     luaBundle?: string;
     luaBundleEntry?: string;
     luaTarget?: LuaTarget;

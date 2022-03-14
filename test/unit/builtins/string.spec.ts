@@ -379,3 +379,18 @@ test.each(['"foo"', "undefined"])("prototype call on nullable string (%p)", valu
         .setOptions({ strictNullChecks: true })
         .expectToMatchJsResult();
 });
+
+// Issue #1218: https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1218
+test.each(["string | undefined", "string | null", "null | string", "null | undefined | string"])(
+    "prototype call on nullable string type (%p)",
+    type => {
+        util.testFunction`
+        function toUpper(str: ${type}) {
+            return str?.toUpperCase();
+        }
+        return toUpper("foo");
+    `
+            .setOptions({ strictNullChecks: true })
+            .expectToMatchJsResult();
+    }
+);

@@ -142,7 +142,6 @@ class LuaLibPlugin implements tstl.Plugin {
             const exports = this.featureExports.get(feature);
             if (!exports) {
                 diagnostics.push(lualibDiagnostic(`Missing file for lualib feature: ${feature}`));
-                console.error(`Missing file for lualib feature: ${feature}`);
                 continue;
             }
             const dependencies = this.featureDependencies.get(feature);

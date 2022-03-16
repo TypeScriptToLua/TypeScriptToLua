@@ -130,8 +130,11 @@ export function readLuaLibFeature(feature: LuaLibFeature, emitHost: EmitHost): s
     return luaLibFeature;
 }
 
-export function resolveRecursiveLualibFeatures(features: Iterable<LuaLibFeature>, emitHost: EmitHost): LuaLibFeature[] {
-    const luaLibModulesInfo = getLuaLibModulesInfo(emitHost);
+export function resolveRecursiveLualibFeatures(
+    features: Iterable<LuaLibFeature>,
+    emitHost: EmitHost,
+    luaLibModulesInfo: LuaLibModulesInfo = getLuaLibModulesInfo(emitHost)
+): LuaLibFeature[] {
     const loadedFeatures = new Set<LuaLibFeature>();
     const result: LuaLibFeature[] = [];
 

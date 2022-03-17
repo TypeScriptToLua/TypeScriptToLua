@@ -483,9 +483,7 @@ test.each([
         const array = [0];
         const value = array.push(${args});
         return { array, value };
-    `
-        .debug()
-        .expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test("array.push(...)", () => {
@@ -496,9 +494,7 @@ test("array.push(...)", () => {
         }
         const value = push(1, 2, 3);
         return { array, value };
-    `
-        .debug()
-        .expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test.each([

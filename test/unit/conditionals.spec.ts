@@ -112,3 +112,29 @@ test.each([false, true, null])("Ternary conditional with generic whenTrue branch
         })
         .expectToMatchJsResult();
 });
+
+test.each([false, true])("Ternary conditional with preceding statements in true branch (%p)", trueVal => {
+    // language=TypeScript
+    util.testFunction`
+        let i = 0;
+        const result = ${trueVal} ? i += 1 : i;
+        return { result, i };
+    `
+        .setOptions({
+            strictNullChecks: true,
+        })
+        .expectToMatchJsResult();
+});
+
+test.each([false, true])("Ternary conditional with preceding statements in false branch (%p)", trueVal => {
+    // language=TypeScript
+    util.testFunction`
+        let i = 0;
+        const result = ${trueVal} ? i : i += 2;
+        return { result, i };
+    `
+        .setOptions({
+            strictNullChecks: true,
+        })
+        .expectToMatchJsResult();
+});

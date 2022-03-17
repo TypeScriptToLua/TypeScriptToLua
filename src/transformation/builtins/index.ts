@@ -9,6 +9,7 @@ import {
     hasStandardLibrarySignature,
     isArrayType,
     isFunctionType,
+    isNullableType,
     isNumberType,
     isStandardLibraryType,
     isStringType,
@@ -115,22 +116,34 @@ export function transformBuiltinCallExpression(
         }
     }
 
-    if (isStringType(context, ownerType) && hasStandardLibrarySignature(context, node)) {
+    const isStringFunction =
+        isStringType(context, ownerType) ||
+        (expression.questionDotToken && isNullableType(context, ownerType, isStringType));
+    if (isStringFunction && hasStandardLibrarySignature(context, node)) {
         if (isOptionalCall) return unsupportedOptionalCall();
         return transformStringPrototypeCall(context, node);
     }
 
-    if (isNumberType(context, ownerType) && hasStandardLibrarySignature(context, node)) {
+    const isNumberFunction =
+        isNumberType(context, ownerType) ||
+        (expression.questionDotToken && isNullableType(context, ownerType, isNumberType));
+    if (isNumberFunction && hasStandardLibrarySignature(context, node)) {
         if (isOptionalCall) return unsupportedOptionalCall();
         return transformNumberPrototypeCall(context, node);
     }
 
-    if (isArrayType(context, ownerType) && hasStandardLibrarySignature(context, node)) {
+    const isArrayFunction =
+        isArrayType(context, ownerType) ||
+        (expression.questionDotToken && isNullableType(context, ownerType, isArrayType));
+    if (isArrayFunction && hasStandardLibrarySignature(context, node)) {
         if (isOptionalCall) return unsupportedOptionalCall();
         return transformArrayPrototypeCall(context, node);
     }
 
-    if (isFunctionType(ownerType) && hasStandardLibrarySignature(context, node)) {
+    const isFunctionFunction =
+        isFunctionType(ownerType) ||
+        (expression.questionDotToken && isNullableType(context, ownerType, (_, t) => isFunctionType(t)));
+    if (isFunctionFunction && hasStandardLibrarySignature(context, node)) {
         if (isOptionalCall) return unsupportedOptionalCall();
         return transformFunctionPrototypeCall(context, node);
     }

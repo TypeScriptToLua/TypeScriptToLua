@@ -181,6 +181,18 @@ test("function apply without arguments should not lead to exception", () => {
     `.expectToMatchJsResult();
 });
 
+// Issue #1218: https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1218
+test.each(["() => 4", "undefined"])("prototype call on nullable function (%p)", value => {
+    util.testFunction`
+        function call(f?: () => number) {
+            return f?.apply(3);
+        }
+        return call(${value});
+    `
+        .setOptions({ strictNullChecks: true })
+        .expectToMatchJsResult();
+});
+
 test("Function call", () => {
     util.testFunction`
         const abc = function (this: { a: number }, a: string) { return this.a + a; }

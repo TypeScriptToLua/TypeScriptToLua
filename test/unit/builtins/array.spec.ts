@@ -700,3 +700,15 @@ test.each([
 ])("trailing undefined or null are allowed in array literal (%p)", literal => {
     util.testExpression(literal).expectToHaveNoDiagnostics();
 });
+
+// Issue #1218: https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1218
+test.each(["[1, 2, 3]", "undefined"])("prototype call on nullable array (%p)", value => {
+    util.testFunction`
+        function find(arr?: number[]) {
+            return arr?.indexOf(2);
+        }
+        return find(${value});
+    `
+        .setOptions({ strictNullChecks: true })
+        .expectToMatchJsResult();
+});

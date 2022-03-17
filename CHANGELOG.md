@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.4.0
+
+- Upgraded to TypeScript 4.6
+- Added two event hooks to TSTL plugins: `beforeTransform` and `afterPrint`
+  - These allow you to run plugin code at specific points in the transpilation process.
+- Lualib polyfills are now modules required into locals, instead of global functions
+  - This change also removes the `"always"` option for the `"lualibImport"` tsconfig key.
+- Added support for `Math.sign`
+- Switched to `^` instead of `math.pow`, the latter was deprecated in 5.3
+- Added an error when using `null` or `undefined` in tuples, as that is undefined behavior in the Lua spec and causes unexpected behavior
+- Added tsconfig setting `extension`, allowing to specify a different output file extension
+- Fixed multiple issues with optional chaining and lualib/language extensions
+- Fixed issue assigning function with properties to variable declarations
+- Fixed multiple issues with preceding statements in class constructors
+- Fixed external code module resolution exploding into a stack overflow in complicated module hierarchies
+- Fixed a `function.apply(context)` breaking the transpiler if called with only one parameter
+- Fixed preceding statements in ternary conditionals (`x ? y : z`) leading to incorrect code
+
 ## 1.3.0
 
 - Added `LuaPairsIterable` language extension to mark objects as iterable with Lua's `pairs`.

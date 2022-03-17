@@ -1,8 +1,9 @@
 import * as ts from "typescript";
+import { EmitHost } from "..";
 import { CompilerOptions } from "../CompilerOptions";
 import { Printer } from "../LuaPrinter";
 import { Visitors } from "../transformation/context";
-import { getConfigDirectory, resolvePlugin } from "./utils";
+import { getConfigDirectory, ProcessedFile, resolvePlugin } from "./utils";
 
 export interface Plugin {
     /**
@@ -18,6 +19,21 @@ export interface Plugin {
      * At most one custom printer can be provided across all plugins.
      */
     printer?: Printer;
+
+    /**
+     * This function is called before transpilation of the TypeScript program starts.
+     */
+    beforeTransform?: (program: ts.Program, options: CompilerOptions, emitHost: EmitHost) => ts.Diagnostic[] | void;
+
+    /**
+     * This function is called after TypeScriptToLua has translated the input program to Lua.
+     */
+    afterPrint?: (
+        program: ts.Program,
+        options: CompilerOptions,
+        emitHost: EmitHost,
+        result: ProcessedFile[]
+    ) => ts.Diagnostic[] | void;
 }
 
 export function getPlugins(program: ts.Program, diagnostics: ts.Diagnostic[], customPlugins: Plugin[]): Plugin[] {

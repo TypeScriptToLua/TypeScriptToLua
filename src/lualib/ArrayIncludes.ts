@@ -1,5 +1,5 @@
 // https://www.ecma-international.org/ecma-262/9.0/index.html#sec-array.prototype.includes
-function __TS__ArrayIncludes<T>(this: T[], searchElement: T, fromIndex = 0): boolean {
+export function __TS__ArrayIncludes<T>(this: T[], searchElement: T, fromIndex = 0): boolean {
     const len = this.length;
     let k = fromIndex;
 

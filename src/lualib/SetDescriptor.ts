@@ -1,4 +1,6 @@
-function ____descriptorIndex(this: any, key: string): void {
+import { __TS__CloneDescriptor } from "./CloneDescriptor";
+
+function descriptorIndex(this: any, key: string): void {
     const value = rawget(this, key);
     if (value !== null) {
         return value;
@@ -27,7 +29,7 @@ function ____descriptorIndex(this: any, key: string): void {
     }
 }
 
-function ____descriptorNewindex(this: any, key: string, value: any): void {
+function descriptorNewIndex(this: any, key: string, value: any): void {
     let metatable = getmetatable(this);
     while (metatable) {
         const descriptors = rawget(metatable, "_descriptors");
@@ -54,7 +56,13 @@ function ____descriptorNewindex(this: any, key: string, value: any): void {
 }
 
 // It's also used directly in class transform to add descriptors to the prototype
-function __TS__SetDescriptor(this: void, target: any, key: any, desc: PropertyDescriptor, isPrototype = false): void {
+export function __TS__SetDescriptor(
+    this: void,
+    target: any,
+    key: any,
+    desc: PropertyDescriptor,
+    isPrototype = false
+): void {
     let metatable = isPrototype ? target : getmetatable(target);
     if (!metatable) {
         metatable = {};
@@ -67,6 +75,6 @@ function __TS__SetDescriptor(this: void, target: any, key: any, desc: PropertyDe
     if (!rawget(metatable, "_descriptors")) metatable._descriptors = {};
     const descriptor = __TS__CloneDescriptor(desc);
     metatable._descriptors[key] = descriptor;
-    metatable.__index = ____descriptorIndex;
-    metatable.__newindex = ____descriptorNewindex;
+    metatable.__index = descriptorIndex;
+    metatable.__newindex = descriptorNewIndex;
 }

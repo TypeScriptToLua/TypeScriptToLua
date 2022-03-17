@@ -1,4 +1,4 @@
-function __TS__StringStartsWith(this: string, searchString: string, position?: number): boolean {
+export function __TS__StringStartsWith(this: string, searchString: string, position?: number): boolean {
     if (position === undefined || position < 0) {
         position = 0;
     }

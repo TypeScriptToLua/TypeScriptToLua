@@ -16,13 +16,6 @@ describe("luaLibImport", () => {
             .tap(builder => expect(builder.getMainLuaCodeChunk()).toContain('require("lualib_bundle")'))
             .expectToMatchJsResult();
     });
-
-    test("always", () => {
-        util.testModule``
-            .setOptions({ luaLibImport: tstl.LuaLibImportKind.Always })
-            .tap(builder => expect(builder.getMainLuaCodeChunk()).toContain('require("lualib_bundle")'))
-            .expectToEqual(undefined);
-    });
 });
 
 test.each([tstl.LuaLibImportKind.Inline, tstl.LuaLibImportKind.None, tstl.LuaLibImportKind.Require])(

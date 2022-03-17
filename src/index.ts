@@ -8,3 +8,4 @@ export { LuaLibFeature } from "./LuaLib";
 export * from "./LuaPrinter";
 export * from "./transformation/context";
 export * from "./transpilation";
+export { ProcessedFile } from "./transpilation/utils";

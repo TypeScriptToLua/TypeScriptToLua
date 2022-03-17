@@ -1,5 +1,6 @@
 import * as path from "path";
 import { EmitHost } from "./transpilation";
+import * as lua from "./LuaAST";
 
 export enum LuaLibFeature {
     ArrayConcat = "ArrayConcat",
@@ -99,81 +100,54 @@ export enum LuaLibFeature {
     Unpack = "Unpack",
 }
 
-/* eslint-disable @typescript-eslint/naming-convention */
-const luaLibDependencies: Partial<Record<LuaLibFeature, LuaLibFeature[]>> = {
-    ArrayConcat: [LuaLibFeature.ArrayIsArray],
-    ArrayFlat: [LuaLibFeature.ArrayConcat, LuaLibFeature.ArrayIsArray],
-    ArrayFlatMap: [LuaLibFeature.ArrayConcat, LuaLibFeature.ArrayIsArray],
-    Await: [LuaLibFeature.InstanceOf, LuaLibFeature.New, LuaLibFeature.Promise],
-    Decorate: [LuaLibFeature.ObjectGetOwnPropertyDescriptor, LuaLibFeature.SetDescriptor, LuaLibFeature.ObjectAssign],
-    DelegatedYield: [LuaLibFeature.StringAccess],
-    Delete: [LuaLibFeature.ObjectGetOwnPropertyDescriptors, LuaLibFeature.Error, LuaLibFeature.New],
-    Error: [LuaLibFeature.Class, LuaLibFeature.ClassExtends, LuaLibFeature.New],
-    FunctionBind: [LuaLibFeature.Unpack],
-    Generator: [LuaLibFeature.Symbol],
-    InstanceOf: [LuaLibFeature.Symbol],
-    Iterator: [LuaLibFeature.Symbol],
-    NumberToString: [LuaLibFeature.StringAccess],
-    ObjectDefineProperty: [LuaLibFeature.CloneDescriptor, LuaLibFeature.SetDescriptor],
-    ObjectFromEntries: [LuaLibFeature.Iterator, LuaLibFeature.Symbol],
-    Promise: [
-        LuaLibFeature.ArrayPush,
-        LuaLibFeature.Class,
-        LuaLibFeature.FunctionBind,
-        LuaLibFeature.InstanceOf,
-        LuaLibFeature.New,
-    ],
-    PromiseAll: [LuaLibFeature.InstanceOf, LuaLibFeature.New, LuaLibFeature.Promise, LuaLibFeature.Iterator],
-    PromiseAllSettled: [LuaLibFeature.InstanceOf, LuaLibFeature.New, LuaLibFeature.Promise, LuaLibFeature.Iterator],
-    PromiseAny: [
-        LuaLibFeature.ArrayPush,
-        LuaLibFeature.InstanceOf,
-        LuaLibFeature.New,
-        LuaLibFeature.Promise,
-        LuaLibFeature.Iterator,
-    ],
-    PromiseRace: [
-        LuaLibFeature.ArrayPush,
-        LuaLibFeature.InstanceOf,
-        LuaLibFeature.New,
-        LuaLibFeature.Promise,
-        LuaLibFeature.Iterator,
-    ],
-    ParseFloat: [LuaLibFeature.StringAccess],
-    ParseInt: [LuaLibFeature.StringSubstr, LuaLibFeature.StringSubstring],
-    SetDescriptor: [LuaLibFeature.CloneDescriptor],
-    Spread: [LuaLibFeature.Iterator, LuaLibFeature.StringAccess, LuaLibFeature.Unpack],
-    StringSplit: [LuaLibFeature.StringSubstring, LuaLibFeature.StringAccess],
-    SymbolRegistry: [LuaLibFeature.Symbol],
+export interface LuaLibFeatureInfo {
+    dependencies?: LuaLibFeature[];
+    exports: string[];
+}
+export type LuaLibModulesInfo = Record<LuaLibFeature, LuaLibFeatureInfo>;
 
-    Map: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol, LuaLibFeature.Class],
-    Set: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol, LuaLibFeature.Class],
-    WeakMap: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol, LuaLibFeature.Class],
-    WeakSet: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol, LuaLibFeature.Class],
-};
-/* eslint-enable @typescript-eslint/naming-convention */
+export const luaLibModulesInfoFileName = "lualib_module_info.json";
+let luaLibModulesInfo: LuaLibModulesInfo | undefined;
+export function getLuaLibModulesInfo(emitHost: EmitHost): LuaLibModulesInfo {
+    if (luaLibModulesInfo === undefined) {
+        const lualibPath = path.resolve(__dirname, `../dist/lualib/${luaLibModulesInfoFileName}`);
+        const result = emitHost.readFile(lualibPath);
+        if (result !== undefined) {
+            luaLibModulesInfo = JSON.parse(result) as LuaLibModulesInfo;
+        } else {
+            throw new Error(`Could not load lualib dependencies from '${lualibPath}'`);
+        }
+    }
+    return luaLibModulesInfo;
+}
 
-export function loadLuaLibFeatures(features: Iterable<LuaLibFeature>, emitHost: EmitHost): string {
-    let result = "";
+export function readLuaLibFeature(feature: LuaLibFeature, emitHost: EmitHost): string {
+    const featurePath = path.resolve(__dirname, `../dist/lualib/${feature}.lua`);
+    const luaLibFeature = emitHost.readFile(featurePath);
+    if (luaLibFeature === undefined) {
+        throw new Error(`Could not load lualib feature from '${featurePath}'`);
+    }
+    return luaLibFeature;
+}
 
+export function resolveRecursiveLualibFeatures(
+    features: Iterable<LuaLibFeature>,
+    emitHost: EmitHost,
+    luaLibModulesInfo: LuaLibModulesInfo = getLuaLibModulesInfo(emitHost)
+): LuaLibFeature[] {
     const loadedFeatures = new Set<LuaLibFeature>();
+    const result: LuaLibFeature[] = [];
 
     function load(feature: LuaLibFeature): void {
         if (loadedFeatures.has(feature)) return;
         loadedFeatures.add(feature);
 
-        const dependencies = luaLibDependencies[feature];
+        const dependencies = luaLibModulesInfo[feature]?.dependencies;
         if (dependencies) {
             dependencies.forEach(load);
         }
 
-        const featurePath = path.resolve(__dirname, `../dist/lualib/${feature}.lua`);
-        const luaLibFeature = emitHost.readFile(featurePath);
-        if (luaLibFeature !== undefined) {
-            result += luaLibFeature + "\n";
-        } else {
-            throw new Error(`Could not load lualib feature from '${featurePath}'`);
-        }
+        result.push(feature);
     }
 
     for (const feature of features) {
@@ -181,6 +155,44 @@ export function loadLuaLibFeatures(features: Iterable<LuaLibFeature>, emitHost: 
     }
 
     return result;
+}
+
+export function loadInlineLualibFeatures(features: Iterable<LuaLibFeature>, emitHost: EmitHost): string {
+    let result = "";
+
+    for (const feature of resolveRecursiveLualibFeatures(features, emitHost)) {
+        const luaLibFeature = readLuaLibFeature(feature, emitHost);
+        result += luaLibFeature + "\n";
+    }
+
+    return result;
+}
+
+export function loadImportedLualibFeatures(features: Iterable<LuaLibFeature>, emitHost: EmitHost): lua.Statement[] {
+    const luaLibModuleInfo = getLuaLibModulesInfo(emitHost);
+
+    const imports = Array.from(features).flatMap(feature => luaLibModuleInfo[feature].exports);
+
+    const requireCall = lua.createCallExpression(lua.createIdentifier("require"), [
+        lua.createStringLiteral("lualib_bundle"),
+    ]);
+    if (imports.length === 0) {
+        return [];
+    }
+
+    const luaLibId = lua.createIdentifier("____lualib");
+    const importStatement = lua.createVariableDeclarationStatement(luaLibId, requireCall);
+    const statements: lua.Statement[] = [importStatement];
+    // local <export> = ____luaLib.<export>
+    for (const item of imports) {
+        statements.push(
+            lua.createVariableDeclarationStatement(
+                lua.createIdentifier(item),
+                lua.createTableIndexExpression(luaLibId, lua.createStringLiteral(item))
+            )
+        );
+    }
+    return statements;
 }
 
 let luaLibBundleContent: string;

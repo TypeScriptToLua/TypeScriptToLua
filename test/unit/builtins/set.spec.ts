@@ -194,3 +194,10 @@ describe.each(iterationMethods)("set.%s() preserves insertion order", iterationM
         `.expectToMatchJsResult();
     });
 });
+
+test("instanceof Set without creating set", () => {
+    util.testFunction`
+        const myset = 3 as any;
+        return myset instanceof Set;
+    `.expectToMatchJsResult();
+});

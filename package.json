@@ -18,13 +18,14 @@
         "dist/**/*.js",
         "dist/**/*.lua",
         "dist/**/*.ts",
+        "dist/lualib/*.json",
         "language-extensions/**/*.ts"
     ],
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "scripts": {
         "build": "tsc && npm run build-lualib",
-        "build-lualib": "node build-lualib.js",
+        "build-lualib": "node dist/tstl.js -p src/lualib/tsconfig.json",
         "pretest": "npm run lint && npm run check:language-extensions && npm run build-lualib",
         "test": "jest",
         "lint": "npm run lint:eslint && npm run lint:prettier",

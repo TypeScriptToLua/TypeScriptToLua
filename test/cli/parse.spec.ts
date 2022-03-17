@@ -111,7 +111,6 @@ describe("command line", () => {
             ["buildMode", "library", { buildMode: tstl.BuildMode.Library }],
 
             ["luaLibImport", "none", { luaLibImport: tstl.LuaLibImportKind.None }],
-            ["luaLibImport", "always", { luaLibImport: tstl.LuaLibImportKind.Always }],
             ["luaLibImport", "inline", { luaLibImport: tstl.LuaLibImportKind.Inline }],
             ["luaLibImport", "require", { luaLibImport: tstl.LuaLibImportKind.Require }],
 
@@ -225,7 +224,6 @@ describe("tsconfig", () => {
             ["buildMode", "library", { buildMode: tstl.BuildMode.Library }],
 
             ["luaLibImport", "none", { luaLibImport: tstl.LuaLibImportKind.None }],
-            ["luaLibImport", "always", { luaLibImport: tstl.LuaLibImportKind.Always }],
             ["luaLibImport", "inline", { luaLibImport: tstl.LuaLibImportKind.Inline }],
             ["luaLibImport", "require", { luaLibImport: tstl.LuaLibImportKind.Require }],
 

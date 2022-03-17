@@ -1,4 +1,4 @@
-function __TS__ParseFloat(this: void, numberString: string): number {
+export function __TS__ParseFloat(this: void, numberString: string): number {
     // Check if string is infinity
     const [infinityMatch] = string.match(numberString, "^%s*(-?Infinity)");
     if (infinityMatch) {

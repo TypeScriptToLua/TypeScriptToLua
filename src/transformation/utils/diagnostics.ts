@@ -91,7 +91,10 @@ export const unsupportedForTarget = createErrorDiagnosticFactory(
 );
 
 export const unsupportedProperty = createErrorDiagnosticFactory(
-    (parentName: string, property: string) => `${parentName}.${property} is unsupported.`
+    (parentName: string, property: string, additionalSuggestion?: string) => {
+        const msg = `${parentName}.${property} is unsupported.`;
+        return additionalSuggestion === undefined ? msg : `${msg} ${additionalSuggestion}`;
+    }
 );
 
 export const invalidAmbientIdentifierName = createErrorDiagnosticFactory(

@@ -18,6 +18,11 @@ export function transformArrayConstructorCall(
     switch (expressionName) {
         case "isArray":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayIsArray, node, ...params);
+        case "from":
+            context.diagnostics.push(
+                unsupportedProperty(expression.name, "array", expressionName, "Please use the spread operator instead.")
+            );
+            break;
         default:
             context.diagnostics.push(unsupportedProperty(expression.name, "Array", expressionName));
     }

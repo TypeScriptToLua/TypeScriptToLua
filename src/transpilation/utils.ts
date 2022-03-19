@@ -24,7 +24,6 @@ interface BaseFile {
 export interface ProcessedFile extends BaseFile {
     fileName: string;
     luaAst?: lua.File;
-    /** @internal */
     sourceMapNode?: SourceNode;
 }
 

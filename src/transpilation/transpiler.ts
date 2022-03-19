@@ -4,6 +4,7 @@ import { CompilerOptions, isBundleEnabled } from "../CompilerOptions";
 import { getLuaLibBundle } from "../LuaLib";
 import { normalizeSlashes, trimExtension } from "../utils";
 import { getBundleResult } from "./bundle";
+import { getPlugins } from "./plugins";
 import { resolveDependencies } from "./resolve";
 import { getProgramTranspileResult, TranspileOptions } from "./transpile";
 import { EmitFile, EmitHost, ProcessedFile } from "./utils";
@@ -29,23 +30,31 @@ export class Transpiler {
 
     public emit(emitOptions: EmitOptions): EmitResult {
         const { program, writeFile = this.emitHost.writeFile } = emitOptions;
-        const verbose = (program.getCompilerOptions() as CompilerOptions).tstlVerbose;
-        const { diagnostics, transpiledFiles: freshFiles } = getProgramTranspileResult(
-            this.emitHost,
-            writeFile,
-            emitOptions
-        );
+        const options = program.getCompilerOptions() as CompilerOptions;
+
+        const { diagnostics: getPluginsDiagnostics, plugins } = getPlugins(program);
+
+        const { diagnostics, transpiledFiles: freshFiles } = getProgramTranspileResult(this.emitHost, writeFile, {
+            ...emitOptions,
+            plugins,
+        });
 
         const { emitPlan } = this.getEmitPlan(program, diagnostics, freshFiles);
 
-        if (verbose) {
+        if (options.tstlVerbose) {
             console.log("Emitting output");
         }
 
-        const options = program.getCompilerOptions();
+        for (const plugin of plugins) {
+            if (plugin.beforeEmit) {
+                const beforeEmitPluginDiagnostics = plugin.beforeEmit(program, options, this.emitHost, emitPlan) ?? [];
+                diagnostics.push(...beforeEmitPluginDiagnostics);
+            }
+        }
+
         const emitBOM = options.emitBOM ?? false;
         for (const { outputPath, code, sourceMap, sourceFiles } of emitPlan) {
-            if (verbose) {
+            if (options.tstlVerbose) {
                 console.log(`Emitting ${normalizeSlashes(outputPath)}`);
             }
 
@@ -55,11 +64,11 @@ export class Transpiler {
             }
         }
 
-        if (verbose) {
+        if (options.tstlVerbose) {
             console.log("Emit finished!");
         }
 
-        return { diagnostics, emitSkipped: emitPlan.length === 0 };
+        return { diagnostics: getPluginsDiagnostics.concat(diagnostics), emitSkipped: emitPlan.length === 0 };
     }
 
     protected getEmitPlan(

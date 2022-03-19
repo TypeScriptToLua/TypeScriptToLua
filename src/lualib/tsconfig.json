@@ -13,5 +13,6 @@
         "luaLibImport": "none",
         "noHeader": true,
         "luaPlugins": [{ "name": "../../dist/lualib-build/plugin.js" }]
-    }
+    },
+    "include": [".", "../../language-extensions/index.d.ts"]
 }

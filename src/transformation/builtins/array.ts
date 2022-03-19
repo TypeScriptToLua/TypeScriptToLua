@@ -5,19 +5,24 @@ import { unsupportedProperty } from "../utils/diagnostics";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { PropertyCallExpression, transformArguments, transformCallAndArguments } from "../visitors/call";
 import { isStringType, isNumberType } from "../utils/typescript";
+import { wrapInTable } from "../utils/lua-ast";
 
 export function transformArrayConstructorCall(
     context: TransformationContext,
     node: PropertyCallExpression
-): lua.CallExpression | undefined {
+): lua.Expression | undefined {
     const expression = node.expression;
     const signature = context.checker.getResolvedSignature(node);
     const params = transformArguments(context, node.arguments, signature);
 
     const expressionName = expression.name.text;
     switch (expressionName) {
+        case "from":
+            return transformLuaLibFunction(context, LuaLibFeature.ArrayFrom, node, ...params);
         case "isArray":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayIsArray, node, ...params);
+        case "of":
+            return wrapInTable(...params);
         default:
             context.diagnostics.push(unsupportedProperty(expression.name, "Array", expressionName));
     }

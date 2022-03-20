@@ -70,7 +70,7 @@ export function getPlugins(program: ts.Program): { diagnostics: ts.Diagnostic[];
     }
 
     if (options.tstlVerbose) {
-        console.log(`Successfully loaded ${pluginsFromOptions.length} plugins`);
+        console.log(`Loaded ${pluginsFromOptions.length} plugins`);
     }
 
     return { diagnostics, plugins: pluginsFromOptions };

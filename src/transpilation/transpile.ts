@@ -4,7 +4,7 @@ import { CompilerOptions, validateOptions } from "../CompilerOptions";
 import { createPrinter } from "../LuaPrinter";
 import { createVisitorMap, transformSourceFile } from "../transformation";
 import { isNonNull } from "../utils";
-import { getPlugins, Plugin } from "./plugins";
+import { Plugin } from "./plugins";
 import { getTransformers } from "./transformers";
 import { EmitHost, ProcessedFile } from "./utils";
 
@@ -23,7 +23,7 @@ export interface TranspileResult {
 export function getProgramTranspileResult(
     emitHost: EmitHost,
     writeFileResult: ts.WriteFileCallback,
-    { program, sourceFiles: targetSourceFiles, customTransformers = {}, plugins: customPlugins = [] }: TranspileOptions
+    { program, sourceFiles: targetSourceFiles, customTransformers = {}, plugins = [] }: TranspileOptions
 ): TranspileResult {
     const options = program.getCompilerOptions() as CompilerOptions;
 
@@ -58,12 +58,6 @@ export function getProgramTranspileResult(
         if (preEmitDiagnostics.length > 0) {
             return { diagnostics: preEmitDiagnostics, transpiledFiles };
         }
-    }
-
-    const plugins = getPlugins(program, diagnostics, customPlugins);
-
-    if (options.tstlVerbose) {
-        console.log(`Successfully loaded ${plugins.length} plugins`);
     }
 
     for (const plugin of plugins) {

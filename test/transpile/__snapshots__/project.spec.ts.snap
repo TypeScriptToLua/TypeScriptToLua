@@ -2,8 +2,8 @@
 
 exports[`should give verbose output 1`] = `
 Array [
+  "Loaded 0 plugins",
   "Parsing project settings",
-  "Successfully loaded 0 plugins",
   "Transforming <cwd>/test/transpile/project/otherFile.ts",
   "Printing <cwd>/test/transpile/project/otherFile.ts",
   "Transforming <cwd>/test/transpile/project/index.ts",

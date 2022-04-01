@@ -1,7 +1,7 @@
 import { ModuleKind, ScriptTarget } from "typescript";
 import { LuaTarget } from "../../../src";
 import { unsupportedForTargetButOverrideAvailable } from "../../../src/transformation/utils/diagnostics";
-import { awaitMustBeInAsyncFunction, unsupportedForTarget } from "../../../src/transformation/utils/diagnostics";
+import { awaitMustBeInAsyncFunction } from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
 const promiseTestLib = `

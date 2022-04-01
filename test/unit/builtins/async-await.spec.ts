@@ -1,5 +1,6 @@
 import { ModuleKind, ScriptTarget } from "typescript";
 import { LuaTarget } from "../../../src";
+import { unsupportedForTargetButOverrideAvailable } from "../../../src/transformation/utils/diagnostics";
 import { awaitMustBeInAsyncFunction, unsupportedForTarget } from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
@@ -540,7 +541,8 @@ describe("try/catch in async function", () => {
         // Cannot execute LuaJIT with test runner
         {
             ...util.expectEachVersionExceptJit(builder => builder.expectToEqual({ result: 4 })),
-            [LuaTarget.Lua51]: builder => builder.expectToHaveDiagnostics([unsupportedForTarget.code]),
+            [LuaTarget.Lua51]: builder =>
+                builder.expectToHaveDiagnostics([unsupportedForTargetButOverrideAvailable.code]),
         }
     );
 
@@ -563,7 +565,8 @@ describe("try/catch in async function", () => {
             ...util.expectEachVersionExceptJit(builder =>
                 builder.expectToEqual({ reason: "an error occurred in the async function: test error" })
             ),
-            [LuaTarget.Lua51]: builder => builder.expectToHaveDiagnostics([unsupportedForTarget.code]),
+            [LuaTarget.Lua51]: builder =>
+                builder.expectToHaveDiagnostics([unsupportedForTargetButOverrideAvailable.code]),
         }
     );
 
@@ -590,7 +593,8 @@ describe("try/catch in async function", () => {
             ...util.expectEachVersionExceptJit(builder =>
                 builder.expectToEqual({ reason: "an error occurred in the async function: test error" })
             ),
-            [LuaTarget.Lua51]: builder => builder.expectToHaveDiagnostics([unsupportedForTarget.code]),
+            [LuaTarget.Lua51]: builder =>
+                builder.expectToHaveDiagnostics([unsupportedForTargetButOverrideAvailable.code]),
         }
     );
 });

@@ -88,6 +88,11 @@ export const optionDeclarations: CommandLineOption[] = [
         description: "An array of paths that tstl should not resolve and keep as-is.",
         type: "array",
     },
+    {
+        name: "lua51AllowTryCatchInAsyncAwait",
+        description: "Always allow try/catch in async/await functions for Lua 5.1.",
+        type: "boolean",
+    },
 ];
 
 export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): ParsedCommandLine {

@@ -112,6 +112,51 @@ test("afterPrint plugin", () => {
     expect(transpiledFiles).toHaveLength(2);
     for (const f of transpiledFiles) {
         // Expect plugin inserted extra lua at start of file
-        expect(f.lua).toContain("-- Commented added by afterPrint plugin");
+        expect(f.lua).toContain("-- Comment added by afterPrint plugin");
+    }
+});
+
+test("beforeEmit plugin", () => {
+    const { transpiledFiles } = util.testModule`
+        console.log("Hello, World!");
+        [].push(1,2,3); // Use lualib code
+    `
+        .addExtraFile(
+            "extrafile.ts",
+            `
+            console.log("Hello, Mars!");
+        `
+        )
+        .setOptions({ luaPlugins: [{ name: path.join(__dirname, "beforeEmit.ts") }] })
+        .getLuaResult();
+
+    // 2 input files + 1 lualib_bundle
+    expect(transpiledFiles).toHaveLength(3);
+    expect(transpiledFiles.find(f => f.outPath.endsWith("lualib_bundle.lua"))).toBeDefined();
+    for (const f of transpiledFiles) {
+        // Expect plugin inserted extra lua at start of all files including lualib bundle
+        expect(f.lua).toContain("-- Comment added by beforeEmit plugin");
+    }
+});
+
+test("beforeEmit plugin bundle", () => {
+    const { transpiledFiles } = util.testBundle`
+        console.log("Hello, World!");
+        [].push(1,2,3); // Use lualib code
+    `
+        .addExtraFile(
+            "extrafile.ts",
+            `
+            console.log("Hello, Mars!");
+        `
+        )
+        .setOptions({ luaPlugins: [{ name: path.join(__dirname, "beforeEmit.ts") }] })
+        .getLuaResult();
+
+    // 1 lua bundle output
+    expect(transpiledFiles).toHaveLength(1);
+    for (const f of transpiledFiles) {
+        // Expect bundle to be affected by plugin
+        expect(f.lua).toContain("-- Comment added by beforeEmit plugin");
     }
 });

@@ -3,7 +3,7 @@ import { EmitHost } from "..";
 import { CompilerOptions } from "../CompilerOptions";
 import { Printer } from "../LuaPrinter";
 import { Visitors } from "../transformation/context";
-import { getConfigDirectory, ProcessedFile, resolvePlugin } from "./utils";
+import { EmitFile, getConfigDirectory, ProcessedFile, resolvePlugin } from "./utils";
 
 export interface Plugin {
     /**
@@ -26,7 +26,7 @@ export interface Plugin {
     beforeTransform?: (program: ts.Program, options: CompilerOptions, emitHost: EmitHost) => ts.Diagnostic[] | void;
 
     /**
-     * This function is called after TypeScriptToLua has translated the input program to Lua.
+     * This function is called after translating the input program to Lua, but before resolving dependencies or bundling.
      */
     afterPrint?: (
         program: ts.Program,
@@ -34,9 +34,20 @@ export interface Plugin {
         emitHost: EmitHost,
         result: ProcessedFile[]
     ) => ts.Diagnostic[] | void;
+
+    /**
+     * This function is called after translating the input program to Lua, after resolving dependencies and after bundling.
+     */
+    beforeEmit?: (
+        program: ts.Program,
+        options: CompilerOptions,
+        emitHost: EmitHost,
+        result: EmitFile[]
+    ) => ts.Diagnostic[] | void;
 }
 
-export function getPlugins(program: ts.Program, diagnostics: ts.Diagnostic[], customPlugins: Plugin[]): Plugin[] {
+export function getPlugins(program: ts.Program): { diagnostics: ts.Diagnostic[]; plugins: Plugin[] } {
+    const diagnostics: ts.Diagnostic[] = [];
     const pluginsFromOptions: Plugin[] = [];
     const options = program.getCompilerOptions() as CompilerOptions;
 
@@ -58,5 +69,9 @@ export function getPlugins(program: ts.Program, diagnostics: ts.Diagnostic[], cu
         pluginsFromOptions.push(plugin);
     }
 
-    return [...customPlugins, ...pluginsFromOptions];
+    if (options.tstlVerbose) {
+        console.log(`Loaded ${pluginsFromOptions.length} plugins`);
+    }
+
+    return { diagnostics, plugins: pluginsFromOptions };
 }

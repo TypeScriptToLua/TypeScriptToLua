@@ -227,32 +227,32 @@ export class LuaPrinter {
     }
 
     protected printFile(file: lua.File): SourceNode {
-        let header = file.trivia;
+        let sourceChunks: SourceChunk[] = [file.trivia];
 
         if (!this.options.noHeader) {
-            header += tstlHeader;
+            sourceChunks.push(tstlHeader);
         }
-        let statements = file.statements;
 
         const luaLibImport = this.options.luaLibImport ?? LuaLibImportKind.Require;
         if (luaLibImport === LuaLibImportKind.Require && file.luaLibFeatures.size > 0) {
             // Import lualib features
-            const importStatements = loadImportedLualibFeatures(file.luaLibFeatures, this.emitHost);
-
-            statements = importStatements.concat(statements);
+            sourceChunks = this.printStatementArray(loadImportedLualibFeatures(file.luaLibFeatures, this.emitHost));
         } else if (luaLibImport === LuaLibImportKind.Inline && file.luaLibFeatures.size > 0) {
             // Inline lualib features
-            header += "-- Lua Library inline imports\n";
-            header += loadInlineLualibFeatures(file.luaLibFeatures, this.emitHost);
+            sourceChunks.push("-- Lua Library inline imports\n");
+            sourceChunks.push(loadInlineLualibFeatures(file.luaLibFeatures, this.emitHost));
         }
 
         if (this.options.sourceMapTraceback && !isBundleEnabled(this.options)) {
             // In bundle mode the traceback is being generated for the entire file in getBundleResult
             // Otherwise, traceback is being generated locally
-            header += `${LuaPrinter.sourceMapTracebackPlaceholder}\n`;
+            sourceChunks.push(`${LuaPrinter.sourceMapTracebackPlaceholder}\n`);
         }
 
-        return this.concatNodes(header, ...this.printStatementArray(statements));
+        // Print reest of the statements in file
+        sourceChunks.push(...this.printStatementArray(file.statements));
+
+        return this.concatNodes(...sourceChunks);
     }
 
     protected pushIndent(): void {

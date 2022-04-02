@@ -14,6 +14,7 @@ const resolver = resolve.ResolverFactory.createResolver({
     enforceExtension: true, // Resolved file must be a lua file
     fileSystem: { ...new resolve.CachedInputFileSystem(fs) },
     useSyncFileSystemCalls: true,
+    symlinks: false, // Do not resolve symlinks to their original paths (that breaks node_modules detection)
 });
 
 interface ResolutionResult {

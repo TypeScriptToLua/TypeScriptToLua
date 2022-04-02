@@ -688,6 +688,20 @@ test("Array.isArray returns true for empty objects", () => {
     util.testExpression`Array.isArray({})`.expectToEqual(true);
 });
 
+test.each([
+    "[1, 2, 3]",
+    "(new Set([1, 2, 3])).values()",
+    "[1, 2, 3], value => value * 2",
+    "{ length: 3 }, (_, index) => index + 1",
+])("Array.from(%p)", valueString => {
+    util.testExpression`Array.from(${valueString})`.expectToMatchJsResult();
+});
+
+// Array.of
+test.each(["1, 2, 3", "", "...[1, 2, 3], 4, 5, 6"])("Array.of(%p)", valueString => {
+    util.testExpression`Array.of(${valueString})`.expectToMatchJsResult();
+});
+
 // Test fix for https://github.com/TypeScriptToLua/TypeScriptToLua/issues/738
 test("array.prototype.concat issue #738", () => {
     util.testExpression`([] as any[]).concat(13, 323, {x: 3}, [2, 3])`.expectToMatchJsResult();

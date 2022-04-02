@@ -21,7 +21,7 @@ export interface LuaPluginImport {
     [option: string]: any;
 }
 
-export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> & {
+export interface TypeScriptToLuaOptions {
     buildMode?: BuildMode;
     extension?: string;
     luaBundle?: string;
@@ -35,8 +35,13 @@ export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> & {
     plugins?: Array<ts.PluginImport | TransformerImport>;
     sourceMapTraceback?: boolean;
     tstlVerbose?: boolean;
-    [option: string]: any;
-};
+    lua51AllowTryCatchInAsyncAwait?: boolean;
+}
+
+export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> &
+    TypeScriptToLuaOptions & {
+        [option: string]: any;
+    };
 
 export enum LuaLibImportKind {
     None = "none",

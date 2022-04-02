@@ -1,8 +1,7 @@
-export function __TS__ArrayJoin(this: unknown[], separator = ",") {
-    let result = "";
-    for (const [index, value] of ipairs(this)) {
-        if (index > 1) result += separator;
-        result += value.toString();
+export function __TS__ArrayJoin(this: any[], separator = ",") {
+    const parts: string[] = [];
+    for (const i of $range(1, this.length)) {
+        parts[i - 1] = this[i - 1].toString();
     }
-    return result;
+    return table.concat(parts, separator);
 }

@@ -1,4 +1,4 @@
-export function __TS__ArraySetLength<T>(this: void, arr: T[], length: number): number {
+export function __TS__ArraySetLength<T>(this: T[], length: number): number {
     if (
         length < 0 ||
         length !== length || // NaN
@@ -8,8 +8,8 @@ export function __TS__ArraySetLength<T>(this: void, arr: T[], length: number): n
         // non-integer
         throw `invalid array length: ${length}`;
     }
-    for (let i = arr.length - 1; i >= length; --i) {
-        arr[i] = undefined;
+    for (const i of $range(length + 1, this.length)) {
+        this[i - 1] = undefined;
     }
     return length;
 }

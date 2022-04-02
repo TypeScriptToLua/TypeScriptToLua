@@ -125,6 +125,13 @@ export type Operator = UnaryOperator | BinaryOperator;
 
 export type SymbolId = number & { _symbolIdBrand: any };
 
+export enum NodeFlags {
+    None = 0,
+    Inline = 1 << 0, // Keep function body on same line
+    Declaration = 1 << 1, // Prefer declaration syntax `function foo()` over assignment syntax `foo = function()`
+    TableUnpackCall = 1 << 2, // This is a table.unpack call
+}
+
 export interface TextRange {
     line?: number;
     column?: number;
@@ -132,18 +139,19 @@ export interface TextRange {
 
 export interface Node extends TextRange {
     kind: SyntaxKind;
+    flags: NodeFlags;
 }
 
 export function createNode(kind: SyntaxKind, tsOriginal?: ts.Node): Node {
     if (tsOriginal === undefined) {
-        return { kind };
+        return { kind, flags: NodeFlags.None };
     }
 
     const sourcePosition = getSourcePosition(tsOriginal);
     if (sourcePosition) {
-        return { kind, line: sourcePosition.line, column: sourcePosition.column };
+        return { kind, line: sourcePosition.line, column: sourcePosition.column, flags: NodeFlags.None };
     } else {
-        return { kind };
+        return { kind, flags: NodeFlags.None };
     }
 }
 
@@ -188,6 +196,11 @@ function getSourcePosition(sourceNode: ts.Node): TextRange | undefined {
 
 export function getOriginalPos(node: Node): TextRange {
     return { line: node.line, column: node.column };
+}
+
+export function setNodeFlags<T extends Node>(node: T, flags: NodeFlags): T {
+    node.flags = flags;
+    return node;
 }
 
 export interface File extends Node {
@@ -578,18 +591,11 @@ export function isLiteral(
     );
 }
 
-export enum FunctionExpressionFlags {
-    None = 1 << 0,
-    Inline = 1 << 1, // Keep function body on same line
-    Declaration = 1 << 2, // Prefer declaration syntax `function foo()` over assignment syntax `foo = function()`
-}
-
 export interface FunctionExpression extends Expression {
     kind: SyntaxKind.FunctionExpression;
     params?: Identifier[];
     dots?: DotsLiteral;
     body: Block;
-    flags: FunctionExpressionFlags;
 }
 
 export function isFunctionExpression(node: Node): node is FunctionExpression {
@@ -600,7 +606,7 @@ export function createFunctionExpression(
     body: Block,
     params?: Identifier[],
     dots?: DotsLiteral,
-    flags = FunctionExpressionFlags.None,
+    flags = NodeFlags.None,
     tsOriginal?: ts.Node
 ): FunctionExpression {
     const expression = createNode(SyntaxKind.FunctionExpression, tsOriginal) as FunctionExpression;
@@ -819,6 +825,6 @@ export function isInlineFunctionExpression(expression: FunctionExpression): expr
         expression.body.statements?.length === 1 &&
         isReturnStatement(expression.body.statements[0]) &&
         expression.body.statements[0].expressions !== undefined &&
-        (expression.flags & FunctionExpressionFlags.Inline) !== 0
+        (expression.flags & NodeFlags.Inline) !== 0
     );
 }

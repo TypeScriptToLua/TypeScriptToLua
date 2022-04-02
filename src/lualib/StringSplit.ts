@@ -1,3 +1,5 @@
+const sub = string.sub;
+const find = string.find;
 export function __TS__StringSplit(this: void, source: string, separator?: string, limit?: number): string[] {
     if (limit === undefined) {
         limit = 4294967295;
@@ -7,30 +9,28 @@ export function __TS__StringSplit(this: void, source: string, separator?: string
         return [];
     }
 
-    const out = [];
-    let index = 0;
-    let count = 0;
+    const result = [];
+    let resultIndex = 1;
 
     if (separator === undefined || separator === "") {
-        while (index < source.length - 1 && count < limit) {
-            out[count] = source[index];
-            count++;
-            index++;
+        for (const i of $range(1, source.length)) {
+            result[resultIndex - 1] = sub(source, i, i);
+            resultIndex++;
         }
     } else {
-        const separatorLength = separator.length;
-        let nextIndex = source.indexOf(separator);
-        while (nextIndex >= 0 && count < limit) {
-            out[count] = source.substring(index, nextIndex);
-            count++;
-            index = nextIndex + separatorLength;
-            nextIndex = source.indexOf(separator, index);
+        let currentPos = 1;
+        while (resultIndex <= limit) {
+            const [startPos, endPos] = find(source, separator, currentPos, true);
+            if (!startPos) break;
+            result[resultIndex - 1] = sub(source, currentPos, startPos - 1);
+            resultIndex++;
+            currentPos = endPos + 1;
+        }
+
+        if (resultIndex <= limit) {
+            result[resultIndex - 1] = sub(source, currentPos);
         }
     }
 
-    if (count < limit) {
-        out[count] = source.substring(index);
-    }
-
-    return out;
+    return result;
 }

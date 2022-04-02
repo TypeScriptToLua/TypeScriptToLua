@@ -66,7 +66,7 @@ export function createCallableTable(functionExpression: lua.Expression): lua.Exp
             ]),
             [lua.createAnonymousIdentifier()],
             lua.createDotsLiteral(),
-            lua.FunctionExpressionFlags.Inline
+            lua.NodeFlags.Inline
         );
     }
     return lua.createCallExpression(lua.createIdentifier("setmetatable"), [
@@ -231,10 +231,10 @@ export function transformFunctionToExpression(
         }
     }
 
-    let flags = lua.FunctionExpressionFlags.None;
-    if (!ts.isBlock(node.body)) flags |= lua.FunctionExpressionFlags.Inline;
+    let flags = lua.NodeFlags.None;
+    if (!ts.isBlock(node.body)) flags |= lua.NodeFlags.Inline;
     if (ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node)) {
-        flags |= lua.FunctionExpressionFlags.Declaration;
+        flags |= lua.NodeFlags.Declaration;
     }
 
     const [paramNames, dotsLiteral, spreadIdentifier] = transformParameters(context, node.parameters, functionContext);

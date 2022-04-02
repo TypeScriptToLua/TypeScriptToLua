@@ -1,12 +1,14 @@
 export function __TS__ArrayFilter<T>(
-    this: void,
-    arr: T[],
-    callbackfn: (value: T, index?: number, array?: any[]) => boolean
+    this: T[],
+    callbackfn: (value: T, index?: number, array?: any[]) => boolean,
+    thisArg?: any
 ): T[] {
     const result: T[] = [];
-    for (let i = 0; i < arr.length; i++) {
-        if (callbackfn(arr[i], i, arr)) {
-            result[result.length] = arr[i];
+    let len = 0;
+    for (const i of $range(1, this.length)) {
+        if (callbackfn.call(thisArg, this[i - 1], i - 1, this)) {
+            len++;
+            result[len - 1] = this[i - 1];
         }
     }
     return result;

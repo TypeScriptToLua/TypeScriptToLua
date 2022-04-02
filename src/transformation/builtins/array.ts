@@ -4,8 +4,9 @@ import { TransformationContext } from "../context";
 import { unsupportedProperty } from "../utils/diagnostics";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { PropertyCallExpression, transformArguments, transformCallAndArguments } from "../visitors/call";
-import { isStringType, isNumberType } from "../utils/typescript";
-import { wrapInTable } from "../utils/lua-ast";
+import { isStringType, isNumberType, findFirstNonOuterParent } from "../utils/typescript";
+import { moveToPrecedingTemp } from "../visitors/expression-list";
+import { isUnpackCall, wrapInTable } from "../utils/lua-ast";
 
 export function transformArrayConstructorCall(
     context: TransformationContext,
@@ -28,10 +29,47 @@ export function transformArrayConstructorCall(
     }
 }
 
+/**
+ * Optimized single element Array.push
+ *
+ * array[#array+1] = el
+ * return (#array + 1)
+ */
+function transformSingleElementArrayPush(
+    context: TransformationContext,
+    node: PropertyCallExpression,
+    caller: lua.Expression,
+    param: lua.Expression
+): lua.Expression {
+    const expressionIsUsed = !ts.isExpressionStatement(findFirstNonOuterParent(node));
+
+    const arrayIdentifier = lua.isIdentifier(caller) ? caller : moveToPrecedingTemp(context, caller);
+
+    // #array + 1
+    let lengthExpression: lua.Expression = lua.createBinaryExpression(
+        lua.createUnaryExpression(arrayIdentifier, lua.SyntaxKind.LengthOperator),
+        lua.createNumericLiteral(1),
+        lua.SyntaxKind.AdditionOperator
+    );
+
+    if (expressionIsUsed) {
+        // store length in a temp
+        lengthExpression = moveToPrecedingTemp(context, lengthExpression);
+    }
+
+    const pushStatement = lua.createAssignmentStatement(
+        lua.createTableIndexExpression(arrayIdentifier, lengthExpression),
+        param,
+        node
+    );
+    context.addPrecedingStatements(pushStatement);
+    return expressionIsUsed ? lengthExpression : lua.createNilLiteral();
+}
+
 export function transformArrayPrototypeCall(
     context: TransformationContext,
     node: PropertyCallExpression
-): lua.CallExpression | undefined {
+): lua.Expression | undefined {
     const expression = node.expression;
     const signature = context.checker.getResolvedSignature(node);
     const [caller, params] = transformCallAndArguments(context, expression.expression, node.arguments, signature);
@@ -43,11 +81,31 @@ export function transformArrayPrototypeCall(
         case "entries":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayEntries, node, caller);
         case "push":
+            if (node.arguments.length === 1) {
+                const param = params[0];
+                if (isUnpackCall(param)) {
+                    return transformLuaLibFunction(
+                        context,
+                        LuaLibFeature.ArrayPushArray,
+                        node,
+                        caller,
+                        (param as lua.CallExpression).params[0]
+                    );
+                }
+                if (!lua.isDotsLiteral(param)) {
+                    return transformSingleElementArrayPush(context, node, caller, param);
+                }
+            }
+
             return transformLuaLibFunction(context, LuaLibFeature.ArrayPush, node, caller, ...params);
         case "reverse":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayReverse, node, caller);
         case "shift":
-            return transformLuaLibFunction(context, LuaLibFeature.ArrayShift, node, caller);
+            return lua.createCallExpression(
+                lua.createTableIndexExpression(lua.createIdentifier("table"), lua.createStringLiteral("remove")),
+                [caller, lua.createNumericLiteral(1)],
+                node
+            );
         case "unshift":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayUnshift, node, caller, ...params);
         case "sort":
@@ -89,11 +147,14 @@ export function transformArrayPrototypeCall(
             const elementType = context.checker.getElementTypeOfArrayType(callerType);
             if (elementType && (isStringType(context, elementType) || isNumberType(context, elementType))) {
                 const defaultSeparatorLiteral = lua.createStringLiteral(",");
+                const param = params[0];
                 const parameters = [
                     caller,
                     node.arguments.length === 0
                         ? defaultSeparatorLiteral
-                        : lua.createBinaryExpression(params[0], defaultSeparatorLiteral, lua.SyntaxKind.OrOperator),
+                        : lua.isStringLiteral(param)
+                        ? param
+                        : lua.createBinaryExpression(param, defaultSeparatorLiteral, lua.SyntaxKind.OrOperator),
                 ];
 
                 return lua.createCallExpression(

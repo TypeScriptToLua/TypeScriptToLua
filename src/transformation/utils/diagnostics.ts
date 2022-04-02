@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import { LuaTarget } from "../../CompilerOptions";
+import { LuaTarget, TypeScriptToLuaOptions } from "../../CompilerOptions";
 import { createSerialDiagnosticFactory } from "../../utils";
 import { AnnotationKind } from "./annotations";
 
@@ -84,10 +84,21 @@ export const unsupportedRightShiftOperator = createErrorDiagnosticFactory(
     "Right shift operator is not supported for target Lua 5.3. Use `>>>` instead."
 );
 
+type NonUniversalTarget = Exclude<LuaTarget, LuaTarget.Universal>;
+
 const getLuaTargetName = (version: LuaTarget) => (version === LuaTarget.LuaJIT ? "LuaJIT" : `Lua ${version}`);
 export const unsupportedForTarget = createErrorDiagnosticFactory(
-    (functionality: string, version: Exclude<LuaTarget, LuaTarget.Universal>) =>
+    (functionality: string, version: NonUniversalTarget) =>
         `${functionality} is/are not supported for target ${getLuaTargetName(version)}.`
+);
+
+export const unsupportedForTargetButOverrideAvailable = createErrorDiagnosticFactory(
+    (functionality: string, version: NonUniversalTarget, optionName: keyof TypeScriptToLuaOptions) =>
+        `As a precaution, ${functionality} is/are not supported for target ${getLuaTargetName(
+            version
+        )} due to language features/limitations. ` +
+        `However "--${optionName}" can be used to bypass this precaution. ` +
+        "See https://typescripttolua.github.io/docs/configuration for more information."
 );
 
 export const unsupportedProperty = createErrorDiagnosticFactory(

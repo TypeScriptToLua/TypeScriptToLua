@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import { LuaTarget } from "../..";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor } from "../context";
-import { unsupportedForTarget } from "../utils/diagnostics";
+import { unsupportedForTarget, unsupportedForTargetButOverrideAvailable } from "../utils/diagnostics";
 import { createUnpackCall } from "../utils/lua-ast";
 import { ScopeType } from "../utils/scope";
 import { isInAsyncFunction, isInGeneratorFunction } from "../utils/typescript";
@@ -14,8 +14,19 @@ import { createReturnStatement } from "./return";
 export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statement, context) => {
     const [tryBlock, tryScope] = transformScopeBlock(context, statement.tryBlock, ScopeType.Try);
 
-    if (context.options.luaTarget === LuaTarget.Lua51 && isInAsyncFunction(statement)) {
-        context.diagnostics.push(unsupportedForTarget(statement, "try/catch inside async functions", LuaTarget.Lua51));
+    if (
+        context.options.luaTarget === LuaTarget.Lua51 &&
+        isInAsyncFunction(statement) &&
+        !context.options.lua51AllowTryCatchInAsyncAwait
+    ) {
+        context.diagnostics.push(
+            unsupportedForTargetButOverrideAvailable(
+                statement,
+                "try/catch inside async functions",
+                LuaTarget.Lua51,
+                "lua51AllowTryCatchInAsyncAwait"
+            )
+        );
         return tryBlock.statements;
     }
 

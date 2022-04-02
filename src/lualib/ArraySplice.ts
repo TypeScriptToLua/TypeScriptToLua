@@ -29,7 +29,7 @@ export function __TS__ArraySplice<T>(this: T[], ...args: any[]): T[] {
         // ECMA-spec line 6: if number of actual arguments is 1
         actualDeleteCount = len - start;
     } else {
-        actualDeleteCount = deleteCount || 0;
+        actualDeleteCount = deleteCount ?? 0;
         if (actualDeleteCount < 0) {
             actualDeleteCount = 0;
         }

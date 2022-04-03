@@ -16,7 +16,17 @@ module.exports = ({ github, context, core }) => {
 
     const summary =
         `[Open visualizer](https://typescripttolua.github.io/benchviz?d=${compressed.toString("base64")})\n` +
-        `### Lua5.3\n${benchmarkInfoLua.comparison.summary}\n### LuaJIT\n${benchmarkInfoJIT.comparison.summary}`;
+        `### Lua5.3
+        #### Memory
+        ${benchmarkInfoLua.comparison.memory.summary}
+        #### Runtime
+        ${benchmarkInfoLua.comparison.runtime.summary}
+        ---
+        ### LuaJIT
+        #### Memory
+        ${benchmarkInfoJIT.comparison.memory.summary}
+        #### Runtime
+        ${benchmarkInfoJIT.comparison.runtime.summary}`;
 
     return summary;
 };

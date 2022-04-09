@@ -44,7 +44,7 @@ export function transformPromiseConstructorCall(
     }
 }
 
-function createStaticPromiseFunctionAccessor(functionName: string, node: ts.Node) {
+export function createStaticPromiseFunctionAccessor(functionName: string, node: ts.Node) {
     return lua.createTableIndexExpression(
         lua.createIdentifier("__TS__Promise"),
         lua.createStringLiteral(functionName),

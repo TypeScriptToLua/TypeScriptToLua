@@ -15,6 +15,7 @@ import { moveToPrecedingTemp, transformExpressionList } from "./expression-list"
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
 import { getOptionalContinuationData, transformOptionalChain } from "./optional-chaining";
 import { transformLanguageExtensionCallExpression } from "./language-extensions";
+import { transformImportExpression } from "./modules/import";
 
 export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
 
@@ -210,6 +211,10 @@ function transformElementCall(context: TransformationContext, node: ts.CallExpre
 }
 
 export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node, context) => {
+    if (node.expression.kind === ts.SyntaxKind.ImportKeyword) {
+        return transformImportExpression(node, context);
+    }
+
     if (ts.isOptionalChain(node)) {
         return transformOptionalChain(context, node);
     }

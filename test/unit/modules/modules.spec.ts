@@ -280,3 +280,14 @@ test("namespace export with unsafe Lua name", () => {
         .addExtraFile("module.ts", moduleFile)
         .expectToMatchJsResult();
 });
+
+test("import expression", () => {
+    util.testModule`
+        let result;
+        import("./module").then(m => { result = m.foo(); });
+        export { result };
+    `
+        .addExtraFile("module.ts", 'export function foo() { return "foo"; }')
+        .setOptions({ module: ts.ModuleKind.ESNext })
+        .expectToMatchJsResult();
+});

@@ -1,7 +1,7 @@
 import { ChildProcess, fork } from "child_process";
 import * as path from "path";
 
-jest.setTimeout(20000);
+jest.setTimeout(30000);
 
 const cliPath = path.join(__dirname, "../../src/tstl.ts");
 

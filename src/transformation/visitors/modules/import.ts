@@ -1,10 +1,12 @@
 import * as path from "path";
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
+import { createStaticPromiseFunctionAccessor } from "../../builtins/promise";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getSymbolAnnotations } from "../../utils/annotations";
 import { createDefaultExportStringLiteral } from "../../utils/export";
 import { createHoistableVariableDeclarationStatement } from "../../utils/lua-ast";
+import { importLuaLibFeature, LuaLibFeature } from "../../utils/lualib";
 import { createSafeName } from "../../utils/safe-names";
 import { peekScope } from "../../utils/scope";
 import { transformIdentifier } from "../identifier";
@@ -160,4 +162,11 @@ export const transformImportEqualsDeclaration: FunctionVisitor<ts.ImportEqualsDe
     const name = transformIdentifier(context, node.name);
     const expression = context.transformExpression(node.moduleReference);
     return createHoistableVariableDeclarationStatement(context, name, expression, node);
+};
+
+export const transformImportExpression: FunctionVisitor<ts.CallExpression> = (node, context) => {
+    importLuaLibFeature(context, LuaLibFeature.Promise);
+
+    const importPath = node.arguments.map(a => context.transformExpression(a));
+    return lua.createCallExpression(createStaticPromiseFunctionAccessor("resolve", node), importPath, node);
 };

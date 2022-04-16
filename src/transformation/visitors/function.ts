@@ -143,7 +143,7 @@ export function transformFunctionBodyHeader(
 
     // Push spread operator here
     if (spreadIdentifier && isRestParameterReferenced(spreadIdentifier, bodyScope)) {
-        let spreadTable: lua.Expression
+        let spreadTable: lua.Expression;
         if (context.luaTarget === LuaTarget.Lua50) {
             spreadTable = lua.createArgLiteral();
         } else {

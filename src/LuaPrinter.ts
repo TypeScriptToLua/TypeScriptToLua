@@ -582,6 +582,8 @@ export class LuaPrinter {
                 return this.printNilLiteral(expression as lua.NilLiteral);
             case lua.SyntaxKind.DotsKeyword:
                 return this.printDotsLiteral(expression as lua.DotsLiteral);
+            case lua.SyntaxKind.ArgKeyword:
+                return this.printArgLiteral(expression as lua.ArgLiteral);
             case lua.SyntaxKind.TrueKeyword:
             case lua.SyntaxKind.FalseKeyword:
                 return this.printBooleanLiteral(expression as lua.BooleanLiteral);
@@ -622,6 +624,10 @@ export class LuaPrinter {
 
     public printDotsLiteral(expression: lua.DotsLiteral): SourceNode {
         return this.createSourceNode(expression, "...");
+    }
+
+    public printArgLiteral(expression: lua.ArgLiteral): SourceNode {
+        return this.createSourceNode(expression, "arg");
     }
 
     public printBooleanLiteral(expression: lua.BooleanLiteral): SourceNode {

@@ -93,6 +93,7 @@ export function transformOperatorMappingExpression(
     }
 
     const isBefore53 =
+        context.luaTarget === LuaTarget.Lua50 ||
         context.luaTarget === LuaTarget.Lua51 ||
         context.luaTarget === LuaTarget.Lua52 ||
         context.luaTarget === LuaTarget.LuaJIT ||

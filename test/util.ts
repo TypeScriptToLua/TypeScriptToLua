@@ -70,6 +70,7 @@ export function expectEachVersionExceptJit<T>(
 ): Record<tstl.LuaTarget, ((builder: T) => void) | boolean> {
     return {
         [tstl.LuaTarget.Universal]: expectation,
+        [tstl.LuaTarget.Lua50]: expectation,
         [tstl.LuaTarget.Lua51]: expectation,
         [tstl.LuaTarget.Lua52]: expectation,
         [tstl.LuaTarget.Lua53]: expectation,

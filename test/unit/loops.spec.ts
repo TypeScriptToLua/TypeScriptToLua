@@ -520,6 +520,7 @@ for (const testCase of [
 
     util.testEachVersion(`loop continue (${testCase})`, () => util.testModule(testCase), {
         [tstl.LuaTarget.Universal]: builder => builder.expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]),
+        [tstl.LuaTarget.Lua50]: builder => builder.expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]),
         [tstl.LuaTarget.Lua51]: builder => builder.expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]),
         [tstl.LuaTarget.Lua52]: expectContinueGotoLabel,
         [tstl.LuaTarget.Lua53]: expectContinueGotoLabel,

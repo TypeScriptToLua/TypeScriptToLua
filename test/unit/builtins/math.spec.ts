@@ -78,6 +78,7 @@ const expectLualibMathAtan2: util.TapCallback = builder =>
 util.testEachVersion("Math.atan2", () => util.testExpression`Math.atan2(4, 5)`, {
     [tstl.LuaTarget.Universal]: builder => builder.tap(expectLualibMathAtan2),
     [tstl.LuaTarget.LuaJIT]: builder => builder.tap(expectMathAtan2),
+    [tstl.LuaTarget.Lua50]: builder => builder.tap(expectMathAtan2),
     [tstl.LuaTarget.Lua51]: builder => builder.tap(expectMathAtan2),
     [tstl.LuaTarget.Lua52]: builder => builder.tap(expectMathAtan2),
     [tstl.LuaTarget.Lua53]: builder => builder.tap(expectMathAtan),

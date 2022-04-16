@@ -48,6 +48,14 @@ test.each(["a+=b", "a-=b", "a*=b", "a/=b", "a%=b", "a**=b"])("Binary expressions
 const supportedInAll = ["~a", "a&b", "a&=b", "a|b", "a|=b", "a^b", "a^=b", "a<<b", "a<<=b", "a>>>b", "a>>>=b"];
 const unsupportedIn53And54 = ["a>>b", "a>>=b"];
 const allBinaryOperators = [...supportedInAll, ...unsupportedIn53And54];
+test.each(allBinaryOperators)("Bitop [5.0] (%p)", input => {
+    // Bit operations not supported in 5.0, expect an exception
+    util.testExpression(input)
+        .setOptions({ luaTarget: tstl.LuaTarget.Lua50, luaLibImport: tstl.LuaLibImportKind.None })
+        .disableSemanticCheck()
+        .expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]);
+});
+
 test.each(allBinaryOperators)("Bitop [5.1] (%p)", input => {
     // Bit operations not supported in 5.1, expect an exception
     util.testExpression(input)

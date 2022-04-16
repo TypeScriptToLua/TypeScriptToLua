@@ -165,6 +165,7 @@ util.testEachVersion(
     // Cannot execute LuaJIT with test runner
     {
         ...util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
+        [LuaTarget.Lua50]: builder => builder.expectToHaveDiagnostics([unsupportedForTarget.code]),
         [LuaTarget.Lua51]: builder => builder.expectToHaveDiagnostics([unsupportedForTarget.code]),
     }
 );

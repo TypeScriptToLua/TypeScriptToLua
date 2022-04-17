@@ -1,4 +1,5 @@
 import * as ts from "typescript";
+import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { unsupportedProperty } from "../utils/diagnostics";
@@ -177,11 +178,19 @@ export function transformArrayPrototypeCall(
 export function transformArrayProperty(
     context: TransformationContext,
     node: ts.PropertyAccessExpression
-): lua.UnaryExpression | undefined {
+): lua.Expression | undefined {
     switch (node.name.text) {
         case "length":
             const expression = context.transformExpression(node.expression);
-            return lua.createUnaryExpression(expression, lua.SyntaxKind.LengthOperator, node);
+            if (context.luaTarget === LuaTarget.Lua50) {
+                const tableGetn = lua.createTableIndexExpression(
+                    lua.createIdentifier("table"),
+                    lua.createStringLiteral("getn")
+                );
+                return lua.createCallExpression(tableGetn, [expression], node);
+            } else {
+                return lua.createUnaryExpression(expression, lua.SyntaxKind.LengthOperator, node);
+            }
         default:
             return undefined;
     }

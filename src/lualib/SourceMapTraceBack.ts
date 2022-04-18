@@ -59,9 +59,7 @@ export function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap
 
                 return `${file}:${line}`;
             };
-            [result] = string.gsub(result, '(%[string "[^"]+"%]):(%d+)', (file, line) =>
-                stringReplacer(file, line)
-            );
+            [result] = string.gsub(result, '(%[string "[^"]+"%]):(%d+)', (file, line) => stringReplacer(file, line));
 
             return result;
         }) as typeof debug.traceback;

@@ -25,9 +25,9 @@ export function findFirstNodeAbove<T extends ts.Node>(node: ts.Node, callback: (
 }
 
 export function findFirstNonOuterParent(node: ts.Node): ts.Node {
-    let current = node.parent;
+    let current = ts.getOriginalNode(node).parent;
     while (ts.isOuterExpression(current)) {
-        current = current.parent;
+        current = ts.getOriginalNode(current).parent;
     }
     return current;
 }

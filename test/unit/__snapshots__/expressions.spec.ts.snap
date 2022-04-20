@@ -572,6 +572,12 @@ ____exports.__result = nil
 return ____exports"
 `;
 
+exports[`Translated binary expressions basic numeric [5.0] ("15%3") 1`] = `
+"local ____exports = {}
+____exports.__result = __TS__Modulo(15, 3)
+return ____exports"
+`;
+
 exports[`Unary expressions basic ("!a") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)

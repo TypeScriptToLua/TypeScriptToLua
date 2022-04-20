@@ -18,8 +18,56 @@ test.each([
     util.testFunction(input).disableSemanticCheck().expectLuaToMatchSnapshot();
 });
 
-test.each(["3+4", "5-2", "6*3", "6**3", "20/5", "15/10", "15%3"])("Binary expressions basic numeric (%p)", input => {
-    util.testExpression(input).expectToMatchJsResult();
+const numericSupportedInAll = ["3+4", "5-2", "6*3", "6**3", "20/5", "15/10"];
+const translatedIn50 = ["15%3"];
+const allNumericOperators = [...numericSupportedInAll, ...translatedIn50];
+test.each(numericSupportedInAll)("Binary expressions basic numeric [5.0] (%p)", input => {
+    util.testExpression(input)
+        .setOptions({ luaTarget: tstl.LuaTarget.Lua50, luaLibImport: tstl.LuaLibImportKind.None })
+        .disableSemanticCheck()
+        .expectToMatchJsResult();
+});
+
+test.each(translatedIn50)("Translated binary expressions basic numeric [5.0] (%p)", input => {
+    util.testExpression(input)
+        .setOptions({ luaTarget: tstl.LuaTarget.Lua50, luaLibImport: tstl.LuaLibImportKind.None })
+        .disableSemanticCheck()
+        .expectLuaToMatchSnapshot();
+});
+
+test.each(allNumericOperators)("Binary expressions basic numeric [5.1] (%p)", input => {
+    util.testExpression(input)
+        .setOptions({ luaTarget: tstl.LuaTarget.Lua51, luaLibImport: tstl.LuaLibImportKind.None })
+        .disableSemanticCheck()
+        .expectToMatchJsResult();
+});
+
+test.each(allNumericOperators)("Binary expressions basic numeric [JIT] (%p)", input => {
+    util.testExpression(input)
+        .setOptions({ luaTarget: tstl.LuaTarget.LuaJIT, luaLibImport: tstl.LuaLibImportKind.None })
+        .disableSemanticCheck()
+        .expectToMatchJsResult();
+});
+
+test.each(allNumericOperators)("Binary expressions basic numeric [5.2] (%p)", input => {
+    util.testExpression(input)
+        .setOptions({ luaTarget: tstl.LuaTarget.Lua52, luaLibImport: tstl.LuaLibImportKind.None })
+        .disableSemanticCheck()
+        .expectToMatchJsResult();
+});
+
+test.each(allNumericOperators)("Binary expressions basic numeric [5.3] (%p)", input => {
+    util.testExpression(input)
+        .setOptions({ luaTarget: tstl.LuaTarget.Lua53, luaLibImport: tstl.LuaLibImportKind.None })
+        .disableSemanticCheck()
+        .expectToMatchJsResult();
+});
+
+test.each(allNumericOperators)("Binary expressions basic numeric [5.4] (%p)", input => {
+    util.testExpression(input)
+        .setOptions({ luaTarget: tstl.LuaTarget.Lua54, luaLibImport: tstl.LuaLibImportKind.None })
+        .disableSemanticCheck()
+        .expectToMatchJsResult();
 });
 
 test.each(["1==1", "1===1", "1!=1", "1!==1", "1>1", "1>=1", "1<1", "1<=1", "1&&1", "1||1"])(
@@ -45,9 +93,9 @@ test.each(["a+=b", "a-=b", "a*=b", "a/=b", "a%=b", "a**=b"])("Binary expressions
     `.expectToMatchJsResult();
 });
 
-const supportedInAll = ["~a", "a&b", "a&=b", "a|b", "a|=b", "a^b", "a^=b", "a<<b", "a<<=b", "a>>>b", "a>>>=b"];
+const binarySupportedInAll = ["~a", "a&b", "a&=b", "a|b", "a|=b", "a^b", "a^=b", "a<<b", "a<<=b", "a>>>b", "a>>>=b"];
 const unsupportedIn53And54 = ["a>>b", "a>>=b"];
-const allBinaryOperators = [...supportedInAll, ...unsupportedIn53And54];
+const allBinaryOperators = [...binarySupportedInAll, ...unsupportedIn53And54];
 test.each(allBinaryOperators)("Bitop [5.0] (%p)", input => {
     // Bit operations not supported in 5.0, expect an exception
     util.testExpression(input)
@@ -78,14 +126,14 @@ test.each(allBinaryOperators)("Bitop [5.2] (%p)", input => {
         .expectLuaToMatchSnapshot();
 });
 
-test.each(supportedInAll)("Bitop [5.3] (%p)", input => {
+test.each(binarySupportedInAll)("Bitop [5.3] (%p)", input => {
     util.testExpression(input)
         .setOptions({ luaTarget: tstl.LuaTarget.Lua53, luaLibImport: tstl.LuaLibImportKind.None })
         .disableSemanticCheck()
         .expectLuaToMatchSnapshot();
 });
 
-test.each(supportedInAll)("Bitop [5.4] (%p)", input => {
+test.each(binarySupportedInAll)("Bitop [5.4] (%p)", input => {
     util.testExpression(input)
         .setOptions({ luaTarget: tstl.LuaTarget.Lua54, luaLibImport: tstl.LuaLibImportKind.None })
         .disableSemanticCheck()

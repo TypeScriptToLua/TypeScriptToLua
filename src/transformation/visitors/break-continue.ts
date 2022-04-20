@@ -16,7 +16,7 @@ export const transformContinueStatement: FunctionVisitor<ts.ContinueStatement> =
         context.luaTarget === LuaTarget.Lua50 ||
         context.luaTarget === LuaTarget.Lua51
     ) {
-        context.diagnostics.push(unsupportedForTarget(statement, "Continue statement", LuaTarget.Lua51));
+        context.diagnostics.push(unsupportedForTarget(statement, "Continue statement", context.luaTarget));
     }
 
     const scope = findScope(context, ScopeType.Loop);

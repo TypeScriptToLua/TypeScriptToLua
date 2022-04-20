@@ -23,7 +23,7 @@ exports[`loop continue (do { continue; } while (false)) [5.0]: code 1`] = `
 until not false"
 `;
 
-exports[`loop continue (do { continue; } while (false)) [5.0]: diagnostics 1`] = `"main.ts(1,6): error TSTL: Continue statement is/are not supported for target Lua 5.1."`;
+exports[`loop continue (do { continue; } while (false)) [5.0]: diagnostics 1`] = `"main.ts(1,6): error TSTL: Continue statement is/are not supported for target Lua 5.0."`;
 
 exports[`loop continue (do { continue; } while (false)) [5.1]: code 1`] = `
 "repeat
@@ -49,7 +49,7 @@ exports[`loop continue (do { continue; } while (false)) [universal]: code 1`] = 
 until not false"
 `;
 
-exports[`loop continue (do { continue; } while (false)) [universal]: diagnostics 1`] = `"main.ts(1,6): error TSTL: Continue statement is/are not supported for target Lua 5.1."`;
+exports[`loop continue (do { continue; } while (false)) [universal]: diagnostics 1`] = `"main.ts(1,6): error TSTL: Continue statement is/are not supported for target Lua universal."`;
 
 exports[`loop continue (for (;;) { continue; }) [5.0]: code 1`] = `
 "do
@@ -62,7 +62,7 @@ exports[`loop continue (for (;;) { continue; }) [5.0]: code 1`] = `
 end"
 `;
 
-exports[`loop continue (for (;;) { continue; }) [5.0]: diagnostics 1`] = `"main.ts(1,12): error TSTL: Continue statement is/are not supported for target Lua 5.1."`;
+exports[`loop continue (for (;;) { continue; }) [5.0]: diagnostics 1`] = `"main.ts(1,12): error TSTL: Continue statement is/are not supported for target Lua 5.0."`;
 
 exports[`loop continue (for (;;) { continue; }) [5.1]: code 1`] = `
 "do
@@ -88,7 +88,7 @@ exports[`loop continue (for (;;) { continue; }) [universal]: code 1`] = `
 end"
 `;
 
-exports[`loop continue (for (;;) { continue; }) [universal]: diagnostics 1`] = `"main.ts(1,12): error TSTL: Continue statement is/are not supported for target Lua 5.1."`;
+exports[`loop continue (for (;;) { continue; }) [universal]: diagnostics 1`] = `"main.ts(1,12): error TSTL: Continue statement is/are not supported for target Lua universal."`;
 
 exports[`loop continue (for (const a in {}) { continue; }) [5.0]: code 1`] = `
 "for a in pairs({}) do
@@ -99,7 +99,7 @@ exports[`loop continue (for (const a in {}) { continue; }) [5.0]: code 1`] = `
 end"
 `;
 
-exports[`loop continue (for (const a in {}) { continue; }) [5.0]: diagnostics 1`] = `"main.ts(1,23): error TSTL: Continue statement is/are not supported for target Lua 5.1."`;
+exports[`loop continue (for (const a in {}) { continue; }) [5.0]: diagnostics 1`] = `"main.ts(1,23): error TSTL: Continue statement is/are not supported for target Lua 5.0."`;
 
 exports[`loop continue (for (const a in {}) { continue; }) [5.1]: code 1`] = `
 "for a in pairs({}) do
@@ -121,7 +121,7 @@ exports[`loop continue (for (const a in {}) { continue; }) [universal]: code 1`]
 end"
 `;
 
-exports[`loop continue (for (const a in {}) { continue; }) [universal]: diagnostics 1`] = `"main.ts(1,23): error TSTL: Continue statement is/are not supported for target Lua 5.1."`;
+exports[`loop continue (for (const a in {}) { continue; }) [universal]: diagnostics 1`] = `"main.ts(1,23): error TSTL: Continue statement is/are not supported for target Lua universal."`;
 
 exports[`loop continue (for (const a of []) { continue; }) [5.0]: code 1`] = `
 "for ____, a in ipairs({}) do
@@ -132,7 +132,7 @@ exports[`loop continue (for (const a of []) { continue; }) [5.0]: code 1`] = `
 end"
 `;
 
-exports[`loop continue (for (const a of []) { continue; }) [5.0]: diagnostics 1`] = `"main.ts(1,23): error TSTL: Continue statement is/are not supported for target Lua 5.1."`;
+exports[`loop continue (for (const a of []) { continue; }) [5.0]: diagnostics 1`] = `"main.ts(1,23): error TSTL: Continue statement is/are not supported for target Lua 5.0."`;
 
 exports[`loop continue (for (const a of []) { continue; }) [5.1]: code 1`] = `
 "for ____, a in ipairs({}) do
@@ -154,7 +154,7 @@ exports[`loop continue (for (const a of []) { continue; }) [universal]: code 1`]
 end"
 `;
 
-exports[`loop continue (for (const a of []) { continue; }) [universal]: diagnostics 1`] = `"main.ts(1,23): error TSTL: Continue statement is/are not supported for target Lua 5.1."`;
+exports[`loop continue (for (const a of []) { continue; }) [universal]: diagnostics 1`] = `"main.ts(1,23): error TSTL: Continue statement is/are not supported for target Lua universal."`;
 
 exports[`loop continue (while (false) { continue; }) [5.0]: code 1`] = `
 "while false do
@@ -165,7 +165,7 @@ exports[`loop continue (while (false) { continue; }) [5.0]: code 1`] = `
 end"
 `;
 
-exports[`loop continue (while (false) { continue; }) [5.0]: diagnostics 1`] = `"main.ts(1,17): error TSTL: Continue statement is/are not supported for target Lua 5.1."`;
+exports[`loop continue (while (false) { continue; }) [5.0]: diagnostics 1`] = `"main.ts(1,17): error TSTL: Continue statement is/are not supported for target Lua 5.0."`;
 
 exports[`loop continue (while (false) { continue; }) [5.1]: code 1`] = `
 "while false do
@@ -187,4 +187,4 @@ exports[`loop continue (while (false) { continue; }) [universal]: code 1`] = `
 end"
 `;
 
-exports[`loop continue (while (false) { continue; }) [universal]: diagnostics 1`] = `"main.ts(1,17): error TSTL: Continue statement is/are not supported for target Lua 5.1."`;
+exports[`loop continue (while (false) { continue; }) [universal]: diagnostics 1`] = `"main.ts(1,17): error TSTL: Continue statement is/are not supported for target Lua universal."`;

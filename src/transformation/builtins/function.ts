@@ -45,7 +45,7 @@ export function transformFunctionProperty(
                 context.luaTarget === LuaTarget.Lua51 ||
                 context.luaTarget === LuaTarget.Universal
             ) {
-                context.diagnostics.push(unsupportedForTarget(node, "function.length", LuaTarget.Lua51));
+                context.diagnostics.push(unsupportedForTarget(node, "function.length", context.luaTarget));
             }
 
             // debug.getinfo(fn)

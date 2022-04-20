@@ -143,12 +143,8 @@ export function transformFunctionBodyHeader(
 
     // Push spread operator here
     if (spreadIdentifier && isRestParameterReferenced(spreadIdentifier, bodyScope)) {
-        let spreadTable: lua.Expression;
-        if (context.luaTarget === LuaTarget.Lua50) {
-            spreadTable = lua.createArgLiteral();
-        } else {
-            spreadTable = wrapInTable(lua.createDotsLiteral());
-        }
+        const spreadTable =
+            context.luaTarget === LuaTarget.Lua50 ? lua.createArgLiteral() : wrapInTable(lua.createDotsLiteral());
         headerStatements.push(lua.createVariableDeclarationStatement(spreadIdentifier, spreadTable));
     }
 

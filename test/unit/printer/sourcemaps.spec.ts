@@ -1,5 +1,6 @@
 import { SourceMapConsumer } from "source-map";
 import * as tstl from "../../../src";
+import { LuaTarget } from "../../../src";
 import { couldNotResolveRequire } from "../../../src/transpilation/diagnostics";
 import * as util from "../../util";
 import { lineAndColumnOf } from "./utils";
@@ -325,4 +326,29 @@ test("Inline sourcemaps", () => {
         file.lua.match(/--# sourceMappingURL=data:application\/json;base64,([A-Za-z0-9+/=]+)/) ?? [];
     const inlineSourceMap = Buffer.from(inlineSourceMapMatch, "base64").toString();
     expect(inlineSourceMap).toBe(file.luaSourceMap);
+});
+
+test("loadstring sourceMapTraceback gives traceback", () => {
+    const strCodeBuilder = util.testModule`
+        function bar() {
+            const trace = (debug.traceback as (this: void)=>string)();
+            return trace;
+        }
+        return bar();
+    `.setOptions({ sourceMapTraceback: true, luaTarget: LuaTarget.Lua51 });
+
+    const strCode = strCodeBuilder.getMainLuaCodeChunk();
+    const file = `
+        const luaCode: string = \`${strCode}\`;
+        return (loadstring as (this: void, string: string, chunkname?: string) => LuaMultiReturn<[() => any] | [undefined, string]>)
+            (luaCode, "foo.lua")()
+    `;
+    const builder = util.testModule`
+        return (require as (this: void, modname: string) => any)("foo");
+    `
+        .addExtraFile("foo.ts", file)
+        .setOptions({ sourceMapTraceback: true, luaTarget: LuaTarget.Lua51 });
+
+    const traceback = builder.getLuaExecutionResult();
+    expect(traceback).toContain("foo.ts");
 });

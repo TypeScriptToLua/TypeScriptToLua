@@ -42,7 +42,7 @@ ____exports.__result = bit.bnot(a)
 return ____exports"
 `;
 
-exports[`Bitop [5.0] ("~a"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.1."`;
+exports[`Bitop [5.0] ("~a"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.0."`;
 
 exports[`Bitop [5.0] ("a&=b"): code 1`] = `
 "local ____exports = {}
@@ -51,7 +51,7 @@ ____exports.__result = a
 return ____exports"
 `;
 
-exports[`Bitop [5.0] ("a&=b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.1."`;
+exports[`Bitop [5.0] ("a&=b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.0."`;
 
 exports[`Bitop [5.0] ("a&b"): code 1`] = `
 "local ____exports = {}
@@ -59,7 +59,7 @@ ____exports.__result = bit.band(a, b)
 return ____exports"
 `;
 
-exports[`Bitop [5.0] ("a&b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.1."`;
+exports[`Bitop [5.0] ("a&b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.0."`;
 
 exports[`Bitop [5.0] ("a<<=b"): code 1`] = `
 "local ____exports = {}
@@ -68,7 +68,7 @@ ____exports.__result = a
 return ____exports"
 `;
 
-exports[`Bitop [5.0] ("a<<=b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.1."`;
+exports[`Bitop [5.0] ("a<<=b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.0."`;
 
 exports[`Bitop [5.0] ("a<<b"): code 1`] = `
 "local ____exports = {}
@@ -76,7 +76,7 @@ ____exports.__result = bit.lshift(a, b)
 return ____exports"
 `;
 
-exports[`Bitop [5.0] ("a<<b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.1."`;
+exports[`Bitop [5.0] ("a<<b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.0."`;
 
 exports[`Bitop [5.0] ("a>>=b"): code 1`] = `
 "local ____exports = {}
@@ -85,7 +85,7 @@ ____exports.__result = a
 return ____exports"
 `;
 
-exports[`Bitop [5.0] ("a>>=b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.1."`;
+exports[`Bitop [5.0] ("a>>=b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.0."`;
 
 exports[`Bitop [5.0] ("a>>>=b"): code 1`] = `
 "local ____exports = {}
@@ -94,7 +94,7 @@ ____exports.__result = a
 return ____exports"
 `;
 
-exports[`Bitop [5.0] ("a>>>=b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.1."`;
+exports[`Bitop [5.0] ("a>>>=b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.0."`;
 
 exports[`Bitop [5.0] ("a>>>b"): code 1`] = `
 "local ____exports = {}
@@ -102,7 +102,7 @@ ____exports.__result = bit.rshift(a, b)
 return ____exports"
 `;
 
-exports[`Bitop [5.0] ("a>>>b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.1."`;
+exports[`Bitop [5.0] ("a>>>b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.0."`;
 
 exports[`Bitop [5.0] ("a>>b"): code 1`] = `
 "local ____exports = {}
@@ -110,7 +110,7 @@ ____exports.__result = bit.arshift(a, b)
 return ____exports"
 `;
 
-exports[`Bitop [5.0] ("a>>b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.1."`;
+exports[`Bitop [5.0] ("a>>b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.0."`;
 
 exports[`Bitop [5.0] ("a^=b"): code 1`] = `
 "local ____exports = {}
@@ -119,7 +119,7 @@ ____exports.__result = a
 return ____exports"
 `;
 
-exports[`Bitop [5.0] ("a^=b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.1."`;
+exports[`Bitop [5.0] ("a^=b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.0."`;
 
 exports[`Bitop [5.0] ("a^b"): code 1`] = `
 "local ____exports = {}
@@ -127,7 +127,7 @@ ____exports.__result = bit.bxor(a, b)
 return ____exports"
 `;
 
-exports[`Bitop [5.0] ("a^b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.1."`;
+exports[`Bitop [5.0] ("a^b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.0."`;
 
 exports[`Bitop [5.0] ("a|=b"): code 1`] = `
 "local ____exports = {}
@@ -136,7 +136,7 @@ ____exports.__result = a
 return ____exports"
 `;
 
-exports[`Bitop [5.0] ("a|=b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.1."`;
+exports[`Bitop [5.0] ("a|=b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.0."`;
 
 exports[`Bitop [5.0] ("a|b"): code 1`] = `
 "local ____exports = {}
@@ -144,7 +144,7 @@ ____exports.__result = bit.bor(a, b)
 return ____exports"
 `;
 
-exports[`Bitop [5.0] ("a|b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.1."`;
+exports[`Bitop [5.0] ("a|b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Bitwise operations is/are not supported for target Lua 5.0."`;
 
 exports[`Bitop [5.1] ("~a"): code 1`] = `
 "local ____exports = {}

@@ -1,6 +1,6 @@
 import { SourceMapConsumer } from "source-map";
 import * as tstl from "../../../src";
-import { LuaTarget } from "../../../src";
+import { LuaTarget, transpileString } from "../../../src";
 import { couldNotResolveRequire } from "../../../src/transpilation/diagnostics";
 import * as util from "../../util";
 import { lineAndColumnOf } from "./utils";
@@ -329,24 +329,20 @@ test("Inline sourcemaps", () => {
 });
 
 test("loadstring sourceMapTraceback gives traceback", () => {
-    const strCodeBuilder = util.testModule`
-        function bar() {
+    const loadStrCode = transpileString(
+        `function bar() {
             const trace = (debug.traceback as (this: void)=>string)();
             return trace;
         }
-        return bar();
-    `.setOptions({ sourceMapTraceback: true, luaTarget: LuaTarget.Lua51 });
+        return bar();`,
+        { sourceMapTraceback: true, luaTarget: LuaTarget.Lua51 }
+    ).file?.lua;
 
-    const strCode = strCodeBuilder.getMainLuaCodeChunk();
-    const file = `
-        const luaCode: string = \`${strCode}\`;
-        return (loadstring as (this: void, string: string, chunkname?: string) => LuaMultiReturn<[() => any] | [undefined, string]>)
-            (luaCode, "foo.lua")()
-    `;
     const builder = util.testModule`
-        return (require as (this: void, modname: string) => any)("foo");
+        const luaCode = \`${loadStrCode}\`;
+        return loadstring(luaCode, "foo.lua")();
     `
-        .addExtraFile("foo.ts", file)
+        .setTsHeader("declare function loadstring(this: void, string: string, chunkname: string): () => unknown")
         .setOptions({ sourceMapTraceback: true, luaTarget: LuaTarget.Lua51 });
 
     const traceback = builder.getLuaExecutionResult();

@@ -1,4 +1,5 @@
 import * as ts from "typescript";
+import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { AnnotationKind, isVarargType } from "../utils/annotations";
@@ -70,7 +71,9 @@ export const transformSpreadElement: FunctionVisitor<ts.SpreadElement> = (node, 
         }
         const symbol = context.checker.getSymbolAtLocation(tsInnerExpression);
         if (symbol && isOptimizedVarArgSpread(context, symbol, tsInnerExpression)) {
-            return lua.createDotsLiteral(node);
+            return context.luaTarget === LuaTarget.Lua50
+                ? lua.createCallExpression(lua.createIdentifier("unpack"), [lua.createArgLiteral()])
+                : lua.createDotsLiteral(node);
         }
     }
 

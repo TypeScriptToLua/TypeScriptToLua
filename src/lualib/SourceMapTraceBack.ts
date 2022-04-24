@@ -43,9 +43,23 @@ export function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap
             let [result] = string.gsub(trace, "(%S+)%.lua:(%d+)", (file, line) =>
                 replacer(`${file}.lua`, `${file}.ts`, line)
             );
-            [result] = string.gsub(result, '(%[string "[^"]+"%]):(%d+)', (file, line) =>
-                replacer(file, "unknown", line)
-            );
+
+            const stringReplacer = (file: string, line: string) => {
+                const fileSourceMap: SourceMap = globalThis.__TS__sourcemap[file];
+                if (fileSourceMap && fileSourceMap[line]) {
+                    const chunkName = string.match(file, '%[string "([^"]+)"%]')[0];
+                    const [sourceName] = string.gsub(chunkName, ".lua$", ".ts");
+                    const data = fileSourceMap[line];
+                    if (typeof data === "number") {
+                        return `${sourceName}:${data}`;
+                    }
+
+                    return `${data.file}:${data.line}`;
+                }
+
+                return `${file}:${line}`;
+            };
+            [result] = string.gsub(result, '(%[string "[^"]+"%]):(%d+)', (file, line) => stringReplacer(file, line));
 
             return result;
         }) as typeof debug.traceback;

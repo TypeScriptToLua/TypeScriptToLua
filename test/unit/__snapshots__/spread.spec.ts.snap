@@ -17,47 +17,56 @@ end
 return ____exports"
 `;
 
-exports[`vararg spread optimization With cast 1`] = `
+exports[`vararg spread optimization With cast [5.0] 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
     local function pick(self, ...)
-        local args = {...}
+        local args = arg
         return args[2]
     end
     local function test(self, ...)
-        return pick(nil, ...)
+        return pick(
+            nil,
+            unpack(arg)
+        )
     end
     return test(nil, \\"a\\", \\"b\\", \\"c\\")
 end
 return ____exports"
 `;
 
-exports[`vararg spread optimization basic use 1`] = `
+exports[`vararg spread optimization basic use [5.0] 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
     local function pick(self, ...)
-        local args = {...}
+        local args = arg
         return args[2]
     end
     local function test(self, ...)
-        return pick(nil, ...)
+        return pick(
+            nil,
+            unpack(arg)
+        )
     end
     return test(nil, \\"a\\", \\"b\\", \\"c\\")
 end
 return ____exports"
 `;
 
-exports[`vararg spread optimization block statement 1`] = `
+exports[`vararg spread optimization block statement [5.0] 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
     local function pick(self, ...)
-        local args = {...}
+        local args = arg
         return args[2]
     end
     local function test(self, ...)
         local result
         do
-            result = pick(nil, ...)
+            result = pick(
+                nil,
+                unpack(arg)
+            )
         end
         return result
     end
@@ -66,26 +75,32 @@ end
 return ____exports"
 `;
 
-exports[`vararg spread optimization body-less arrow function 1`] = `
+exports[`vararg spread optimization body-less arrow function [5.0] 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
     local function pick(self, ...)
-        local args = {...}
+        local args = arg
         return args[2]
     end
     local function test(____, ...)
-        return pick(nil, ...)
+        return pick(
+            nil,
+            unpack(arg)
+        )
     end
     return test(nil, \\"a\\", \\"b\\", \\"c\\")
 end
 return ____exports"
 `;
 
-exports[`vararg spread optimization curry 1`] = `
+exports[`vararg spread optimization curry [5.0] 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
     local function test(self, fn, ...)
-        return fn(nil, ...)
+        return fn(
+            nil,
+            unpack(arg)
+        )
     end
     return test(
         nil,
@@ -96,27 +111,30 @@ end
 return ____exports"
 `;
 
-exports[`vararg spread optimization curry with indirect type 1`] = `
+exports[`vararg spread optimization curry with indirect type [5.0] 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
     local function test(self, obj, ...)
         local fn = obj.fn
-        return fn(nil, ...)
+        return fn(
+            nil,
+            unpack(arg)
+        )
     end
     return test(
         nil,
-        {fn = function(____, arg) return arg end},
+        {fn = function(____, s) return s end},
         \\"foobar\\"
     )
 end
 return ____exports"
 `;
 
-exports[`vararg spread optimization finally clause 1`] = `
+exports[`vararg spread optimization finally clause [5.0] 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
     local function pick(self, ...)
-        local args = {...}
+        local args = arg
         return args[2]
     end
     local function test(self, ...)
@@ -125,7 +143,10 @@ function ____exports.__main(self)
                 error(\\"foobar\\", 0)
             end)
             do
-                return pick(nil, ...)
+                return pick(
+                    nil,
+                    unpack(arg)
+                )
             end
         end
     end
@@ -134,31 +155,37 @@ end
 return ____exports"
 `;
 
-exports[`vararg spread optimization function type declared inside scope 1`] = `
+exports[`vararg spread optimization function type declared inside scope [5.0] 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
     local function test(self, ...)
         local function fn(____, ...)
-            local args = {...}
+            local args = arg
             return args[1]
         end
-        return fn(nil, ...)
+        return fn(
+            nil,
+            unpack(arg)
+        )
     end
     test(nil, \\"foobar\\")
 end
 return ____exports"
 `;
 
-exports[`vararg spread optimization if statement 1`] = `
+exports[`vararg spread optimization if statement [5.0] 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
     local function pick(self, ...)
-        local args = {...}
+        local args = arg
         return args[2]
     end
     local function test(self, ...)
         if true then
-            return pick(nil, ...)
+            return pick(
+                nil,
+                unpack(arg)
+            )
         end
     end
     return test(nil, \\"a\\", \\"b\\", \\"c\\")
@@ -166,17 +193,20 @@ end
 return ____exports"
 `;
 
-exports[`vararg spread optimization loop statement 1`] = `
+exports[`vararg spread optimization loop statement [5.0] 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
     local function pick(self, ...)
-        local args = {...}
+        local args = arg
         return args[2]
     end
     local function test(self, ...)
         repeat
             do
-                return pick(nil, ...)
+                return pick(
+                    nil,
+                    unpack(arg)
+                )
             end
         until not false
     end

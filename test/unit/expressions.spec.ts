@@ -18,9 +18,13 @@ test.each([
     util.testFunction(input).disableSemanticCheck().expectLuaToMatchSnapshot();
 });
 
-test.each(["3+4", "5-2", "6*3", "6**3", "20/5", "15/10", "15%3"])("Binary expressions basic numeric (%p)", input => {
-    util.testExpression(input).expectToMatchJsResult();
-});
+for (const expression of ["3+4", "5-2", "6*3", "6**3", "20/5", "15/10", "15%3"]) {
+    util.testEachVersion(
+        `Binary expressions basic numeric (${expression})`,
+        () => util.testExpression(expression),
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    )
+}
 
 test.each(["1==1", "1===1", "1!=1", "1!==1", "1>1", "1>=1", "1<1", "1<=1", "1&&1", "1||1"])(
     "Binary expressions basic boolean (%p)",

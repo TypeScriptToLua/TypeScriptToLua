@@ -497,6 +497,15 @@ test("array.push(...)", () => {
     `.expectToMatchJsResult();
 });
 
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1256
+test.each(["[1, 2, 3]", "undefined"])("array push on optional array", value => {
+    util.testFunction`
+        const arr = ${value} as number[] | undefined;
+        arr?.push(4);
+        return arr
+    `.expectToMatchJsResult();
+});
+
 test.each([
     { array: [1, 2, 3], expected: [3, 2] },
     { array: [1, 2, 3, null], expected: [3, 2] },

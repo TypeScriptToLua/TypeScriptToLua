@@ -72,7 +72,7 @@ export const transformSpreadElement: FunctionVisitor<ts.SpreadElement> = (node, 
         const symbol = context.checker.getSymbolAtLocation(tsInnerExpression);
         if (symbol && isOptimizedVarArgSpread(context, symbol, tsInnerExpression)) {
             return context.luaTarget === LuaTarget.Lua50
-                ? lua.createCallExpression(lua.createIdentifier("unpack"), [lua.createArgLiteral()])
+                ? createUnpackCall(context, lua.createArgLiteral(), node)
                 : lua.createDotsLiteral(node);
         }
     }

@@ -34,6 +34,7 @@ export enum LuaLibFeature {
     Class = "Class",
     ClassExtends = "ClassExtends",
     CloneDescriptor = "CloneDescriptor",
+    CountVarargs = "CountVarargs",
     Decorate = "Decorate",
     DecorateParam = "DecorateParam",
     Delete = "Delete",

@@ -202,6 +202,8 @@ export function createLocalOrExportedOrGlobalDeclaration(
         }
     }
 
+    applyJSDocComments(context, tsOriginal, declaration, assignment);
+
     if (declaration && assignment) {
         return [declaration, assignment];
     } else if (declaration) {
@@ -211,6 +213,64 @@ export function createLocalOrExportedOrGlobalDeclaration(
     } else {
         return [];
     }
+}
+
+/**
+ * Apply JSDoc comments to the newly-created Lua statement, if present.
+ * https://stackoverflow.com/questions/47429792/is-it-possible-to-get-comments-as-nodes-in-the-ast-using-the-typescript-compiler
+ */
+function applyJSDocComments(
+    context: TransformationContext,
+    tsOriginal: ts.Node | undefined,
+    declaration: lua.VariableDeclarationStatement | undefined,
+    assignment: lua.AssignmentStatement | undefined
+) {
+    const docComment = extractJSDocCommentFromTSNode(context, tsOriginal);
+    if (docComment === undefined) {
+        return;
+    }
+
+    // By default, TSTL will display comments immediately next to the "--" characters. We can make
+    // the comments look better if we separate them by a space (similar to what Prettier does in
+    // JavaScript/TypeScript).
+    const docCommentWithSpace = docComment.map((line) => ` ${line}`);
+
+    if (declaration && assignment) {
+        declaration.leadingComments = docCommentWithSpace;
+    } else if (declaration) {
+        declaration.leadingComments = docCommentWithSpace;
+    } else if (assignment) {
+        assignment.leadingComments = docCommentWithSpace;
+    }
+}
+
+function extractJSDocCommentFromTSNode(
+    context: TransformationContext,
+    tsOriginal: ts.Node | undefined,
+) {
+    if (tsOriginal === undefined) {
+        return undefined;
+    }
+
+    // The "name" property is only on a subset of node types; we want to be permissive and get the
+    // comments from as many nodes as possible.
+    const node = tsOriginal as any;
+    if (node.name === undefined) {
+        return undefined;
+    }
+
+    const symbol = context.checker.getSymbolAtLocation(node.name);
+    if (symbol === undefined) {
+        return undefined;
+    }
+
+    const docCommentArray = symbol.getDocumentationComment(context.checker);
+    const docComment = ts.displayPartsToString(docCommentArray).trim();
+    if (docComment === "") {
+        return undefined;
+    }
+
+    return docComment.split("\n");
 }
 
 export const createNaN = (tsOriginal?: ts.Node) =>

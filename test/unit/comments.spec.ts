@@ -14,7 +14,6 @@ test("JSDoc is copied on a function", () => {
     util.assert(transpiledFile !== undefined);
     const { lua } =  transpiledFile;
     util.assert(lua !== undefined);
-    console.log(lua);
     expect(lua).toContain("This is a function comment.");
 });
 
@@ -32,6 +31,5 @@ test("JSDoc is copied on a variable", () => {
     util.assert(transpiledFile !== undefined);
     const { lua } =  transpiledFile;
     util.assert(lua !== undefined);
-    console.log(lua);
     expect(lua).toContain("This is a variable comment.");
 });

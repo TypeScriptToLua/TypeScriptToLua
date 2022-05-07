@@ -18,6 +18,8 @@ export function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap
             let trace: string;
             if (thread === undefined && message === undefined && level === undefined) {
                 trace = originalTraceback();
+            } else if (_VERSION === "Lua 5.0") {
+                trace = originalTraceback(message, level);
             } else {
                 trace = originalTraceback(thread, message, level);
             }

@@ -46,6 +46,7 @@ export enum LuaLibFeature {
     InstanceOfObject = "InstanceOfObject",
     Iterator = "Iterator",
     Map = "Map",
+    Match = "Match",
     MathAtan2 = "MathAtan2",
     MathSign = "MathSign",
     Modulo = "Modulo",

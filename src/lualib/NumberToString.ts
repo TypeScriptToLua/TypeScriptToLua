@@ -3,7 +3,7 @@ import { __TS__IsLua50 } from "./IsLua50";
 const radixChars = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 function modf(this: void, x: number): LuaMultiReturn<[number, number]> {
-    if (__TS__IsLua50()) {
+    if (__TS__IsLua50) {
         const integral = x > 0 ? Math.floor(x) : Math.ceil(x);
         return $multi(integral, x - integral);
     } else {

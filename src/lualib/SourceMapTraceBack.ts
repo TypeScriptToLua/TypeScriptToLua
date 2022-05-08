@@ -21,7 +21,7 @@ export function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap
             let trace: string;
             if (thread === undefined && message === undefined && level === undefined) {
                 trace = originalTraceback();
-            } else if (__TS__IsLua50()) {
+            } else if (__TS__IsLua50) {
                 trace = originalTraceback(message, level);
             } else {
                 trace = originalTraceback(thread, message, level);

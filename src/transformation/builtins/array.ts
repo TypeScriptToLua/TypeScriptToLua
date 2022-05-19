@@ -30,6 +30,8 @@ export function transformArrayConstructorCall(
     }
 }
 
+const lua50TableLength = lua.createTableIndexExpression(lua.createIdentifier("table"), lua.createStringLiteral("getn"));
+
 /**
  * Optimized single element Array.push
  *
@@ -48,7 +50,9 @@ function transformSingleElementArrayPush(
 
     // #array + 1
     let lengthExpression: lua.Expression = lua.createBinaryExpression(
-        lua.createUnaryExpression(arrayIdentifier, lua.SyntaxKind.LengthOperator),
+        context.luaTarget === LuaTarget.Lua50
+            ? lua.createCallExpression(lua50TableLength, [arrayIdentifier])
+            : lua.createUnaryExpression(arrayIdentifier, lua.SyntaxKind.LengthOperator),
         lua.createNumericLiteral(1),
         lua.SyntaxKind.AdditionOperator
     );
@@ -182,15 +186,9 @@ export function transformArrayProperty(
     switch (node.name.text) {
         case "length":
             const expression = context.transformExpression(node.expression);
-            if (context.luaTarget === LuaTarget.Lua50) {
-                const tableGetn = lua.createTableIndexExpression(
-                    lua.createIdentifier("table"),
-                    lua.createStringLiteral("getn")
-                );
-                return lua.createCallExpression(tableGetn, [expression], node);
-            } else {
-                return lua.createUnaryExpression(expression, lua.SyntaxKind.LengthOperator, node);
-            }
+            return context.luaTarget === LuaTarget.Lua50
+                ? lua.createCallExpression(lua50TableLength, [expression], node)
+                : lua.createUnaryExpression(expression, lua.SyntaxKind.LengthOperator, node);
         default:
             return undefined;
     }

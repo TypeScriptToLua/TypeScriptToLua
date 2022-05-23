@@ -163,7 +163,7 @@ export function transformFunctionBody(
     scope.node = node;
     let bodyStatements = transformFunctionBodyContent(context, body);
     if (node && isAsyncFunction(node)) {
-        bodyStatements = wrapInAsyncAwaiter(context, bodyStatements);
+        bodyStatements = [lua.createReturnStatement([wrapInAsyncAwaiter(context, bodyStatements)])];
     }
     const headerStatements = transformFunctionBodyHeader(context, scope, parameters, spreadIdentifier);
     popScope(context);

@@ -546,6 +546,23 @@ describe("try/catch in async function", () => {
         }
     );
 
+    test.only("try in async", () => {
+        util.testModule`
+            export let result = 0;
+            async function foo(): Promise<number> {
+                try {
+                    return await new Promise(resolve => resolve(4));
+                } catch {
+                    return 3;
+                }
+            }
+            foo().then(value => {
+                print("THEN", value);
+                result = value;
+            });
+        `.setTsHeader("declare function print(...args: unknown[]): void;").debug().expectToEqual({ result: 4 });
+    });
+
     util.testEachVersion(
         "await inside try/catch throws inside async function",
         () => util.testModule`
@@ -597,4 +614,81 @@ describe("try/catch in async function", () => {
                 builder.expectToHaveDiagnostics([unsupportedForTargetButOverrideAvailable.code]),
         }
     );
+
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1272
+    test("Awaiting a rejected promise should halt function execution (#1272)", () => {
+        util.testModule`
+            const foo = async () => {
+                throw new Error('foo error');
+            };
+
+            let halted = true;
+            let caught = "";
+
+            const run = async () => {
+                try {
+                    await foo();
+                    halted = false;
+                } catch (err) {
+                    caught = 'catch err: ' + err;
+                }
+            };
+
+            let succeeded: any = false;
+            let rejected: any = false;
+
+            run()
+                .then(_ => { succeeded = true })
+                .catch(e => { rejected = e });
+
+            export const result = { halted, caught, succeeded, rejected };
+        `.expectToEqual({
+            result: {
+                halted: true,
+                caught: "catch err: Error: foo error",
+                succeeded: true,
+                rejected: false,
+            },
+        });
+    });
+
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1272
+    test("Awaiting a rejectin promise should halt function execution (#1272)", () => {
+        util.testModule`
+            let rej: (error: any) => void = () => {};
+            const foo = () => new Promise((_, reject) => {
+                rej = reject;
+            });
+
+            let halted = true;
+            let caught = "";
+
+            const run = async () => {
+                try {
+                    await foo();
+                    halted = false;
+                } catch (err) {
+                    caught = 'catch err: ' + err;
+                }
+            };
+
+            let succeeded: any = false;
+            let rejected: any = false;
+
+            run()
+                .then(_ => { succeeded = true })
+                .catch(e => { rejected = e });
+
+            rej("rejection message");
+
+            export const result = { halted, caught, succeeded, rejected };
+        `.expectToEqual({
+            result: {
+                halted: true,
+                caught: "catch err: rejection message",
+                succeeded: true,
+                rejected: false,
+            },
+        });
+    });
 });

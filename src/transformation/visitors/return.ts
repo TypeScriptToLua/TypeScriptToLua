@@ -85,7 +85,7 @@ export function createReturnStatement(
 ): lua.ReturnStatement {
     const results = [...values];
 
-    if (isInTryCatch(context)) {
+    if (isInTryCatch(context) && !isInAsyncFunction(node)) {
         // Bubble up explicit return flag and check if we're inside a try/catch block
         results.unshift(lua.createBooleanLiteral(true));
     } else if (isInAsyncFunction(node)) {

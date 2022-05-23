@@ -1,24 +1,22 @@
 import * as ts from "typescript";
-import { LuaTarget } from "../..";
+import { LuaLibFeature, LuaTarget } from "../..";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor } from "../context";
 import { unsupportedForTarget, unsupportedForTargetButOverrideAvailable } from "../utils/diagnostics";
 import { createUnpackCall } from "../utils/lua-ast";
+import { transformLuaLibFunction } from "../utils/lualib";
 import { ScopeType } from "../utils/scope";
 import { isInAsyncFunction, isInGeneratorFunction } from "../utils/typescript";
+import { wrapInAsyncAwaiter } from "./async-await";
 import { transformScopeBlock } from "./block";
 import { transformIdentifier } from "./identifier";
 import { isInMultiReturnFunction } from "./language-extensions/multi";
 import { createReturnStatement } from "./return";
 
-export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statement, context) => {
+const transformAsyncTry: FunctionVisitor<ts.TryStatement> = (statement, context) => {
     const [tryBlock, tryScope] = transformScopeBlock(context, statement.tryBlock, ScopeType.Try);
 
-    if (
-        context.options.luaTarget === LuaTarget.Lua51 &&
-        isInAsyncFunction(statement) &&
-        !context.options.lua51AllowTryCatchInAsyncAwait
-    ) {
+    if (context.options.luaTarget === LuaTarget.Lua51 && !context.options.lua51AllowTryCatchInAsyncAwait) {
         context.diagnostics.push(
             unsupportedForTargetButOverrideAvailable(
                 statement,
@@ -29,6 +27,33 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
         );
         return tryBlock.statements;
     }
+
+    const awaiter = wrapInAsyncAwaiter(context, tryBlock.statements);
+    const awaiterIdentifier = lua.createIdentifier("____try");
+    const awaiterDefinition = lua.createVariableDeclarationStatement(awaiterIdentifier, awaiter);
+
+    const awaiterThen = lua.createTableIndexExpression(awaiterIdentifier, lua.createStringLiteral("then"));
+    const thenCall = lua.createCallExpression(awaiterThen, [
+        awaiterIdentifier,
+        // then
+        lua.createFunctionExpression(lua.createBlock([lua.createExpressionStatement(lua.createCallExpression(lua.createIdentifier("print"), [lua.createStringLiteral("then"), lua.createIdentifier("v")])), lua.createReturnStatement([lua.createIdentifier("v")])]), [lua.createAnonymousIdentifier(), lua.createIdentifier("v")]),
+        // catch
+        lua.createFunctionExpression(lua.createBlock([lua.createExpressionStatement(lua.createCallExpression(lua.createIdentifier("print"), [lua.createStringLiteral("catch"), lua.createIdentifier("e")])), lua.createReturnStatement([lua.createIdentifier("e")])]), [lua.createAnonymousIdentifier(), lua.createIdentifier("e")]),
+    ])
+
+
+    const promiseAwait = lua.createExpressionStatement(transformLuaLibFunction(context, LuaLibFeature.Await, statement, lua.createNilLiteral(), thenCall), statement);
+
+
+    return [awaiterDefinition, promiseAwait];
+};
+
+export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statement, context) => {
+    if (isInAsyncFunction(statement)) {
+        return transformAsyncTry(statement, context);
+    }
+
+    const [tryBlock, tryScope] = transformScopeBlock(context, statement.tryBlock, ScopeType.Try);
 
     if (context.options.luaTarget === LuaTarget.Lua51 && isInGeneratorFunction(statement)) {
         context.diagnostics.push(

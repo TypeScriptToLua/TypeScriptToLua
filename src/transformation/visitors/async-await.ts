@@ -3,15 +3,11 @@ import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { awaitMustBeInAsyncFunction } from "../utils/diagnostics";
 import { importLuaLibFeature, LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
-import { findFirstNodeAbove } from "../utils/typescript";
+import { isInAsyncFunction } from "../utils/typescript";
 
 export const transformAwaitExpression: FunctionVisitor<ts.AwaitExpression> = (node, context) => {
     // Check if await is inside an async function, it is not allowed at top level or in non-async functions
-    const containingFunction = findFirstNodeAbove(node, ts.isFunctionLike);
-    if (
-        containingFunction === undefined ||
-        !containingFunction.modifiers?.some(m => m.kind === ts.SyntaxKind.AsyncKeyword)
-    ) {
+    if (!isInAsyncFunction(node)) {
         context.diagnostics.push(awaitMustBeInAsyncFunction(node));
     }
 
@@ -24,14 +20,13 @@ export function isAsyncFunction(declaration: ts.FunctionLikeDeclaration): boolea
     return declaration.modifiers?.some(m => m.kind === ts.SyntaxKind.AsyncKeyword) ?? false;
 }
 
-export function wrapInAsyncAwaiter(context: TransformationContext, statements: lua.Statement[]): lua.Statement[] {
+export function wrapInAsyncAwaiter(context: TransformationContext, statements: lua.Statement[]): lua.CallExpression {
     importLuaLibFeature(context, LuaLibFeature.Await);
 
-    return [
-        lua.createReturnStatement([
-            lua.createCallExpression(lua.createIdentifier("__TS__AsyncAwaiter"), [
-                lua.createFunctionExpression(lua.createBlock(statements)),
-            ]),
+    return lua.createCallExpression(lua.createIdentifier("__TS__AsyncAwaiter"), [
+        lua.createFunctionExpression(lua.createBlock(statements), [
+            lua.createIdentifier("____awaiter_resolve"),
+            lua.createIdentifier("____awaiter_reject"),
         ]),
-    ];
+    ]);
 }

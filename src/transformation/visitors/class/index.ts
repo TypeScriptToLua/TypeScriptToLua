@@ -25,6 +25,7 @@ import {
 import { createMethodDecoratingExpression, transformMethodDeclaration } from "./members/method";
 import { getExtendedNode, getExtendedType, isStaticNode } from "./utils";
 import { createClassSetup } from "./setup";
+import { LuaTarget } from "../../../CompilerOptions";
 
 export const transformClassDeclaration: FunctionVisitor<ts.ClassLikeDeclaration> = (declaration, context) => {
     // If declaration is a default export, transform to export variable assignment instead
@@ -138,16 +139,20 @@ function transformClassLikeDeclaration(
     } else if (instanceFields.length > 0) {
         // Generate a constructor if none was defined in a class with instance fields that need initialization
         // localClassName.prototype.____constructor = function(self, ...)
-        //     baseClassName.prototype.____constructor(self, ...)
+        //     baseClassName.prototype.____constructor(self, ...)  // or unpack(arg) for Lua 5.0
         //     ...
         const constructorBody = transformClassInstanceFields(context, instanceFields);
+        const argsExpression =
+            context.luaTarget === LuaTarget.Lua50
+                ? lua.createCallExpression(lua.createIdentifier("unpack"), [lua.createArgLiteral()])
+                : lua.createDotsLiteral();
         const superCall = lua.createExpressionStatement(
             lua.createCallExpression(
                 lua.createTableIndexExpression(
                     context.transformExpression(ts.factory.createSuper()),
                     lua.createStringLiteral("____constructor")
                 ),
-                [createSelfIdentifier(), lua.createDotsLiteral()]
+                [createSelfIdentifier(), argsExpression]
             )
         );
         constructorBody.unshift(superCall);

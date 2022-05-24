@@ -60,7 +60,8 @@ export const optionDeclarations: CommandLineOption[] = [
     },
     {
         name: "noImplicitGlobalVariables",
-        description: "Specify to prevent implicitly turning \"normal\" variants into global variables in the transpiled output.",
+        description:
+            'Specify to prevent implicitly turning "normal" variants into global variables in the transpiled output.',
         type: "boolean",
     },
     {

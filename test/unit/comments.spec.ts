@@ -7,12 +7,11 @@ test("JSDoc is copied on a function", () => {
          * It has multiple lines.
          */
         function foo() {}
-    `
-        .expectToHaveNoDiagnostics();
+    `.expectToHaveNoDiagnostics();
 
     const transpiledFile = builder.getLuaResult().transpiledFiles[0];
     util.assert(transpiledFile !== undefined);
-    const { lua } =  transpiledFile;
+    const { lua } = transpiledFile;
     util.assert(lua !== undefined);
     expect(lua).toContain("This is a function comment.");
 });
@@ -24,12 +23,11 @@ test("JSDoc is copied on a variable", () => {
          * It has multiple lines.
          */
         const foo = 123;
-    `
-        .expectToHaveNoDiagnostics();
+    `.expectToHaveNoDiagnostics();
 
     const transpiledFile = builder.getLuaResult().transpiledFiles[0];
     util.assert(transpiledFile !== undefined);
-    const { lua } =  transpiledFile;
+    const { lua } = transpiledFile;
     util.assert(lua !== undefined);
     expect(lua).toContain("This is a variable comment.");
 });

@@ -233,7 +233,7 @@ function applyJSDocComments(
     // By default, TSTL will display comments immediately next to the "--" characters. We can make
     // the comments look better if we separate them by a space (similar to what Prettier does in
     // JavaScript/TypeScript).
-    const docCommentWithSpace = docComment.map((line) => ` ${line}`);
+    const docCommentWithSpace = docComment.map(line => ` ${line}`);
 
     if (declaration && assignment) {
         declaration.leadingComments = docCommentWithSpace;
@@ -244,10 +244,7 @@ function applyJSDocComments(
     }
 }
 
-function extractJSDocCommentFromTSNode(
-    context: TransformationContext,
-    tsOriginal: ts.Node | undefined,
-) {
+function extractJSDocCommentFromTSNode(context: TransformationContext, tsOriginal: ts.Node | undefined) {
     if (tsOriginal === undefined) {
         return undefined;
     }

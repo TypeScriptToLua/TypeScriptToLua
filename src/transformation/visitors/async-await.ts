@@ -20,13 +20,16 @@ export function isAsyncFunction(declaration: ts.FunctionLikeDeclaration): boolea
     return declaration.modifiers?.some(m => m.kind === ts.SyntaxKind.AsyncKeyword) ?? false;
 }
 
-export function wrapInAsyncAwaiter(context: TransformationContext, statements: lua.Statement[]): lua.CallExpression {
+export function wrapInAsyncAwaiter(
+    context: TransformationContext,
+    statements: lua.Statement[],
+    includeResolveParameter = true
+): lua.CallExpression {
     importLuaLibFeature(context, LuaLibFeature.Await);
 
+    const parameters = includeResolveParameter ? [lua.createIdentifier("____awaiter_resolve")] : [];
+
     return lua.createCallExpression(lua.createIdentifier("__TS__AsyncAwaiter"), [
-        lua.createFunctionExpression(lua.createBlock(statements), [
-            lua.createIdentifier("____awaiter_resolve"),
-            lua.createIdentifier("____awaiter_reject"),
-        ]),
+        lua.createFunctionExpression(lua.createBlock(statements), parameters),
     ]);
 }

@@ -28,7 +28,7 @@ const transformAsyncTry: FunctionVisitor<ts.TryStatement> = (statement, context)
         return tryBlock.statements;
     }
 
-    const awaiter = wrapInAsyncAwaiter(context, tryBlock.statements);
+    const awaiter = wrapInAsyncAwaiter(context, tryBlock.statements, false);
     const awaiterIdentifier = lua.createIdentifier("____try");
     const awaiterDefinition = lua.createVariableDeclarationStatement(awaiterIdentifier, awaiter);
 
@@ -51,17 +51,16 @@ const transformAsyncTry: FunctionVisitor<ts.TryStatement> = (statement, context)
         const awaiterCatch = lua.createTableIndexExpression(awaiterIdentifier, lua.createStringLiteral("catch"));
         const catchCall = lua.createCallExpression(awaiterCatch, [
             awaiterIdentifier,
-            // catch
             catchFunction
         ]);
 
         const promiseAwait = transformLuaLibFunction(context, LuaLibFeature.Await, statement, lua.createNilLiteral(), catchCall);
-        result.push(lua.createReturnStatement([lua.createNilLiteral(), promiseAwait], statement));
+        result.push(lua.createExpressionStatement(promiseAwait, statement));
     }
     else
     {
         const promiseAwait = transformLuaLibFunction(context, LuaLibFeature.Await, statement, lua.createNilLiteral(), awaiterIdentifier);
-        result.push(lua.createReturnStatement([lua.createNilLiteral(), promiseAwait], statement));
+        result.push(lua.createExpressionStatement(promiseAwait, statement));
     }
 
     return result;

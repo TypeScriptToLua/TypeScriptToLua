@@ -21,6 +21,7 @@ type ErrorHandler = (this: void, error: unknown) => unknown;
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 export function __TS__AsyncAwaiter(this: void, generator: (this: void) => void) {
     return new Promise((resolve, reject) => {
+        let resolved = false;
         const asyncCoroutine = coroutine.create(generator);
 
         // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -57,13 +58,14 @@ export function __TS__AsyncAwaiter(this: void, generator: (this: void) => void) 
             }
         }
         function step(result: unknown, errorHandler: ErrorHandler | undefined) {
+            if (resolved) return;
             if (coroutine.status(asyncCoroutine) === "dead") {
                 resolve(result);
             } else {
                 adopt(result).then(fulfilled, rejected(errorHandler));
             }
         }
-        const [success, errorOrErrorHandler, resultOrError] = coroutine.resume(asyncCoroutine);
+        const [success, errorOrErrorHandler, resultOrError] = coroutine.resume(asyncCoroutine, (v: unknown) => { resolved = true; adopt(v).then(resolve, reject) });
         if (success) {
             step(resultOrError, errorOrErrorHandler);
         } else {

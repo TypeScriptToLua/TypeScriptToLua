@@ -632,6 +632,35 @@ describe("try/catch in async function", () => {
         });
     });
 
+    test("async function adopts pending promise in try", () => {
+        util.testFunction`
+            let resolve: (v: string) => void = () => {};
+            async function receive(): Promise<string> {
+                try
+                {
+                    return new Promise(res => {
+                        resolve = res;
+                    });
+                }
+                catch
+                {
+                }
+            }
+
+            receive().then(v => {
+                // @ts-ignore
+                print("then", v);
+                log(v);
+            });
+
+            resolve("delayed resolve");
+
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual(["delayed resolve"]);
+    });
+
     // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1272
     test("Awaiting a rejected promise should halt function execution (#1272)", () => {
         util.testModule`
@@ -655,8 +684,8 @@ describe("try/catch in async function", () => {
             let rejected: any = false;
 
             run()
-                .then(_ => { succeeded = true })
-                .catch(e => { rejected = e });
+                .then(_ => { succeeded = true },
+                      e => { rejected = e });
 
             export const result = { halted, caught, succeeded, rejected };
         `.expectToEqual({
@@ -670,7 +699,7 @@ describe("try/catch in async function", () => {
     });
 
     // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1272
-    test("Awaiting a rejecting promise should halt function execution (#1272)", () => {
+    test.only("Awaiting a rejecting promise should halt function execution (#1272)", () => {
         util.testModule`
             let rej: (error: any) => void = () => {};
             const foo = () => new Promise((_, reject) => {
@@ -693,8 +722,8 @@ describe("try/catch in async function", () => {
             let rejected: any = false;
 
             run()
-                .then(_ => { succeeded = true })
-                .catch(e => { rejected = e });
+                .then(_ => { succeeded = true },
+                      e => { rejected = e });
 
             rej("rejection message");
 
@@ -739,8 +768,8 @@ describe("try/catch in async function", () => {
             let value: any = undefined;
 
             run()
-                .then(v => { succeeded = true; value = v })
-                .catch(e => { rejected = e });
+                .then(v => { succeeded = true; value = v },
+                      e => { rejected = e });
 
             export const result = { halted, caught, succeeded, rejected, value };
         `.expectToEqual({
@@ -749,7 +778,7 @@ describe("try/catch in async function", () => {
                 caught: "catch err: Error: foo error",
                 succeeded: true,
                 rejected: false,
-                value: "throw 2"
+                value: "throw 2",
             },
         });
     });

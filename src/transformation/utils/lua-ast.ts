@@ -225,6 +225,8 @@ function applyJSDocComments(
     declaration: lua.VariableDeclarationStatement | undefined,
     assignment: lua.AssignmentStatement | undefined
 ) {
+    // Respect the vanilla TypeScript option of "removeComments":
+    // https://www.typescriptlang.org/tsconfig#removeComments
     if (context.options.removeComments) {
         return;
     }

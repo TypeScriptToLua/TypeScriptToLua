@@ -225,6 +225,10 @@ function applyJSDocComments(
     declaration: lua.VariableDeclarationStatement | undefined,
     assignment: lua.AssignmentStatement | undefined
 ) {
+    if (context.options.removeComments) {
+        return;
+    }
+
     const docComment = getJSDocCommentFromTSNode(context, tsOriginal);
     if (docComment === undefined) {
         return;

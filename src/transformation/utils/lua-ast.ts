@@ -137,6 +137,8 @@ export function createLocalOrExportedOrGlobalDeclaration(
     let declaration: lua.VariableDeclarationStatement | undefined;
     let assignment: lua.AssignmentStatement | undefined;
 
+    const noImplicitGlobalVariables = context.options.noImplicitGlobalVariables === true;
+
     const isFunctionDeclaration = tsOriginal !== undefined && ts.isFunctionDeclaration(tsOriginal);
 
     const identifiers = castArray(lhs);
@@ -160,7 +162,7 @@ export function createLocalOrExportedOrGlobalDeclaration(
         const scope = peekScope(context);
         const isTopLevelVariable = scope.type === ScopeType.File;
 
-        if (context.isModule || !isTopLevelVariable) {
+        if (context.isModule || !isTopLevelVariable || noImplicitGlobalVariables) {
             const isLuaFunctionExpression = rhs && !Array.isArray(rhs) && lua.isFunctionExpression(rhs);
             const isSafeRecursiveFunctionDeclaration = isFunctionDeclaration && isLuaFunctionExpression;
             if (!isSafeRecursiveFunctionDeclaration && hasMultipleReferences(scope, lhs)) {

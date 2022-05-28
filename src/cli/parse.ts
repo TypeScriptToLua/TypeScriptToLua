@@ -59,6 +59,12 @@ export const optionDeclarations: CommandLineOption[] = [
         choices: Object.values(LuaTarget),
     },
     {
+        name: "noImplicitGlobalVariables",
+        description:
+            'Specify to prevent implicitly turning "normal" variants into global variables in the transpiled output.',
+        type: "boolean",
+    },
+    {
         name: "noImplicitSelf",
         description: 'If "this" is implicitly considered an any type, do not generate a self parameter.',
         type: "boolean",

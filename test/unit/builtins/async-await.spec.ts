@@ -546,23 +546,6 @@ describe("try/catch in async function", () => {
         }
     );
 
-    test.only("try in async", () => {
-        util.testModule`
-            export let result = 0;
-            async function foo(): Promise<number> {
-                try {
-                    return await new Promise(resolve => resolve(4));
-                } catch {
-                    return 3;
-                }
-            }
-            foo().then(value => {
-                print("THEN", value);
-                result = value;
-            });
-        `.setTsHeader("declare function print(...args: unknown[]): void;").debug().expectToEqual({ result: 4 });
-    });
-
     util.testEachVersion(
         "await inside try/catch throws inside async function",
         () => util.testModule`
@@ -615,6 +598,40 @@ describe("try/catch in async function", () => {
         }
     );
 
+    test("try/finally in async function", () => {
+        util.testModule`
+            const foo = async () => {
+                throw "foo error";
+            };
+
+            let finallyCalled = false;
+
+            const run = async () => {
+                try {
+                    await foo();
+                } finally {
+                    finallyCalled = true;
+                }
+                return 10;
+            };
+
+            let succeeded: any = false;
+            let rejected: any = false;
+
+            run()
+                .then(_ => { succeeded = true })
+                .catch(e => { rejected = e });
+
+            export const result = { finallyCalled, succeeded, rejected };
+        `.expectToEqual({
+            result: {
+                finallyCalled: true,
+                succeeded: false,
+                rejected: "foo error",
+            },
+        });
+    });
+
     // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1272
     test("Awaiting a rejected promise should halt function execution (#1272)", () => {
         util.testModule`
@@ -653,7 +670,7 @@ describe("try/catch in async function", () => {
     });
 
     // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1272
-    test("Awaiting a rejectin promise should halt function execution (#1272)", () => {
+    test("Awaiting a rejecting promise should halt function execution (#1272)", () => {
         util.testModule`
             let rej: (error: any) => void = () => {};
             const foo = () => new Promise((_, reject) => {
@@ -688,6 +705,51 @@ describe("try/catch in async function", () => {
                 caught: "catch err: rejection message",
                 succeeded: true,
                 rejected: false,
+            },
+        });
+    });
+
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1272
+    test("Async try/catch complicated case (#1272)", () => {
+        util.testModule`
+            const foo = async () => {
+                throw new Error('foo error');
+            };
+
+            let halted = true;
+            let caught = "";
+
+            const run = async () => {
+                try {
+                    await foo(); // This throws
+                } catch (err) {
+                    caught = 'catch err: ' + err; // This catches the async thrown error, function continues
+                }
+                try {
+                    throw "throw 2"; // Another throw
+                } catch (err) {
+                    return err; // Async function should exit here
+                }
+                halted = false; // This code should not be called
+                return 10;
+            };
+
+            let succeeded: any = false;
+            let rejected: any = false;
+            let value: any = undefined;
+
+            run()
+                .then(v => { succeeded = true; value = v })
+                .catch(e => { rejected = e });
+
+            export const result = { halted, caught, succeeded, rejected, value };
+        `.expectToEqual({
+            result: {
+                halted: true,
+                caught: "catch err: Error: foo error",
+                succeeded: true,
+                rejected: false,
+                value: "throw 2"
             },
         });
     });

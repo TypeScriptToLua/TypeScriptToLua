@@ -88,7 +88,7 @@ export function createReturnStatement(
     if (isInTryCatch(context) && !isInAsyncFunction(node)) {
         // Bubble up explicit return flag and check if we're inside a try/catch block
         results.unshift(lua.createBooleanLiteral(true));
-    } else if (isInAsyncFunction(node)) {
+    } else if (isInAsyncFunction(node) && !isInCatch(context)) {
         // Add nil error handler in async function and not in try
         results.unshift(lua.createNilLiteral());
     }
@@ -110,4 +110,20 @@ function isInTryCatch(context: TransformationContext): boolean {
     }
 
     return insideTryCatch;
+}
+
+function isInCatch(context: TransformationContext): boolean {
+        // Check if context is in a try or catch
+        let insideCatch = false;
+        for (const scope of walkScopesUp(context)) {
+            scope.functionReturned = true;
+
+            if (scope.type === ScopeType.Function) {
+                break;
+            }
+
+            insideCatch = insideCatch || scope.type === ScopeType.Catch;
+        }
+
+        return insideCatch;
 }

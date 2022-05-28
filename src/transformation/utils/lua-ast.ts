@@ -225,7 +225,7 @@ function applyJSDocComments(
     declaration: lua.VariableDeclarationStatement | undefined,
     assignment: lua.AssignmentStatement | undefined
 ) {
-    const docComment = extractJSDocCommentFromTSNode(context, tsOriginal);
+    const docComment = getJSDocCommentFromTSNode(context, tsOriginal);
     if (docComment === undefined) {
         return;
     }
@@ -244,7 +244,7 @@ function applyJSDocComments(
     }
 }
 
-function extractJSDocCommentFromTSNode(context: TransformationContext, tsOriginal: ts.Node | undefined) {
+function getJSDocCommentFromTSNode(context: TransformationContext, tsOriginal: ts.Node | undefined) {
     if (tsOriginal === undefined) {
         return undefined;
     }

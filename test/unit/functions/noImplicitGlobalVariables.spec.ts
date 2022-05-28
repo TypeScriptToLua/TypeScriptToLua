@@ -7,9 +7,9 @@ test("normal TSTL creates global variables", () => {
     `.expectToHaveNoDiagnostics();
 
     const transpiledFile = builder.getLuaResult().transpiledFiles[0];
-    util.assert(transpiledFile !== undefined);
+    expect(transpiledFile).toBeDefined();
     const { lua } = transpiledFile;
-    util.assert(lua !== undefined);
+    expect(lua).toBeDefined();
     expect(lua).not.toContain("local");
 });
 
@@ -22,9 +22,9 @@ test("noImplicitGlobalVariables does not create any global variables", () => {
         .expectToHaveNoDiagnostics();
 
     const transpiledFile = builder.getLuaResult().transpiledFiles[0];
-    util.assert(transpiledFile !== undefined);
+    expect(transpiledFile).toBeDefined();
     const { lua } = transpiledFile;
-    util.assert(lua !== undefined);
+    expect(lua).toBeDefined();
     expect(lua).toContain("local function foo(");
     expect(lua).toContain("local bar =");
 });

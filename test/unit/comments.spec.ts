@@ -7,7 +7,7 @@ test("JSDoc is copied on a function", () => {
          * It has multiple lines.
          */
         function foo() {}
-    `.expectToHaveNoDiagnostics();
+    `.expectToHaveNoDiagnostics().expectDiagnosticsToMatchSnapshot();
 
     const transpiledFile = builder.getLuaResult().transpiledFiles[0];
     expect(transpiledFile).toBeDefined();
@@ -23,7 +23,7 @@ test("JSDoc is copied on a variable", () => {
          * It has multiple lines.
          */
         const foo = 123;
-    `.expectToHaveNoDiagnostics();
+    `.expectToHaveNoDiagnostics().expectDiagnosticsToMatchSnapshot();
 
     const transpiledFile = builder.getLuaResult().transpiledFiles[0];
     expect(transpiledFile).toBeDefined();

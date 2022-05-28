@@ -1,0 +1,18 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`JSDoc is copied on a function: code 1`] = `
+"-- This is a function comment.
+-- It has multiple lines.
+function foo(self)
+end"
+`;
+
+exports[`JSDoc is copied on a function: diagnostics 1`] = `""`;
+
+exports[`JSDoc is copied on a variable: code 1`] = `
+"-- This is a variable comment.
+-- It has multiple lines.
+foo = 123"
+`;
+
+exports[`JSDoc is copied on a variable: diagnostics 1`] = `""`;

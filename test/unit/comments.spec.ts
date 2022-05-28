@@ -10,9 +10,9 @@ test("JSDoc is copied on a function", () => {
     `.expectToHaveNoDiagnostics();
 
     const transpiledFile = builder.getLuaResult().transpiledFiles[0];
-    util.assert(transpiledFile !== undefined);
+    expect(transpiledFile).toBeDefined();
     const { lua } = transpiledFile;
-    util.assert(lua !== undefined);
+    expect(lua).toBeDefined();
     expect(lua).toContain("This is a function comment.");
 });
 
@@ -26,8 +26,8 @@ test("JSDoc is copied on a variable", () => {
     `.expectToHaveNoDiagnostics();
 
     const transpiledFile = builder.getLuaResult().transpiledFiles[0];
-    util.assert(transpiledFile !== undefined);
+    expect(transpiledFile).toBeDefined();
     const { lua } = transpiledFile;
-    util.assert(lua !== undefined);
+    expect(lua).toBeDefined();
     expect(lua).toContain("This is a variable comment.");
 });

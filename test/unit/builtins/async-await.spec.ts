@@ -648,8 +648,6 @@ describe("try/catch in async function", () => {
             }
 
             receive().then(v => {
-                // @ts-ignore
-                print("then", v);
                 log(v);
             });
 

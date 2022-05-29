@@ -12,8 +12,7 @@ export const transformAwaitExpression: FunctionVisitor<ts.AwaitExpression> = (no
     }
 
     const expression = context.transformExpression(node.expression);
-    const catchIdentifier = lua.createIdentifier("____catch");
-    return transformLuaLibFunction(context, LuaLibFeature.Await, node, catchIdentifier, expression);
+    return transformLuaLibFunction(context, LuaLibFeature.Await, node, expression);
 };
 
 export function isAsyncFunction(declaration: ts.FunctionLikeDeclaration): boolean {

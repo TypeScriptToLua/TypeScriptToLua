@@ -202,7 +202,7 @@ export function createLocalOrExportedOrGlobalDeclaration(
         }
     }
 
-    applyJSDocComments(context, tsOriginal, declaration, assignment);
+    setJSDocComments(context, tsOriginal, declaration, assignment);
 
     if (declaration && assignment) {
         return [declaration, assignment];
@@ -219,7 +219,7 @@ export function createLocalOrExportedOrGlobalDeclaration(
  * Apply JSDoc comments to the newly-created Lua statement, if present.
  * https://stackoverflow.com/questions/47429792/is-it-possible-to-get-comments-as-nodes-in-the-ast-using-the-typescript-compiler
  */
-function applyJSDocComments(
+function setJSDocComments(
     context: TransformationContext,
     tsOriginal: ts.Node | undefined,
     declaration: lua.VariableDeclarationStatement | undefined,
@@ -231,26 +231,24 @@ function applyJSDocComments(
         return;
     }
 
-    const docComment = getJSDocCommentFromTSNode(context, tsOriginal);
-    if (docComment === undefined) {
+    const docCommentArray = getJSDocCommentFromTSNode(context, tsOriginal);
+    if (docCommentArray === undefined) {
         return;
     }
 
-    // By default, TSTL will display comments immediately next to the "--" characters. We can make
-    // the comments look better if we separate them by a space (similar to what Prettier does in
-    // JavaScript/TypeScript).
-    const docCommentWithSpace = docComment.map(line => ` ${line}`);
-
     if (declaration && assignment) {
-        declaration.leadingComments = docCommentWithSpace;
+        declaration.leadingComments = docCommentArray;
     } else if (declaration) {
-        declaration.leadingComments = docCommentWithSpace;
+        declaration.leadingComments = docCommentArray;
     } else if (assignment) {
-        assignment.leadingComments = docCommentWithSpace;
+        assignment.leadingComments = docCommentArray;
     }
 }
 
-function getJSDocCommentFromTSNode(context: TransformationContext, tsOriginal: ts.Node | undefined) {
+function getJSDocCommentFromTSNode(
+    context: TransformationContext,
+    tsOriginal: ts.Node | undefined
+): string[] | undefined {
     if (tsOriginal === undefined) {
         return undefined;
     }
@@ -267,13 +265,51 @@ function getJSDocCommentFromTSNode(context: TransformationContext, tsOriginal: t
         return undefined;
     }
 
+    // The TypeScript compiler separates JSDoc comments into the "documentation comment" and the
+    // "tags". The former is conventionally at the top of the comment, and the bottom is
+    // conventionally at the bottom. We need to get both from the TypeScript API and then combine
+    // them into one block of text.
     const docCommentArray = symbol.getDocumentationComment(context.checker);
-    const docComment = ts.displayPartsToString(docCommentArray).trim();
-    if (docComment === "") {
+    const docCommentText = ts.displayPartsToString(docCommentArray).trim();
+
+    const jsDocTagInfoArray = symbol.getJsDocTags(context.checker);
+    const jsDocTagsTextLines = jsDocTagInfoArray.map(jsDocTagInfo => {
+        let text = "@" + jsDocTagInfo.name;
+        if (jsDocTagInfo.text !== undefined) {
+            const tagDescriptionTextArray = jsDocTagInfo.text
+                .filter(symbolDisplayPart => symbolDisplayPart.text.trim() !== "")
+                .map(symbolDisplayPart => symbolDisplayPart.text.trim());
+            const tagDescriptionText = tagDescriptionTextArray.join(" ");
+            text += " " + tagDescriptionText;
+        }
+        return text;
+    });
+    const jsDocTagsText = jsDocTagsTextLines.join("\n");
+
+    const combined = (docCommentText + "\n\n" + jsDocTagsText).trim();
+    if (combined === "") {
         return undefined;
     }
 
-    return docComment.split("\n");
+    // By default, TSTL will display comments immediately next to the "--" characters. We can make
+    // the comments look better if we separate them by a space (similar to what Prettier does in
+    // JavaScript/TypeScript).
+    const linesWithoutSpace = combined.split("\n");
+    const lines = linesWithoutSpace.map(line => ` ${line}`);
+
+    // We want to JSDoc comments to map on to LDoc comments:
+    // https://stevedonovan.github.io/ldoc/manual/doc.md.html
+    // LDoc comments require that the first line starts with three hyphens.
+    // Thus, need to add one or more hyphens to the first line.
+    const firstLine = lines[0];
+    if (firstLine.startsWith(" @")) {
+        lines.unshift("-");
+    } else {
+        lines.shift();
+        lines.unshift("-" + firstLine);
+    }
+
+    return lines;
 }
 
 export const createNaN = (tsOriginal?: ts.Node) =>

@@ -699,7 +699,7 @@ describe("try/catch in async function", () => {
     });
 
     // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1272
-    test.only("Awaiting a rejecting promise should halt function execution (#1272)", () => {
+    test("Awaiting a rejecting promise should halt function execution (#1272)", () => {
         util.testModule`
             let rej: (error: any) => void = () => {};
             const foo = () => new Promise((_, reject) => {
@@ -757,7 +757,11 @@ describe("try/catch in async function", () => {
                 try {
                     throw "throw 2"; // Another throw
                 } catch (err) {
-                    return err; // Async function should exit here
+                    try {
+                        await foo();
+                    } catch (err2) {
+                        return \`caught: \${err}, then: \${err2}\`; // Async function should exit here
+                    }
                 }
                 halted = false; // This code should not be called
                 return 10;
@@ -778,7 +782,7 @@ describe("try/catch in async function", () => {
                 caught: "catch err: Error: foo error",
                 succeeded: true,
                 rejected: false,
-                value: "throw 2",
+                value: "caught: throw 2, then: Error: foo error",
             },
         });
     });

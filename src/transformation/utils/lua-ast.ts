@@ -300,7 +300,7 @@ function getJSDocCommentFromTSNode(
     // We want to JSDoc comments to map on to LDoc comments:
     // https://stevedonovan.github.io/ldoc/manual/doc.md.html
     // LDoc comments require that the first line starts with three hyphens.
-    // Thus, need to add one or more hyphens to the first line.
+    // Thus, need to add a hyphen to the first line.
     const firstLine = lines[0];
     if (firstLine.startsWith(" @")) {
         lines.unshift("-");

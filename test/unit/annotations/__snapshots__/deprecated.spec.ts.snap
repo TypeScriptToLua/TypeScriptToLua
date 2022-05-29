@@ -42,6 +42,8 @@ exports[`extension removed: code 1`] = `
 "local ____lualib = require(\\"lualib_bundle\\")
 local __TS__Class = ____lualib.__TS__Class
 local __TS__ClassExtends = ____lualib.__TS__ClassExtends
+---
+-- @extension
 B = __TS__Class()
 B.name = \\"B\\"
 __TS__ClassExtends(B, A)"
@@ -51,6 +53,8 @@ exports[`extension removed: code 2`] = `
 "local ____lualib = require(\\"lualib_bundle\\")
 local __TS__Class = ____lualib.__TS__Class
 local __TS__ClassExtends = ____lualib.__TS__ClassExtends
+---
+-- @metaExtension
 B = __TS__Class()
 B.name = \\"B\\"
 __TS__ClassExtends(B, A)"
@@ -108,6 +112,8 @@ exports[`pureAbstract removed: diagnostics 1`] = `"main.ts(4,22): error TSTL: '@
 exports[`tuplereturn lambda: code 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
+    ---
+    -- @tupleReturn
     local function f()
         return {3, 4}
     end
@@ -120,6 +126,8 @@ exports[`tuplereturn lambda: diagnostics 1`] = `"main.ts(2,39): error TSTL: '@tu
 exports[`tuplereturn removed on function declaration: code 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
+    ---
+    -- @tupleReturn
     local function tuple(self)
         return {3, 5, 1}
     end
@@ -132,6 +140,8 @@ exports[`tuplereturn removed on function declaration: diagnostics 1`] = `"main.t
 exports[`tuplereturn removed: code 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
+    ---
+    -- @tupleReturn
     local function tuple(self)
         return {3, 5, 1}
     end

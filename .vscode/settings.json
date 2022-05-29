@@ -1,0 +1,6 @@
+{
+  // This matches the ".prettierrc.json" file.
+  "editor.rulers": [120],
+  "editor.tabSize": 4,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+}

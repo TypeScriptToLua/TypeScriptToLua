@@ -1,0 +1,50 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`JSDoc is copied on a function with tags: code 1`] = `
+"--- This is a function comment.
+-- It has multiple lines.
+-- 
+-- @param arg1 This is the first argument.
+-- @param arg2 This is the second argument.
+-- @returns A very powerful string.
+function foo(self, arg1, arg2)
+    return \\"bar\\"
+end"
+`;
+
+exports[`JSDoc is copied on a function with tags: diagnostics 1`] = `""`;
+
+exports[`JSDoc is copied on a variable: code 1`] = `
+"--- This is a variable comment.
+foo = 123"
+`;
+
+exports[`JSDoc is copied on a variable: diagnostics 1`] = `""`;
+
+exports[`Multi-line JSDoc with one block is copied on a function: code 1`] = `
+"--- This is a function comment.
+-- It has more than one line.
+function foo(self)
+end"
+`;
+
+exports[`Multi-line JSDoc with one block is copied on a function: diagnostics 1`] = `""`;
+
+exports[`Multi-line JSDoc with two blocks is copied on a function: code 1`] = `
+"--- This is a function comment.
+-- It has more than one line.
+-- 
+-- It also has more than one block.
+function foo(self)
+end"
+`;
+
+exports[`Multi-line JSDoc with two blocks is copied on a function: diagnostics 1`] = `""`;
+
+exports[`Single-line JSDoc is copied on a function: code 1`] = `
+"--- This is a function comment.
+function foo(self)
+end"
+`;
+
+exports[`Single-line JSDoc is copied on a function: diagnostics 1`] = `""`;

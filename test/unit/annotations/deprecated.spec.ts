@@ -4,14 +4,14 @@ import * as util from "../../util";
 test.each(["extension", "metaExtension"])("extension removed", extensionType => {
     util.testModule`
         declare class A {}
-        /** @${extensionType} **/
+        /** @${extensionType} */
         class B extends A {}
     `.expectDiagnosticsToMatchSnapshot([annotationRemoved.code]);
 });
 
 test("phantom removed", () => {
     util.testModule`
-        /** @phantom **/
+        /** @phantom */
         namespace A {
             function nsMember() {}
         }

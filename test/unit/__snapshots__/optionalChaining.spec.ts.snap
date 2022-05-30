@@ -32,9 +32,17 @@ exports[`Unsupported optional chains Builtin prototype method: diagnostics 1`] =
 exports[`Unsupported optional chains Compile members only: code 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
+    ---
+    -- @compileMembersOnly
     local A = 0
+    ---
+    -- @compileMembersOnly
     local B = 2
+    ---
+    -- @compileMembersOnly
     local C = 3
+    ---
+    -- @compileMembersOnly
     local D = \\"D\\"
     local ____TestEnum_B_0 = TestEnum
     if ____TestEnum_B_0 ~= nil then

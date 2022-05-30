@@ -3,20 +3,20 @@ import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { unsupportedProperty } from "../utils/diagnostics";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
-import { PropertyCallExpression, transformArguments, transformCallAndArguments } from "../visitors/call";
+import { transformArguments, transformCallAndArguments } from "../visitors/call";
 import { isStringType, isNumberType, findFirstNonOuterParent } from "../utils/typescript";
 import { moveToPrecedingTemp } from "../visitors/expression-list";
 import { isUnpackCall, wrapInTable } from "../utils/lua-ast";
 
 export function transformArrayConstructorCall(
     context: TransformationContext,
-    node: PropertyCallExpression
+    node: ts.CallExpression,
+    calledMethod: ts.PropertyAccessExpression
 ): lua.Expression | undefined {
-    const expression = node.expression;
     const signature = context.checker.getResolvedSignature(node);
     const params = transformArguments(context, node.arguments, signature);
 
-    const expressionName = expression.name.text;
+    const expressionName = calledMethod.name.text;
     switch (expressionName) {
         case "from":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayFrom, node, ...params);
@@ -25,7 +25,7 @@ export function transformArrayConstructorCall(
         case "of":
             return wrapInTable(...params);
         default:
-            context.diagnostics.push(unsupportedProperty(expression.name, "Array", expressionName));
+            context.diagnostics.push(unsupportedProperty(calledMethod.name, "Array", expressionName));
     }
 }
 
@@ -37,7 +37,7 @@ export function transformArrayConstructorCall(
  */
 function transformSingleElementArrayPush(
     context: TransformationContext,
-    node: PropertyCallExpression,
+    node: ts.CallExpression,
     caller: lua.Expression,
     param: lua.Expression
 ): lua.Expression {
@@ -68,13 +68,13 @@ function transformSingleElementArrayPush(
 
 export function transformArrayPrototypeCall(
     context: TransformationContext,
-    node: PropertyCallExpression
+    node: ts.CallExpression,
+    calledMethod: ts.PropertyAccessExpression
 ): lua.Expression | undefined {
-    const expression = node.expression;
     const signature = context.checker.getResolvedSignature(node);
-    const [caller, params] = transformCallAndArguments(context, expression.expression, node.arguments, signature);
+    const [caller, params] = transformCallAndArguments(context, calledMethod.expression, node.arguments, signature);
 
-    const expressionName = expression.name.text;
+    const expressionName = calledMethod.name.text;
     switch (expressionName) {
         case "concat":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayConcat, node, caller, ...params);
@@ -143,7 +143,7 @@ export function transformArrayPrototypeCall(
         case "splice":
             return transformLuaLibFunction(context, LuaLibFeature.ArraySplice, node, caller, ...params);
         case "join":
-            const callerType = context.checker.getTypeAtLocation(expression.expression);
+            const callerType = context.checker.getTypeAtLocation(calledMethod.expression);
             const elementType = context.checker.getElementTypeOfArrayType(callerType);
             if (elementType && (isStringType(context, elementType) || isNumberType(context, elementType))) {
                 const defaultSeparatorLiteral = lua.createStringLiteral(",");
@@ -170,7 +170,7 @@ export function transformArrayPrototypeCall(
         case "flatMap":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayFlatMap, node, caller, ...params);
         default:
-            context.diagnostics.push(unsupportedProperty(expression.name, "array", expressionName));
+            context.diagnostics.push(unsupportedProperty(calledMethod.name, "array", expressionName));
     }
 }
 

@@ -17,8 +17,6 @@ import { getOptionalContinuationData, transformOptionalChain } from "./optional-
 import { transformLanguageExtensionCallExpression } from "./language-extensions";
 import { transformImportExpression } from "./modules/import";
 
-export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
-
 export function validateArguments(
     context: TransformationContext,
     params: readonly ts.Expression[],
@@ -179,11 +177,11 @@ export function transformContextualCallExpression(
 function transformPropertyCall(
     context: TransformationContext,
     node: ts.CallExpression,
-    calledExpression: ts.PropertyAccessExpression
+    calledMethod: ts.PropertyAccessExpression
 ): lua.Expression {
     const signature = context.checker.getResolvedSignature(node);
 
-    if (calledExpression.expression.kind === ts.SyntaxKind.SuperKeyword) {
+    if (calledMethod.expression.kind === ts.SyntaxKind.SuperKeyword) {
         // Super calls take the format of super.call(self,...)
         const parameters = transformArguments(context, node.arguments, signature, ts.factory.createThis());
         return lua.createCallExpression(context.transformExpression(node.expression), parameters);
@@ -301,7 +299,7 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     return wrapResultInTable ? wrapInTable(callExpression) : callExpression;
 };
 
-function getCalledExpression(node: ts.CallExpression): ts.Expression {
+export function getCalledExpression(node: ts.CallExpression): ts.Expression {
     function unwrapExpression(expression: ts.Expression): ts.Expression {
         expression = ts.skipOuterExpressions(expression);
         return ts.isNonNullExpression(expression) ? unwrapExpression(expression.expression) : expression;

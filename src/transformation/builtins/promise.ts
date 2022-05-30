@@ -4,7 +4,7 @@ import { TransformationContext } from "../context";
 import { unsupportedProperty } from "../utils/diagnostics";
 import { importLuaLibFeature, LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isStandardLibraryType } from "../utils/typescript";
-import { PropertyCallExpression, transformArguments } from "../visitors/call";
+import { transformArguments } from "../visitors/call";
 
 export function isPromiseClass(context: TransformationContext, node: ts.Identifier) {
     const type = context.checker.getTypeAtLocation(node);
@@ -17,13 +17,13 @@ export function createPromiseIdentifier(original: ts.Node) {
 
 export function transformPromiseConstructorCall(
     context: TransformationContext,
-    node: PropertyCallExpression
+    node: ts.CallExpression,
+    calledMethod: ts.PropertyAccessExpression
 ): lua.Expression | undefined {
-    const expression = node.expression;
     const signature = context.checker.getResolvedSignature(node);
     const params = transformArguments(context, node.arguments, signature);
 
-    const expressionName = expression.name.text;
+    const expressionName = calledMethod.name.text;
     switch (expressionName) {
         case "all":
             return transformLuaLibFunction(context, LuaLibFeature.PromiseAll, node, ...params);
@@ -35,12 +35,12 @@ export function transformPromiseConstructorCall(
             return transformLuaLibFunction(context, LuaLibFeature.PromiseRace, node, ...params);
         case "resolve":
             importLuaLibFeature(context, LuaLibFeature.Promise);
-            return lua.createCallExpression(createStaticPromiseFunctionAccessor("resolve", expression), params, node);
+            return lua.createCallExpression(createStaticPromiseFunctionAccessor("resolve", calledMethod), params, node);
         case "reject":
             importLuaLibFeature(context, LuaLibFeature.Promise);
-            return lua.createCallExpression(createStaticPromiseFunctionAccessor("reject", expression), params, node);
+            return lua.createCallExpression(createStaticPromiseFunctionAccessor("reject", calledMethod), params, node);
         default:
-            context.diagnostics.push(unsupportedProperty(expression.name, "Promise", expressionName));
+            context.diagnostics.push(unsupportedProperty(calledMethod.name, "Promise", expressionName));
     }
 }
 

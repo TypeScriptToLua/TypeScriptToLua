@@ -6,21 +6,21 @@ import { unsupportedForTarget, unsupportedProperty, unsupportedSelfFunctionConve
 import { ContextType, getFunctionContextType } from "../utils/function-context";
 import { createUnpackCall } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
-import { PropertyCallExpression, transformCallAndArguments } from "../visitors/call";
+import { transformCallAndArguments } from "../visitors/call";
 
 export function transformFunctionPrototypeCall(
     context: TransformationContext,
-    node: PropertyCallExpression
+    node: ts.CallExpression,
+    calledMethod: ts.PropertyAccessExpression
 ): lua.CallExpression | undefined {
-    const expression = node.expression;
-    const callerType = context.checker.getTypeAtLocation(expression.expression);
+    const callerType = context.checker.getTypeAtLocation(calledMethod.expression);
     if (getFunctionContextType(context, callerType) === ContextType.Void) {
         context.diagnostics.push(unsupportedSelfFunctionConversion(node));
     }
 
     const signature = context.checker.getResolvedSignature(node);
-    const [caller, params] = transformCallAndArguments(context, expression.expression, node.arguments, signature);
-    const expressionName = expression.name.text;
+    const [caller, params] = transformCallAndArguments(context, calledMethod.expression, node.arguments, signature);
+    const expressionName = calledMethod.name.text;
     switch (expressionName) {
         case "apply":
             const nonContextArgs = params.length > 1 ? [createUnpackCall(context, params[1], node.arguments[1])] : [];
@@ -30,7 +30,7 @@ export function transformFunctionPrototypeCall(
         case "call":
             return lua.createCallExpression(caller, params, node);
         case "toString":
-            context.diagnostics.push(unsupportedProperty(expression.name, "function", expressionName));
+            context.diagnostics.push(unsupportedProperty(calledMethod.name, "function", expressionName));
     }
 }
 

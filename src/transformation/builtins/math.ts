@@ -4,7 +4,7 @@ import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { unsupportedProperty } from "../utils/diagnostics";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
-import { PropertyCallExpression, transformArguments } from "../visitors/call";
+import { transformArguments } from "../visitors/call";
 
 export function transformMathProperty(
     context: TransformationContext,
@@ -33,14 +33,14 @@ export function transformMathProperty(
 
 export function transformMathCall(
     context: TransformationContext,
-    node: PropertyCallExpression
+    node: ts.CallExpression,
+    calledMethod: ts.PropertyAccessExpression
 ): lua.Expression | undefined {
-    const expression = node.expression;
     const signature = context.checker.getResolvedSignature(node);
     const params = transformArguments(context, node.arguments, signature);
     const math = lua.createIdentifier("math");
 
-    const expressionName = expression.name.text;
+    const expressionName = calledMethod.name.text;
     switch (expressionName) {
         // Lua 5.3: math.atan(y, x)
         // Otherwise: math.atan2(y, x)
@@ -107,6 +107,6 @@ export function transformMathCall(
         }
 
         default:
-            context.diagnostics.push(unsupportedProperty(expression.name, "Math", expressionName));
+            context.diagnostics.push(unsupportedProperty(calledMethod.name, "Math", expressionName));
     }
 }

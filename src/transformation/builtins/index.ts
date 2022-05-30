@@ -1,6 +1,5 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
-import { assume } from "../../utils";
 import { TransformationContext } from "../context";
 import { createNaN } from "../utils/lua-ast";
 import { importLuaLibFeature, LuaLibFeature } from "../utils/lualib";
@@ -14,7 +13,7 @@ import {
     isStandardLibraryType,
     isStringType,
 } from "../utils/typescript";
-import { PropertyCallExpression } from "../visitors/call";
+import { getCalledExpression } from "../visitors/call";
 import { transformArrayConstructorCall, transformArrayProperty, transformArrayPrototypeCall } from "./array";
 import { transformConsoleCall } from "./console";
 import { transformFunctionPrototypeCall, transformFunctionProperty } from "./function";
@@ -74,79 +73,78 @@ export function transformBuiltinCallExpression(
         }
     }
 
-    const expression = ts.getOriginalNode(node.expression);
-    if (!ts.isPropertyAccessExpression(expression)) {
+    const calledMethod = ts.getOriginalNode(getCalledExpression(node));
+    if (!ts.isPropertyAccessExpression(calledMethod)) {
         return;
     }
 
-    const isOptionalAccess = expression.questionDotToken;
-    assume<PropertyCallExpression>(node);
+    const isOptionalAccess = calledMethod.questionDotToken;
     // If the function being called is of type owner.func, get the type of owner
-    const ownerType = context.checker.getTypeAtLocation(expression.expression);
+    const ownerType = context.checker.getTypeAtLocation(calledMethod.expression);
 
     if (isStandardLibraryType(context, ownerType, undefined)) {
         const symbol = ownerType.getSymbol();
         switch (symbol?.name) {
             case "ArrayConstructor":
                 if (isOptionalCall || isOptionalAccess) return unsupportedOptionalCall();
-                return transformArrayConstructorCall(context, node);
+                return transformArrayConstructorCall(context, node, calledMethod);
             case "Console":
                 if (isOptionalCall || isOptionalAccess) return unsupportedOptionalCall();
-                return transformConsoleCall(context, node);
+                return transformConsoleCall(context, node, calledMethod);
             case "Math":
                 if (isOptionalCall || isOptionalAccess) return unsupportedOptionalCall();
-                return transformMathCall(context, node);
+                return transformMathCall(context, node, calledMethod);
             case "StringConstructor":
                 if (isOptionalCall || isOptionalAccess) return unsupportedOptionalCall();
-                return transformStringConstructorCall(context, node);
+                return transformStringConstructorCall(context, node, calledMethod);
             case "ObjectConstructor":
                 if (isOptionalCall || isOptionalAccess) return unsupportedOptionalCall();
-                return transformObjectConstructorCall(context, node);
+                return transformObjectConstructorCall(context, node, calledMethod);
             case "SymbolConstructor":
                 if (isOptionalCall || isOptionalAccess) return unsupportedOptionalCall();
-                return transformSymbolConstructorCall(context, node);
+                return transformSymbolConstructorCall(context, node, calledMethod);
             case "NumberConstructor":
                 if (isOptionalCall || isOptionalAccess) return unsupportedOptionalCall();
-                return transformNumberConstructorCall(context, node);
+                return transformNumberConstructorCall(context, node, calledMethod);
             case "PromiseConstructor":
                 if (isOptionalCall || isOptionalAccess) return unsupportedOptionalCall();
-                return transformPromiseConstructorCall(context, node);
+                return transformPromiseConstructorCall(context, node, calledMethod);
         }
     }
 
     const isStringFunction =
         isStringType(context, ownerType) ||
-        (expression.questionDotToken && isNullableType(context, ownerType, isStringType));
+        (calledMethod.questionDotToken && isNullableType(context, ownerType, isStringType));
     if (isStringFunction && hasStandardLibrarySignature(context, node)) {
         if (isOptionalCall) return unsupportedOptionalCall();
-        return transformStringPrototypeCall(context, node);
+        return transformStringPrototypeCall(context, node, calledMethod);
     }
 
     const isNumberFunction =
         isNumberType(context, ownerType) ||
-        (expression.questionDotToken && isNullableType(context, ownerType, isNumberType));
+        (calledMethod.questionDotToken && isNullableType(context, ownerType, isNumberType));
     if (isNumberFunction && hasStandardLibrarySignature(context, node)) {
         if (isOptionalCall) return unsupportedOptionalCall();
-        return transformNumberPrototypeCall(context, node);
+        return transformNumberPrototypeCall(context, node, calledMethod);
     }
 
     const isArrayFunction =
         isArrayType(context, ownerType) ||
-        (expression.questionDotToken && isNullableType(context, ownerType, isArrayType));
+        (calledMethod.questionDotToken && isNullableType(context, ownerType, isArrayType));
     if (isArrayFunction && hasStandardLibrarySignature(context, node)) {
         if (isOptionalCall) return unsupportedOptionalCall();
-        return transformArrayPrototypeCall(context, node);
+        return transformArrayPrototypeCall(context, node, calledMethod);
     }
 
     const isFunctionFunction =
         isFunctionType(ownerType) ||
-        (expression.questionDotToken && isNullableType(context, ownerType, (_, t) => isFunctionType(t)));
+        (calledMethod.questionDotToken && isNullableType(context, ownerType, (_, t) => isFunctionType(t)));
     if (isFunctionFunction && hasStandardLibrarySignature(context, node)) {
         if (isOptionalCall) return unsupportedOptionalCall();
-        return transformFunctionPrototypeCall(context, node);
+        return transformFunctionPrototypeCall(context, node, calledMethod);
     }
 
-    const objectResult = transformObjectPrototypeCall(context, node, expression);
+    const objectResult = transformObjectPrototypeCall(context, node, calledMethod);
     if (objectResult) {
         if (isOptionalCall) return unsupportedOptionalCall();
         return objectResult;

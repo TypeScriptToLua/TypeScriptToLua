@@ -268,6 +268,14 @@ test("Object method declaration", () => {
     `.expectToMatchJsResult();
 });
 
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1266
+test("Object method declaration used with non-null operator (#1266)", () => {
+    util.testFunction`
+        let o = { v: 4, m(i: number): number { return this.v * i; } };
+        return o.m!(3);
+    `.expectToMatchJsResult();
+});
+
 test.each([
     { args: ["bar"], expected: "foobar" },
     { args: ["baz", "bar"], expected: "bazbar" },

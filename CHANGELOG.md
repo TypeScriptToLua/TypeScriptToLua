@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.5.0
+
+- Added support for `Array.from` and `Array.of`
+- Added support for `beforeEmit` hook to plugins that runs after tstl is totally done, but before emitting the result.
+  - For more info about plugin hooks, see: https://typescripttolua.github.io/docs/api/plugins
+- Added support for import expressions (`import("./module").then(m => m.foo());`)
+- Added tsconfig setting `lua51AllowTryCatchInAsyncAwait` to disable restrictions on try/catch in combination with async/await in 5.1 (default: false)
+- Added tsconfig setting `noImplicitGlobalVariables` to disable tstl making variables global in non-module files.
+- Various lualib optimizations
+- JSDoc comments from input TS are now also part of output Lua as LDoc comments.
+  - Can be disabled with `removeComments` tsconfig setting.
+- Rewrote how try/catch works in async functions, fixing many bugs.
+- Fixed a bug where methods with non-null expressions (i.e. `obj.method!()`) would not pass the correct self parameter, causing runtime errors.
+- Fixed a bug where symlinked node_modules (for example when using `npm link`) were not recognized as external dependencies by module resolution.
+- Fixed a bug with sourcemap traceback leading to invalid lua
+- Improved sourcemap traceback interaction with `loadstring`
+
 ## 1.4.0
 
 - Upgraded to TypeScript 4.6

@@ -138,8 +138,8 @@ function resolveFileDependencies(file: ProcessedFile, context: ResolutionContext
     const diagnostics: ts.Diagnostic[] = [];
 
     for (const required of findRequiredPaths(file.code)) {
-        // Do no resolve lualib
-        if (required === "lualib_bundle") {
+        // Do no resolve lualib, unless it is included from node_modules
+        if (required === "lualib_bundle" && !isNodeModulesFile(file.fileName)) {
             dependencies.push({ fileName: "lualib_bundle", code: "" });
             continue;
         }

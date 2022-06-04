@@ -246,7 +246,7 @@ describe("module resolution project with dependencies built by tstl library mode
         dependency2OtherFileResult: "Dependency 2 func: my string argument",
     };
 
-    test.only("can resolve lua dependencies", () => {
+    test("can resolve lua dependencies", () => {
         const transpileResult = util
             .testProject(path.join(projectPath, "tsconfig.json"))
             .setMainFileName(path.join(projectPath, "main.ts"))

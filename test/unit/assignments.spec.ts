@@ -135,6 +135,17 @@ test.each([
     `.expectToMatchJsResult();
 });
 
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1277
+test("Compound assignment as expression (#1277)", () => {
+    util.testFunction`
+        let foo = {
+            bar: false as any
+        }
+        const result = foo.bar ||= true;
+        return { result, foo };
+    `.expectToMatchJsResult();
+});
+
 test.each([
     "++o.p",
     "o.p++",
@@ -439,9 +450,9 @@ test.each([
     `.expectToMatchJsResult();
 });
 
-test.each([
-    { operator: "||=", initialValue: true },
-    { operator: "&&=", initialValue: false },
+test.only.each([
+    // { operator: "||=", initialValue: true },
+    // { operator: "&&=", initialValue: false },
     { operator: "??=", initialValue: false },
 ])("compound assignment short-circuits and does not call setter as expression", ({ operator, initialValue }) => {
     /*
@@ -468,7 +479,7 @@ test.each([
 
         const inst = new MyClass();
         export const result = (inst.prop ${operator} 8);
-    `.expectToMatchJsResult();
+    `.debug().expectToMatchJsResult();
 });
 
 test.each([

@@ -76,7 +76,7 @@ export function transformCompoundAssignment(
         context.transformExpression(rhs)
     );
 
-    if (lua.isTableIndexExpression(left) && shouldCacheTableIndexExpressions(left, rightPrecedingStatements)) {
+    if (lua.isTableIndexExpression(left)) {
         // Complex property/element accesses need to cache object/index expressions to avoid repeating side-effects
         // local __obj, __index = ${objExpression}, ${indexExpression};
         const obj = context.createTempNameForLuaExpression(left.table);
@@ -145,7 +145,7 @@ export function transformCompoundAssignment(
             rightPrecedingStatements
         );
         return { statements: [tmpDeclaration, ...precedingStatements, ...assignStatements], result: tmpIdentifier };
-    } else if (ts.isPropertyAccessExpression(lhs) || ts.isElementAccessExpression(lhs)) {
+    } /*else if (ts.isPropertyAccessExpression(lhs) || ts.isElementAccessExpression(lhs)) {
         // Simple property/element access expressions need to cache in temp to avoid double-evaluation
         // local ____tmp = ${left} ${replacementOperator} ${right};
         // ${left} = ____tmp;
@@ -176,7 +176,7 @@ export function transformCompoundAssignment(
             precedingStatements
         );
         return { statements: [tmpDeclaration, ...assignStatements], result: tmpIdentifier };
-    } else {
+    } */else {
         if (rightPrecedingStatements.length > 0 && isSetterSkippingCompoundAssignmentOperator(operator)) {
             return {
                 statements: transformSetterSkippingCompoundAssignment(left, operator, right, rightPrecedingStatements),

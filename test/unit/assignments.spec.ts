@@ -450,9 +450,9 @@ test.each([
     `.expectToMatchJsResult();
 });
 
-test.only.each([
-    // { operator: "||=", initialValue: true },
-    // { operator: "&&=", initialValue: false },
+test.each([
+    { operator: "||=", initialValue: true },
+    { operator: "&&=", initialValue: false },
     { operator: "??=", initialValue: false },
 ])("compound assignment short-circuits and does not call setter as expression", ({ operator, initialValue }) => {
     /*
@@ -460,7 +460,7 @@ test.only.each([
         * x.y ||= z is translated to x.y || (x.y = z).
         * x.y &&= z is translated to x.y && (x.y = z).
         * x.y ||= z is translated to x.y !== undefined && (x.y = z).
-        
+
         Test if setter in Lua is called same nr of times as in JS.
     */
     util.testModule`
@@ -479,7 +479,7 @@ test.only.each([
 
         const inst = new MyClass();
         export const result = (inst.prop ${operator} 8);
-    `.debug().expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test.each([

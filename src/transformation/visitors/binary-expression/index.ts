@@ -16,6 +16,7 @@ import {
 import { assert } from "../../../utils";
 import { transformOrderedExpressions } from "../expression-list";
 import { transformInPrecedingStatementScope } from "../../utils/preceding-statements";
+import { AssignmentLeftHandSideExpression } from "../../..";
 
 type ShortCircuitOperator =
     | ts.SyntaxKind.AmpersandAmpersandToken
@@ -88,31 +89,28 @@ function transformBinaryOperationWithNoPrecedingStatements(
 }
 
 export function createShortCircuitBinaryExpressionPrecedingStatements(
-    context: TransformationContext,
+    _context: TransformationContext,
     lhs: lua.Expression,
     rhs: lua.Expression,
     rightPrecedingStatements: lua.Statement[],
     operator: ShortCircuitOperator,
     node?: ts.BinaryExpression
 ): [lua.Statement[], lua.Expression] {
-    const conditionIdentifier = context.createTempNameForLuaExpression(lhs);
-    const assignmentStatement = lua.createVariableDeclarationStatement(conditionIdentifier, lhs, node?.left);
-
     let condition: lua.Expression;
     switch (operator) {
         case ts.SyntaxKind.BarBarToken:
             condition = lua.createUnaryExpression(
-                lua.cloneIdentifier(conditionIdentifier),
+                lhs,
                 lua.SyntaxKind.NotOperator,
                 node
             );
             break;
         case ts.SyntaxKind.AmpersandAmpersandToken:
-            condition = lua.cloneIdentifier(conditionIdentifier);
+            condition = lhs;
             break;
         case ts.SyntaxKind.QuestionQuestionToken:
             condition = lua.createBinaryExpression(
-                lua.cloneIdentifier(conditionIdentifier),
+                lhs,
                 lua.createNilLiteral(),
                 lua.SyntaxKind.EqualityOperator,
                 node
@@ -122,11 +120,11 @@ export function createShortCircuitBinaryExpressionPrecedingStatements(
 
     const ifStatement = lua.createIfStatement(
         condition,
-        lua.createBlock([...rightPrecedingStatements, lua.createAssignmentStatement(conditionIdentifier, rhs)]),
+        lua.createBlock([...rightPrecedingStatements, lua.createAssignmentStatement(lhs as AssignmentLeftHandSideExpression, rhs)]),
         undefined,
         node?.left
     );
-    return [[assignmentStatement, ifStatement], conditionIdentifier];
+    return [[ifStatement], lhs];
 }
 
 function transformShortCircuitBinaryExpression(
@@ -161,9 +159,11 @@ export function transformBinaryOperation(
         );
     }
 
+    const [precedingStatements, result] = transformInPrecedingStatementScope(context, () => transformBinaryOperationWithNoPrecedingStatements(context, left, right, operator, node))
+
     return [
-        rightPrecedingStatements,
-        transformBinaryOperationWithNoPrecedingStatements(context, left, right, operator, node),
+        [...rightPrecedingStatements, ...precedingStatements],
+        result,
     ];
 }
 

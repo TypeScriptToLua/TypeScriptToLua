@@ -116,11 +116,19 @@ export function transformCompoundAssignment(
                 operator,
                 expression
             );
-            const tmpDeclaration = lua.createVariableDeclarationStatement(tmp, operatorExpression);
-            const assignStatement = lua.createAssignmentStatement(accessExpression, tmp);
+
+            if (isSetterSkippingCompoundAssignmentOperator(operator)) {
+                const statements = [
+                    objAndIndexDeclaration,
+                    ...transformSetterSkippingCompoundAssignment(accessExpression, operator, right, precedingStatements),
+                ];
+                return { statements, result: accessExpression };
+            }
+
+            const assignStatement = lua.createAssignmentStatement(accessExpression, operatorExpression);
             return {
-                statements: [objAndIndexDeclaration, ...precedingStatements, tmpDeclaration, assignStatement],
-                result: tmp,
+                statements: [objAndIndexDeclaration, ...precedingStatements, assignStatement],
+                result: accessExpression,
             };
         }
     } else if (isPostfix) {

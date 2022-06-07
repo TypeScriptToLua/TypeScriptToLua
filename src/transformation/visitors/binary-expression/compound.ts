@@ -120,7 +120,12 @@ export function transformCompoundAssignment(
             if (isSetterSkippingCompoundAssignmentOperator(operator)) {
                 const statements = [
                     objAndIndexDeclaration,
-                    ...transformSetterSkippingCompoundAssignment(accessExpression, operator, right, precedingStatements),
+                    ...transformSetterSkippingCompoundAssignment(
+                        accessExpression,
+                        operator,
+                        right,
+                        precedingStatements
+                    ),
                 ];
                 return { statements, result: accessExpression };
             }
@@ -153,38 +158,7 @@ export function transformCompoundAssignment(
             rightPrecedingStatements
         );
         return { statements: [tmpDeclaration, ...precedingStatements, ...assignStatements], result: tmpIdentifier };
-    } /*else if (ts.isPropertyAccessExpression(lhs) || ts.isElementAccessExpression(lhs)) {
-        // Simple property/element access expressions need to cache in temp to avoid double-evaluation
-        // local ____tmp = ${left} ${replacementOperator} ${right};
-        // ${left} = ____tmp;
-        // return ____tmp
-        const tmpIdentifier = context.createTempNameForLuaExpression(left);
-        const [precedingStatements, operatorExpression] = transformBinaryOperation(
-            context,
-            left,
-            right,
-            rightPrecedingStatements,
-            operator,
-            expression
-        );
-        const tmpDeclaration = lua.createVariableDeclarationStatement(tmpIdentifier, operatorExpression);
-
-        if (isSetterSkippingCompoundAssignmentOperator(operator)) {
-            const statements = [
-                tmpDeclaration,
-                ...transformSetterSkippingCompoundAssignment(tmpIdentifier, operator, right, precedingStatements),
-            ];
-            return { statements, result: tmpIdentifier };
-        }
-
-        const assignStatements = transformAssignmentWithRightPrecedingStatements(
-            context,
-            lhs,
-            tmpIdentifier,
-            precedingStatements
-        );
-        return { statements: [tmpDeclaration, ...assignStatements], result: tmpIdentifier };
-    } */else {
+    } else {
         if (rightPrecedingStatements.length > 0 && isSetterSkippingCompoundAssignmentOperator(operator)) {
             return {
                 statements: transformSetterSkippingCompoundAssignment(left, operator, right, rightPrecedingStatements),

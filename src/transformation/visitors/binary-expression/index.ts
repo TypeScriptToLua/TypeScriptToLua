@@ -99,28 +99,22 @@ export function createShortCircuitBinaryExpressionPrecedingStatements(
     let condition: lua.Expression;
     switch (operator) {
         case ts.SyntaxKind.BarBarToken:
-            condition = lua.createUnaryExpression(
-                lhs,
-                lua.SyntaxKind.NotOperator,
-                node
-            );
+            condition = lua.createUnaryExpression(lhs, lua.SyntaxKind.NotOperator, node);
             break;
         case ts.SyntaxKind.AmpersandAmpersandToken:
             condition = lhs;
             break;
         case ts.SyntaxKind.QuestionQuestionToken:
-            condition = lua.createBinaryExpression(
-                lhs,
-                lua.createNilLiteral(),
-                lua.SyntaxKind.EqualityOperator,
-                node
-            );
+            condition = lua.createBinaryExpression(lhs, lua.createNilLiteral(), lua.SyntaxKind.EqualityOperator, node);
             break;
     }
 
     const ifStatement = lua.createIfStatement(
         condition,
-        lua.createBlock([...rightPrecedingStatements, lua.createAssignmentStatement(lhs as AssignmentLeftHandSideExpression, rhs)]),
+        lua.createBlock([
+            ...rightPrecedingStatements,
+            lua.createAssignmentStatement(lhs as AssignmentLeftHandSideExpression, rhs),
+        ]),
         undefined,
         node?.left
     );
@@ -159,12 +153,11 @@ export function transformBinaryOperation(
         );
     }
 
-    const [precedingStatements, result] = transformInPrecedingStatementScope(context, () => transformBinaryOperationWithNoPrecedingStatements(context, left, right, operator, node))
+    const [precedingStatements, result] = transformInPrecedingStatementScope(context, () =>
+        transformBinaryOperationWithNoPrecedingStatements(context, left, right, operator, node)
+    );
 
-    return [
-        [...rightPrecedingStatements, ...precedingStatements],
-        result,
-    ];
+    return [[...rightPrecedingStatements, ...precedingStatements], result];
 }
 
 export const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (node, context) => {

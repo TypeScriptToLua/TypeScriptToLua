@@ -20,14 +20,12 @@ const containsBreakOrReturn = (nodes: Iterable<ts.Node>): boolean => {
 };
 
 const createOrExpression = (
-    context: TransformationContext,
     left: lua.Expression,
     right: lua.Expression,
     rightPrecedingStatements: lua.Statement[]
 ): [lua.Statement[], lua.Expression] => {
     if (rightPrecedingStatements.length > 0) {
         return createShortCircuitBinaryExpressionPrecedingStatements(
-            context,
             left,
             right,
             rightPrecedingStatements,
@@ -56,7 +54,7 @@ const coalesceCondition = (
         lua.SyntaxKind.EqualityOperator
     );
     if (condition) {
-        return createOrExpression(context, condition, comparison, precedingStatements);
+        return createOrExpression(condition, comparison, precedingStatements);
     }
 
     // Next condition
@@ -127,7 +125,6 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
                     );
                 } else {
                     [conditionPrecedingStatements, condition] = createOrExpression(
-                        context,
                         conditionVariable,
                         condition,
                         conditionPrecedingStatements
@@ -160,7 +157,6 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
                     // Evaluate the final condition that we may be skipping
                     if (condition) {
                         [conditionPrecedingStatements, condition] = createOrExpression(
-                            context,
                             conditionVariable,
                             condition,
                             conditionPrecedingStatements

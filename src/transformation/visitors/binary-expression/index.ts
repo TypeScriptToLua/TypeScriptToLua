@@ -89,7 +89,6 @@ function transformBinaryOperationWithNoPrecedingStatements(
 }
 
 export function createShortCircuitBinaryExpressionPrecedingStatements(
-    _context: TransformationContext,
     lhs: lua.Expression,
     rhs: lua.Expression,
     rightPrecedingStatements: lua.Statement[],
@@ -144,7 +143,6 @@ export function transformBinaryOperation(
     if (rightPrecedingStatements.length > 0 && isShortCircuitOperator(operator)) {
         assert(ts.isBinaryExpression(node));
         return createShortCircuitBinaryExpressionPrecedingStatements(
-            context,
             left,
             right,
             rightPrecedingStatements,
@@ -265,7 +263,6 @@ function transformNullishCoalescingOperationNoPrecedingStatements(
     if (canBeFalsyWhenNotNull(context, lhsType)) {
         // reuse logic from case with preceding statements
         const [precedingStatements, result] = createShortCircuitBinaryExpressionPrecedingStatements(
-            context,
             transformedLeft,
             transformedRight,
             [],

@@ -29,10 +29,11 @@ export class Transpiler {
     }
 
     public emit(emitOptions: EmitOptions): EmitResult {
-        const { program, writeFile = this.emitHost.writeFile } = emitOptions;
+        const { program, writeFile = this.emitHost.writeFile, plugins: optionsPlugins = [] } = emitOptions;
         const options = program.getCompilerOptions() as CompilerOptions;
 
-        const { diagnostics: getPluginsDiagnostics, plugins } = getPlugins(program);
+        const { diagnostics: getPluginsDiagnostics, plugins: configPlugins } = getPlugins(program);
+        const plugins = [...optionsPlugins, ...configPlugins];
 
         const { diagnostics, transpiledFiles: freshFiles } = getProgramTranspileResult(this.emitHost, writeFile, {
             ...emitOptions,

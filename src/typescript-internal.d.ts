@@ -1,4 +1,3 @@
-import { DiagnosticsProducingTypeChecker } from "./transformation/context";
 export {};
 
 declare module "typescript" {
@@ -15,7 +14,6 @@ declare module "typescript" {
 
     interface Program {
         getCommonSourceDirectory(): string;
-        getDiagnosticsProducingTypeChecker(): DiagnosticsProducingTypeChecker;
     }
 
     interface CompilerOptions {

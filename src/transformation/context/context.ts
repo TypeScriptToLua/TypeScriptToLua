@@ -24,13 +24,13 @@ export interface EmitResolver {
     getAllAccessorDeclarations(declaration: ts.AccessorDeclaration): AllAccessorDeclarations;
 }
 
-export interface DiagnosticsProducingTypeChecker extends ts.TypeChecker {
+export interface TypeCheckerWithEmitResolver extends ts.TypeChecker {
     getEmitResolver(sourceFile?: ts.SourceFile, cancellationToken?: ts.CancellationToken): EmitResolver;
 }
 
 export class TransformationContext {
     public readonly diagnostics: ts.Diagnostic[] = [];
-    public readonly checker: DiagnosticsProducingTypeChecker = this.program.getDiagnosticsProducingTypeChecker();
+    public readonly checker = this.program.getTypeChecker() as TypeCheckerWithEmitResolver;
     public readonly resolver: EmitResolver;
     public readonly precedingStatementsStack: lua.Statement[][] = [];
 

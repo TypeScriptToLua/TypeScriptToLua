@@ -288,7 +288,8 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
             calledExpression,
             node.arguments,
             signature,
-            callContext
+            // Only pass context if noImplicitSelf is not configured
+            context.options.noImplicitSelf ? undefined : callContext
         );
     }
 

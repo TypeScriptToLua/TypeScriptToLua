@@ -79,7 +79,7 @@ export function getDeclarationContextType(
 
     // When using --noImplicitSelf and the signature is defined in a file targeted by the program apply the @noSelf rule.
     const options = program.getCompilerOptions() as CompilerOptions;
-    if (options.noImplicitSelf && program.getRootFileNames().includes(signatureDeclaration.getSourceFile().fileName)) {
+    if (options.noImplicitSelf && program.getSourceFile(signatureDeclaration.getSourceFile().fileName) !== undefined) {
         return ContextType.Void;
     }
 

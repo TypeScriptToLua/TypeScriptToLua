@@ -1,3 +1,5 @@
+import * as path from "path";
+import { transpileFiles } from "../../../src";
 import { couldNotResolveRequire } from "../../../src/transpilation/diagnostics";
 import * as util from "../../util";
 
@@ -5,9 +7,32 @@ test("enables noSelfInFile behavior for functions", () => {
     util.testFunction`
         function fooBar() {}
         const test: (this: void) => void = fooBar;
+        fooBar();
     `
         .setOptions({ noImplicitSelf: true })
         .expectToHaveNoDiagnostics();
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1084
+test.each(["\\", "/"])("transpileFiles handles paths with noImplicitSelf and %s separator (#1084)", separator => {
+    const projectDir = `${path.dirname(path.dirname(__dirname))}${separator}transpile${separator}project`;
+    const emittedFiles: Record<string, string> = {};
+    const { diagnostics } = transpileFiles(
+        [
+            `${projectDir}${separator}index.ts`,
+            `${projectDir}${separator}api.d.ts`,
+            `${projectDir}${separator}otherFile.ts`,
+        ],
+        { noImplicitSelf: true },
+        (fileName, text) => (emittedFiles[fileName] = text)
+    );
+    expect(diagnostics).toHaveLength(0);
+    expect(Object.keys(emittedFiles)).not.toHaveLength(0);
+    for (const fileContent of Object.values(emittedFiles)) {
+        expect(fileContent).toContain("getNumber()");
+        expect(fileContent).not.toContain("getNumber(self)");
+        expect(fileContent).not.toContain("getNumber(_G)");
+    }
 });
 
 test("enables noSelfInFile behavior for methods", () => {

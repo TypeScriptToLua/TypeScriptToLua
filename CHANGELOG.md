@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.0
+
+- **[Breaking]** Upgraded TypeScript to 4.7
+- Fixed a bug where EmitOptions plugins were ignored
+- Fixed a bug where sometimes function calls (like those to a custom jsx factory) would have a context argument even though `noImplicitSelf` was specified.
+- Fixed a bug where sometimes `noImplicitSelf` was ignored because of incorrect file path separators.
+- Fixed lualib_bundle files not correctly being included from node_module packages.
+- Fixed compound assignment operators (e.g. ??= or ||=) not correctly updating the lhs if used as expression instead of statement.
+
 ## 1.5.0
 
 - Added support for `Array.from` and `Array.of`

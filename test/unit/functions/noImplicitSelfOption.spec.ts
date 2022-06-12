@@ -19,9 +19,9 @@ test.each(["\\", "/"])("transpileFiles handles paths with noImplicitSelf and %s 
     const emittedFiles: Record<string, string> = {};
     const { diagnostics } = transpileFiles(
         [
-            `${projectDir}${separator}project${separator}index.ts`,
-            `${projectDir}${separator}project${separator}api.d.ts`,
-            `${projectDir}${separator}project${separator}otherFile.ts`,
+            `${projectDir}${separator}index.ts`,
+            `${projectDir}${separator}api.d.ts`,
+            `${projectDir}${separator}otherFile.ts`,
         ],
         { noImplicitSelf: true },
         (fileName, text) => (emittedFiles[fileName] = text)

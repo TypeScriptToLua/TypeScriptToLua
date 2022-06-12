@@ -247,10 +247,21 @@ describe("module resolution project with dependencies built by tstl library mode
     };
 
     test("can resolve lua dependencies", () => {
-        util.testProject(path.join(projectPath, "tsconfig.json"))
+        const transpileResult = util
+            .testProject(path.join(projectPath, "tsconfig.json"))
             .setMainFileName(path.join(projectPath, "main.ts"))
             .setOptions({ outDir: "tstl-out" })
-            .expectToEqual(expectedResult);
+            .expectToEqual(expectedResult)
+            .getLuaResult();
+
+        // Assert lualib_bundle from node_module is include
+        const expectedLualibBundle = path.join("lua_modules", "dependency1", "lualib_bundle.lua");
+        expect(transpileResult.transpiledFiles.some(f => f.outPath.endsWith(expectedLualibBundle))).toBe(true);
+        // Assert node_modules file requires the correct lualib_bundle
+        const requiringLuaFile = path.join("lua_modules", "dependency1", "index.lua");
+        const lualibRequiringFile = transpileResult.transpiledFiles.find(f => f.outPath.endsWith(requiringLuaFile));
+        expect(lualibRequiringFile).toBeDefined();
+        expect(lualibRequiringFile?.lua).toContain('require("lua_modules.dependency1.lualib_bundle")');
     });
 
     test("can resolve dependencies and bundle", () => {

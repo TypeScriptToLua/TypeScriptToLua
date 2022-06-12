@@ -172,14 +172,14 @@ export abstract class TestBuilder {
     protected mainFileName = "main.ts";
     public setMainFileName(mainFileName: string): this {
         expect(this.hasProgram).toBe(false);
-        this.mainFileName = normalizeSlashes(mainFileName);
+        this.mainFileName = mainFileName;
         return this;
     }
 
     protected extraFiles: Record<string, string> = {};
     public addExtraFile(fileName: string, code: string): this {
         expect(this.hasProgram).toBe(false);
-        this.extraFiles[fileName] = code;
+        this.extraFiles[fileName] = normalizeSlashes(code);
         return this;
     }
 
@@ -206,10 +206,7 @@ export abstract class TestBuilder {
             Object.entries(this.extraFiles).filter(([fileName]) => !fileName.endsWith(".lua"))
         );
 
-        return tstl.createVirtualProgram(
-            { ...nonLuaExtraFiles, [normalizeSlashes(this.mainFileName)]: this.getTsCode() },
-            this.options
-        );
+        return tstl.createVirtualProgram({ ...nonLuaExtraFiles, [this.mainFileName]: this.getTsCode() }, this.options);
     }
 
     private getEmitHost(): EmitHost {
@@ -247,7 +244,7 @@ export abstract class TestBuilder {
         const mainFile = this.options.luaBundle
             ? transpiledFiles[0]
             : transpiledFiles.find(({ sourceFiles }) =>
-                  sourceFiles.some(f => normalizeSlashes(f.fileName) === this.mainFileName)
+                  sourceFiles.some(f => f.fileName === normalizeSlashes(this.mainFileName))
               );
 
         expect(mainFile).toMatchObject({ lua: expect.any(String), luaSourceMap: expect.any(String) });

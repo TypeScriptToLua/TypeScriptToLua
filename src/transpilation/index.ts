@@ -3,6 +3,7 @@ import * as path from "path";
 import * as ts from "typescript";
 import { parseConfigFileWithSystem } from "../cli/tsconfig";
 import { CompilerOptions } from "../CompilerOptions";
+import { normalizeSlashes } from "../utils";
 import { createEmitOutputCollector, TranspiledFile } from "./output-collector";
 import { EmitResult, Transpiler } from "./transpiler";
 
@@ -44,8 +45,12 @@ const libCache: { [key: string]: ts.SourceFile } = {};
 
 /** @internal */
 export function createVirtualProgram(input: Record<string, string>, options: CompilerOptions = {}): ts.Program {
+    const normalizedFiles: Record<string, string> = {};
+    for (const [path, file] of Object.entries(input)) {
+        normalizedFiles[normalizeSlashes(path)] = file;
+    }
     const compilerHost: ts.CompilerHost = {
-        fileExists: fileName => fileName in input || ts.sys.fileExists(fileName),
+        fileExists: fileName => fileName in normalizedFiles || ts.sys.fileExists(fileName),
         getCanonicalFileName: fileName => fileName,
         getCurrentDirectory: () => "",
         getDefaultLibFileName: ts.getDefaultLibFileName,
@@ -55,8 +60,8 @@ export function createVirtualProgram(input: Record<string, string>, options: Com
         writeFile() {},
 
         getSourceFile(fileName) {
-            if (fileName in input) {
-                return ts.createSourceFile(fileName, input[fileName], ts.ScriptTarget.Latest, false);
+            if (fileName in normalizedFiles) {
+                return ts.createSourceFile(fileName, normalizedFiles[fileName], ts.ScriptTarget.Latest, false);
             }
 
             let filePath: string | undefined;
@@ -80,7 +85,7 @@ export function createVirtualProgram(input: Record<string, string>, options: Com
         },
     };
 
-    return ts.createProgram(Object.keys(input), options, compilerHost);
+    return ts.createProgram(Object.keys(normalizedFiles), options, compilerHost);
 }
 
 export interface TranspileVirtualProjectResult {

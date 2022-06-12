@@ -76,7 +76,7 @@ export function transformCompoundAssignment(
         context.transformExpression(rhs)
     );
 
-    if (lua.isTableIndexExpression(left) && shouldCacheTableIndexExpressions(left, rightPrecedingStatements)) {
+    if (lua.isTableIndexExpression(left)) {
         // Complex property/element accesses need to cache object/index expressions to avoid repeating side-effects
         // local __obj, __index = ${objExpression}, ${indexExpression};
         const obj = context.createTempNameForLuaExpression(left.table);
@@ -105,6 +105,20 @@ export function transformCompoundAssignment(
                 result: tmp,
             };
         } else {
+            if (isSetterSkippingCompoundAssignmentOperator(operator)) {
+                return {
+                    statements: [
+                        objAndIndexDeclaration,
+                        ...transformSetterSkippingCompoundAssignment(
+                            accessExpression,
+                            operator,
+                            right,
+                            rightPrecedingStatements
+                        ),
+                    ],
+                    result: left,
+                };
+            }
             // local ____tmp = ____obj[____index] ${replacementOperator} ${right};
             // ____obj[____index] = ____tmp;
             // return ____tmp
@@ -145,37 +159,6 @@ export function transformCompoundAssignment(
             rightPrecedingStatements
         );
         return { statements: [tmpDeclaration, ...precedingStatements, ...assignStatements], result: tmpIdentifier };
-    } else if (ts.isPropertyAccessExpression(lhs) || ts.isElementAccessExpression(lhs)) {
-        // Simple property/element access expressions need to cache in temp to avoid double-evaluation
-        // local ____tmp = ${left} ${replacementOperator} ${right};
-        // ${left} = ____tmp;
-        // return ____tmp
-        const tmpIdentifier = context.createTempNameForLuaExpression(left);
-        const [precedingStatements, operatorExpression] = transformBinaryOperation(
-            context,
-            left,
-            right,
-            rightPrecedingStatements,
-            operator,
-            expression
-        );
-        const tmpDeclaration = lua.createVariableDeclarationStatement(tmpIdentifier, operatorExpression);
-
-        if (isSetterSkippingCompoundAssignmentOperator(operator)) {
-            const statements = [
-                tmpDeclaration,
-                ...transformSetterSkippingCompoundAssignment(tmpIdentifier, operator, right, precedingStatements),
-            ];
-            return { statements, result: tmpIdentifier };
-        }
-
-        const assignStatements = transformAssignmentWithRightPrecedingStatements(
-            context,
-            lhs,
-            tmpIdentifier,
-            precedingStatements
-        );
-        return { statements: [tmpDeclaration, ...assignStatements], result: tmpIdentifier };
     } else {
         if (rightPrecedingStatements.length > 0 && isSetterSkippingCompoundAssignmentOperator(operator)) {
             return {

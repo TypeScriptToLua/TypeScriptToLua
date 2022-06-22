@@ -107,8 +107,6 @@ function transformDestructuredAssignmentExpression(
     context: TransformationContext,
     expression: ts.DestructuringAssignment
 ) {
-    const rootIdentifier = context.createTempNameForNode(expression.right);
-
     let [rightPrecedingStatements, right] = transformInPrecedingStatementScope(context, () =>
         context.transformExpression(expression.right)
     );
@@ -117,12 +115,15 @@ function transformDestructuredAssignmentExpression(
         right = wrapInTable(right);
     }
 
-    const statements = [
-        lua.createVariableDeclarationStatement(rootIdentifier, right),
-        ...transformDestructuringAssignment(context, expression, rootIdentifier, rightPrecedingStatements.length > 0),
-    ];
+    const rightExpr = moveToPrecedingTemp(context, right, expression.right);
+    const statements = transformDestructuringAssignment(
+        context,
+        expression,
+        rightExpr,
+        rightPrecedingStatements.length > 0
+    );
 
-    return { statements, result: rootIdentifier };
+    return { statements, result: rightExpr };
 }
 
 export function transformAssignmentExpression(
@@ -152,7 +153,6 @@ export function transformAssignmentExpression(
     }
 
     if (ts.isPropertyAccessExpression(expression.left) || ts.isElementAccessExpression(expression.left)) {
-        const tempVar = context.createTempNameForNode(expression.right);
         const [precedingStatements, right] = transformInPrecedingStatementScope(context, () =>
             context.transformExpression(expression.right)
         );
@@ -163,12 +163,10 @@ export function transformAssignmentExpression(
             precedingStatements.length > 0
         );
 
-        context.addPrecedingStatements([
-            ...precedingStatements,
-            lua.createVariableDeclarationStatement(tempVar, right, expression.right),
-            lua.createAssignmentStatement(left, lua.cloneIdentifier(tempVar), expression.left),
-        ]);
-        return lua.cloneIdentifier(tempVar);
+        context.addPrecedingStatements(precedingStatements);
+        const rightExpr = moveToPrecedingTemp(context, right, expression.right);
+        context.addPrecedingStatements(lua.createAssignmentStatement(left, rightExpr, expression.left));
+        return rightExpr;
     } else {
         // Simple assignment
         // ${left} = ${right}; return ${left}
@@ -232,24 +230,8 @@ export function transformAssignmentStatement(
             return [lua.createAssignmentStatement(left, right, expression)];
         }
 
-        let [rightPrecedingStatements, right] = transformInPrecedingStatementScope(context, () =>
-            context.transformExpression(expression.right)
-        );
-        context.addPrecedingStatements(rightPrecedingStatements);
-        if (isMultiReturnCall(context, expression.right)) {
-            right = wrapInTable(right);
-        }
-
-        const rootIdentifier = context.createTempNameForNode(expression.left);
-        return [
-            lua.createVariableDeclarationStatement(rootIdentifier, right),
-            ...transformDestructuringAssignment(
-                context,
-                expression,
-                rootIdentifier,
-                rightPrecedingStatements.length > 0
-            ),
-        ];
+        const { statements } = transformDestructuredAssignmentExpression(context, expression);
+        return statements;
     } else {
         const [precedingStatements, right] = transformInPrecedingStatementScope(context, () =>
             context.transformExpression(expression.right)

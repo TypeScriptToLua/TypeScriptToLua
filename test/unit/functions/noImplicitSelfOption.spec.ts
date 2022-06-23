@@ -35,6 +35,18 @@ test.each(["\\", "/"])("transpileFiles handles paths with noImplicitSelf and %s 
     }
 });
 
+test("noImplicitSelf does not affect functions in default libraries", () => {
+    util.testFunction`
+        const array = [1, 2, 3];
+        const items = array.filter(x => x > 1); // array.filter is in external library
+        return items;
+    `
+        .setOptions({
+            noImplicitSelf: true,
+        })
+        .expectToMatchJsResult();
+});
+
 test("enables noSelfInFile behavior for methods", () => {
     util.testFunction`
         class FooBar {

@@ -167,9 +167,7 @@ export function transformBindingVariableDeclaration(
 
     if (ts.isObjectBindingPattern(bindingPattern) || bindingPattern.elements.some(isComplexBindingElement)) {
         let table: lua.Expression;
-        if (initializer !== undefined && ts.isIdentifier(initializer)) {
-            table = transformIdentifier(context, initializer);
-        } else if (initializer) {
+        if (initializer) {
             // Contain the expression in a temporary variable
             let expression = context.transformExpression(initializer);
             if (isMultiReturnCall(context, initializer)) {

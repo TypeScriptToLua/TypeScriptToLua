@@ -269,7 +269,8 @@ value1 = obj.value1
 value2 = obj.value2
 obj2 = {value3 = 1, value4 = 2}
 value3 = obj2.value3
-value4 = obj2.value4
+local ____obj2_0 = obj2
+value4 = ____obj2_0.value4
 function fun1(self)
 end
 fun2 = function()

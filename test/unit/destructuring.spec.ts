@@ -74,6 +74,28 @@ test.each(testCases)("in variable declaration (%p)", ({ binding, value }) => {
     `.expectToMatchJsResult();
 });
 
+test.each(testCases)("in variable declaration from const variable (%p)", ({ binding, value }) => {
+    util.testFunction`
+        let ${allBindings};
+        {
+            const v: any = ${value};
+            const ${binding} = v;
+            return { ${allBindings} };
+        }
+   `.expectToMatchJsResult();
+});
+
+test.each(testCases)("in variable declaration from this (%p)", ({ binding, value }) => {
+    util.testFunction`
+        let ${allBindings};
+        function test(this: any) {
+            const ${binding} = this;
+            return { ${allBindings} };
+        }
+        return test.call(${value});
+    `.expectToMatchJsResult();
+});
+
 test.each(testCases)("in exported variable declaration (%p)", ({ binding, value }) => {
     util.testModule`
         export const ${binding} = ${value};
@@ -98,6 +120,28 @@ test.each(assignmentTestCases)("in assignment expression (%p)", ({ binding, valu
         const obj = { prop: false };
         const expressionResult = (${binding} = ${value});
         return { ${allBindings}, obj, expressionResult };
+    `.expectToMatchJsResult();
+});
+
+test.each(assignmentTestCases)("in assignment expression from const variable (%p)", ({ binding, value }) => {
+    util.testFunction`
+        let ${allBindings};
+        const obj = { prop: false };
+        const v: any = ${value};
+        const expressionResult = (${binding} = v);
+        return { ${allBindings}, expressionResult };
+    `.expectToMatchJsResult();
+});
+
+test.each(assignmentTestCases)("in assignment expression from this (%p)", ({ binding, value }) => {
+    util.testFunction`
+        let ${allBindings};
+        const obj = { prop: false };
+        function test(this: any) {
+            const expressionResult = (${binding} = this);
+            return { ${allBindings}, obj, expressionResult };
+        }
+        return test.call(${value});
     `.expectToMatchJsResult();
 });
 

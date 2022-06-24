@@ -11,7 +11,12 @@ export function shouldMoveToTemp(context: TransformationContext, expression: lua
     return (
         !lua.isLiteral(expression) &&
         !(lua.isIdentifier(expression) && expression.symbolId === tempSymbolId) && // Treat generated temps as consts
-        !(tsOriginal && (isConstIdentifier(context, tsOriginal) || isOptionalContinuation(tsOriginal)))
+        !(
+            tsOriginal &&
+            (isConstIdentifier(context, tsOriginal) ||
+                isOptionalContinuation(tsOriginal) ||
+                tsOriginal.kind === ts.SyntaxKind.ThisKeyword)
+        )
     );
 }
 

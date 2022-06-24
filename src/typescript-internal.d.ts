@@ -28,8 +28,6 @@ declare module "typescript" {
 
     function transformJsx(context: TransformationContext): (x: SourceFile) => SourceFile;
 
-    function nodeIsSynthesized(range: TextRange): boolean;
-
     export type OuterExpression =
         | ParenthesizedExpression
         | TypeAssertion

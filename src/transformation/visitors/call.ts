@@ -273,7 +273,7 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
 
     let callPath: lua.Expression;
     let parameters: lua.Expression[];
-    const isContextualCall = isContextualCallExpression(context, node, signature);
+    const isContextualCall = isContextualCallExpression(context, signature);
     if (!isContextualCall) {
         [callPath, parameters] = transformCallAndArguments(context, calledExpression, node.arguments, signature);
     } else {
@@ -296,19 +296,10 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     return wrapResultInTable ? wrapInTable(callExpression) : callExpression;
 };
 
-function isContextualCallExpression(
-    context: TransformationContext,
-    node: ts.CallExpression,
-    signature: ts.Signature | undefined
-): boolean {
+function isContextualCallExpression(context: TransformationContext, signature: ts.Signature | undefined): boolean {
     const declaration = signature?.getDeclaration();
     if (!declaration) {
-        if (ts.nodeIsSynthesized(node.expression)) {
-            // this includes JSX createElement calls
-            // For this we use noImplicitSelf option
-            return !context.options.noImplicitSelf;
-        }
-        return true;
+        return !context.options.noImplicitSelf;
     }
     return getDeclarationContextType(context, declaration) !== ContextType.Void;
 }

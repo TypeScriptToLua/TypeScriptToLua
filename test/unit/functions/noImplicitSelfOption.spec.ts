@@ -79,3 +79,17 @@ test("generates declaration files with @noSelfInFile", () => {
         .ignoreDiagnostics([couldNotResolveRequire.code]) // no foo implementation in the project to create foo.lua
         .expectToHaveNoDiagnostics();
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1292
+test("explicit this parameter respected over noImplicitSelf", () => {
+    util.testModule`
+        function foo(this: unknown, arg: any) {
+            return {self: this, arg};
+        }
+        export const result = foo(1);
+    `
+        .setOptions({
+            noImplicitSelf: true,
+        })
+        .expectToMatchJsResult();
+});

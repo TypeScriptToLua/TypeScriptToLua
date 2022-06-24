@@ -51,3 +51,14 @@ test("@noSelf on parent namespace declaration removes context argument", () => {
         MyNamespace.myMethod();
     `.expectLuaToMatchSnapshot();
 });
+
+// additional coverage for https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1292
+test("explicit this parameter respected over @noSelf", () => {
+    util.testModule`
+        /** @noSelfInFile */
+        function foo(this: unknown, arg: any) {
+            return {self: this, arg};
+        }
+        export const result = foo(1);
+    `.expectToMatchJsResult();
+});

@@ -523,6 +523,34 @@ test("chained then throws", () => {
         ]);
 });
 
+test("empty then resolves", () => {
+    util.testFunction`
+    const { promise, resolve } = defer<string>();
+
+    promise.then().then(v => { log("then2", v) });
+
+    resolve("mydata");
+
+    return allLogs;
+    `
+        .setTsHeader(promiseTestLib)
+        .expectToEqual(["then2", "mydata"]);
+});
+
+test("empty then rejects", () => {
+    util.testFunction`
+    const { promise, reject } = defer<string>();
+
+    promise.then().catch(err => { log("catch", err) });
+
+    reject("my error");
+
+    return allLogs;
+    `
+        .setTsHeader(promiseTestLib)
+        .expectToEqual(["catch", "my error"]);
+});
+
 test("catch on rejected promise immediately calls callback", () => {
     util.testFunction`
         Promise.reject("already rejected").catch(reason => { log(reason); });
@@ -592,7 +620,7 @@ describe("finally behaves same as then/catch", () => {
                 log("final code");
             })
             .catch(reason => {
-                log("handling error", data);
+                log("handling error", reason);
                 log("final code");
             });
     `;

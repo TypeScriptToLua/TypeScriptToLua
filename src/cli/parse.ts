@@ -124,7 +124,7 @@ export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): 
                 continue;
             }
 
-            const { error, value } = readValue(option, rawValue);
+            const { error, value } = readValue(option, rawValue, false);
             if (error) parsedConfigFile.errors.push(error);
             if (parsedConfigFile.options[name] === undefined) parsedConfigFile.options[name] = value;
         }
@@ -164,9 +164,9 @@ function updateParsedCommandLine(parsedCommandLine: ts.ParsedCommandLine, args: 
             if (error) parsedCommandLine.errors.push(error);
             parsedCommandLine.options[option.name] = value;
             if (consumed) {
-                i += 1;
                 // Values of custom options are parsed as a file name, exclude them
-                parsedCommandLine.fileNames = parsedCommandLine.fileNames.filter(f => f !== value);
+                parsedCommandLine.fileNames = parsedCommandLine.fileNames.filter(f => f !== args[i + 1]);
+                i += 1;
             }
         }
     }
@@ -196,7 +196,7 @@ function readCommandLineArgument(option: CommandLineOption, value: any): Command
         };
     }
 
-    return { ...readValue(option, value), consumed: true };
+    return { ...readValue(option, value, true), consumed: true };
 }
 
 interface ReadValueResult {
@@ -204,7 +204,7 @@ interface ReadValueResult {
     value: any;
 }
 
-function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
+function readValue(option: CommandLineOption, value: unknown, isFromCli: boolean): ReadValueResult {
     if (value === null) return { value };
 
     switch (option.type) {
@@ -221,11 +221,19 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
             return { value };
         }
         case "array": {
-            if (!Array.isArray(value)) {
+            const isInvalidNonCliValue = !isFromCli && !Array.isArray(value);
+            const isInvalidCliValue = isFromCli && typeof value !== "string";
+
+            if (isInvalidNonCliValue || isInvalidCliValue) {
                 return {
                     value: undefined,
                     error: cliDiagnostics.compilerOptionRequiresAValueOfType(option.name, option.type),
                 };
+            }
+
+            if (isFromCli && typeof value === "string") {
+                const array = value.split(",");
+                return { value: array };
             }
 
             return { value };

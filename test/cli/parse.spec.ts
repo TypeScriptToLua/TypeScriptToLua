@@ -125,6 +125,8 @@ describe("command line", () => {
 
             ["extension", ".lua", { extension: ".lua" }],
             ["extension", "scar", { extension: "scar" }],
+
+            ["noResolvePaths", "path1,path2", { noResolvePaths: ["path1", "path2"] }],
         ])("--%s %s", (optionName, value, expected) => {
             const result = tstl.parseCommandLine([`--${optionName}`, value]);
 

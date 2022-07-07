@@ -18,7 +18,7 @@ interface CommandLineOptionOfEnum extends CommandLineOptionBase {
 }
 
 interface CommandLineOptionOfPrimitive extends CommandLineOptionBase {
-    type: "boolean" | "string" | "array-of-objects" | "array";
+    type: "boolean" | "string" | "json-array-of-objects" | "array";
 }
 
 type CommandLineOption = CommandLineOptionOfEnum | CommandLineOptionOfPrimitive;
@@ -82,7 +82,7 @@ export const optionDeclarations: CommandLineOption[] = [
     {
         name: "luaPlugins",
         description: "List of TypeScriptToLua plugins.",
-        type: "array-of-objects",
+        type: "json-array-of-objects",
     },
     {
         name: "tstlVerbose",
@@ -220,7 +220,7 @@ function readValue(option: CommandLineOption, value: unknown, isFromCli: boolean
             return { value };
         }
         case "array":
-        case "array-of-objects": {
+        case "json-array-of-objects": {
             const isInvalidNonCliValue = !isFromCli && !Array.isArray(value);
             const isInvalidCliValue = isFromCli && typeof value !== "string";
 
@@ -231,26 +231,32 @@ function readValue(option: CommandLineOption, value: unknown, isFromCli: boolean
                 };
             }
 
-            if (isFromCli && typeof value === "string") {
-                if (option.type === "array-of-objects") {
-                    try {
-                        const objects = JSON.parse(value);
-                        return { value: objects };
-                    } catch (e) {
-                        if (!(e instanceof SyntaxError)) throw e;
+            const shouldParseValue = isFromCli && typeof value === "string";
+            if (!shouldParseValue) return { value };
 
-                        return {
-                            value: undefined,
-                            error: cliDiagnostics.compilerOptionCouldNotParseJson(option.name, e.message),
-                        };
-                    }
-                }
-
+            if (option.type === "array") {
                 const array = value.split(",");
                 return { value: array };
             }
 
-            return { value };
+            try {
+                const objects = JSON.parse(value);
+                if (!Array.isArray(objects)) {
+                    return {
+                        value: undefined,
+                        error: cliDiagnostics.compilerOptionRequiresAValueOfType(option.name, option.type),
+                    };
+                }
+
+                return { value: objects };
+            } catch (e) {
+                if (!(e instanceof SyntaxError)) throw e;
+
+                return {
+                    value: undefined,
+                    error: cliDiagnostics.compilerOptionCouldNotParseJson(option.name, e.message),
+                };
+            }
         }
         case "enum": {
             if (typeof value !== "string") {

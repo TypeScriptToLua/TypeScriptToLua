@@ -57,9 +57,11 @@ describe("command line", () => {
 
             expect(result.errors).toHaveDiagnostics();
         });
+    });
 
-        test("should error on invalid value", () => {
-            const result = tstl.parseCommandLine(["--luaPlugins", "{"]);
+    describe("array-of-objects options", () => {
+        test.each([["{"], ["{}"], ["0"], ["''"]])("should error on invalid value (%s)", value => {
+            const result = tstl.parseCommandLine(["--luaPlugins", value]);
 
             expect(result.errors).toHaveDiagnostics();
         });

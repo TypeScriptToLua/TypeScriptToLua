@@ -93,3 +93,23 @@ test("JSDoc is copied on a variable", () => {
     expect(lua).toBeDefined();
     expect(lua).toContain("This is a variable comment.");
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1299
+test("tsdoc comment does not cause a diagnostic (#1299)", () => {
+    util.testModule`
+        interface LuaBootstrap {
+            /**
+             * @remarks
+             *
+             * Links can point to a URL: {@link https://github.com/microsoft/tsdoc}
+             */
+            on_init(f: (() => void) ): void
+        }
+
+        const script : LuaBootstrap = {
+            on_init: (x) => x()
+        }
+
+        script.on_init(() => {})
+    `.expectToHaveNoDiagnostics();
+});

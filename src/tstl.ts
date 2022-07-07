@@ -102,12 +102,11 @@ function performCompilation(
         configFileParsingDiagnostics,
     });
 
+    const preEmitDiagnostics = ts.getPreEmitDiagnostics(program);
+
     const { diagnostics: transpileDiagnostics, emitSkipped } = new tstl.Transpiler().emit({ program });
 
-    const diagnostics = ts.sortAndDeduplicateDiagnostics([
-        ...ts.getPreEmitDiagnostics(program),
-        ...transpileDiagnostics,
-    ]);
+    const diagnostics = ts.sortAndDeduplicateDiagnostics([...preEmitDiagnostics, ...transpileDiagnostics]);
 
     diagnostics.forEach(reportDiagnostic);
     const exitCode =

@@ -232,11 +232,9 @@ function readValue(option: CommandLineOption, value: unknown, isFromCli: boolean
             }
 
             if (isFromCli && typeof value === "string") {
-                const array = value.split(",");
-
                 if (option.type === "array-of-objects") {
                     try {
-                        const objects = array.map(s => JSON.parse(s));
+                        const objects = JSON.parse(value);
                         return { value: objects };
                     } catch (e) {
                         if (!(e instanceof SyntaxError)) throw e;
@@ -248,6 +246,7 @@ function readValue(option: CommandLineOption, value: unknown, isFromCli: boolean
                     }
                 }
 
+                const array = value.split(",");
                 return { value: array };
             }
 

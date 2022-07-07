@@ -132,8 +132,8 @@ describe("command line", () => {
             ["extension", ".lua", { extension: ".lua" }],
             ["extension", "scar", { extension: "scar" }],
 
-            ["luaPlugins", '{ "name": "a" }', { luaPlugins: [{ name: "a" }] }],
-            ["luaPlugins", '{ "name": "a" },{ "name": "b" }', { luaPlugins: [{ name: "a" }, { name: "b" }] }],
+            ["luaPlugins", '[{ "name": "a" }]', { luaPlugins: [{ name: "a" }] }],
+            ["luaPlugins", '[{ "name": "a" },{ "name": "b" }]', { luaPlugins: [{ name: "a" }, { name: "b" }] }],
 
             ["noResolvePaths", "path1", { noResolvePaths: ["path1"] }],
             ["noResolvePaths", "path1,path2", { noResolvePaths: ["path1", "path2"] }],

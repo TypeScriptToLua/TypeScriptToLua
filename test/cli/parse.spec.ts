@@ -57,6 +57,12 @@ describe("command line", () => {
 
             expect(result.errors).toHaveDiagnostics();
         });
+
+        test("should error on invalid value", () => {
+            const result = tstl.parseCommandLine(["--luaPlugins", "{"]);
+
+            expect(result.errors).toHaveDiagnostics();
+        });
     });
 
     describe("boolean options", () => {
@@ -126,6 +132,10 @@ describe("command line", () => {
             ["extension", ".lua", { extension: ".lua" }],
             ["extension", "scar", { extension: "scar" }],
 
+            ["luaPlugins", '{ "name": "a" }', { luaPlugins: [{ name: "a" }] }],
+            ["luaPlugins", '{ "name": "a" },{ "name": "b" }', { luaPlugins: [{ name: "a" }, { name: "b" }] }],
+
+            ["noResolvePaths", "path1", { noResolvePaths: ["path1"] }],
             ["noResolvePaths", "path1,path2", { noResolvePaths: ["path1", "path2"] }],
         ])("--%s %s", (optionName, value, expected) => {
             const result = tstl.parseCommandLine([`--${optionName}`, value]);

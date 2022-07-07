@@ -18,7 +18,7 @@ interface CommandLineOptionOfEnum extends CommandLineOptionBase {
 }
 
 interface CommandLineOptionOfPrimitive extends CommandLineOptionBase {
-    type: "boolean" | "string" | "object" | "array";
+    type: "boolean" | "string" | "array-of-objects" | "array";
 }
 
 type CommandLineOption = CommandLineOptionOfEnum | CommandLineOptionOfPrimitive;
@@ -82,7 +82,7 @@ export const optionDeclarations: CommandLineOption[] = [
     {
         name: "luaPlugins",
         description: "List of TypeScriptToLua plugins.",
-        type: "object",
+        type: "array-of-objects",
     },
     {
         name: "tstlVerbose",
@@ -209,8 +209,7 @@ function readValue(option: CommandLineOption, value: unknown, isFromCli: boolean
 
     switch (option.type) {
         case "boolean":
-        case "string":
-        case "object": {
+        case "string": {
             if (typeof value !== option.type) {
                 return {
                     value: undefined,
@@ -220,7 +219,8 @@ function readValue(option: CommandLineOption, value: unknown, isFromCli: boolean
 
             return { value };
         }
-        case "array": {
+        case "array":
+        case "array-of-objects": {
             const isInvalidNonCliValue = !isFromCli && !Array.isArray(value);
             const isInvalidCliValue = isFromCli && typeof value !== "string";
 
@@ -233,6 +233,21 @@ function readValue(option: CommandLineOption, value: unknown, isFromCli: boolean
 
             if (isFromCli && typeof value === "string") {
                 const array = value.split(",");
+
+                if (option.type === "array-of-objects") {
+                    try {
+                        const objects = array.map(s => JSON.parse(s));
+                        return { value: objects };
+                    } catch (e) {
+                        if (!(e instanceof SyntaxError)) throw e;
+
+                        return {
+                            value: undefined,
+                            error: cliDiagnostics.compilerOptionCouldNotParseJson(option.name, e.message),
+                        };
+                    }
+                }
+
                 return { value: array };
             }
 

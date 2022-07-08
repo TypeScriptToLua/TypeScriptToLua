@@ -223,6 +223,7 @@ export abstract class TestBuilder {
     @memoize
     public getLuaResult(): tstl.TranspileVirtualProjectResult {
         const program = this.getProgram();
+        const preEmitDiagnostics = ts.getPreEmitDiagnostics(program);
         const collector = createEmitOutputCollector();
         const { diagnostics: transpileDiagnostics } = new tstl.Transpiler({ emitHost: this.getEmitHost() }).emit({
             program,
@@ -230,10 +231,7 @@ export abstract class TestBuilder {
             writeFile: collector.writeFile,
         });
 
-        const diagnostics = ts.sortAndDeduplicateDiagnostics([
-            ...ts.getPreEmitDiagnostics(program),
-            ...transpileDiagnostics,
-        ]);
+        const diagnostics = ts.sortAndDeduplicateDiagnostics([...preEmitDiagnostics, ...transpileDiagnostics]);
 
         return { diagnostics: [...diagnostics], transpiledFiles: collector.files };
     }

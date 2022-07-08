@@ -124,7 +124,7 @@ export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): 
                 continue;
             }
 
-            const { error, value } = readValue(option, rawValue, false);
+            const { error, value } = readValue(option, rawValue, OptionSource.TsConfig);
             if (error) parsedConfigFile.errors.push(error);
             if (parsedConfigFile.options[name] === undefined) parsedConfigFile.options[name] = value;
         }
@@ -196,7 +196,12 @@ function readCommandLineArgument(option: CommandLineOption, value: any): Command
         };
     }
 
-    return { ...readValue(option, value, true), consumed: true };
+    return { ...readValue(option, value, OptionSource.CommandLine), consumed: true };
+}
+
+enum OptionSource {
+    CommandLine,
+    TsConfig,
 }
 
 interface ReadValueResult {
@@ -204,7 +209,7 @@ interface ReadValueResult {
     value: any;
 }
 
-function readValue(option: CommandLineOption, value: unknown, isFromCli: boolean): ReadValueResult {
+function readValue(option: CommandLineOption, value: unknown, source: OptionSource): ReadValueResult {
     if (value === null) return { value };
 
     switch (option.type) {
@@ -221,8 +226,8 @@ function readValue(option: CommandLineOption, value: unknown, isFromCli: boolean
         }
         case "array":
         case "json-array-of-objects": {
-            const isInvalidNonCliValue = !isFromCli && !Array.isArray(value);
-            const isInvalidCliValue = isFromCli && typeof value !== "string";
+            const isInvalidNonCliValue = source === OptionSource.TsConfig && !Array.isArray(value);
+            const isInvalidCliValue = source === OptionSource.CommandLine && typeof value !== "string";
 
             if (isInvalidNonCliValue || isInvalidCliValue) {
                 return {
@@ -231,7 +236,7 @@ function readValue(option: CommandLineOption, value: unknown, isFromCli: boolean
                 };
             }
 
-            const shouldParseValue = isFromCli && typeof value === "string";
+            const shouldParseValue = source === OptionSource.CommandLine && typeof value === "string";
             if (!shouldParseValue) return { value };
 
             if (option.type === "array") {

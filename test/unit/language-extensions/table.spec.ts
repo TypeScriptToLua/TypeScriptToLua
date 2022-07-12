@@ -332,6 +332,18 @@ describe("LuaTable extension interface", () => {
             .expectToEqual({ baz: 5 });
     });
 
+    test("table add", () => {
+        util.testFunction`
+            const tbl: LuaTable<string, true> & {
+                add: LuaTableAddMethod<string>
+            } = {} as any
+            tbl.add("foo");
+            return tbl
+        `
+            .withLanguageExtensions()
+            .expectToEqual({ foo: true });
+    });
+
     test.each(['new LuaTable().get("foo");', 'new LuaTable().set("foo", "bar");'])(
         "table immediate access (%p)",
         statement => {

@@ -89,6 +89,13 @@ declare type LuaPairsIterable<TKey extends AnyNotNil, TValue> = Iterable<[TKey, 
     LuaExtension<"__luaPairsIterableBrand">;
 
 /**
+ * Represents an object that can be iterated with pairs(), where only the key value is used.
+ *
+ * @param TKey The type of the key returned each iteration.
+ */
+declare type LuaPairsKeyIterable<TKey extends AnyNotNil> = Iterable<TKey> & LuaExtension<"__luaPairsKeyIterableBRand">;
+
+/**
  * Calls to functions with this type are translated to `left + right`.
  * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
  *
@@ -495,10 +502,27 @@ declare type LuaTableSet<TTable extends AnyTable, TKey extends AnyNotNil, TValue
  * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
  *
  * @param TKey The type of the key to use to access the table.
- * @param TValue The type of the value to assign to the table.
  */
 declare type LuaTableSetMethod<TKey extends AnyNotNil, TValue> = ((key: TKey, value: TValue) => void) &
     LuaExtension<"__luaTableSetMethodBrand">;
+
+/**
+ * Calls to functions with this type are translated to `table[key] = true`.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TTable The type to access as a Lua table.
+ * @param TKey The type of the key to use to access the table.
+ */
+declare type LuaTableAdd<TTable extends AnyTable, TKey extends AnyNotNil> = ((table: TTable, key: TKey) => void) &
+    LuaExtension<"__luaTableAddBrand">;
+
+/**
+ * Calls to methods with this type are translated to `table[key] = true`, where `table` is the object with the method.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ * @param TKey The type of the key to use to access the table.
+ */
+declare type LuaTableAddMethod<TKey extends AnyNotNil> = ((key: TKey) => void) &
+    LuaExtension<"__luaTableAddMethodBrand">;
 
 /**
  * Calls to functions with this type are translated to `table[key] ~= nil`.

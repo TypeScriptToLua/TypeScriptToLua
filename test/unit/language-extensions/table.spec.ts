@@ -334,9 +334,7 @@ describe("LuaTable extension interface", () => {
 
     test("table add", () => {
         util.testFunction`
-            const tbl: LuaTable<string, true> & {
-                add: LuaTableAddMethod<string>
-            } = {} as any
+            const tbl = new LuaSet<string>()
             tbl.add("foo");
             return tbl
         `

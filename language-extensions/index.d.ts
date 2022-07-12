@@ -93,7 +93,7 @@ declare type LuaPairsIterable<TKey extends AnyNotNil, TValue> = Iterable<[TKey, 
  *
  * @param TKey The type of the key returned each iteration.
  */
-declare type LuaPairsKeyIterable<TKey extends AnyNotNil> = Iterable<TKey> & LuaExtension<"__luaPairsKeyIterableBRand">;
+declare type LuaPairsKeyIterable<TKey extends AnyNotNil> = Iterable<TKey> & LuaExtension<"__luaPairsKeyIterableBrand">;
 
 /**
  * Calls to functions with this type are translated to `left + right`.
@@ -598,3 +598,69 @@ declare type LuaTableConstructor = (new <TKey extends AnyNotNil = AnyNotNil, TVa
  * @param TValue The type of the values stored in the table.
  */
 declare const LuaTable: LuaTableConstructor;
+
+/**
+ * A convenience type for working directly with a Lua table, used as a map.
+ *
+ * This differs from LuaTable in that the `get` method may return `nil`.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ * @param K The type of the keys used to access the table.
+ * @param V The type of the values stored in the table.
+ */
+declare interface LuaMap<K extends AnyNotNil = AnyNotNil, V = any> extends LuaPairsIterable<K, V> {
+    get: LuaTableGetMethod<K, V | undefined>;
+    set: LuaTableSetMethod<K, V>;
+    has: LuaTableHasMethod<K>;
+    delete: LuaTableDeleteMethod<K>;
+}
+
+/**
+ * A convenience type for working directly with a Lua table, used as a map.
+ *
+ * This differs from LuaTable in that the `get` method may return `nil`.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ * @param K The type of the keys used to access the table.
+ * @param V The type of the values stored in the table.
+ */
+declare const LuaMap: (new <K extends AnyNotNil = AnyNotNil, V = any>() => LuaMap<K, V>) &
+    LuaExtension<"__luaTableNewBrand">;
+
+/**
+ * Readonly version of {@link LuaMap}.
+ *
+ * @param K The type of the keys used to access the table.
+ * @param V The type of the values stored in the table.
+ */
+declare interface LuaReadonlyMap<K extends AnyNotNil = AnyNotNil, V = any> extends LuaPairsIterable<K, V> {
+    get: LuaTableGetMethod<K, V>;
+    has: LuaTableHasMethod<K>;
+}
+
+/**
+ * A convenience type for working directly with a Lua table, used as a set.
+ *
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ * @param T The type of the keys used to access the table.
+ */
+declare interface LuaSet<T extends AnyNotNil = AnyNotNil> extends LuaPairsKeyIterable<T> {
+    add: LuaTableAddMethod<T>;
+    has: LuaTableHasMethod<T>;
+    delete: LuaTableDeleteMethod<T>;
+}
+
+/**
+ * A convenience type for working directly with a Lua table, used as a set.Sl
+ *
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ * @param T The type of the keys used to access the table.
+ */
+declare const LuaSet: (new <T extends AnyNotNil = AnyNotNil>() => LuaSet<T>) & LuaExtension<"__luaTableNewBrand">;
+
+/**
+ * Readonly version of {@link LuaSet}.
+ *
+ * @param T The type of the keys used to access the table.
+ */
+declare interface LuaReadonlySet<T extends AnyNotNil = AnyNotNil> extends LuaPairsKeyIterable<T> {
+    has: LuaTableHasMethod<T>;
+}

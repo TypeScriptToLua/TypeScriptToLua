@@ -133,7 +133,6 @@ test("pairs key iterable", () => {
         return results;
     `
         .withLanguageExtensions()
-        .debug()
         .expectToEqual({ a1: true, b1: true, c1: true });
 });
 

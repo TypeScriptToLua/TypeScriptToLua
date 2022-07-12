@@ -4,7 +4,7 @@ import { cast } from "../../../utils";
 import { TransformationContext } from "../../context";
 import { invalidPairsIterableWithoutDestructuring } from "../../utils/diagnostics";
 import * as extensions from "../../utils/language-extensions";
-import { getVariableDeclarationBinding } from "../loops/utils";
+import { getVariableDeclarationBinding, transformForInitializer } from "../loops/utils";
 import { transformArrayBindingElement } from "../variable-declaration";
 
 function isPairsIterableType(type: ts.Type): boolean {
@@ -14,6 +14,15 @@ function isPairsIterableType(type: ts.Type): boolean {
 export function isPairsIterableExpression(context: TransformationContext, expression: ts.Expression): boolean {
     const type = context.checker.getTypeAtLocation(expression);
     return isPairsIterableType(type);
+}
+
+function isPairsKeyIterableType(type: ts.Type): boolean {
+    return extensions.isExtensionType(type, extensions.ExtensionKind.PairsKeyIterableType);
+}
+
+export function isPairsKeyIterableExpression(context: TransformationContext, expression: ts.Expression): boolean {
+    const type = context.checker.getTypeAtLocation(expression);
+    return isPairsKeyIterableType(type);
 }
 
 export function transformForOfPairsIterableStatement(
@@ -60,4 +69,16 @@ export function transformForOfPairsIterableStatement(
     }
 
     return lua.createForInStatement(block, identifiers, [pairsCall], statement);
+}
+
+export function transformForOfPairsKeyIterableStatement(
+    context: TransformationContext,
+    statement: ts.ForOfStatement,
+    block: lua.Block
+): lua.Statement {
+    const pairsCall = lua.createCallExpression(lua.createIdentifier("pairs"), [
+        context.transformExpression(statement.expression),
+    ]);
+    const identifier = transformForInitializer(context, statement.initializer, block);
+    return lua.createForInStatement(block, [identifier], [pairsCall], statement);
 }

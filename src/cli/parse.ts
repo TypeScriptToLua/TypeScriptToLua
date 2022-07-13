@@ -99,6 +99,11 @@ export const optionDeclarations: CommandLineOption[] = [
         description: "Always allow try/catch in async/await functions for Lua 5.1.",
         type: "boolean",
     },
+    {
+        name: "measurePerformance",
+        description: "Measure performance of the tstl compiler.",
+        type: "boolean",
+    },
 ];
 
 export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): ParsedCommandLine {

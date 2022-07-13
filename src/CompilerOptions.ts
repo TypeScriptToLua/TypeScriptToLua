@@ -37,6 +37,7 @@ export interface TypeScriptToLuaOptions {
     sourceMapTraceback?: boolean;
     tstlVerbose?: boolean;
     lua51AllowTryCatchInAsyncAwait?: boolean;
+    measurePerformance?: boolean;
 }
 
 export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> &

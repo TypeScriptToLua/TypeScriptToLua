@@ -1,9 +1,9 @@
 import * as ts from "typescript";
 import { CompilerOptions, LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
-import { assert, castArray } from "../../utils";
+import { assert, castArrayFlatMap } from "../../utils";
 import { unsupportedNodeKind } from "../utils/diagnostics";
-import { unwrapVisitorResult } from "../utils/lua-ast";
+import { unwrapVisitorResult, OneToManyVisitorResult } from "../utils/lua-ast";
 import { createSafeName } from "../utils/safe-names";
 import { ExpressionLikeNode, ObjectVisitor, StatementLikeNode, VisitorMap } from "./visitors";
 
@@ -49,80 +49,92 @@ export class TransformationContext {
         this.resolver = this.checker.getEmitResolver(originalSourceFile);
     }
 
-    private currentNodeVisitors: Array<ObjectVisitor<ts.Node>> = [];
+    private currentNodeVisitors: ReadonlyArray<ObjectVisitor<ts.Node>> = [];
+    private currentNodeVisitorsIndex = 0;
+
     private nextTempId = 0;
 
-    public transformNode(node: ts.Node): lua.Node[];
+    public transformNode(node: ts.Node): lua.Node[] {
+        return unwrapVisitorResult(this.transformNodeRaw(node));
+    }
+
     /** @internal */
-    // eslint-disable-next-line @typescript-eslint/unified-signatures
-    public transformNode(node: ts.Node, isExpression?: boolean): lua.Node[];
-    public transformNode(node: ts.Node, isExpression?: boolean): lua.Node[] {
+    public transformNodeRaw(node: ts.Node, isExpression?: boolean) {
         // TODO: Move to visitors?
         if (node.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.DeclareKeyword)) {
             return [];
         }
 
         const nodeVisitors = this.visitorMap.get(node.kind);
-        if (!nodeVisitors || nodeVisitors.length === 0) {
+        if (!nodeVisitors) {
             this.diagnostics.push(unsupportedNodeKind(node, node.kind));
             return isExpression ? [lua.createNilLiteral()] : [];
         }
 
         const previousNodeVisitors = this.currentNodeVisitors;
-        this.currentNodeVisitors = [...nodeVisitors];
+        const previousNodeVisitorsIndex = this.currentNodeVisitorsIndex;
+        this.currentNodeVisitors = nodeVisitors;
+        this.currentNodeVisitorsIndex = nodeVisitors.length - 1;
 
-        const visitor = this.currentNodeVisitors.pop()!;
-        const result = unwrapVisitorResult(visitor.transform(node, this));
+        const visitor = this.currentNodeVisitors[this.currentNodeVisitorsIndex];
+        const result = visitor.transform(node, this);
 
         this.currentNodeVisitors = previousNodeVisitors;
+        this.currentNodeVisitorsIndex = previousNodeVisitorsIndex;
 
         return result;
     }
 
     public superTransformNode(node: ts.Node): lua.Node[] {
-        if (this.currentNodeVisitors.length === 0) {
+        return unwrapVisitorResult(this.doSuperTransformNode(node));
+    }
+
+    private doSuperTransformNode(node: ts.Node): OneToManyVisitorResult<lua.Node> {
+        if (--this.currentNodeVisitorsIndex < 0) {
             throw new Error(`There is no super transform for ${ts.SyntaxKind[node.kind]} visitor`);
         }
 
-        const visitor = this.currentNodeVisitors.pop()!;
+        const visitor = this.currentNodeVisitors[this.currentNodeVisitorsIndex];
         return unwrapVisitorResult(visitor.transform(node, this));
     }
 
     public transformExpression(node: ExpressionLikeNode): lua.Expression {
-        const [result] = this.transformNode(node, true);
+        const result = this.transformNodeRaw(node, true);
+        return this.assertIsExpression(node, result);
+    }
 
+    private assertIsExpression(node: ExpressionLikeNode, result: OneToManyVisitorResult<lua.Node>): lua.Expression {
         if (result === undefined) {
             throw new Error(`Expression visitor for node type ${ts.SyntaxKind[node.kind]} did not return any result.`);
         }
-
+        if (Array.isArray(result)) {
+            return result[0] as lua.Expression;
+        }
         return result as lua.Expression;
     }
 
     public superTransformExpression(node: ExpressionLikeNode): lua.Expression {
-        const [result] = this.superTransformNode(node);
-
-        if (result === undefined) {
-            throw new Error(`Expression visitor for node type ${ts.SyntaxKind[node.kind]} did not return any result.`);
-        }
-
-        return result as lua.Expression;
+        const result = this.doSuperTransformNode(node);
+        return this.assertIsExpression(node, result);
     }
 
     public transformStatements(node: StatementLikeNode | readonly StatementLikeNode[]): lua.Statement[] {
-        return castArray(node).flatMap(n => {
+        return castArrayFlatMap(node, n => {
             this.pushPrecedingStatements();
             const statements = this.transformNode(n) as lua.Statement[];
-            statements.unshift(...this.popPrecedingStatements());
-            return statements;
+            const result = this.popPrecedingStatements();
+            result.push(...statements);
+            return result;
         });
     }
 
     public superTransformStatements(node: StatementLikeNode | readonly StatementLikeNode[]): lua.Statement[] {
-        return castArray(node).flatMap(n => {
+        return castArrayFlatMap(node, n => {
             this.pushPrecedingStatements();
             const statements = this.superTransformNode(n) as lua.Statement[];
-            statements.unshift(...this.popPrecedingStatements());
-            return statements;
+            const result = this.popPrecedingStatements();
+            result.push(...statements);
+            return result;
         });
     }
 
@@ -139,19 +151,21 @@ export class TransformationContext {
     public addPrecedingStatements(statements: lua.Statement | lua.Statement[]) {
         const precedingStatements = this.precedingStatementsStack[this.precedingStatementsStack.length - 1];
         assert(precedingStatements);
-        if (!Array.isArray(statements)) {
-            statements = [statements];
+        if (Array.isArray(statements)) {
+            precedingStatements.push(...statements);
+        } else {
+            precedingStatements.push(statements);
         }
-        precedingStatements.push(...statements);
     }
 
     public prependPrecedingStatements(statements: lua.Statement | lua.Statement[]) {
         const precedingStatements = this.precedingStatementsStack[this.precedingStatementsStack.length - 1];
         assert(precedingStatements);
-        if (!Array.isArray(statements)) {
-            statements = [statements];
+        if (Array.isArray(statements)) {
+            precedingStatements.unshift(...statements);
+        } else {
+            precedingStatements.unshift(statements);
         }
-        precedingStatements.unshift(...statements);
     }
 
     public createTempName(prefix = "temp") {

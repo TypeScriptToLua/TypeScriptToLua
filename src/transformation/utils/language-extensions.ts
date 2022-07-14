@@ -117,8 +117,8 @@ const extensionKindToTypeBrand: { [T in ExtensionKind]: string } = {
     [ExtensionKind.TableHasMethodType]: "__luaTableHasMethodBrand",
     [ExtensionKind.TableSetType]: "__luaTableSetBrand",
     [ExtensionKind.TableSetMethodType]: "__luaTableSetMethodBrand",
-    [ExtensionKind.TableAddType]: "__luaTableAddBrand",
-    [ExtensionKind.TableAddMethodType]: "__luaTableAddMethodBrand",
+    [ExtensionKind.TableAddType]: "__luaTableAddKeyBrand",
+    [ExtensionKind.TableAddMethodType]: "__luaTableAddKeyMethodBrand",
 };
 
 export function isExtensionType(type: ts.Type, extensionKind: ExtensionKind): boolean {

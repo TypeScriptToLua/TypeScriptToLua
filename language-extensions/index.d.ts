@@ -514,16 +514,16 @@ declare type LuaTableSetMethod<TKey extends AnyNotNil, TValue> = ((key: TKey, va
  * @param TTable The type to access as a Lua table.
  * @param TKey The type of the key to use to access the table.
  */
-declare type LuaTableAdd<TTable extends AnyTable, TKey extends AnyNotNil> = ((table: TTable, key: TKey) => void) &
-    LuaExtension<"__luaTableAddBrand">;
+declare type LuaTableAddKey<TTable extends AnyTable, TKey extends AnyNotNil> = ((table: TTable, key: TKey) => void) &
+    LuaExtension<"__luaTableAddKeyBrand">;
 
 /**
  * Calls to methods with this type are translated to `table[key] = true`, where `table` is the object with the method.
  * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
  * @param TKey The type of the key to use to access the table.
  */
-declare type LuaTableAddMethod<TKey extends AnyNotNil> = ((key: TKey) => void) &
-    LuaExtension<"__luaTableAddMethodBrand">;
+declare type LuaTableAddKeyMethod<TKey extends AnyNotNil> = ((key: TKey) => void) &
+    LuaExtension<"__luaTableAddKeyMethodBrand">;
 
 /**
  * Calls to functions with this type are translated to `table[key] ~= nil`.
@@ -644,7 +644,7 @@ declare interface LuaReadonlyMap<K extends AnyNotNil = AnyNotNil, V = any> exten
  * @param T The type of the keys used to access the table.
  */
 declare interface LuaSet<T extends AnyNotNil = AnyNotNil> extends LuaPairsKeyIterable<T> {
-    add: LuaTableAddMethod<T>;
+    add: LuaTableAddKeyMethod<T>;
     has: LuaTableHasMethod<T>;
     delete: LuaTableDeleteMethod<T>;
 }

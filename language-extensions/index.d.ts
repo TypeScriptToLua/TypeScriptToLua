@@ -502,6 +502,7 @@ declare type LuaTableSet<TTable extends AnyTable, TKey extends AnyNotNil, TValue
  * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
  *
  * @param TKey The type of the key to use to access the table.
+ * @param TValue The type of the value to assign to the table.
  */
 declare type LuaTableSetMethod<TKey extends AnyNotNil, TValue> = ((key: TKey, value: TValue) => void) &
     LuaExtension<"__luaTableSetMethodBrand">;
@@ -649,7 +650,7 @@ declare interface LuaSet<T extends AnyNotNil = AnyNotNil> extends LuaPairsKeyIte
 }
 
 /**
- * A convenience type for working directly with a Lua table, used as a set.Sl
+ * A convenience type for working directly with a Lua table, used as a set.
  *
  * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
  * @param T The type of the keys used to access the table.

@@ -8,6 +8,7 @@ export enum ExtensionKind {
     VarargConstant = "VarargConstant",
     IterableType = "IterableType",
     PairsIterableType = "PairsIterableType",
+    PairsKeyIterableType = "PairsKeyIterableType",
     AdditionOperatorType = "AdditionOperatorType",
     AdditionOperatorMethodType = "AdditionOperatorMethodType",
     SubtractionOperatorType = "SubtractionOperatorType",
@@ -53,6 +54,8 @@ export enum ExtensionKind {
     TableHasMethodType = "TableHasMethodType",
     TableSetType = "TableSetType",
     TableSetMethodType = "TableSetMethodType",
+    TableAddType = "TableAddType",
+    TableAddMethodType = "TableAddMethodType",
 }
 
 const extensionKindToValueName: { [T in ExtensionKind]?: string } = {
@@ -68,6 +71,7 @@ const extensionKindToTypeBrand: { [T in ExtensionKind]: string } = {
     [ExtensionKind.VarargConstant]: "__luaVarargConstantBrand",
     [ExtensionKind.IterableType]: "__luaIterableBrand",
     [ExtensionKind.PairsIterableType]: "__luaPairsIterableBrand",
+    [ExtensionKind.PairsKeyIterableType]: "__luaPairsKeyIterableBrand",
     [ExtensionKind.AdditionOperatorType]: "__luaAdditionBrand",
     [ExtensionKind.AdditionOperatorMethodType]: "__luaAdditionMethodBrand",
     [ExtensionKind.SubtractionOperatorType]: "__luaSubtractionBrand",
@@ -113,6 +117,8 @@ const extensionKindToTypeBrand: { [T in ExtensionKind]: string } = {
     [ExtensionKind.TableHasMethodType]: "__luaTableHasMethodBrand",
     [ExtensionKind.TableSetType]: "__luaTableSetBrand",
     [ExtensionKind.TableSetMethodType]: "__luaTableSetMethodBrand",
+    [ExtensionKind.TableAddType]: "__luaTableAddKeyBrand",
+    [ExtensionKind.TableAddMethodType]: "__luaTableAddKeyMethodBrand",
 };
 
 export function isExtensionType(type: ts.Type, extensionKind: ExtensionKind): boolean {

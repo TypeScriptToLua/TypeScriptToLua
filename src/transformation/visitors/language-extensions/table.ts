@@ -15,6 +15,8 @@ const tableCallExtensions = [
     extensions.ExtensionKind.TableHasMethodType,
     extensions.ExtensionKind.TableSetType,
     extensions.ExtensionKind.TableSetMethodType,
+    extensions.ExtensionKind.TableAddType,
+    extensions.ExtensionKind.TableAddMethodType,
 ];
 
 const tableExtensions = [extensions.ExtensionKind.TableNewType, ...tableCallExtensions];
@@ -76,6 +78,13 @@ export function transformTableExtensionCall(
         extensionType === extensions.ExtensionKind.TableSetMethodType
     ) {
         return transformTableSetExpression(context, node, extensionType);
+    }
+
+    if (
+        extensionType === extensions.ExtensionKind.TableAddType ||
+        extensionType === extensions.ExtensionKind.TableAddMethodType
+    ) {
+        return transformTableAddExpression(context, node, extensionType);
     }
 }
 
@@ -169,6 +178,32 @@ function transformTableSetExpression(
     const [table, accessExpression, value] = transformExpressionList(context, args);
     context.addPrecedingStatements(
         lua.createAssignmentStatement(lua.createTableIndexExpression(table, accessExpression), value, node)
+    );
+    return lua.createNilLiteral();
+}
+
+function transformTableAddExpression(
+    context: TransformationContext,
+    node: ts.CallExpression,
+    extensionKind: extensions.ExtensionKind
+): lua.Expression {
+    const args = node.arguments.slice();
+    if (
+        extensionKind === extensions.ExtensionKind.TableAddMethodType &&
+        (ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression))
+    ) {
+        // In case of method (no table argument), push method owner to front of args list
+        args.unshift(node.expression.expression);
+    }
+
+    // arg0[arg1] = true
+    const [table, value] = transformExpressionList(context, args);
+    context.addPrecedingStatements(
+        lua.createAssignmentStatement(
+            lua.createTableIndexExpression(table, value),
+            lua.createBooleanLiteral(true),
+            node
+        )
     );
     return lua.createNilLiteral();
 }

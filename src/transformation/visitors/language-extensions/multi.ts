@@ -3,7 +3,7 @@ import * as extensions from "../../utils/language-extensions";
 import { TransformationContext } from "../../context";
 import { findFirstNodeAbove } from "../../utils/typescript";
 import { isIterableExpression } from "./iterable";
-import { invalidMultiFunctionUse } from "../../utils/diagnostics";
+import { getExtensionKindForNode } from "../../utils/language-extensions";
 
 const multiReturnExtensionName = "__tstlMultiReturn";
 export function isMultiReturnType(type: ts.Type): boolean {
@@ -29,8 +29,11 @@ export function isMultiReturnCall(context: TransformationContext, expression: ts
 }
 
 export function isMultiFunctionNode(context: TransformationContext, node: ts.Node): boolean {
-    const symbol = context.checker.getSymbolAtLocation(node);
-    return symbol ? extensions.isExtensionValue(context, symbol, extensions.ExtensionKind.MultiFunction) : false;
+    return (
+        ts.isIdentifier(node) &&
+        node.text === "$multi" &&
+        getExtensionKindForNode(context, node) === extensions.ExtensionKind.MultiFunction
+    );
 }
 
 export function isInMultiReturnFunction(context: TransformationContext, node: ts.Node) {
@@ -91,24 +94,4 @@ export function shouldMultiReturnCallBeWrapped(context: TransformationContext, n
     }
 
     return true;
-}
-
-export function findMultiAssignmentViolations(
-    context: TransformationContext,
-    node: ts.ObjectLiteralExpression
-): ts.Node[] {
-    const result: ts.Node[] = [];
-
-    for (const element of node.properties) {
-        if (!ts.isShorthandPropertyAssignment(element)) continue;
-        const valueSymbol = context.checker.getShorthandAssignmentValueSymbol(element);
-        if (valueSymbol) {
-            if (extensions.isExtensionValue(context, valueSymbol, extensions.ExtensionKind.MultiFunction)) {
-                context.diagnostics.push(invalidMultiFunctionUse(element));
-                result.push(element);
-            }
-        }
-    }
-
-    return result;
 }

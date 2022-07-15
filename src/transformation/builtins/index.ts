@@ -153,7 +153,8 @@ export function transformBuiltinCallExpression(
 
 export function transformBuiltinIdentifierExpression(
     context: TransformationContext,
-    node: ts.Identifier
+    node: ts.Identifier,
+    symbol: ts.Symbol | undefined
 ): lua.Expression | undefined {
     switch (node.text) {
         case "NaN":
@@ -165,7 +166,7 @@ export function transformBuiltinIdentifierExpression(
             return lua.createTableIndexExpression(math, huge, node);
 
         case "globalThis":
-            return lua.createIdentifier("_G", node, getIdentifierSymbolId(context, node), "globalThis");
+            return lua.createIdentifier("_G", node, getIdentifierSymbolId(context, node, symbol), "globalThis");
     }
 }
 
@@ -204,6 +205,10 @@ export function checkForLuaLibType(context: TransformationContext, type: ts.Type
         case "WeakSet":
         case "WeakSetConstructor":
             importLuaLibFeature(context, LuaLibFeature.WeakSet);
+            return;
+        case "Promise":
+        case "PromiseConstructor":
+            importLuaLibFeature(context, LuaLibFeature.Promise);
             return;
     }
 

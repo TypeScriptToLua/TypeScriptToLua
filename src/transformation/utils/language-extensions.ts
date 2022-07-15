@@ -55,14 +55,9 @@ export enum ExtensionKind {
 }
 const extensionNames: Set<string> = new Set(Object.values(ExtensionKind));
 
-const extensionKindToValueName: { [T in ExtensionKind]?: string } = {
-    [ExtensionKind.MultiFunction]: "$multi",
-    [ExtensionKind.RangeFunction]: "$range",
-    [ExtensionKind.VarargConstant]: "$vararg",
-};
-
 const extensionProperty = "__tstlExtension";
-export function getExtensionKind(context: TransformationContext, type: ts.Type): ExtensionKind | undefined {
+
+export function getExtensionTypeForType(context: TransformationContext, type: ts.Type): ExtensionKind | undefined {
     const property = type.getProperty(extensionProperty);
     if (!property) return undefined;
     const propertyType = context.checker.getTypeOfSymbolAtLocation(property, context.sourceFile);
@@ -73,21 +68,15 @@ export function getExtensionKind(context: TransformationContext, type: ts.Type):
     }
 }
 
-/** @deprecated */
-export function isExtensionType(context: TransformationContext, type: ts.Type, extensionKind: ExtensionKind): boolean {
-    return getExtensionKind(context, type) === extensionKind;
+export function getExtensionKindForNode(context: TransformationContext, node: ts.Node): ExtensionKind | undefined {
+    const type = context.checker.getTypeAtLocation(node);
+    return getExtensionTypeForType(context, type);
 }
 
-/** @deprecated */
-export function isExtensionValue(
+export function getExtensionKindForSymbol(
     context: TransformationContext,
-    symbol: ts.Symbol,
-    extensionKind: ExtensionKind
-): boolean {
-    return (
-        symbol.getName() === extensionKindToValueName[extensionKind] &&
-        symbol.declarations?.some(d =>
-            isExtensionType(context, context.checker.getTypeAtLocation(d), extensionKind)
-        ) === true
-    );
+    symbol: ts.Symbol
+): ExtensionKind | undefined {
+    const type = context.checker.getTypeOfSymbolAtLocation(symbol, context.sourceFile);
+    return getExtensionTypeForType(context, type);
 }

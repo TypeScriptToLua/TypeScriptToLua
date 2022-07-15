@@ -6,10 +6,10 @@ import { invalidPairsIterableWithoutDestructuring } from "../../utils/diagnostic
 import * as extensions from "../../utils/language-extensions";
 import { getVariableDeclarationBinding } from "../loops/utils";
 import { transformArrayBindingElement } from "../variable-declaration";
+import { getExtensionKindForNode } from "../../utils/language-extensions";
 
 export function isPairsIterableExpression(context: TransformationContext, expression: ts.Expression): boolean {
-    const type = context.checker.getTypeAtLocation(expression);
-    return extensions.isExtensionType(context, type, extensions.ExtensionKind.PairsIterableType);
+    return getExtensionKindForNode(context, expression) === extensions.ExtensionKind.PairsIterableType;
 }
 
 export function transformForOfPairsIterableStatement(

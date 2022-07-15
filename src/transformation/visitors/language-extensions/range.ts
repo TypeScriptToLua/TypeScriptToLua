@@ -7,14 +7,18 @@ import { transformIdentifier } from "../identifier";
 import { transformArguments } from "../call";
 import { assert } from "../../../utils";
 import { invalidRangeControlVariable } from "../../utils/diagnostics";
+import { getExtensionKindForNode } from "../../utils/language-extensions";
 
 export function isRangeFunction(context: TransformationContext, expression: ts.CallExpression): boolean {
     return isRangeFunctionNode(context, expression.expression);
 }
 
 export function isRangeFunctionNode(context: TransformationContext, node: ts.Node): boolean {
-    const symbol = context.checker.getSymbolAtLocation(node);
-    return symbol ? extensions.isExtensionValue(context, symbol, extensions.ExtensionKind.RangeFunction) : false;
+    return (
+        ts.isIdentifier(node) &&
+        node.text === "$range" &&
+        getExtensionKindForNode(context, node) === extensions.ExtensionKind.RangeFunction
+    );
 }
 
 function getControlVariable(context: TransformationContext, statement: ts.ForOfStatement) {

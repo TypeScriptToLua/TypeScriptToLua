@@ -3,7 +3,7 @@ type AnyTable = Record<any, any>;
 type AnyNotNil = {};
 
 /**
- * Indicates a type is a language extension provided by TypescriptToLua.
+ * Indicates a type (a method, or value) is a language extension provided by TypescriptToLua.
  * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
  *
  * @param TBrand A string used to uniquely identify the language extension type

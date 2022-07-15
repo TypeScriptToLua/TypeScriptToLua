@@ -46,9 +46,9 @@ export function trackSymbolReference(
 
 export function getIdentifierSymbolId(
     context: TransformationContext,
-    identifier: ts.Identifier
+    identifier: ts.Identifier,
+    symbol: ts.Symbol | undefined
 ): lua.SymbolId | undefined {
-    const symbol = context.checker.getSymbolAtLocation(identifier);
     if (symbol) {
         return trackSymbolReference(context, symbol, identifier);
     }

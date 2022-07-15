@@ -96,13 +96,10 @@ export function hasUnsafeSymbolName(
 export function hasUnsafeIdentifierName(
     context: TransformationContext,
     identifier: ts.Identifier,
-    checkSymbol = true
+    symbol: ts.Symbol | undefined
 ): boolean {
-    if (checkSymbol) {
-        const symbol = context.checker.getSymbolAtLocation(identifier);
-        if (symbol) {
-            return hasUnsafeSymbolName(context, symbol, identifier);
-        }
+    if (symbol) {
+        return hasUnsafeSymbolName(context, symbol, identifier);
     }
 
     return checkName(context, identifier.text, identifier);

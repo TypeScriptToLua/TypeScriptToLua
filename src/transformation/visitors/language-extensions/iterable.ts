@@ -7,16 +7,10 @@ import { transformArrayBindingElement } from "../variable-declaration";
 import { invalidMultiIterableWithoutDestructuring } from "../../utils/diagnostics";
 import { cast } from "../../../utils";
 import { isMultiReturnType } from "./multi";
-
-export function returnsIterableType(context: TransformationContext, node: ts.CallExpression): boolean {
-    const signature = context.checker.getResolvedSignature(node);
-    const type = signature?.getReturnType();
-    return type ? extensions.isExtensionType(context, type, extensions.ExtensionKind.IterableType) : false;
-}
+import { getExtensionKindForNode } from "../../utils/language-extensions";
 
 export function isIterableExpression(context: TransformationContext, expression: ts.Expression): boolean {
-    const type = context.checker.getTypeAtLocation(expression);
-    return extensions.isExtensionType(context, type, extensions.ExtensionKind.IterableType);
+    return getExtensionKindForNode(context, expression) === extensions.ExtensionKind.IterableType;
 }
 
 function transformForOfMultiIterableStatement(

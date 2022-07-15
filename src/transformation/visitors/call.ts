@@ -10,7 +10,7 @@ import { isValidLuaIdentifier } from "../utils/safe-names";
 import { isExpressionWithEvaluationEffect } from "../utils/typescript";
 import { transformElementAccessArgument } from "./access";
 import { isMultiReturnCall, shouldMultiReturnCallBeWrapped } from "./language-extensions/multi";
-import { annotationRemoved } from "../utils/diagnostics";
+import { annotationRemoved, unsupportedBuiltinOptionalCall } from "../utils/diagnostics";
 import { moveToPrecedingTemp, transformExpressionList } from "./expression-list";
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
 import { getOptionalContinuationData, transformOptionalChain } from "./optional-chaining";
@@ -27,9 +27,9 @@ export function validateArguments(
     }
     for (const [index, param] of params.entries()) {
         const signatureParameter = signature.parameters[index];
-        const paramType = context.checker.getTypeAtLocation(param);
         if (signatureParameter.valueDeclaration !== undefined) {
             const signatureType = context.checker.getTypeAtLocation(signatureParameter.valueDeclaration);
+            const paramType = context.checker.getTypeAtLocation(param);
             validateAssignment(context, param, paramType, signatureType, signatureParameter.name);
         }
     }
@@ -233,10 +233,11 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     }
 
     const builtinOrExtensionResult =
-        transformBuiltinCallExpression(context, node, optionalContinuation !== undefined) ??
-        transformLanguageExtensionCallExpression(context, node, optionalContinuation !== undefined);
+        transformBuiltinCallExpression(context, node) ?? transformLanguageExtensionCallExpression(context, node);
     if (builtinOrExtensionResult) {
-        // unsupportedOptionalCall diagnostic already present
+        if (optionalContinuation !== undefined) {
+            context.diagnostics.push(unsupportedBuiltinOptionalCall(node));
+        }
         return wrapResultInTable ? wrapInTable(builtinOrExtensionResult) : builtinOrExtensionResult;
     }
 
@@ -305,9 +306,5 @@ function isContextualCallExpression(context: TransformationContext, signature: t
 }
 
 export function getCalledExpression(node: ts.CallExpression): ts.Expression {
-    function unwrapExpression(expression: ts.Expression): ts.Expression {
-        expression = ts.skipOuterExpressions(expression);
-        return ts.isNonNullExpression(expression) ? unwrapExpression(expression.expression) : expression;
-    }
-    return unwrapExpression(node.expression);
+    return ts.skipOuterExpressions(node.expression);
 }

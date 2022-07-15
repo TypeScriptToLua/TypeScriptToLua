@@ -26,6 +26,12 @@ declare module "typescript" {
         getContextualTypeForObjectLiteralElement(element: ObjectLiteralElementLike): Type | undefined;
     }
 
+    interface Symbol {
+        // false positive
+        // eslint-disable-next-line @typescript-eslint/ban-types
+        parent?: Symbol;
+    }
+
     function transformJsx(context: TransformationContext): (x: SourceFile) => SourceFile;
 
     export type OuterExpression =

@@ -49,12 +49,12 @@ function transformTableDeleteExpression(
     return lua.createBooleanLiteral(true);
 }
 
-function addTableArgument(node: ts.CallExpression) {
+function transformWithTableArgument(context: TransformationContext, node: ts.CallExpression): lua.Expression[] {
     if (ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression)) {
-        return [node.expression.expression, ...node.arguments];
+        return transformExpressionList(context, [node.expression.expression, ...node.arguments]);
     }
-    // todo: report an error?
-    return node.arguments;
+    // todo: report diagnostic?
+    return [lua.createNilLiteral(), ...transformExpressionList(context, node.arguments)];
 }
 
 function transformTableGetExpression(
@@ -62,10 +62,12 @@ function transformTableGetExpression(
     node: ts.CallExpression,
     extensionKind: ExtensionKind
 ): lua.Expression {
-    const args = extensionKind === ExtensionKind.TableGetMethodType ? addTableArgument(node) : node.arguments;
+    const args =
+        extensionKind === ExtensionKind.TableGetMethodType
+            ? transformWithTableArgument(context, node)
+            : transformExpressionList(context, node.arguments);
 
-    const [table, accessExpression] = transformExpressionList(context, args);
-    // arg0[arg1]
+    const [table, accessExpression] = args; // arg0[arg1]
     return lua.createTableIndexExpression(table, accessExpression, node);
 }
 
@@ -74,10 +76,13 @@ function transformTableHasExpression(
     node: ts.CallExpression,
     extensionKind: ExtensionKind
 ): lua.Expression {
-    const args = extensionKind === ExtensionKind.TableHasMethodType ? addTableArgument(node) : node.arguments;
+    const args =
+        extensionKind === ExtensionKind.TableHasMethodType
+            ? transformWithTableArgument(context, node)
+            : transformExpressionList(context, node.arguments);
 
     // arg0[arg1]
-    const [table, accessExpression] = transformExpressionList(context, args);
+    const [table, accessExpression] = args;
     const tableIndexExpression = lua.createTableIndexExpression(table, accessExpression);
 
     // arg0[arg1] ~= nil
@@ -94,10 +99,13 @@ function transformTableSetExpression(
     node: ts.CallExpression,
     extensionKind: ExtensionKind
 ): lua.Expression {
-    const args = extensionKind === ExtensionKind.TableSetMethodType ? addTableArgument(node) : node.arguments;
+    const args =
+        extensionKind === ExtensionKind.TableSetMethodType
+            ? transformWithTableArgument(context, node)
+            : transformExpressionList(context, node.arguments);
 
     // arg0[arg1] = arg2
-    const [table, accessExpression, value] = transformExpressionList(context, args);
+    const [table, accessExpression, value] = args;
     context.addPrecedingStatements(
         lua.createAssignmentStatement(lua.createTableIndexExpression(table, accessExpression), value, node)
     );
@@ -109,10 +117,13 @@ function transformTableAddExpression(
     node: ts.CallExpression,
     extensionKind: ExtensionKind
 ): lua.Expression {
-    const args = extensionKind === ExtensionKind.TableAddKeyMethodType ? addTableArgument(node) : node.arguments;
+    const args =
+        extensionKind === ExtensionKind.TableAddKeyMethodType
+            ? transformWithTableArgument(context, node)
+            : transformExpressionList(context, node.arguments);
 
     // arg0[arg1] = true
-    const [table, value] = transformExpressionList(context, args);
+    const [table, value] = args;
     context.addPrecedingStatements(
         lua.createAssignmentStatement(
             lua.createTableIndexExpression(table, value),

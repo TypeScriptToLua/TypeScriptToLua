@@ -2,10 +2,10 @@ import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { TransformationContext } from "../../context";
 import { assert } from "../../../utils";
-import { getFunctionTypeForCall } from "../../utils/typescript";
 import { LuaTarget } from "../../../CompilerOptions";
-import { unsupportedBuiltinOptionalCall, unsupportedForTarget } from "../../utils/diagnostics";
-import { ExtensionKind, getExtensionTypeForType } from "../../utils/language-extensions";
+import { unsupportedForTarget } from "../../utils/diagnostics";
+import { ExtensionKind } from "../../utils/language-extensions";
+import { LanguageExtensionCallTransformerMap } from "./call-extension";
 
 const binaryOperatorMappings = new Map<ExtensionKind, lua.BinaryOperator>([
     [ExtensionKind.AdditionOperatorType, lua.SyntaxKind.AdditionOperator],
@@ -49,11 +49,6 @@ const unaryOperatorMappings = new Map<ExtensionKind, lua.UnaryOperator>([
     [ExtensionKind.LengthOperatorMethodType, lua.SyntaxKind.LengthOperator],
 ]);
 
-export const operatorMapExtensions: ReadonlySet<ExtensionKind> = new Set([
-    ...binaryOperatorMappings.keys(),
-    ...unaryOperatorMappings.keys(),
-]);
-
 const bitwiseOperatorMapExtensions = new Set<ExtensionKind>([
     ExtensionKind.BitwiseAndOperatorType,
     ExtensionKind.BitwiseAndOperatorMethodType,
@@ -69,25 +64,59 @@ const bitwiseOperatorMapExtensions = new Set<ExtensionKind>([
     ExtensionKind.BitwiseNotOperatorMethodType,
 ]);
 
-function getOperatorMapExtensionKindForCall(context: TransformationContext, node: ts.CallExpression) {
-    const type = getFunctionTypeForCall(context, node);
-    if (!type) return undefined;
-    const kind = getExtensionTypeForType(context, type);
-    if (kind && operatorMapExtensions.has(kind)) return kind;
+const requiresLua53 = new Set([
+    ...bitwiseOperatorMapExtensions,
+    ExtensionKind.FloorDivisionOperatorType,
+    ExtensionKind.FloorDivisionOperatorMethodType,
+]);
+
+export const operatorExtensionTransformers: LanguageExtensionCallTransformerMap = {};
+for (const kind of binaryOperatorMappings.keys()) {
+    operatorExtensionTransformers[kind] = transformBinaryOperator;
+}
+for (const kind of unaryOperatorMappings.keys()) {
+    operatorExtensionTransformers[kind] = transformUnaryOperator;
 }
 
-export function transformOperatorMappingExpression(
-    context: TransformationContext,
-    node: ts.CallExpression,
-    isOptionalCall: boolean
-): lua.Expression | undefined {
-    const extensionKind = getOperatorMapExtensionKindForCall(context, node);
-    if (!extensionKind) return undefined;
-    if (isOptionalCall) {
-        context.diagnostics.push(unsupportedBuiltinOptionalCall(node));
-        return lua.createNilLiteral();
+function transformBinaryOperator(context: TransformationContext, node: ts.CallExpression, kind: ExtensionKind) {
+    if (requiresLua53.has(kind)) checkHasLua53(context, node, kind);
+
+    let args: readonly ts.Expression[] = node.arguments;
+    if (
+        args.length === 1 &&
+        (ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression))
+    ) {
+        args = [node.expression.expression, ...args];
     }
 
+    const luaOperator = binaryOperatorMappings.get(kind);
+    assert(luaOperator);
+    return lua.createBinaryExpression(
+        context.transformExpression(args[0]),
+        context.transformExpression(args[1]),
+        luaOperator
+    );
+}
+
+function transformUnaryOperator(context: TransformationContext, node: ts.CallExpression, kind: ExtensionKind) {
+    if (requiresLua53.has(kind)) checkHasLua53(context, node, kind);
+
+    let arg: ts.Expression;
+    if (
+        node.arguments.length === 0 &&
+        (ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression))
+    ) {
+        arg = node.expression.expression;
+    } else {
+        arg = node.arguments[0];
+    }
+
+    const luaOperator = unaryOperatorMappings.get(kind);
+    assert(luaOperator);
+    return lua.createUnaryExpression(context.transformExpression(arg), luaOperator);
+}
+
+function checkHasLua53(context: TransformationContext, node: ts.CallExpression, kind: ExtensionKind) {
     const isBefore53 =
         context.luaTarget === LuaTarget.Lua51 ||
         context.luaTarget === LuaTarget.Lua52 ||
@@ -95,45 +124,14 @@ export function transformOperatorMappingExpression(
         context.luaTarget === LuaTarget.Universal;
     if (isBefore53) {
         const luaTarget = context.luaTarget === LuaTarget.Universal ? LuaTarget.Lua51 : context.luaTarget;
-        if (bitwiseOperatorMapExtensions.has(extensionKind)) {
-            context.diagnostics.push(unsupportedForTarget(node, "Native bitwise operations", luaTarget));
-        } else if (
-            extensionKind === ExtensionKind.FloorDivisionOperatorType ||
-            extensionKind === ExtensionKind.FloorDivisionOperatorMethodType
+        if (
+            kind === ExtensionKind.FloorDivisionOperatorType ||
+            kind === ExtensionKind.FloorDivisionOperatorMethodType
         ) {
             context.diagnostics.push(unsupportedForTarget(node, "Floor division operator", luaTarget));
-        }
-    }
-
-    let args: readonly ts.Expression[] = node.arguments;
-    if (binaryOperatorMappings.has(extensionKind)) {
-        if (
-            args.length === 1 &&
-            (ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression))
-        ) {
-            args = [node.expression.expression, ...args];
-        }
-
-        const luaOperator = binaryOperatorMappings.get(extensionKind);
-        assert(luaOperator);
-        return lua.createBinaryExpression(
-            context.transformExpression(args[0]),
-            context.transformExpression(args[1]),
-            luaOperator
-        );
-    } else {
-        let arg: ts.Expression;
-        if (
-            args.length === 0 &&
-            (ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression))
-        ) {
-            arg = node.expression.expression;
         } else {
-            arg = args[0];
+            // is bitwise operator
+            context.diagnostics.push(unsupportedForTarget(node, "Native bitwise operations", luaTarget));
         }
-
-        const luaOperator = unaryOperatorMappings.get(extensionKind);
-        assert(luaOperator);
-        return lua.createUnaryExpression(context.transformExpression(arg), luaOperator);
     }
 }

@@ -1,27 +1,9 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { TransformationContext } from "../../context";
-import { ExtensionKind, getExtensionTypeForType, getExtensionKindForNode } from "../../utils/language-extensions";
-import { getFunctionTypeForCall } from "../../utils/typescript";
+import { ExtensionKind, getExtensionKindForNode } from "../../utils/language-extensions";
 import { transformExpressionList } from "../expression-list";
-import { unsupportedBuiltinOptionalCall } from "../../utils/diagnostics";
-
-type TableCallExtensionHandler = (
-    context: TransformationContext,
-    node: ts.CallExpression,
-    extensionKind: ExtensionKind
-) => lua.Expression;
-
-const tableCallTransformers: Map<ExtensionKind, TableCallExtensionHandler> = new Map([
-    [ExtensionKind.TableDeleteType, transformTableDeleteExpression],
-    [ExtensionKind.TableDeleteMethodType, transformTableDeleteExpression],
-    [ExtensionKind.TableGetType, transformTableGetExpression],
-    [ExtensionKind.TableGetMethodType, transformTableGetExpression],
-    [ExtensionKind.TableHasType, transformTableHasExpression],
-    [ExtensionKind.TableHasMethodType, transformTableHasExpression],
-    [ExtensionKind.TableSetType, transformTableSetExpression],
-    [ExtensionKind.TableSetMethodType, transformTableSetExpression],
-]);
+import { LanguageExtensionCallTransformer } from "./call-extension";
 
 export const tableExtensions: ReadonlySet<ExtensionKind> = new Set([
     ExtensionKind.TableDeleteType,
@@ -39,28 +21,16 @@ export function isTableNewCall(context: TransformationContext, node: ts.NewExpre
     return getExtensionKindForNode(context, node.expression) === ExtensionKind.TableNewType;
 }
 
-function getTableExtensionKindForCall(context: TransformationContext, node: ts.CallExpression) {
-    const type = getFunctionTypeForCall(context, node);
-    return type && getExtensionTypeForType(context, type);
-}
-
-export function transformTableExtensionCall(
-    context: TransformationContext,
-    node: ts.CallExpression,
-    isOptionalCall: boolean
-): lua.Expression | undefined {
-    const extensionType = getTableExtensionKindForCall(context, node);
-    if (!extensionType) return;
-    const transformer = tableCallTransformers.get(extensionType);
-    if (!transformer) return;
-
-    if (isOptionalCall) {
-        context.diagnostics.push(unsupportedBuiltinOptionalCall(node));
-        return lua.createNilLiteral();
-    }
-
-    return transformer(context, node, extensionType);
-}
+export const tableExtensionTransformers: { [P in ExtensionKind]?: LanguageExtensionCallTransformer } = {
+    [ExtensionKind.TableDeleteType]: transformTableDeleteExpression,
+    [ExtensionKind.TableDeleteMethodType]: transformTableDeleteExpression,
+    [ExtensionKind.TableGetType]: transformTableGetExpression,
+    [ExtensionKind.TableGetMethodType]: transformTableGetExpression,
+    [ExtensionKind.TableHasType]: transformTableHasExpression,
+    [ExtensionKind.TableHasMethodType]: transformTableHasExpression,
+    [ExtensionKind.TableSetType]: transformTableSetExpression,
+    [ExtensionKind.TableSetMethodType]: transformTableSetExpression,
+};
 
 function transformTableDeleteExpression(
     context: TransformationContext,

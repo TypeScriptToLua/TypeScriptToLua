@@ -14,8 +14,8 @@ import { annotationRemoved } from "../utils/diagnostics";
 import { moveToPrecedingTemp, transformExpressionList } from "./expression-list";
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
 import { getOptionalContinuationData, transformOptionalChain } from "./optional-chaining";
-import { transformLanguageExtensionCallExpression } from "./language-extensions";
 import { transformImportExpression } from "./modules/import";
+import { transformLanguageExtensionCallExpression } from "./language-extensions/call-extension";
 
 export function validateArguments(
     context: TransformationContext,

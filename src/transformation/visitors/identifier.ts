@@ -6,20 +6,18 @@ import { FunctionVisitor, tempSymbolId, TransformationContext } from "../context
 import { AnnotationKind, isForRangeType } from "../utils/annotations";
 import {
     invalidMultiFunctionUse,
-    invalidOperatorMappingUse,
     invalidRangeUse,
     invalidVarargUse,
-    invalidTableExtensionUse,
+    invalidCallExtensionUse,
     annotationRemoved,
 } from "../utils/diagnostics";
 import { createExportedIdentifier, getSymbolExportScope } from "../utils/export";
 import { createSafeName, hasUnsafeIdentifierName } from "../utils/safe-names";
 import { getIdentifierSymbolId } from "../utils/symbols";
-import { operatorMapExtensions } from "./language-extensions/operators";
-import { tableExtensions } from "./language-extensions/table";
 import { isOptionalContinuation } from "./optional-chaining";
 import { isStandardLibraryType } from "../utils/typescript";
 import { getExtensionKindForNode, ExtensionKind, getExtensionKindForSymbol } from "../utils/language-extensions";
+import { allCallExtensionHandlers } from "./language-extensions/call-extension";
 
 function reportInvalidExtensionValue(
     context: TransformationContext,
@@ -62,11 +60,8 @@ function transformNonValueIdentifier(
         : getExtensionKindForNode(context, identifier);
 
     if (extensionKind) {
-        if (operatorMapExtensions.has(extensionKind)) {
-            context.diagnostics.push(invalidOperatorMappingUse(identifier));
-            // fall through
-        } else if (tableExtensions.has(extensionKind)) {
-            context.diagnostics.push(invalidTableExtensionUse(identifier));
+        if (allCallExtensionHandlers[extensionKind]) {
+            context.diagnostics.push(invalidCallExtensionUse(identifier));
             // fall through
         } else if (isIdentifierExtensionValue(symbol, extensionKind)) {
             reportInvalidExtensionValue(context, identifier, extensionKind);

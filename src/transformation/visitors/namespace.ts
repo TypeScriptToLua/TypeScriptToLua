@@ -1,8 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
-import { annotationRemoved } from "../utils/diagnostics";
 import { addExportToIdentifier, createExportedIdentifier, getIdentifierExportScope } from "../utils/export";
 import {
     createHoistableVariableDeclarationStatement,
@@ -48,12 +46,6 @@ function moduleHasEmittedBody(
 }
 
 export const transformModuleDeclaration: FunctionVisitor<ts.ModuleDeclaration> = (node, context) => {
-    const annotations = getTypeAnnotations(context.checker.getTypeAtLocation(node));
-    // If phantom namespace elide the declaration and return the body
-    if (annotations.has(AnnotationKind.Phantom)) {
-        context.diagnostics.push(annotationRemoved(node, AnnotationKind.Phantom));
-    }
-
     const currentNamespace = context.currentNamespaces;
     const result: lua.Statement[] = [];
 

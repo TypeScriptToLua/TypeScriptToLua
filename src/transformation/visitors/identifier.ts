@@ -3,13 +3,11 @@ import * as lua from "../../LuaAST";
 import { transformBuiltinIdentifierExpression, checkForLuaLibType } from "../builtins";
 import { isPromiseClass, createPromiseIdentifier } from "../builtins/promise";
 import { FunctionVisitor, tempSymbolId, TransformationContext } from "../context";
-import { AnnotationKind, isForRangeType } from "../utils/annotations";
 import {
     invalidMultiFunctionUse,
     invalidRangeUse,
     invalidVarargUse,
     invalidCallExtensionUse,
-    annotationRemoved,
 } from "../utils/diagnostics";
 import { createExportedIdentifier, getSymbolExportScope } from "../utils/export";
 import { createSafeName, hasUnsafeIdentifierName } from "../utils/safe-names";
@@ -67,10 +65,6 @@ function transformNonValueIdentifier(
             reportInvalidExtensionValue(context, identifier, extensionKind);
             return lua.createAnonymousIdentifier(identifier);
         }
-    }
-
-    if (isForRangeType(context, identifier)) {
-        context.diagnostics.push(annotationRemoved(identifier, AnnotationKind.ForRange));
     }
 
     const type = context.checker.getTypeAtLocation(identifier);

@@ -1,21 +1,11 @@
 import * as ts from "typescript";
-import { TransformationContext } from "../context";
 
 export enum AnnotationKind {
-    Extension = "extension",
-    MetaExtension = "metaExtension",
     CustomConstructor = "customConstructor",
     CompileMembersOnly = "compileMembersOnly",
     NoResolution = "noResolution",
-    PureAbstract = "pureAbstract",
-    Phantom = "phantom",
-    TupleReturn = "tupleReturn",
-    LuaIterator = "luaIterator",
-    LuaTable = "luaTable",
     NoSelf = "noSelf",
     NoSelfInFile = "noSelfInFile",
-    Vararg = "vararg",
-    ForRange = "forRange",
 }
 
 const annotationValues = new Map(Object.values(AnnotationKind).map(k => [k.toLowerCase(), k]));
@@ -118,72 +108,6 @@ export function getFileAnnotations(sourceFile: ts.SourceFile): AnnotationsMap {
         }
     }
     return (withAnnotations.tstlAnnotationMap = annotationsMap);
-}
-
-interface SignatureWithAnnotationMap extends ts.Signature {
-    tstlAnnotationMap?: AnnotationsMap;
-}
-
-export function getSignatureAnnotations(context: TransformationContext, signature: ts.Signature): AnnotationsMap {
-    const withAnnotations = signature as SignatureWithAnnotationMap;
-    if (withAnnotations.tstlAnnotationMap !== undefined) return withAnnotations.tstlAnnotationMap;
-
-    const annotationsMap: AnnotationsMap = new Map();
-    collectAnnotations(signature, annotationsMap);
-
-    // Function properties on interfaces have the JSDoc tags on the parent PropertySignature
-    const declaration = signature.getDeclaration();
-    if (declaration?.parent && ts.isPropertySignature(declaration.parent)) {
-        const symbol = context.checker.getSymbolAtLocation(declaration.parent.name);
-        if (symbol) {
-            getSymbolAnnotations(symbol).forEach((value, key) => {
-                annotationsMap.set(key, value);
-            });
-        }
-    }
-
-    return (withAnnotations.tstlAnnotationMap = annotationsMap);
-}
-
-export function isTupleReturnCall(context: TransformationContext, node: ts.Node): boolean {
-    if (!ts.isCallExpression(node)) {
-        return false;
-    }
-
-    const signature = context.checker.getResolvedSignature(node);
-    if (signature) {
-        if (getSignatureAnnotations(context, signature).has(AnnotationKind.TupleReturn)) {
-            return true;
-        }
-
-        // Only check function type for directive if it is declared as an interface or type alias
-        const declaration = signature.getDeclaration();
-        const isInterfaceOrAlias =
-            declaration?.parent &&
-            ((ts.isInterfaceDeclaration(declaration.parent) && ts.isCallSignatureDeclaration(declaration)) ||
-                ts.isTypeAliasDeclaration(declaration.parent));
-        if (!isInterfaceOrAlias) {
-            return false;
-        }
-    }
-
-    const type = context.checker.getTypeAtLocation(node.expression);
-    return getTypeAnnotations(type).has(AnnotationKind.TupleReturn);
-}
-
-export function isLuaIteratorType(context: TransformationContext, node: ts.Node): boolean {
-    const type = context.checker.getTypeAtLocation(node);
-    return getTypeAnnotations(type).has(AnnotationKind.LuaIterator);
-}
-
-export function isVarargType(context: TransformationContext, node: ts.Node): boolean {
-    const type = context.checker.getTypeAtLocation(node);
-    return getTypeAnnotations(type).has(AnnotationKind.Vararg);
-}
-
-export function isForRangeType(context: TransformationContext, node: ts.Node): boolean {
-    const type = context.checker.getTypeAtLocation(node);
-    return getTypeAnnotations(type).has(AnnotationKind.ForRange);
 }
 
 function getTagArgsFromComment(tag: ts.JSDocTag): string[] {

@@ -1,8 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../../context";
-import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
-import { annotationRemoved } from "../../utils/diagnostics";
 import {
     createDefaultExportExpression,
     createExportedIdentifier,
@@ -68,17 +66,8 @@ function transformClassLikeDeclaration(
         className = lua.createIdentifier(context.createTempName("class"), classDeclaration);
     }
 
-    const annotations = getTypeAnnotations(context.checker.getTypeAtLocation(classDeclaration));
-
-    if (annotations.has(AnnotationKind.Extension)) {
-        context.diagnostics.push(annotationRemoved(classDeclaration, AnnotationKind.Extension));
-    }
-    if (annotations.has(AnnotationKind.MetaExtension)) {
-        context.diagnostics.push(annotationRemoved(classDeclaration, AnnotationKind.MetaExtension));
-    }
-
     // Get type that is extended
-    const extendedTypeNode = getExtendedNode(context, classDeclaration);
+    const extendedTypeNode = getExtendedNode(classDeclaration);
     const extendedType = getExtendedType(context, classDeclaration);
 
     context.classSuperInfos.push({ className, extendedTypeNode });

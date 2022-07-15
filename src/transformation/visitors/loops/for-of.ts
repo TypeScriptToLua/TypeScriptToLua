@@ -1,8 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../../context";
-import { AnnotationKind, isForRangeType, isLuaIteratorType } from "../../utils/annotations";
-import { annotationRemoved } from "../../utils/diagnostics";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType } from "../../utils/typescript";
 import {
@@ -49,9 +47,6 @@ export const transformForOfStatement: FunctionVisitor<ts.ForOfStatement> = (node
 
     if (ts.isCallExpression(node.expression) && isRangeFunction(context, node.expression)) {
         return transformRangeStatement(context, node, body);
-    } else if (ts.isCallExpression(node.expression) && isForRangeType(context, node.expression.expression)) {
-        context.diagnostics.push(annotationRemoved(node.expression, AnnotationKind.ForRange));
-        return undefined;
     }
     const iterableType = getIterableExtensionKindForNode(context, node.expression);
     if (iterableType) {
@@ -64,10 +59,6 @@ export const transformForOfStatement: FunctionVisitor<ts.ForOfStatement> = (node
         } else {
             assertNever(iterableType);
         }
-    }
-    if (isLuaIteratorType(context, node.expression)) {
-        context.diagnostics.push(annotationRemoved(node.expression, AnnotationKind.LuaIterator));
-        return undefined;
     }
     if (isArrayType(context, context.checker.getTypeAtLocation(node.expression))) {
         return transformForOfArrayStatement(context, node, body);

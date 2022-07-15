@@ -6,6 +6,10 @@ import { unsupportedNodeKind } from "../utils/diagnostics";
 import { unwrapVisitorResult, OneToManyVisitorResult } from "../utils/lua-ast";
 import { createSafeName } from "../utils/safe-names";
 import { ExpressionLikeNode, ObjectVisitor, StatementLikeNode, VisitorMap } from "./visitors";
+import { SymbolInfo } from "../utils/symbols";
+import { LuaLibFeature } from "../../LuaLib";
+import { Scope, ScopeType } from "../utils/scope";
+import { ClassSuperInfo } from "../visitors/class";
 
 export const tempSymbolId = -1 as lua.SymbolId;
 
@@ -226,4 +230,39 @@ export class TransformationContext {
         const name = this.getTempNameForNode(node);
         return lua.createIdentifier(this.createTempName(name), node, tempSymbolId);
     }
+
+    // other utils
+
+    private lastSymbolId = 0;
+    public readonly symbolInfoMap = new Map<lua.SymbolId, SymbolInfo>();
+    public readonly symbolIdMaps = new Map<ts.Symbol, lua.SymbolId>();
+
+    public nextSymbolId(): lua.SymbolId {
+        return ++this.lastSymbolId as lua.SymbolId;
+    }
+
+    public readonly usedLuaLibFeatures = new Set<LuaLibFeature>();
+
+    public readonly scopeStack: Scope[] = [];
+    private lastScopeId = 0;
+
+    public pushScope(type: ScopeType): Scope {
+        const scope = { type, id: ++this.lastScopeId };
+        this.scopeStack.push(scope);
+        return scope;
+    }
+
+    public popScope(): Scope {
+        const scope = this.scopeStack.pop();
+        assert(scope);
+        return scope;
+    }
+
+    // Static context -> namespace dictionary keeping the current namespace for each transformation context
+    // see visitors/namespace.ts
+    /** @internal */
+    public currentNamespaces: ts.ModuleDeclaration | undefined;
+
+    /** @internal */
+    public classSuperInfos: ClassSuperInfo[] = [];
 }

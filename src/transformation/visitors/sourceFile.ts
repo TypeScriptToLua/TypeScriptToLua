@@ -3,9 +3,8 @@ import * as lua from "../../LuaAST";
 import { assert } from "../../utils";
 import { FunctionVisitor } from "../context";
 import { createExportsIdentifier } from "../utils/lua-ast";
-import { getUsedLuaLibFeatures } from "../utils/lualib";
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
-import { performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
+import { performHoisting, ScopeType } from "../utils/scope";
 import { hasExportEquals } from "../utils/typescript";
 
 export const transformSourceFileNode: FunctionVisitor<ts.SourceFile> = (node, context) => {
@@ -27,10 +26,10 @@ export const transformSourceFileNode: FunctionVisitor<ts.SourceFile> = (node, co
             statements.push(lua.createExpressionStatement(errorCall));
         }
     } else {
-        pushScope(context, ScopeType.File);
+        context.pushScope(ScopeType.File);
 
         statements = performHoisting(context, context.transformStatements(node.statements));
-        popScope(context);
+        context.popScope();
 
         if (context.isModule) {
             // If export equals was not used. Create the exports table.
@@ -47,5 +46,5 @@ export const transformSourceFileNode: FunctionVisitor<ts.SourceFile> = (node, co
     }
 
     const trivia = node.getFullText().match(/^#!.*\r?\n/)?.[0] ?? "";
-    return lua.createFile(statements, getUsedLuaLibFeatures(context), trivia, node);
+    return lua.createFile(statements, context.usedLuaLibFeatures, trivia, node);
 };

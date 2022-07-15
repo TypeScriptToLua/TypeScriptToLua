@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { TransformationContext } from "../../context";
 import { transformInPrecedingStatementScope } from "../../utils/preceding-statements";
-import { performHoisting, popScope, pushScope, ScopeType } from "../../utils/scope";
+import { performHoisting, ScopeType } from "../../utils/scope";
 import { isAssignmentPattern } from "../../utils/typescript";
 import { transformAssignment } from "../binary-expression/assignments";
 import { transformAssignmentPattern } from "../binary-expression/destructuring-assignments";
@@ -14,9 +14,9 @@ export function transformLoopBody(
     context: TransformationContext,
     loop: ts.WhileStatement | ts.DoStatement | ts.ForStatement | ts.ForOfStatement | ts.ForInOrOfStatement
 ): lua.Statement[] {
-    pushScope(context, ScopeType.Loop);
+    context.pushScope(ScopeType.Loop);
     const body = performHoisting(context, transformBlockOrStatement(context, loop.statement));
-    const scope = popScope(context);
+    const scope = context.popScope();
     const scopeId = scope.id;
 
     if (!scope.loopContinued) {
@@ -50,7 +50,7 @@ export function transformForInitializer(
 ): lua.Identifier {
     const valueVariable = lua.createIdentifier("____value");
 
-    pushScope(context, ScopeType.LoopInitializer);
+    context.pushScope(ScopeType.LoopInitializer);
 
     if (ts.isVariableDeclarationList(initializer)) {
         // Declaration of new variable
@@ -63,7 +63,7 @@ export function transformForInitializer(
             block.statements.unshift(...precedingStatements, ...bindings);
         } else {
             // Single variable declared in for loop
-            popScope(context);
+            context.popScope();
             return transformIdentifier(context, binding);
         }
     } else {
@@ -76,7 +76,7 @@ export function transformForInitializer(
         );
     }
 
-    popScope(context);
+    context.popScope();
     return valueVariable;
 }
 

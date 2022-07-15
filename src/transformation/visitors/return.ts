@@ -3,7 +3,7 @@ import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { validateAssignment } from "../utils/assignment-validation";
 import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
-import { ScopeType, walkScopesUp } from "../utils/scope";
+import { ScopeType } from "../utils/scope";
 import { transformArguments } from "./call";
 import {
     returnsMultiType,
@@ -83,7 +83,7 @@ export function createReturnStatement(
     values: lua.Expression[],
     node: ts.Node
 ): lua.ReturnStatement {
-    const results = [...values];
+    let results = values;
 
     if (isInAsyncFunction(node)) {
         return lua.createReturnStatement([
@@ -93,7 +93,8 @@ export function createReturnStatement(
 
     if (isInTryCatch(context)) {
         // Bubble up explicit return flag and check if we're inside a try/catch block
-        results.unshift(lua.createBooleanLiteral(true));
+        // results.unshift(lua.createBooleanLiteral(true));
+        results = [lua.createBooleanLiteral(true), ...results];
     }
 
     return lua.createReturnStatement(results, node);
@@ -102,7 +103,9 @@ export function createReturnStatement(
 function isInTryCatch(context: TransformationContext): boolean {
     // Check if context is in a try or catch
     let insideTryCatch = false;
-    for (const scope of walkScopesUp(context)) {
+    const scopeStack = context.scopeStack;
+    for (let i = scopeStack.length - 1; i >= 0; i--) {
+        const scope = scopeStack[i];
         scope.functionReturned = true;
 
         if (scope.type === ScopeType.Function) {

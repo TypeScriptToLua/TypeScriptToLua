@@ -15,7 +15,7 @@ import {
 } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
-import { peekScope, performHoisting, popScope, pushScope, Scope, ScopeType } from "../utils/scope";
+import { peekScope, performHoisting, Scope, ScopeType } from "../utils/scope";
 import { isFunctionType } from "../utils/typescript";
 import { isAsyncFunction, wrapInAsyncAwaiter } from "./async-await";
 import { transformIdentifier } from "./identifier";
@@ -159,14 +159,14 @@ export function transformFunctionBody(
     spreadIdentifier?: lua.Identifier,
     node?: ts.FunctionLikeDeclaration
 ): [lua.Statement[], Scope] {
-    const scope = pushScope(context, ScopeType.Function);
+    const scope = context.pushScope(ScopeType.Function);
     scope.node = node;
     let bodyStatements = transformFunctionBodyContent(context, body);
     if (node && isAsyncFunction(node)) {
         bodyStatements = [lua.createReturnStatement([wrapInAsyncAwaiter(context, bodyStatements)])];
     }
     const headerStatements = transformFunctionBodyHeader(context, scope, parameters, spreadIdentifier);
-    popScope(context);
+    context.popScope();
     return [[...headerStatements, ...bodyStatements], scope];
 }
 

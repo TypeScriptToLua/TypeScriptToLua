@@ -1,6 +1,5 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import { getOrUpdate } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
 import { annotationRemoved } from "../../utils/diagnostics";
@@ -49,8 +48,8 @@ export function transformClassAsExpression(
     return name;
 }
 
-const classSuperInfos = new WeakMap<TransformationContext, ClassSuperInfo[]>();
-interface ClassSuperInfo {
+/** @internal */
+export interface ClassSuperInfo {
     className: lua.Identifier;
     extendedTypeNode?: ts.ExpressionWithTypeArguments;
 }
@@ -82,8 +81,7 @@ function transformClassLikeDeclaration(
     const extendedTypeNode = getExtendedNode(context, classDeclaration);
     const extendedType = getExtendedType(context, classDeclaration);
 
-    const superInfo = getOrUpdate(classSuperInfos, context, () => []);
-    superInfo.push({ className, extendedTypeNode });
+    context.classSuperInfos.push({ className, extendedTypeNode });
 
     // Get all properties with value
     const properties = classDeclaration.members.filter(ts.isPropertyDeclaration).filter(member => member.initializer);
@@ -220,13 +218,14 @@ function transformClassLikeDeclaration(
         }
     }
 
-    superInfo.pop();
+    context.classSuperInfos.pop();
 
     return { statements: result, name: className };
 }
 
 export const transformSuperExpression: FunctionVisitor<ts.SuperExpression> = (expression, context) => {
-    const superInfos = getOrUpdate(classSuperInfos, context, () => []);
+    // const superInfos = getOrUpdate(classSuperInfos, context, () => []);
+    const superInfos = context.classSuperInfos;
     const superInfo = superInfos[superInfos.length - 1];
     if (!superInfo) return lua.createAnonymousIdentifier(expression);
     const { className, extendedTypeNode } = superInfo;

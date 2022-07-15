@@ -5,10 +5,10 @@ import { AnnotationKind, getFileAnnotations, getNodeAnnotations } from "./annota
 import { findFirstNodeAbove, getAllCallSignatures, inferAssignedType } from "./typescript";
 
 export enum ContextType {
-    None,
-    Void,
-    NonVoid,
-    Mixed,
+    None = 0,
+    Void = 0b01,
+    NonVoid = 0b10,
+    Mixed = 0b11,
 }
 
 function hasNoSelfAncestor(declaration: ts.Declaration): boolean {
@@ -29,15 +29,28 @@ function hasNoSelfAncestor(declaration: ts.Declaration): boolean {
 }
 
 function getExplicitThisParameter(signatureDeclaration: ts.SignatureDeclaration): ts.ParameterDeclaration | undefined {
-    return signatureDeclaration.parameters.find(
-        param => ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword
-    );
+    const param = signatureDeclaration.parameters[0];
+    if (param && ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword) {
+        return param;
+    }
+}
+
+interface SignatureDeclarationWithContextType extends ts.SignatureDeclarationBase {
+    tstlFunctionContextType?: ContextType;
 }
 
 export function getDeclarationContextType(
-    { program }: TransformationContext,
+    context: TransformationContext,
     signatureDeclaration: ts.SignatureDeclaration
 ): ContextType {
+    const withContextType = signatureDeclaration as SignatureDeclarationWithContextType;
+    if (withContextType.tstlFunctionContextType !== undefined) {
+        return withContextType.tstlFunctionContextType;
+    }
+    return (withContextType.tstlFunctionContextType = computeDeclarationContextType(context, signatureDeclaration));
+}
+
+function computeDeclarationContextType(context: TransformationContext, signatureDeclaration: ts.SignatureDeclaration) {
     const thisParameter = getExplicitThisParameter(signatureDeclaration);
     if (thisParameter) {
         // Explicit 'this'
@@ -66,11 +79,7 @@ export function getDeclarationContextType(
                 ts.isClassDeclaration(n) || ts.isClassExpression(n) || ts.isInterfaceDeclaration(n)
         );
 
-        if (scopeDeclaration === undefined) {
-            return ContextType.NonVoid;
-        }
-
-        if (getNodeAnnotations(scopeDeclaration).has(AnnotationKind.NoSelf)) {
+        if (scopeDeclaration !== undefined && getNodeAnnotations(scopeDeclaration).has(AnnotationKind.NoSelf)) {
             return ContextType.Void;
         }
 
@@ -78,6 +87,7 @@ export function getDeclarationContextType(
     }
 
     // When using --noImplicitSelf and the signature is defined in a file targeted by the program apply the @noSelf rule.
+    const program = context.program;
     const options = program.getCompilerOptions() as CompilerOptions;
     if (options.noImplicitSelf) {
         const sourceFile = program.getSourceFile(signatureDeclaration.getSourceFile().fileName);
@@ -99,60 +109,55 @@ export function getDeclarationContextType(
 }
 
 function reduceContextTypes(contexts: ContextType[]): ContextType {
-    const reducer = (a: ContextType, b: ContextType) => {
-        if (a === ContextType.None) {
-            return b;
-        } else if (b === ContextType.None) {
-            return a;
-        } else if (a !== b) {
-            return ContextType.Mixed;
-        } else {
-            return a;
-        }
-    };
-
-    return contexts.reduce(reducer, ContextType.None);
+    let type = ContextType.None;
+    for (const context of contexts) {
+        type |= context;
+        if (type === ContextType.Mixed) break;
+    }
+    return type;
 }
 
-function getSignatureDeclarations(
-    context: TransformationContext,
-    signatures: readonly ts.Signature[]
-): ts.SignatureDeclaration[] {
-    return signatures.flatMap(signature => {
-        const signatureDeclaration = signature.getDeclaration();
-        let inferredType: ts.Type | undefined;
-        if (
-            ts.isMethodDeclaration(signatureDeclaration) &&
-            ts.isObjectLiteralExpression(signatureDeclaration.parent) &&
-            !getExplicitThisParameter(signatureDeclaration)
-        ) {
-            inferredType = context.checker.getContextualTypeForObjectLiteralElement(signatureDeclaration);
-        } else if (
-            (ts.isFunctionExpression(signatureDeclaration) || ts.isArrowFunction(signatureDeclaration)) &&
-            !getExplicitThisParameter(signatureDeclaration)
-        ) {
-            // Infer type of function expressions/arrow functions
-            inferredType = inferAssignedType(context, signatureDeclaration);
-        }
+function getSignatureDeclarations(context: TransformationContext, signature: ts.Signature): ts.SignatureDeclaration[] {
+    const signatureDeclaration = signature.getDeclaration();
+    let inferredType: ts.Type | undefined;
+    if (
+        ts.isMethodDeclaration(signatureDeclaration) &&
+        ts.isObjectLiteralExpression(signatureDeclaration.parent) &&
+        !getExplicitThisParameter(signatureDeclaration)
+    ) {
+        inferredType = context.checker.getContextualTypeForObjectLiteralElement(signatureDeclaration);
+    } else if (
+        (ts.isFunctionExpression(signatureDeclaration) || ts.isArrowFunction(signatureDeclaration)) &&
+        !getExplicitThisParameter(signatureDeclaration)
+    ) {
+        // Infer type of function expressions/arrow functions
+        inferredType = inferAssignedType(context, signatureDeclaration);
+    }
 
-        if (inferredType) {
-            const inferredSignatures = getAllCallSignatures(inferredType);
-            if (inferredSignatures.length > 0) {
-                return inferredSignatures.map(s => s.getDeclaration());
-            }
+    if (inferredType) {
+        const inferredSignatures = getAllCallSignatures(inferredType);
+        if (inferredSignatures.length > 0) {
+            return inferredSignatures.map(s => s.getDeclaration());
         }
+    }
 
-        return signatureDeclaration;
-    });
+    return [signatureDeclaration];
+}
+
+interface TypeWithFunctionContext extends ts.Type {
+    tstlFunctionContextType?: ContextType;
 }
 
 export function getFunctionContextType(context: TransformationContext, type: ts.Type): ContextType {
-    if (type.isTypeParameter()) {
-        type = type.getConstraint() ?? type;
-    }
+    const asCached = type as TypeWithFunctionContext;
+    if (asCached.tstlFunctionContextType !== undefined) return asCached.tstlFunctionContextType;
+    return (asCached.tstlFunctionContextType = computeFunctionContextType(context, type));
+}
 
-    if (type.isUnion()) {
-        return reduceContextTypes(type.types.map(t => getFunctionContextType(context, t)));
+function computeFunctionContextType(context: TransformationContext, type: ts.Type): ContextType {
+    if (type.isTypeParameter()) {
+        const constraint = type.getConstraint();
+        if (constraint) return getFunctionContextType(context, constraint);
     }
 
     const signatures = context.checker.getSignaturesOfType(type, ts.SignatureKind.Call);
@@ -160,6 +165,7 @@ export function getFunctionContextType(context: TransformationContext, type: ts.
         return ContextType.None;
     }
 
-    const signatureDeclarations = getSignatureDeclarations(context, signatures);
-    return reduceContextTypes(signatureDeclarations.map(s => getDeclarationContextType(context, s)));
+    return reduceContextTypes(
+        signatures.flatMap(s => getSignatureDeclarations(context, s)).map(s => getDeclarationContextType(context, s))
+    );
 }

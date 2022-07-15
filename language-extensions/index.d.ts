@@ -8,7 +8,9 @@ type AnyNotNil = {};
  *
  * @param TBrand A string used to uniquely identify the language extension type
  */
-declare type LuaExtension<TBrand extends string> = { [T in TBrand]: { readonly __luaExtensionSymbol: unique symbol } };
+declare interface LuaExtension<TBrand extends string> {
+    readonly __tstlExtension: TBrand;
+}
 
 /**
  * Returns multiple values from a function, by wrapping them in a LuaMultiReturn tuple.
@@ -17,7 +19,7 @@ declare type LuaExtension<TBrand extends string> = { [T in TBrand]: { readonly _
  * @param T A tuple type with each element type representing a return value's type.
  * @param values Return values.
  */
-declare const $multi: (<T extends any[]>(...values: T) => LuaMultiReturn<T>) & LuaExtension<"__luaMultiFunctionBrand">;
+declare const $multi: (<T extends any[]>(...values: T) => LuaMultiReturn<T>) & LuaExtension<"MultiFunction">;
 
 /**
  * Represents multiple return values as a tuple.
@@ -25,7 +27,9 @@ declare const $multi: (<T extends any[]>(...values: T) => LuaMultiReturn<T>) & L
  *
  * @param T A tuple type with each element type representing a return value's type.
  */
-declare type LuaMultiReturn<T extends any[]> = T & LuaExtension<"__luaMultiReturnBrand">;
+declare type LuaMultiReturn<T extends any[]> = T & {
+    readonly __tstlMultiReturn: any;
+};
 
 /**
  * Creates a Lua-style numeric for loop (for i=start,limit,step) when used in for...of. Not valid in any other context.
@@ -36,13 +40,13 @@ declare type LuaMultiReturn<T extends any[]> = T & LuaExtension<"__luaMultiRetur
  * @param step The amount to increment each iteration.
  */
 declare const $range: ((start: number, limit: number, step?: number) => Iterable<number>) &
-    LuaExtension<"__luaRangeFunctionBrand">;
+    LuaExtension<"RangeFunction">;
 
 /**
  * Transpiles to the global vararg (`...`)
  * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
  */
-declare const $vararg: string[] & LuaExtension<"__luaVarargConstantBrand">;
+declare const $vararg: string[] & LuaExtension<"VarargConstant">;
 
 /**
  * Represents a Lua-style iterator which is returned from a LuaIterable.
@@ -76,7 +80,7 @@ declare type LuaIterator<TValue, TState> = TState extends undefined
  */
 declare type LuaIterable<TValue, TState = undefined> = Iterable<TValue> &
     LuaIterator<TValue, TState> &
-    LuaExtension<"__luaIterableBrand">;
+    LuaExtension<"Iterable">;
 
 /**
  * Represents an object that can be iterated with pairs()
@@ -86,7 +90,7 @@ declare type LuaIterable<TValue, TState = undefined> = Iterable<TValue> &
  * @param TValue The type of the value returned each iteration.
  */
 declare type LuaPairsIterable<TKey extends AnyNotNil, TValue> = Iterable<[TKey, TValue]> &
-    LuaExtension<"__luaPairsIterableBrand">;
+    LuaExtension<"PairsIterable">;
 
 /**
  * Calls to functions with this type are translated to `left + right`.
@@ -96,8 +100,7 @@ declare type LuaPairsIterable<TKey extends AnyNotNil, TValue> = Iterable<[TKey, 
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaAddition<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension<"__luaAdditionBrand">;
+declare type LuaAddition<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & LuaExtension<"Addition">;
 
 /**
  * Calls to methods with this type are translated to `left + right`, where `left` is the object with the method.
@@ -106,8 +109,7 @@ declare type LuaAddition<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight)
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaAdditionMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension<"__luaAdditionMethodBrand">;
+declare type LuaAdditionMethod<TRight, TReturn> = ((right: TRight) => TReturn) & LuaExtension<"AdditionMethod">;
 
 /**
  * Calls to functions with this type are translated to `left - right`.
@@ -118,7 +120,7 @@ declare type LuaAdditionMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
  * @param TReturn The resulting (return) type of the operation.
  */
 declare type LuaSubtraction<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension<"__luaSubtractionBrand">;
+    LuaExtension<"Subtraction">;
 
 /**
  * Calls to methods with this type are translated to `left - right`, where `left` is the object with the method.
@@ -127,8 +129,7 @@ declare type LuaSubtraction<TLeft, TRight, TReturn> = ((left: TLeft, right: TRig
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaSubtractionMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension<"__luaSubtractionMethodBrand">;
+declare type LuaSubtractionMethod<TRight, TReturn> = ((right: TRight) => TReturn) & LuaExtension<"SubtractionMethod">;
 
 /**
  * Calls to functions with this type are translated to `left * right`.
@@ -139,7 +140,7 @@ declare type LuaSubtractionMethod<TRight, TReturn> = ((right: TRight) => TReturn
  * @param TReturn The resulting (return) type of the operation.
  */
 declare type LuaMultiplication<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension<"__luaMultiplicationBrand">;
+    LuaExtension<"Multiplication">;
 
 /**
  * Calls to methods with this type are translated to `left * right`, where `left` is the object with the method.
@@ -149,7 +150,7 @@ declare type LuaMultiplication<TLeft, TRight, TReturn> = ((left: TLeft, right: T
  * @param TReturn The resulting (return) type of the operation.
  */
 declare type LuaMultiplicationMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension<"__luaMultiplicationMethodBrand">;
+    LuaExtension<"MultiplicationMethod">;
 
 /**
  * Calls to functions with this type are translated to `left / right`.
@@ -159,8 +160,7 @@ declare type LuaMultiplicationMethod<TRight, TReturn> = ((right: TRight) => TRet
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaDivision<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension<"__luaDivisionBrand">;
+declare type LuaDivision<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & LuaExtension<"Division">;
 
 /**
  * Calls to methods with this type are translated to `left / right`, where `left` is the object with the method.
@@ -169,8 +169,7 @@ declare type LuaDivision<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight)
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaDivisionMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension<"__luaDivisionMethodBrand">;
+declare type LuaDivisionMethod<TRight, TReturn> = ((right: TRight) => TReturn) & LuaExtension<"DivisionMethod">;
 
 /**
  * Calls to functions with this type are translated to `left % right`.
@@ -180,8 +179,7 @@ declare type LuaDivisionMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaModulo<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension<"__luaModuloBrand">;
+declare type LuaModulo<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & LuaExtension<"Modulo">;
 
 /**
  * Calls to methods with this type are translated to `left % right`, where `left` is the object with the method.
@@ -190,7 +188,7 @@ declare type LuaModulo<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) =
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaModuloMethod<TRight, TReturn> = ((right: TRight) => TReturn) & LuaExtension<"__luaModuloMethodBrand">;
+declare type LuaModuloMethod<TRight, TReturn> = ((right: TRight) => TReturn) & LuaExtension<"ModuloMethod">;
 
 /**
  * Calls to functions with this type are translated to `left ^ right`.
@@ -200,8 +198,7 @@ declare type LuaModuloMethod<TRight, TReturn> = ((right: TRight) => TReturn) & L
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaPower<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension<"__luaPowerBrand">;
+declare type LuaPower<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & LuaExtension<"Power">;
 
 /**
  * Calls to methods with this type are translated to `left ^ right`, where `left` is the object with the method.
@@ -210,7 +207,7 @@ declare type LuaPower<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) =>
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaPowerMethod<TRight, TReturn> = ((right: TRight) => TReturn) & LuaExtension<"__luaPowerMethodBrand">;
+declare type LuaPowerMethod<TRight, TReturn> = ((right: TRight) => TReturn) & LuaExtension<"PowerMethod">;
 
 /**
  * Calls to functions with this type are translated to `left // right`.
@@ -221,7 +218,7 @@ declare type LuaPowerMethod<TRight, TReturn> = ((right: TRight) => TReturn) & Lu
  * @param TReturn The resulting (return) type of the operation.
  */
 declare type LuaFloorDivision<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension<"__luaFloorDivisionBrand">;
+    LuaExtension<"FloorDivision">;
 
 /**
  * Calls to methods with this type are translated to `left // right`, where `left` is the object with the method.
@@ -231,7 +228,7 @@ declare type LuaFloorDivision<TLeft, TRight, TReturn> = ((left: TLeft, right: TR
  * @param TReturn The resulting (return) type of the operation.
  */
 declare type LuaFloorDivisionMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension<"__luaFloorDivisionMethodBrand">;
+    LuaExtension<"FloorDivisionMethod">;
 
 /**
  * Calls to functions with this type are translated to `left & right`.
@@ -242,7 +239,7 @@ declare type LuaFloorDivisionMethod<TRight, TReturn> = ((right: TRight) => TRetu
  * @param TReturn The resulting (return) type of the operation.
  */
 declare type LuaBitwiseAnd<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension<"__luaBitwiseAndBrand">;
+    LuaExtension<"BitwiseAnd">;
 
 /**
  * Calls to methods with this type are translated to `left & right`, where `left` is the object with the method.
@@ -251,8 +248,7 @@ declare type LuaBitwiseAnd<TLeft, TRight, TReturn> = ((left: TLeft, right: TRigh
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaBitwiseAndMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension<"__luaBitwiseAndMethodBrand">;
+declare type LuaBitwiseAndMethod<TRight, TReturn> = ((right: TRight) => TReturn) & LuaExtension<"BitwiseAndMethod">;
 
 /**
  * Calls to functions with this type are translated to `left | right`.
@@ -263,7 +259,7 @@ declare type LuaBitwiseAndMethod<TRight, TReturn> = ((right: TRight) => TReturn)
  * @param TReturn The resulting (return) type of the operation.
  */
 declare type LuaBitwiseOr<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension<"__luaBitwiseOrBrand">;
+    LuaExtension<"BitwiseOr">;
 
 /**
  * Calls to methods with this type are translated to `left | right`, where `left` is the object with the method.
@@ -272,8 +268,7 @@ declare type LuaBitwiseOr<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaBitwiseOrMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension<"__luaBitwiseOrMethodBrand">;
+declare type LuaBitwiseOrMethod<TRight, TReturn> = ((right: TRight) => TReturn) & LuaExtension<"BitwiseOrMethod">;
 
 /**
  * Calls to functions with this type are translated to `left ~ right`.
@@ -284,7 +279,7 @@ declare type LuaBitwiseOrMethod<TRight, TReturn> = ((right: TRight) => TReturn) 
  * @param TReturn The resulting (return) type of the operation.
  */
 declare type LuaBitwiseExclusiveOr<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension<"__luaBitwiseExclusiveOrBrand">;
+    LuaExtension<"BitwiseExclusiveOr">;
 
 /**
  * Calls to methods with this type are translated to `left ~ right`, where `left` is the object with the method.
@@ -294,7 +289,7 @@ declare type LuaBitwiseExclusiveOr<TLeft, TRight, TReturn> = ((left: TLeft, righ
  * @param TReturn The resulting (return) type of the operation.
  */
 declare type LuaBitwiseExclusiveOrMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension<"__luaBitwiseExclusiveOrMethodBrand">;
+    LuaExtension<"BitwiseExclusiveOrMethod">;
 
 /**
  * Calls to functions with this type are translated to `left << right`.
@@ -305,7 +300,7 @@ declare type LuaBitwiseExclusiveOrMethod<TRight, TReturn> = ((right: TRight) => 
  * @param TReturn The resulting (return) type of the operation.
  */
 declare type LuaBitwiseLeftShift<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension<"__luaBitwiseLeftShiftBrand">;
+    LuaExtension<"BitwiseLeftShift">;
 
 /**
  * Calls to methods with this type are translated to `left << right`, where `left` is the object with the method.
@@ -315,7 +310,7 @@ declare type LuaBitwiseLeftShift<TLeft, TRight, TReturn> = ((left: TLeft, right:
  * @param TReturn The resulting (return) type of the operation.
  */
 declare type LuaBitwiseLeftShiftMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension<"__luaBitwiseLeftShiftMethodBrand">;
+    LuaExtension<"BitwiseLeftShiftMethod">;
 
 /**
  * Calls to functions with this type are translated to `left >> right`.
@@ -326,7 +321,7 @@ declare type LuaBitwiseLeftShiftMethod<TRight, TReturn> = ((right: TRight) => TR
  * @param TReturn The resulting (return) type of the operation.
  */
 declare type LuaBitwiseRightShift<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension<"__luaBitwiseRightShiftBrand">;
+    LuaExtension<"BitwiseRightShift">;
 
 /**
  * Calls to methods with this type are translated to `left >> right`, where `left` is the object with the method.
@@ -336,7 +331,7 @@ declare type LuaBitwiseRightShift<TLeft, TRight, TReturn> = ((left: TLeft, right
  * @param TReturn The resulting (return) type of the operation.
  */
 declare type LuaBitwiseRightShiftMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension<"__luaBitwiseRightShiftMethodBrand">;
+    LuaExtension<"BitwiseRightShiftMethod">;
 
 /**
  * Calls to functions with this type are translated to `left .. right`.
@@ -346,8 +341,7 @@ declare type LuaBitwiseRightShiftMethod<TRight, TReturn> = ((right: TRight) => T
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaConcat<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension<"__luaConcatBrand">;
+declare type LuaConcat<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & LuaExtension<"Concat">;
 
 /**
  * Calls to methods with this type are translated to `left .. right`, where `left` is the object with the method.
@@ -356,7 +350,7 @@ declare type LuaConcat<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) =
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaConcatMethod<TRight, TReturn> = ((right: TRight) => TReturn) & LuaExtension<"__luaConcatMethodBrand">;
+declare type LuaConcatMethod<TRight, TReturn> = ((right: TRight) => TReturn) & LuaExtension<"ConcatMethod">;
 
 /**
  * Calls to functions with this type are translated to `left < right`.
@@ -366,8 +360,7 @@ declare type LuaConcatMethod<TRight, TReturn> = ((right: TRight) => TReturn) & L
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaLessThan<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension<"__luaLessThanBrand">;
+declare type LuaLessThan<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & LuaExtension<"LessThan">;
 
 /**
  * Calls to methods with this type are translated to `left < right`, where `left` is the object with the method.
@@ -376,8 +369,7 @@ declare type LuaLessThan<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight)
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaLessThanMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension<"__luaLessThanMethodBrand">;
+declare type LuaLessThanMethod<TRight, TReturn> = ((right: TRight) => TReturn) & LuaExtension<"LessThanMethod">;
 
 /**
  * Calls to functions with this type are translated to `left > right`.
@@ -388,7 +380,7 @@ declare type LuaLessThanMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
  * @param TReturn The resulting (return) type of the operation.
  */
 declare type LuaGreaterThan<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) &
-    LuaExtension<"__luaGreaterThanBrand">;
+    LuaExtension<"GreaterThan">;
 
 /**
  * Calls to methods with this type are translated to `left > right`, where `left` is the object with the method.
@@ -397,8 +389,7 @@ declare type LuaGreaterThan<TLeft, TRight, TReturn> = ((left: TLeft, right: TRig
  * @param TRight The type of the right-hand-side of the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaGreaterThanMethod<TRight, TReturn> = ((right: TRight) => TReturn) &
-    LuaExtension<"__luaGreaterThanMethodBrand">;
+declare type LuaGreaterThanMethod<TRight, TReturn> = ((right: TRight) => TReturn) & LuaExtension<"GreaterThanMethod">;
 
 /**
  * Calls to functions with this type are translated to `-operand`.
@@ -407,7 +398,7 @@ declare type LuaGreaterThanMethod<TRight, TReturn> = ((right: TRight) => TReturn
  * @param TOperand The type of the value in the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaNegation<TOperand, TReturn> = ((operand: TOperand) => TReturn) & LuaExtension<"__luaNegationBrand">;
+declare type LuaNegation<TOperand, TReturn> = ((operand: TOperand) => TReturn) & LuaExtension<"Negation">;
 
 /**
  * Calls to method with this type are translated to `-operand`, where `operand` is the object with the method.
@@ -415,7 +406,7 @@ declare type LuaNegation<TOperand, TReturn> = ((operand: TOperand) => TReturn) &
  *
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaNegationMethod<TReturn> = (() => TReturn) & LuaExtension<"__luaNegationMethodBrand">;
+declare type LuaNegationMethod<TReturn> = (() => TReturn) & LuaExtension<"NegationMethod">;
 
 /**
  * Calls to functions with this type are translated to `~operand`.
@@ -424,7 +415,7 @@ declare type LuaNegationMethod<TReturn> = (() => TReturn) & LuaExtension<"__luaN
  * @param TOperand The type of the value in the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaBitwiseNot<TOperand, TReturn> = ((operand: TOperand) => TReturn) & LuaExtension<"__luaBitwiseNotBrand">;
+declare type LuaBitwiseNot<TOperand, TReturn> = ((operand: TOperand) => TReturn) & LuaExtension<"BitwiseNot">;
 
 /**
  * Calls to method with this type are translated to `~operand`, where `operand` is the object with the method.
@@ -432,7 +423,7 @@ declare type LuaBitwiseNot<TOperand, TReturn> = ((operand: TOperand) => TReturn)
  *
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaBitwiseNotMethod<TReturn> = (() => TReturn) & LuaExtension<"__luaBitwiseNotMethodBrand">;
+declare type LuaBitwiseNotMethod<TReturn> = (() => TReturn) & LuaExtension<"BitwiseNotMethod">;
 
 /**
  * Calls to functions with this type are translated to `#operand`.
@@ -441,7 +432,7 @@ declare type LuaBitwiseNotMethod<TReturn> = (() => TReturn) & LuaExtension<"__lu
  * @param TOperand The type of the value in the operation.
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaLength<TOperand, TReturn> = ((operand: TOperand) => TReturn) & LuaExtension<"__luaLengthBrand">;
+declare type LuaLength<TOperand, TReturn> = ((operand: TOperand) => TReturn) & LuaExtension<"Length">;
 
 /**
  * Calls to method with this type are translated to `#operand`, where `operand` is the object with the method.
@@ -449,7 +440,7 @@ declare type LuaLength<TOperand, TReturn> = ((operand: TOperand) => TReturn) & L
  *
  * @param TReturn The resulting (return) type of the operation.
  */
-declare type LuaLengthMethod<TReturn> = (() => TReturn) & LuaExtension<"__luaLengthMethodBrand">;
+declare type LuaLengthMethod<TReturn> = (() => TReturn) & LuaExtension<"LengthMethod">;
 
 /**
  * Calls to functions with this type are translated to `table[key]`.
@@ -463,7 +454,7 @@ declare type LuaTableGet<TTable extends AnyTable, TKey extends AnyNotNil, TValue
     table: TTable,
     key: TKey
 ) => TValue) &
-    LuaExtension<"__luaTableGetBrand">;
+    LuaExtension<"TableGet">;
 
 /**
  * Calls to methods with this type are translated to `table[key]`, where `table` is the object with the method.
@@ -473,7 +464,7 @@ declare type LuaTableGet<TTable extends AnyTable, TKey extends AnyNotNil, TValue
  * @param TValue The type of the value stored in the table.
  */
 declare type LuaTableGetMethod<TKey extends AnyNotNil, TValue> = ((key: TKey) => TValue) &
-    LuaExtension<"__luaTableGetMethodBrand">;
+    LuaExtension<"TableGetMethod">;
 
 /**
  * Calls to functions with this type are translated to `table[key] = value`.
@@ -488,7 +479,7 @@ declare type LuaTableSet<TTable extends AnyTable, TKey extends AnyNotNil, TValue
     key: TKey,
     value: TValue
 ) => void) &
-    LuaExtension<"__luaTableSetBrand">;
+    LuaExtension<"TableSet">;
 
 /**
  * Calls to methods with this type are translated to `table[key] = value`, where `table` is the object with the method.
@@ -498,7 +489,7 @@ declare type LuaTableSet<TTable extends AnyTable, TKey extends AnyNotNil, TValue
  * @param TValue The type of the value to assign to the table.
  */
 declare type LuaTableSetMethod<TKey extends AnyNotNil, TValue> = ((key: TKey, value: TValue) => void) &
-    LuaExtension<"__luaTableSetMethodBrand">;
+    LuaExtension<"TableSetMethod">;
 
 /**
  * Calls to functions with this type are translated to `table[key] ~= nil`.
@@ -508,7 +499,7 @@ declare type LuaTableSetMethod<TKey extends AnyNotNil, TValue> = ((key: TKey, va
  * @param TKey The type of the key to use to access the table.
  */
 declare type LuaTableHas<TTable extends AnyTable, TKey extends AnyNotNil> = ((table: TTable, key: TKey) => boolean) &
-    LuaExtension<"__luaTableHasBrand">;
+    LuaExtension<"TableHas">;
 
 /**
  * Calls to methods with this type are translated to `table[key] ~= nil`, where `table` is the object with the method.
@@ -516,8 +507,7 @@ declare type LuaTableHas<TTable extends AnyTable, TKey extends AnyNotNil> = ((ta
  *
  * @param TKey The type of the key to use to access the table.
  */
-declare type LuaTableHasMethod<TKey extends AnyNotNil> = ((key: TKey) => boolean) &
-    LuaExtension<"__luaTableHasMethodBrand">;
+declare type LuaTableHasMethod<TKey extends AnyNotNil> = ((key: TKey) => boolean) & LuaExtension<"TableHasMethod">;
 
 /**
  * Calls to functions with this type are translated to `table[key] = nil`.
@@ -527,7 +517,7 @@ declare type LuaTableHasMethod<TKey extends AnyNotNil> = ((key: TKey) => boolean
  * @param TKey The type of the key to use to access the table.
  */
 declare type LuaTableDelete<TTable extends AnyTable, TKey extends AnyNotNil> = ((table: TTable, key: TKey) => boolean) &
-    LuaExtension<"__luaTableDeleteBrand">;
+    LuaExtension<"TableDelete">;
 
 /**
  * Calls to methods with this type are translated to `table[key] = nil`, where `table` is the object with the method.
@@ -536,7 +526,7 @@ declare type LuaTableDelete<TTable extends AnyTable, TKey extends AnyNotNil> = (
  * @param TKey The type of the key to use to access the table.
  */
 declare type LuaTableDeleteMethod<TKey extends AnyNotNil> = ((key: TKey) => boolean) &
-    LuaExtension<"__luaTableDeleteMethodBrand">;
+    LuaExtension<"TableDeleteMethod">;
 
 /**
  * A convenience type for working directly with a Lua table.
@@ -564,7 +554,7 @@ declare type LuaTableConstructor = (new <TKey extends AnyNotNil = AnyNotNil, TVa
     TKey,
     TValue
 >) &
-    LuaExtension<"__luaTableNewBrand">;
+    LuaExtension<"TableNew">;
 
 /**
  * A convenience type for working directly with a Lua table.

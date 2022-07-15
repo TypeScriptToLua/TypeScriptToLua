@@ -7,13 +7,9 @@ import * as extensions from "../../utils/language-extensions";
 import { getVariableDeclarationBinding } from "../loops/utils";
 import { transformArrayBindingElement } from "../variable-declaration";
 
-function isPairsIterableType(type: ts.Type): boolean {
-    return extensions.isExtensionType(type, extensions.ExtensionKind.PairsIterableType);
-}
-
 export function isPairsIterableExpression(context: TransformationContext, expression: ts.Expression): boolean {
     const type = context.checker.getTypeAtLocation(expression);
-    return isPairsIterableType(type);
+    return extensions.isExtensionType(context, type, extensions.ExtensionKind.PairsIterableType);
 }
 
 export function transformForOfPairsIterableStatement(

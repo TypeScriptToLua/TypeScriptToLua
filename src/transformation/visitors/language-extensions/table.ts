@@ -25,17 +25,17 @@ function getTableExtensionKindForCall(
     validExtensions: extensions.ExtensionKind[]
 ) {
     const type = getFunctionTypeForCall(context, node);
-    return type && validExtensions.find(extensionKind => extensions.isExtensionType(type, extensionKind));
+    return type && validExtensions.find(extensionKind => extensions.isExtensionType(context, type, extensionKind));
 }
 
 export function isTableExtensionIdentifier(context: TransformationContext, node: ts.Identifier) {
     const type = context.checker.getTypeAtLocation(node);
-    return tableExtensions.some(extensionKind => extensions.isExtensionType(type, extensionKind));
+    return tableExtensions.some(extensionKind => extensions.isExtensionType(context, type, extensionKind));
 }
 
 export function isTableNewCall(context: TransformationContext, node: ts.NewExpression) {
     const type = context.checker.getTypeAtLocation(node.expression);
-    return extensions.isExtensionType(type, extensions.ExtensionKind.TableNewType);
+    return extensions.isExtensionType(context, type, extensions.ExtensionKind.TableNewType);
 }
 
 export function transformTableExtensionCall(

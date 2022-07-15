@@ -5,12 +5,13 @@ import { findFirstNodeAbove } from "../../utils/typescript";
 import { isIterableExpression } from "./iterable";
 import { invalidMultiFunctionUse } from "../../utils/diagnostics";
 
+const multiReturnExtensionName = "__tstlMultiReturn";
 export function isMultiReturnType(type: ts.Type): boolean {
-    return extensions.isExtensionType(type, extensions.ExtensionKind.MultiType);
+    return type.getProperty(multiReturnExtensionName) !== undefined;
 }
 
 export function canBeMultiReturnType(type: ts.Type): boolean {
-    return isMultiReturnType(type) || (type.isUnion() && type.types.some(canBeMultiReturnType));
+    return isMultiReturnType(type) || (type.isUnion() && type.types.some(t => canBeMultiReturnType(t)));
 }
 
 export function isMultiFunctionCall(context: TransformationContext, expression: ts.CallExpression): boolean {

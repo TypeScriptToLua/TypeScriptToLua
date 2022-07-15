@@ -6,7 +6,7 @@ import { AnnotationKind, getNodeAnnotations } from "../utils/annotations";
 import { annotationRemoved } from "../utils/diagnostics";
 import { createDefaultExportStringLiteral, hasDefaultExportModifier } from "../utils/export";
 import { ContextType, getFunctionContextType } from "../utils/function-context";
-import { getExtensionKinds } from "../utils/language-extensions";
+import { getExtensionKind } from "../utils/language-extensions";
 import {
     createExportsIdentifier,
     createLocalOrExportedOrGlobalDeclaration,
@@ -77,14 +77,14 @@ export function createCallableTable(functionExpression: lua.Expression): lua.Exp
     ]);
 }
 
-export function isFunctionTypeWithProperties(functionType: ts.Type) {
+export function isFunctionTypeWithProperties(context: TransformationContext, functionType: ts.Type): boolean {
     if (functionType.isUnion()) {
-        return functionType.types.some(isFunctionTypeWithProperties);
+        return functionType.types.some(t => isFunctionTypeWithProperties(context, t));
     } else {
         return (
             isFunctionType(functionType) &&
             functionType.getProperties().length > 0 &&
-            getExtensionKinds(functionType).length === 0 // ignore TSTL extension functions like $range
+            getExtensionKind(context, functionType) === undefined // ignore TSTL extension functions like $range
         );
     }
 }
@@ -290,7 +290,7 @@ export function transformFunctionLikeDeclaration(
             // Only handle if the name is actually referenced inside the function
             if (isReferenced) {
                 const nameIdentifier = transformIdentifier(context, node.name);
-                if (isFunctionTypeWithProperties(context.checker.getTypeAtLocation(node))) {
+                if (isFunctionTypeWithProperties(context, context.checker.getTypeAtLocation(node))) {
                     context.addPrecedingStatements([
                         lua.createVariableDeclarationStatement(nameIdentifier),
                         lua.createAssignmentStatement(nameIdentifier, createCallableTable(functionExpression)),
@@ -305,7 +305,7 @@ export function transformFunctionLikeDeclaration(
         }
     }
 
-    return isNamedFunctionExpression && isFunctionTypeWithProperties(context.checker.getTypeAtLocation(node))
+    return isNamedFunctionExpression && isFunctionTypeWithProperties(context, context.checker.getTypeAtLocation(node))
         ? createCallableTable(functionExpression)
         : functionExpression;
 }
@@ -345,7 +345,7 @@ export const transformFunctionDeclaration: FunctionVisitor<ts.FunctionDeclaratio
 
     // Wrap functions with properties into a callable table
     const wrappedFunction =
-        node.name && isFunctionTypeWithProperties(context.checker.getTypeAtLocation(node.name))
+        node.name && isFunctionTypeWithProperties(context, context.checker.getTypeAtLocation(node.name))
             ? createCallableTable(functionExpression)
             : functionExpression;
 

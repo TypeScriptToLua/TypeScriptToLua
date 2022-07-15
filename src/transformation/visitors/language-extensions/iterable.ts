@@ -8,19 +8,15 @@ import { invalidMultiIterableWithoutDestructuring } from "../../utils/diagnostic
 import { cast } from "../../../utils";
 import { isMultiReturnType } from "./multi";
 
-export function isIterableType(type: ts.Type): boolean {
-    return extensions.isExtensionType(type, extensions.ExtensionKind.IterableType);
-}
-
 export function returnsIterableType(context: TransformationContext, node: ts.CallExpression): boolean {
     const signature = context.checker.getResolvedSignature(node);
     const type = signature?.getReturnType();
-    return type ? isIterableType(type) : false;
+    return type ? extensions.isExtensionType(context, type, extensions.ExtensionKind.IterableType) : false;
 }
 
 export function isIterableExpression(context: TransformationContext, expression: ts.Expression): boolean {
     const type = context.checker.getTypeAtLocation(expression);
-    return isIterableType(type);
+    return extensions.isExtensionType(context, type, extensions.ExtensionKind.IterableType);
 }
 
 function transformForOfMultiIterableStatement(

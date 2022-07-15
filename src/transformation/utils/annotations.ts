@@ -18,79 +18,116 @@ export enum AnnotationKind {
     ForRange = "forRange",
 }
 
+const annotationValues = new Map(Object.values(AnnotationKind).map(k => [k.toLowerCase(), k]));
+
 export interface Annotation {
     kind: AnnotationKind;
     args: string[];
-}
-
-function createAnnotation(name: string, args: string[]): Annotation | undefined {
-    const kind = Object.values(AnnotationKind).find(k => k.toLowerCase() === name.toLowerCase());
-    if (kind !== undefined) {
-        return { kind, args };
-    }
 }
 
 export type AnnotationsMap = Map<AnnotationKind, Annotation>;
 
 function collectAnnotations(source: ts.Symbol | ts.Signature, annotationsMap: AnnotationsMap): void {
     for (const tag of source.getJsDocTags()) {
-        const annotation = createAnnotation(tag.name, tag.text?.map(p => p.text) ?? []);
-        if (annotation) {
-            annotationsMap.set(annotation.kind, annotation);
+        // const annotationValue = annotationValues.get(tag.name.toLowerCase())
+        const tagName = annotationValues.get(tag.name.toLowerCase());
+        if (tagName) {
+            // const annotation = createAnnotation(tag.name, tag.text?.map(p => p.text) ?? []);
+            const annotation: Annotation = {
+                kind: tag.name as AnnotationKind,
+                args: tag.text?.map(p => p.text) ?? [],
+            };
+            annotationsMap.set(tagName, annotation);
         }
     }
+}
+
+interface SymbolWithAnnotationMap extends ts.Symbol {
+    tstlAnnotationMap?: AnnotationsMap;
 }
 
 export function getSymbolAnnotations(symbol: ts.Symbol): AnnotationsMap {
+    const withAnnotations = symbol as SymbolWithAnnotationMap;
+    if (withAnnotations.tstlAnnotationMap !== undefined) return withAnnotations.tstlAnnotationMap;
+
     const annotationsMap: AnnotationsMap = new Map();
     collectAnnotations(symbol, annotationsMap);
-    return annotationsMap;
+    return (withAnnotations.tstlAnnotationMap = annotationsMap);
 }
 
+// interface TypeWithAnnotationMap extends ts.Type {
+//     tstlAnnotationMap?: AnnotationsMap;
+// }
+
 export function getTypeAnnotations(type: ts.Type): AnnotationsMap {
+    // const withAnnotations = type as TypeWithAnnotationMap;
+    // if (withAnnotations.tstlAnnotationMap !== undefined) return withAnnotations.tstlAnnotationMap;
+
     const annotationsMap: AnnotationsMap = new Map();
-
-    if (type.symbol) collectAnnotations(type.symbol, annotationsMap);
-    if (type.aliasSymbol) collectAnnotations(type.aliasSymbol, annotationsMap);
-
+    if (type.symbol) {
+        getSymbolAnnotations(type.symbol).forEach((value, key) => {
+            annotationsMap.set(key, value);
+        });
+    }
+    if (type.aliasSymbol) {
+        getSymbolAnnotations(type.aliasSymbol).forEach((value, key) => {
+            annotationsMap.set(key, value);
+        });
+    }
     return annotationsMap;
+
+    // return (withAnnotations.tstlAnnotationMap = annotationsMap);
+}
+
+interface NodeWithAnnotationMap extends ts.Node {
+    tstlAnnotationMap?: AnnotationsMap;
 }
 
 export function getNodeAnnotations(node: ts.Node): AnnotationsMap {
+    const withAnnotations = node as NodeWithAnnotationMap;
+    if (withAnnotations.tstlAnnotationMap !== undefined) return withAnnotations.tstlAnnotationMap;
+
     const annotationsMap: AnnotationsMap = new Map();
+    collectAnnotationsFromTags(annotationsMap, ts.getAllJSDocTags(node, ts.isJSDocUnknownTag));
+    return (withAnnotations.tstlAnnotationMap = annotationsMap);
+}
 
-    for (const tag of ts.getJSDocTags(node)) {
-        const tagName = tag.tagName.text;
-        const annotation = createAnnotation(tagName, getTagArgsFromComment(tag));
-        if (annotation) {
-            annotationsMap.set(annotation.kind, annotation);
-        }
+function collectAnnotationsFromTags(annotationsMap: AnnotationsMap, tags: readonly ts.JSDocTag[]) {
+    for (const tag of tags) {
+        const tagName = annotationValues.get(tag.tagName.text.toLowerCase());
+        if (!tagName) continue;
+        annotationsMap.set(tagName, { kind: tagName, args: getTagArgsFromComment(tag) });
     }
-
-    return annotationsMap;
 }
 
 export function getFileAnnotations(sourceFile: ts.SourceFile): AnnotationsMap {
+    const withAnnotations = sourceFile as NodeWithAnnotationMap;
+    if (withAnnotations.tstlAnnotationMap !== undefined) return withAnnotations.tstlAnnotationMap;
+
     const annotationsMap: AnnotationsMap = new Map();
 
     if (sourceFile.statements.length > 0) {
         // Manually collect jsDoc because `getJSDocTags` includes tags only from closest comment
         const jsDoc = sourceFile.statements[0].jsDoc;
         if (jsDoc) {
-            for (const tag of jsDoc.flatMap(x => x.tags ?? [])) {
-                const tagName = tag.tagName.text;
-                const annotation = createAnnotation(tagName, getTagArgsFromComment(tag));
-                if (annotation) {
-                    annotationsMap.set(annotation.kind, annotation);
+            for (const jsDocElement of jsDoc) {
+                if (jsDocElement.tags) {
+                    collectAnnotationsFromTags(annotationsMap, jsDocElement.tags);
                 }
             }
         }
     }
+    return (withAnnotations.tstlAnnotationMap = annotationsMap);
+}
 
-    return annotationsMap;
+interface SignatureWithAnnotationMap extends ts.Signature {
+    tstlAnnotationMap?: AnnotationsMap;
 }
 
 export function getSignatureAnnotations(context: TransformationContext, signature: ts.Signature): AnnotationsMap {
+    const withAnnotations = signature as SignatureWithAnnotationMap;
+    if (withAnnotations.tstlAnnotationMap !== undefined) return withAnnotations.tstlAnnotationMap;
+
     const annotationsMap: AnnotationsMap = new Map();
     collectAnnotations(signature, annotationsMap);
 
@@ -99,11 +136,13 @@ export function getSignatureAnnotations(context: TransformationContext, signatur
     if (declaration?.parent && ts.isPropertySignature(declaration.parent)) {
         const symbol = context.checker.getSymbolAtLocation(declaration.parent.name);
         if (symbol) {
-            collectAnnotations(symbol, annotationsMap);
+            getSymbolAnnotations(symbol).forEach((value, key) => {
+                annotationsMap.set(key, value);
+            });
         }
     }
 
-    return annotationsMap;
+    return (withAnnotations.tstlAnnotationMap = annotationsMap);
 }
 
 export function isTupleReturnCall(context: TransformationContext, node: ts.Node): boolean {
@@ -147,7 +186,7 @@ export function isForRangeType(context: TransformationContext, node: ts.Node): b
     return getTypeAnnotations(type).has(AnnotationKind.ForRange);
 }
 
-export function getTagArgsFromComment(tag: ts.JSDocTag): string[] {
+function getTagArgsFromComment(tag: ts.JSDocTag): string[] {
     if (tag.comment) {
         if (typeof tag.comment === "string") {
             return tag.comment.split(" ");

@@ -5,8 +5,6 @@ export enum ExtensionKind {
     MultiFunction = "MultiFunction",
     RangeFunction = "RangeFunction",
     VarargConstant = "VarargConstant",
-    IterableType = "Iterable",
-    PairsIterableType = "PairsIterable",
     AdditionOperatorType = "Addition",
     AdditionOperatorMethodType = "AdditionMethod",
     SubtractionOperatorType = "Subtraction",
@@ -79,4 +77,32 @@ export function getExtensionKindForSymbol(
 ): ExtensionKind | undefined {
     const type = context.checker.getTypeOfSymbolAtLocation(symbol, context.sourceFile);
     return getExtensionTypeForType(context, type);
+}
+
+export enum IterableExtensionKind {
+    Iterable = "Iterable",
+    Pairs = "Pairs",
+}
+const iterableExtensionProperty = "__tstlIterable";
+
+export function getIterableExtensionTypeForType(
+    context: TransformationContext,
+    type: ts.Type
+): IterableExtensionKind | undefined {
+    const property = type.getProperty(iterableExtensionProperty);
+    if (!property) return undefined;
+    const propertyType = context.checker.getTypeOfSymbolAtLocation(property, context.sourceFile);
+    if (!propertyType.isStringLiteral()) return undefined;
+    const value = propertyType.value;
+    if (value in IterableExtensionKind) {
+        return value as IterableExtensionKind;
+    }
+}
+
+export function getIterableExtensionKindForNode(
+    context: TransformationContext,
+    node: ts.Node
+): IterableExtensionKind | undefined {
+    const type = context.checker.getTypeAtLocation(node);
+    return getIterableExtensionTypeForType(context, type);
 }

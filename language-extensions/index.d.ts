@@ -79,8 +79,9 @@ declare type LuaIterator<TValue, TState> = TState extends undefined
  * @param TState The type of the state value passed back to the iterator function each iteration.
  */
 declare type LuaIterable<TValue, TState = undefined> = Iterable<TValue> &
-    LuaIterator<TValue, TState> &
-    LuaExtension<"Iterable">;
+    LuaIterator<TValue, TState> & {
+        __tstlIterable: "Iterable";
+    };
 
 /**
  * Represents an object that can be iterated with pairs()
@@ -89,8 +90,9 @@ declare type LuaIterable<TValue, TState = undefined> = Iterable<TValue> &
  * @param TKey The type of the key returned each iteration.
  * @param TValue The type of the value returned each iteration.
  */
-declare type LuaPairsIterable<TKey extends AnyNotNil, TValue> = Iterable<[TKey, TValue]> &
-    LuaExtension<"PairsIterable">;
+declare type LuaPairsIterable<TKey extends AnyNotNil, TValue> = Iterable<[TKey, TValue]> & {
+    __tstlIterable: "Pairs";
+};
 
 /**
  * Calls to functions with this type are translated to `left + right`.

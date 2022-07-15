@@ -2,8 +2,7 @@ import * as ts from "typescript";
 import * as extensions from "../../utils/language-extensions";
 import { TransformationContext } from "../../context";
 import { findFirstNodeAbove } from "../../utils/typescript";
-import { isIterableExpression } from "./iterable";
-import { getExtensionKindForNode } from "../../utils/language-extensions";
+import { getExtensionKindForNode, getIterableExtensionKindForNode } from "../../utils/language-extensions";
 
 const multiReturnExtensionName = "__tstlMultiReturn";
 export function isMultiReturnType(type: ts.Type): boolean {
@@ -89,7 +88,7 @@ export function shouldMultiReturnCallBeWrapped(context: TransformationContext, n
     }
 
     // LuaIterable in for...of
-    if (ts.isForOfStatement(node.parent) && isIterableExpression(context, node)) {
+    if (ts.isForOfStatement(node.parent) && getIterableExtensionKindForNode(context, node) === "Iterable") {
         return false;
     }
 

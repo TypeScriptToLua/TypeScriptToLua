@@ -50,6 +50,8 @@ export enum ExtensionKind {
     TableHasMethodType = "TableHasMethod",
     TableSetType = "TableSet",
     TableSetMethodType = "TableSetMethod",
+    TableAddKeyType = "TableAddKey",
+    TableAddKeyMethodType = "TableAddKeyMethod",
 }
 const extensionNames: Set<string> = new Set(Object.values(ExtensionKind));
 
@@ -82,6 +84,7 @@ export function getExtensionKindForSymbol(
 export enum IterableExtensionKind {
     Iterable = "Iterable",
     Pairs = "Pairs",
+    PairsKey = "PairsKey",
 }
 const iterableExtensionProperty = "__tstlIterable";
 

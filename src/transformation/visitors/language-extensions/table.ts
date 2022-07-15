@@ -19,6 +19,8 @@ export const tableExtensionTransformers: { [P in ExtensionKind]?: LanguageExtens
     [ExtensionKind.TableHasMethodType]: transformTableHasExpression,
     [ExtensionKind.TableSetType]: transformTableSetExpression,
     [ExtensionKind.TableSetMethodType]: transformTableSetExpression,
+    [ExtensionKind.TableAddKeyType]: transformTableAddExpression,
+    [ExtensionKind.TableAddKeyMethodType]: transformTableAddExpression,
 };
 
 function transformTableDeleteExpression(
@@ -98,6 +100,25 @@ function transformTableSetExpression(
     const [table, accessExpression, value] = transformExpressionList(context, args);
     context.addPrecedingStatements(
         lua.createAssignmentStatement(lua.createTableIndexExpression(table, accessExpression), value, node)
+    );
+    return lua.createNilLiteral();
+}
+
+function transformTableAddExpression(
+    context: TransformationContext,
+    node: ts.CallExpression,
+    extensionKind: ExtensionKind
+): lua.Expression {
+    const args = extensionKind === ExtensionKind.TableAddKeyMethodType ? addTableArgument(node) : node.arguments;
+
+    // arg0[arg1] = true
+    const [table, value] = transformExpressionList(context, args);
+    context.addPrecedingStatements(
+        lua.createAssignmentStatement(
+            lua.createTableIndexExpression(table, value),
+            lua.createBooleanLiteral(true),
+            node
+        )
     );
     return lua.createNilLiteral();
 }

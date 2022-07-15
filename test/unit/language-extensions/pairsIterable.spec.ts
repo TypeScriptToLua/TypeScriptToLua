@@ -118,3 +118,102 @@ test.each(["for (const s of testIterable) {}", "let s; for (s of testIterable) {
             .expectDiagnosticsToMatchSnapshot([invalidPairsIterableWithoutDestructuring.code]);
     }
 );
+
+const testKeyIterable = `
+const testKeyIterable = {a1: true, b1: true, c1: true} as unknown as LuaPairsKeyIterable<string>;
+`;
+
+test("pairs key iterable", () => {
+    util.testFunction`
+        ${testKeyIterable}
+        const results: Record<string, boolean> = {};
+        for (const k of testKeyIterable) {
+            results[k] = true;
+        }
+        return results;
+    `
+        .withLanguageExtensions()
+        .expectToEqual({ a1: true, b1: true, c1: true });
+});
+
+test("pairs key iterable with external control variable", () => {
+    util.testFunction`
+        ${testKeyIterable}
+        const results: Record<string, boolean> = {};
+        let k: string;
+        for (k of testKeyIterable) {
+            results[k] = true;
+        }
+        return results;
+    `
+        .withLanguageExtensions()
+        .expectToEqual({ a1: true, b1: true, c1: true });
+});
+
+test("pairs key iterable function forward", () => {
+    util.testFunction`
+        ${testKeyIterable}
+        function forward() { return testKeyIterable; }
+        const results: Record<string, boolean> = {};
+        for (const k of forward()) {
+            results[k] = true;
+        }
+        return results;
+    `
+        .withLanguageExtensions()
+        .expectToEqual({ a1: true, b1: true, c1: true });
+});
+
+test("pairs key iterable function indirect forward", () => {
+    util.testFunction`
+        ${testKeyIterable}
+        function forward() { const iter = testKeyIterable; return iter; }
+        const results: Record<string, boolean> = {};
+        for (const k of forward()) {
+            results[k] = true;
+        }
+        return results;
+    `
+        .withLanguageExtensions()
+        .expectToEqual({ a1: true, b1: true, c1: true });
+});
+
+test("pairs key iterable arrow function forward", () => {
+    util.testFunction`
+        ${testKeyIterable}
+        const forward = () => testKeyIterable;
+        const results: Record<string, boolean> = {};
+        for (const k of forward()) {
+            results[k] = true;
+        }
+        return results;
+    `
+        .withLanguageExtensions()
+        .expectToEqual({ a1: true, b1: true, c1: true });
+});
+
+test("pairs key iterable with __pairs metamethod", () => {
+    util.testFunction`
+        class PairsTest  {
+            __pairs() {
+                const kvp = [ ["a1", true], ["b1", true], ["c1", true] ];
+                let i = 0;
+                return () => {
+                    if (i < kvp.length) {
+                        const [k, v] = kvp[i++];
+                        return $multi(k, v);
+                    }
+                };
+            }
+        }
+        const tester = new PairsTest() as PairsTest & LuaPairsKeyIterable<string>;
+        const results: Record<string, boolean> = {};
+        for (const k of tester) {
+            results[k] = true;
+        }
+        return results;
+    `
+        .withLanguageExtensions()
+        .setOptions({ luaTarget: LuaTarget.Lua53 })
+        .expectToEqual({ a1: true, b1: true, c1: true });
+});

@@ -92,3 +92,15 @@ export function transformForOfPairsIterableStatement(
         invalidPairsIterableWithoutDestructuring
     );
 }
+
+export function transformForOfPairsKeyIterableStatement(
+    context: TransformationContext,
+    statement: ts.ForOfStatement,
+    block: lua.Block
+): lua.Statement {
+    const pairsCall = lua.createCallExpression(lua.createIdentifier("pairs"), [
+        context.transformExpression(statement.expression),
+    ]);
+    const identifier = transformForInitializer(context, statement.initializer, block);
+    return lua.createForInStatement(block, [identifier], [pairsCall], statement);
+}

@@ -5,7 +5,11 @@ import { AnnotationKind, isForRangeType, isLuaIteratorType } from "../../utils/a
 import { annotationRemoved } from "../../utils/diagnostics";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType } from "../../utils/typescript";
-import { transformForOfIterableStatement, transformForOfPairsIterableStatement } from "../language-extensions/iterable";
+import {
+    transformForOfIterableStatement,
+    transformForOfPairsIterableStatement,
+    transformForOfPairsKeyIterableStatement,
+} from "../language-extensions/iterable";
 import { isRangeFunction, transformRangeStatement } from "../language-extensions/range";
 import { transformForInitializer, transformLoopBody } from "./utils";
 import { getIterableExtensionKindForNode } from "../../utils/language-extensions";
@@ -55,6 +59,8 @@ export const transformForOfStatement: FunctionVisitor<ts.ForOfStatement> = (node
             return transformForOfIterableStatement(context, node, body);
         } else if (iterableType === "Pairs") {
             return transformForOfPairsIterableStatement(context, node, body);
+        } else if (iterableType === "PairsKey") {
+            return transformForOfPairsKeyIterableStatement(context, node, body);
         } else {
             assertNever(iterableType);
         }

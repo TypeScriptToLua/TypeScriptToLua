@@ -17,7 +17,7 @@ import { getIdentifierSymbolId } from "../utils/symbols";
 import { isOptionalContinuation } from "./optional-chaining";
 import { isStandardLibraryType } from "../utils/typescript";
 import { getExtensionKindForNode, ExtensionKind, getExtensionKindForSymbol } from "../utils/language-extensions";
-import { allCallExtensionHandlers } from "./language-extensions/call-extension";
+import { callExtensions } from "./language-extensions/call-extension";
 
 function reportInvalidExtensionValue(
     context: TransformationContext,
@@ -60,7 +60,7 @@ function transformNonValueIdentifier(
         : getExtensionKindForNode(context, identifier);
 
     if (extensionKind) {
-        if (allCallExtensionHandlers[extensionKind]) {
+        if (callExtensions.has(extensionKind)) {
             context.diagnostics.push(invalidCallExtensionUse(identifier));
             // fall through
         } else if (isIdentifierExtensionValue(symbol, extensionKind)) {

@@ -4,12 +4,15 @@ import { ExtensionKind, getExtensionKindForNode } from "../../utils/language-ext
 import * as lua from "../../../LuaAST";
 import { unsupportedBuiltinOptionalCall } from "../../utils/diagnostics";
 import { operatorExtensionTransformers } from "./operators";
-import { tableExtensionTransformers } from "./table";
+import { tableExtensionTransformers, tableNewExtensions } from "./table";
 
-export const allCallExtensionHandlers: LanguageExtensionCallTransformerMap = {
+const allCallExtensionHandlers: LanguageExtensionCallTransformerMap = {
     ...operatorExtensionTransformers,
     ...tableExtensionTransformers,
 };
+export const callExtensions = new Set(Object.keys(allCallExtensionHandlers) as ExtensionKind[]);
+tableNewExtensions.forEach(kind => callExtensions.add(kind));
+
 export type LanguageExtensionCallTransformer = (
     context: TransformationContext,
     node: ts.CallExpression,

@@ -6,7 +6,7 @@ import { AnnotationKind, getNodeAnnotations } from "../utils/annotations";
 import { annotationRemoved } from "../utils/diagnostics";
 import { createDefaultExportStringLiteral, hasDefaultExportModifier } from "../utils/export";
 import { ContextType, getFunctionContextType } from "../utils/function-context";
-import { getExtensionTypeForType } from "../utils/language-extensions";
+import { getExtensionKindForType } from "../utils/language-extensions";
 import {
     createExportsIdentifier,
     createLocalOrExportedOrGlobalDeclaration,
@@ -84,7 +84,7 @@ export function isFunctionTypeWithProperties(context: TransformationContext, fun
         return (
             isFunctionType(functionType) &&
             functionType.getProperties().length > 0 &&
-            getExtensionTypeForType(context, functionType) === undefined // ignore TSTL extension functions like $range
+            getExtensionKindForType(context, functionType) === undefined // ignore TSTL extension functions like $range
         );
     }
 }

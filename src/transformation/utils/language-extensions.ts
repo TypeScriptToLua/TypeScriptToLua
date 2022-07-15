@@ -55,7 +55,7 @@ const extensionNames: Set<string> = new Set(Object.values(ExtensionKind));
 
 const extensionProperty = "__tstlExtension";
 
-export function getExtensionTypeForType(context: TransformationContext, type: ts.Type): ExtensionKind | undefined {
+export function getExtensionKindForType(context: TransformationContext, type: ts.Type): ExtensionKind | undefined {
     const property = type.getProperty(extensionProperty);
     if (!property) return undefined;
     const propertyType = context.checker.getTypeOfSymbolAtLocation(property, context.sourceFile);
@@ -68,7 +68,7 @@ export function getExtensionTypeForType(context: TransformationContext, type: ts
 
 export function getExtensionKindForNode(context: TransformationContext, node: ts.Node): ExtensionKind | undefined {
     const type = context.checker.getTypeAtLocation(node);
-    return getExtensionTypeForType(context, type);
+    return getExtensionKindForType(context, type);
 }
 
 export function getExtensionKindForSymbol(
@@ -76,7 +76,7 @@ export function getExtensionKindForSymbol(
     symbol: ts.Symbol
 ): ExtensionKind | undefined {
     const type = context.checker.getTypeOfSymbolAtLocation(symbol, context.sourceFile);
-    return getExtensionTypeForType(context, type);
+    return getExtensionKindForType(context, type);
 }
 
 export enum IterableExtensionKind {

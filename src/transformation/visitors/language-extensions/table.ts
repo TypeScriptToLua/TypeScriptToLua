@@ -5,21 +5,10 @@ import { ExtensionKind, getExtensionKindForNode } from "../../utils/language-ext
 import { transformExpressionList } from "../expression-list";
 import { LanguageExtensionCallTransformer } from "./call-extension";
 
-export const tableExtensions: ReadonlySet<ExtensionKind> = new Set([
-    ExtensionKind.TableDeleteType,
-    ExtensionKind.TableDeleteMethodType,
-    ExtensionKind.TableGetType,
-    ExtensionKind.TableGetMethodType,
-    ExtensionKind.TableHasType,
-    ExtensionKind.TableHasMethodType,
-    ExtensionKind.TableSetType,
-    ExtensionKind.TableSetMethodType,
-    ExtensionKind.TableNewType,
-]);
-
 export function isTableNewCall(context: TransformationContext, node: ts.NewExpression) {
     return getExtensionKindForNode(context, node.expression) === ExtensionKind.TableNewType;
 }
+export const tableNewExtensions = [ExtensionKind.TableNewType];
 
 export const tableExtensionTransformers: { [P in ExtensionKind]?: LanguageExtensionCallTransformer } = {
     [ExtensionKind.TableDeleteType]: transformTableDeleteExpression,

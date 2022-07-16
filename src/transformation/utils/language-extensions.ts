@@ -55,17 +55,24 @@ export enum ExtensionKind {
 }
 const extensionNames: Set<string> = new Set(Object.values(ExtensionKind));
 
-const extensionProperty = "__tstlExtension";
-
 export function getExtensionKindForType(context: TransformationContext, type: ts.Type): ExtensionKind | undefined {
-    const property = type.getProperty(extensionProperty);
-    if (!property) return undefined;
-    const propertyType = context.checker.getTypeOfSymbolAtLocation(property, context.sourceFile);
-    if (!propertyType.isStringLiteral()) return undefined;
-    const value = propertyType.value;
-    if (extensionNames.has(value)) {
+    const value = getPropertyValue(context, type, "__tstlExtension");
+    if (value && extensionNames.has(value)) {
         return value as ExtensionKind;
     }
+}
+
+const excludedTypeFlags: ts.TypeFlags =
+    ((1 << 18) - 1) & // All flags from Any...Never
+    ts.TypeFlags.Index &
+    ts.TypeFlags.NonPrimitive;
+
+function getPropertyValue(context: TransformationContext, type: ts.Type, propertyName: string): string | undefined {
+    if (type.flags & excludedTypeFlags) return;
+    const property = type.getProperty(propertyName);
+    if (!property) return undefined;
+    const propertyType = context.checker.getTypeOfSymbolAtLocation(property, context.sourceFile);
+    if (propertyType.isStringLiteral()) return propertyType.value;
 }
 
 export function getExtensionKindForNode(context: TransformationContext, node: ts.Node): ExtensionKind | undefined {
@@ -86,18 +93,13 @@ export enum IterableExtensionKind {
     Pairs = "Pairs",
     PairsKey = "PairsKey",
 }
-const iterableExtensionProperty = "__tstlIterable";
 
 export function getIterableExtensionTypeForType(
     context: TransformationContext,
     type: ts.Type
 ): IterableExtensionKind | undefined {
-    const property = type.getProperty(iterableExtensionProperty);
-    if (!property) return undefined;
-    const propertyType = context.checker.getTypeOfSymbolAtLocation(property, context.sourceFile);
-    if (!propertyType.isStringLiteral()) return undefined;
-    const value = propertyType.value;
-    if (value in IterableExtensionKind) {
+    const value = getPropertyValue(context, type, "__tstlIterable");
+    if (value && value in IterableExtensionKind) {
         return value as IterableExtensionKind;
     }
 }

@@ -24,6 +24,9 @@ declare module "typescript" {
     interface TypeChecker {
         getElementTypeOfArrayType(type: Type): Type | undefined;
         getContextualTypeForObjectLiteralElement(element: ObjectLiteralElementLike): Type | undefined;
+
+        isTupleType(type: Type): boolean;
+        isArrayType(type: Type): boolean;
     }
 
     interface Symbol {
@@ -31,6 +34,8 @@ declare module "typescript" {
         // eslint-disable-next-line @typescript-eslint/ban-types
         parent?: Symbol;
     }
+
+    function getObjectFlags(type: Type): ObjectFlags;
 
     function transformJsx(context: TransformationContext): (x: SourceFile) => SourceFile;
 

@@ -5,7 +5,7 @@ import { assert, castArrayFlatMap } from "../../utils";
 import { unsupportedNodeKind } from "../utils/diagnostics";
 import { unwrapVisitorResult, OneToManyVisitorResult } from "../utils/lua-ast";
 import { createSafeName } from "../utils/safe-names";
-import { ExpressionLikeNode, ObjectVisitor, StatementLikeNode, VisitorMap } from "./visitors";
+import { ExpressionLikeNode, StatementLikeNode, VisitorMap, FunctionVisitor } from "./visitors";
 import { SymbolInfo } from "../utils/symbols";
 import { LuaLibFeature } from "../../LuaLib";
 import { Scope, ScopeType } from "../utils/scope";
@@ -53,7 +53,7 @@ export class TransformationContext {
         this.resolver = this.checker.getEmitResolver(originalSourceFile);
     }
 
-    private currentNodeVisitors: ReadonlyArray<ObjectVisitor<ts.Node>> = [];
+    private currentNodeVisitors: ReadonlyArray<FunctionVisitor<ts.Node>> = [];
     private currentNodeVisitorsIndex = 0;
 
     private nextTempId = 0;
@@ -81,7 +81,7 @@ export class TransformationContext {
         this.currentNodeVisitorsIndex = nodeVisitors.length - 1;
 
         const visitor = this.currentNodeVisitors[this.currentNodeVisitorsIndex];
-        const result = visitor.transform(node, this);
+        const result = visitor(node, this);
 
         this.currentNodeVisitors = previousNodeVisitors;
         this.currentNodeVisitorsIndex = previousNodeVisitorsIndex;
@@ -99,7 +99,7 @@ export class TransformationContext {
         }
 
         const visitor = this.currentNodeVisitors[this.currentNodeVisitorsIndex];
-        return unwrapVisitorResult(visitor.transform(node, this));
+        return unwrapVisitorResult(visitor(node, this));
     }
 
     public transformExpression(node: ExpressionLikeNode): lua.Expression {

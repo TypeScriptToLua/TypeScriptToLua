@@ -5,14 +5,14 @@ import { ObjectVisitor, TransformationContext, VisitorMap, Visitors } from "./co
 import { standardVisitors } from "./visitors";
 
 export function createVisitorMap(customVisitors: Visitors[]): VisitorMap {
-    const visitorMap: VisitorMap = new Map();
+    const objectVisitorMap: Map<ts.SyntaxKind, Array<ObjectVisitor<ts.Node>>> = new Map();
     for (const visitors of [standardVisitors, ...customVisitors]) {
         const priority = visitors === standardVisitors ? -Infinity : 0;
         for (const [syntaxKindKey, visitor] of Object.entries(visitors)) {
             if (!visitor) continue;
 
             const syntaxKind = Number(syntaxKindKey) as ts.SyntaxKind;
-            const nodeVisitors = getOrUpdate(visitorMap, syntaxKind, () => []);
+            const nodeVisitors = getOrUpdate(objectVisitorMap, syntaxKind, () => []);
 
             const objectVisitor: ObjectVisitor<any> =
                 typeof visitor === "function" ? { transform: visitor, priority } : visitor;
@@ -20,11 +20,14 @@ export function createVisitorMap(customVisitors: Visitors[]): VisitorMap {
         }
     }
 
-    for (const nodeVisitors of visitorMap.values()) {
-        nodeVisitors.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+    const result: VisitorMap = new Map();
+    for (const [kind, nodeVisitors] of objectVisitorMap) {
+        result.set(
+            kind,
+            nodeVisitors.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0)).map(visitor => visitor.transform)
+        );
     }
-
-    return visitorMap;
+    return result;
 }
 
 export function transformSourceFile(program: ts.Program, sourceFile: ts.SourceFile, visitorMap: VisitorMap) {

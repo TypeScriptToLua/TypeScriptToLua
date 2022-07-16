@@ -12,3 +12,4 @@ benchmark/dist/*
 
 # v8 cpu profiles
 *-.log
+*.cpuprofile

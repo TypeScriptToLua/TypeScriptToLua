@@ -1,0 +1,106 @@
+{
+    "title": "tsconfig.json with TSTL",
+    "description": "JSON schema for the TypeScript compiler's configuration file with TSTL",
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "allOf": [
+        {
+            "$ref": "https://json.schemastore.org/tsconfig"
+        }
+    ],
+    "properties": {
+        "tstl": {
+            "description": "TypeScriptToLua compiler options.",
+            "type": "object",
+            "definitions": {
+                "//": {
+                    "reference": "https://typescripttolua.github.io/docs/configuration#custom-options"
+                }
+            },
+            "properties": {
+                "buildMode": {
+                    "description": "Use buildMode: \"library\" to build publishable library packages.",
+                    "type": "string",
+                    "default": "library",
+                    "enum": ["default", "library"]
+                },
+                "lua51AllowTryCatchInAsyncAwait": {
+                    "description": "Disable the warning that try/catch is not allowed in async functions in Lua 5.1, in case you are using a patched 5.1 lua version that supports this.",
+                    "type": "boolean",
+                    "default": false
+                },
+                "luaBundle": {
+                    "description": "The name of the lua file to bundle output lua to. Requires luaBundleEntry.",
+                    "type": "string"
+                },
+                "luaBundleEntry": {
+                    "description": "The entry *.ts file that will be executed when entering the luaBundle. Requires luaBundle.",
+                    "type": "string"
+                },
+                "luaLibImport": {
+                    "description": "Specifies how js standard features missing in lua are imported.",
+                    "type": "string",
+                    "default": "require",
+                    "enum": ["none", "always", "inline", "require"]
+                },
+                "luaTarget": {
+                    "description": "Specifies the Lua version you want to generate code for.",
+                    "type": "string",
+                    "default": "universal",
+                    "enum": ["5.1", "5.2", "5.3", "JIT"]
+                },
+                "noImplicitGlobalVariables": {
+                    "description": "Always declare all root-level variables as local, even if the file is not a module and they would be global in TypeScript.",
+                    "type": "boolean",
+                    "default": false
+                },
+                "noImplicitSelf": {
+                    "description": "If true, treats all project files as if they were prefixed with\n/** @noSelfInFile **/.",
+                    "type": "boolean",
+                    "default": false
+                },
+                "noHeader": {
+                    "description": "Specify if a header will be added to compiled files.",
+                    "type": "boolean",
+                    "default": false
+                },
+                "noResolvePaths": {
+                    "description": "An array of import paths that should not be resolved but copied verbatim to output lua.",
+                    "type": "array"
+                },
+                "sourceMapTraceback": {
+                    "description": "Applies the source map to show source TS files and lines in error tracebacks.",
+                    "default": false,
+                    "type": "boolean"
+                },
+                "tstlVerbose": {
+                    "description": "Give verbose tstl output, helpful when diagnosing tstl issues.",
+                    "type": "boolean",
+                    "default": false
+                },
+                "luaPlugins": {
+                    "description": "List of TypeScriptToLua plugins.",
+                    "type": "array",
+                    "items": {
+                        "description": "Describes TypeScriptToLua plugin",
+                        "type": "object",
+                        "required": ["name"],
+                        "properties": {
+                            "name": {
+                                "description": "Path to the JS file, that contains the plugin code",
+                                "type": "string"
+                            },
+                            "import": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "dependencies": {
+                "luaBundle": ["luaBundleEntry"],
+                "luaBundleEntry": ["luaBundle"]
+            }
+        }
+    },
+    "allowTrailingCommas": true
+}

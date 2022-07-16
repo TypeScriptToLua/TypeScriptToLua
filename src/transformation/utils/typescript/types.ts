@@ -55,6 +55,7 @@ export function isNumberType(context: TransformationContext, type: ts.Type): boo
 }
 
 function isExplicitArrayType(context: TransformationContext, type: ts.Type): boolean {
+    if (context.checker.isArrayType(type) || context.checker.isTupleType(type)) return true;
     if (type.symbol) {
         const baseConstraint = context.checker.getBaseConstraintOfType(type);
         if (baseConstraint && baseConstraint !== type) {
@@ -66,13 +67,7 @@ function isExplicitArrayType(context: TransformationContext, type: ts.Type): boo
         return type.types.some(t => isExplicitArrayType(context, t));
     }
 
-    const flags = ts.NodeBuilderFlags.InTypeAlias | ts.NodeBuilderFlags.AllowEmptyTuple;
-    let typeNode = context.checker.typeToTypeNode(type, undefined, flags);
-    if (typeNode && ts.isTypeOperatorNode(typeNode) && typeNode.operator === ts.SyntaxKind.ReadonlyKeyword) {
-        typeNode = typeNode.type;
-    }
-
-    return typeNode !== undefined && (ts.isArrayTypeNode(typeNode) || ts.isTupleTypeNode(typeNode));
+    return false;
 }
 
 /**

@@ -213,7 +213,6 @@ function transformClassLikeDeclaration(
 }
 
 export const transformSuperExpression: FunctionVisitor<ts.SuperExpression> = (expression, context) => {
-    // const superInfos = getOrUpdate(classSuperInfos, context, () => []);
     const superInfos = context.classSuperInfos;
     const superInfo = superInfos[superInfos.length - 1];
     if (!superInfo) return lua.createAnonymousIdentifier(expression);

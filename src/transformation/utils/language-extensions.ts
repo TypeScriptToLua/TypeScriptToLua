@@ -53,11 +53,11 @@ export enum ExtensionKind {
     TableAddKeyType = "TableAddKey",
     TableAddKeyMethodType = "TableAddKeyMethod",
 }
-const extensionNames: Set<string> = new Set(Object.values(ExtensionKind));
+const extensionValues: Set<string> = new Set(Object.values(ExtensionKind));
 
 export function getExtensionKindForType(context: TransformationContext, type: ts.Type): ExtensionKind | undefined {
     const value = getPropertyValue(context, type, "__tstlExtension");
-    if (value && extensionNames.has(value)) {
+    if (value && extensionValues.has(value)) {
         return value as ExtensionKind;
     }
 }

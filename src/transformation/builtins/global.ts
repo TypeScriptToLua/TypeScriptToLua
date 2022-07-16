@@ -5,7 +5,7 @@ import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isNumberType } from "../utils/typescript";
 import { transformArguments } from "../visitors/call";
 
-export function transformGlobalCall(
+export function tryTransformBuiltinGlobalCall(
     context: TransformationContext,
     node: ts.CallExpression,
     expressionType: ts.Type

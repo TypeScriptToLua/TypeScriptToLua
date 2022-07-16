@@ -15,10 +15,10 @@ import { getCalledExpression } from "../visitors/call";
 import { transformArrayConstructorCall, transformArrayProperty, transformArrayPrototypeCall } from "./array";
 import { transformConsoleCall } from "./console";
 import { transformFunctionPrototypeCall, transformFunctionProperty } from "./function";
-import { transformGlobalCall } from "./global";
+import { tryTransformBuiltinGlobalCall } from "./global";
 import { transformMathCall, transformMathProperty } from "./math";
 import { transformNumberConstructorCall, transformNumberPrototypeCall } from "./number";
-import { transformObjectConstructorCall, transformObjectPrototypeCall } from "./object";
+import { transformObjectConstructorCall, tryTransformObjectPrototypeCall } from "./object";
 import { transformPromiseConstructorCall } from "./promise";
 import { transformStringConstructorCall, transformStringProperty, transformStringPrototypeCall } from "./string";
 import { transformSymbolConstructorCall } from "./symbol";
@@ -59,27 +59,27 @@ export function transformBuiltinCallExpression(
     const expressionType = context.checker.getTypeAtLocation(node.expression);
     if (ts.isIdentifier(node.expression) && isStandardLibraryType(context, expressionType, undefined)) {
         checkForLuaLibType(context, expressionType);
-        const result = transformGlobalCall(context, node, expressionType);
+        const result = tryTransformBuiltinGlobalCall(context, node, expressionType);
         if (result) return result;
     }
 
     const calledMethod = ts.getOriginalNode(getCalledExpression(node));
     if (ts.isPropertyAccessExpression(calledMethod)) {
-        const globalResult = transformGlobalMethodCall(context, node, calledMethod);
+        const globalResult = tryTransformBuiltinGlobalMethodCall(context, node, calledMethod);
         if (globalResult) return globalResult;
 
-        const prototypeResult = transformPrototypeCall(context, node, calledMethod);
+        const prototypeResult = tryTransformBuiltinPropertyCall(context, node, calledMethod);
         if (prototypeResult) return prototypeResult;
 
-        // object prototype call may work even without resolved signature (which transformMethodCall needs)
+        // object prototype call may work even without resolved signature/type (which the other builtin calls use)
         // e.g. (foo as any).toString()
         // prototype methods take precedence (e.g. number.toString(2))
-        const objectResult = transformObjectPrototypeCall(context, node, calledMethod);
+        const objectResult = tryTransformObjectPrototypeCall(context, node, calledMethod);
         if (objectResult) return objectResult;
     }
 }
 
-function transformGlobalMethodCall(
+function tryTransformBuiltinGlobalMethodCall(
     context: TransformationContext,
     node: ts.CallExpression,
     calledMethod: ts.PropertyAccessExpression
@@ -88,7 +88,7 @@ function transformGlobalMethodCall(
     if (!isStandardLibraryType(context, ownerType, undefined)) return;
 
     const ownerSymbol = ownerType.symbol;
-    if (!ownerSymbol) return;
+    if (!ownerSymbol || ownerSymbol.parent) return;
 
     let result: lua.Expression | undefined;
     switch (ownerSymbol.name) {
@@ -124,7 +124,7 @@ function transformGlobalMethodCall(
     return result;
 }
 
-function transformPrototypeCall(
+function tryTransformBuiltinPropertyCall(
     context: TransformationContext,
     node: ts.CallExpression,
     calledMethod: ts.PropertyAccessExpression

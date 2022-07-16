@@ -35,7 +35,7 @@ export function transformObjectConstructorCall(
     }
 }
 
-export function transformObjectPrototypeCall(
+export function tryTransformObjectPrototypeCall(
     context: TransformationContext,
     node: ts.CallExpression,
     calledMethod: ts.PropertyAccessExpression

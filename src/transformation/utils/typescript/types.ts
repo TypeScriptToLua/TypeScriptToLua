@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import { TransformationContext } from "../../context";
 
-export function typeAlwaysHasFlags(context: TransformationContext, type: ts.Type, flags: ts.TypeFlags): boolean {
+export function typeAlwaysHasSomeOfFlags(context: TransformationContext, type: ts.Type, flags: ts.TypeFlags): boolean {
     const baseConstraint = context.checker.getBaseConstraintOfType(type);
     if (baseConstraint) {
         type = baseConstraint;
@@ -12,17 +12,17 @@ export function typeAlwaysHasFlags(context: TransformationContext, type: ts.Type
     }
 
     if (type.isUnion()) {
-        return type.types.every(t => typeAlwaysHasFlags(context, t, flags));
+        return type.types.every(t => typeAlwaysHasSomeOfFlags(context, t, flags));
     }
 
     if (type.isIntersection()) {
-        return type.types.some(t => typeAlwaysHasFlags(context, t, flags));
+        return type.types.some(t => typeAlwaysHasSomeOfFlags(context, t, flags));
     }
 
     return false;
 }
 
-export function typeCanHaveFlags(context: TransformationContext, type: ts.Type, flags: ts.TypeFlags): boolean {
+export function typeCanHaveSomeOfFlags(context: TransformationContext, type: ts.Type, flags: ts.TypeFlags): boolean {
     const baseConstraint = context.checker.getBaseConstraintOfType(type);
     if (!baseConstraint) {
         // type parameter with no constraint can be anything, assume it might satisfy predicate
@@ -36,22 +36,22 @@ export function typeCanHaveFlags(context: TransformationContext, type: ts.Type, 
     }
 
     if (type.isUnion()) {
-        return type.types.some(t => typeCanHaveFlags(context, t, flags));
+        return type.types.some(t => typeCanHaveSomeOfFlags(context, t, flags));
     }
 
     if (type.isIntersection()) {
-        return type.types.some(t => typeCanHaveFlags(context, t, flags));
+        return type.types.some(t => typeCanHaveSomeOfFlags(context, t, flags));
     }
 
     return false;
 }
 
 export function isStringType(context: TransformationContext, type: ts.Type): boolean {
-    return typeAlwaysHasFlags(context, type, ts.TypeFlags.StringLike);
+    return typeAlwaysHasSomeOfFlags(context, type, ts.TypeFlags.StringLike);
 }
 
 export function isNumberType(context: TransformationContext, type: ts.Type): boolean {
-    return typeAlwaysHasFlags(context, type, ts.TypeFlags.NumberLike);
+    return typeAlwaysHasSomeOfFlags(context, type, ts.TypeFlags.NumberLike);
 }
 
 function isExplicitArrayType(context: TransformationContext, type: ts.Type): boolean {
@@ -116,7 +116,7 @@ export function canBeFalsy(context: TransformationContext, type: ts.Type): boole
         ts.TypeFlags.Any |
         ts.TypeFlags.Undefined |
         ts.TypeFlags.Null;
-    return typeCanHaveFlags(context, type, falsyFlags);
+    return typeCanHaveSomeOfFlags(context, type, falsyFlags);
 }
 
 export function canBeFalsyWhenNotNull(context: TransformationContext, type: ts.Type): boolean {
@@ -129,5 +129,5 @@ export function canBeFalsyWhenNotNull(context: TransformationContext, type: ts.T
         ts.TypeFlags.Void |
         ts.TypeFlags.Unknown |
         ts.TypeFlags.Any;
-    return typeCanHaveFlags(context, type, falsyFlags);
+    return typeCanHaveSomeOfFlags(context, type, falsyFlags);
 }

@@ -5,8 +5,9 @@ import { unsupportedProperty } from "../utils/diagnostics";
 import { importLuaLibFeature, LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { transformArguments } from "../visitors/call";
 
+/** Assumes that the type is already checked to be a standard library type. */
 export function isPromiseClass(node: ts.Identifier) {
-    return /* isStandardLibraryType(context, type, undefined) && */ node.text === "Promise";
+    return node.text === "Promise";
 }
 
 export function createPromiseIdentifier(original: ts.Node) {

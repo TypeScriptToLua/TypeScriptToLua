@@ -19,16 +19,13 @@ export type AnnotationsMap = Map<AnnotationKind, Annotation>;
 
 function collectAnnotations(source: ts.Symbol | ts.Signature, annotationsMap: AnnotationsMap): void {
     for (const tag of source.getJsDocTags()) {
-        // const annotationValue = annotationValues.get(tag.name.toLowerCase())
         const tagName = annotationValues.get(tag.name.toLowerCase());
-        if (tagName) {
-            // const annotation = createAnnotation(tag.name, tag.text?.map(p => p.text) ?? []);
-            const annotation: Annotation = {
-                kind: tag.name as AnnotationKind,
-                args: tag.text?.map(p => p.text) ?? [],
-            };
-            annotationsMap.set(tagName, annotation);
-        }
+        if (!tagName) continue;
+        const annotation: Annotation = {
+            kind: tag.name as AnnotationKind,
+            args: tag.text?.map(p => p.text) ?? [],
+        };
+        annotationsMap.set(tagName, annotation);
     }
 }
 
@@ -45,14 +42,8 @@ export function getSymbolAnnotations(symbol: ts.Symbol): AnnotationsMap {
     return (withAnnotations.tstlAnnotationMap = annotationsMap);
 }
 
-// interface TypeWithAnnotationMap extends ts.Type {
-//     tstlAnnotationMap?: AnnotationsMap;
-// }
-
 export function getTypeAnnotations(type: ts.Type): AnnotationsMap {
-    // const withAnnotations = type as TypeWithAnnotationMap;
-    // if (withAnnotations.tstlAnnotationMap !== undefined) return withAnnotations.tstlAnnotationMap;
-
+    // types are not frequently repeatedly polled for annotations, so it's not worth caching them
     const annotationsMap: AnnotationsMap = new Map();
     if (type.symbol) {
         getSymbolAnnotations(type.symbol).forEach((value, key) => {
@@ -65,8 +56,6 @@ export function getTypeAnnotations(type: ts.Type): AnnotationsMap {
         });
     }
     return annotationsMap;
-
-    // return (withAnnotations.tstlAnnotationMap = annotationsMap);
 }
 
 interface NodeWithAnnotationMap extends ts.Node {

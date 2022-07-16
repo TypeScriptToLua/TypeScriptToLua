@@ -7,7 +7,7 @@ import { parseCommandLine } from "./cli/parse";
 import { createDiagnosticReporter } from "./cli/report";
 import { createConfigFileUpdater, locateConfigFile, parseConfigFileWithSystem } from "./cli/tsconfig";
 import { isBundleEnabled } from "./CompilerOptions";
-import * as performance from "./performance";
+import * as performance from "./measure-performance";
 
 const shouldBePretty = ({ pretty }: ts.CompilerOptions = {}) =>
     pretty !== undefined ? (pretty as boolean) : ts.sys.writeOutputIsTTY?.() ?? false;

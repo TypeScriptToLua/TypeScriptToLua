@@ -12,10 +12,11 @@ export function castArrayFlatMap<T, TResult>(
     value: T | readonly T[],
     callback: (value: T, index: number) => TResult[]
 ): TResult[] {
-    if (Array.isArray(value)) {
-        return value.flatMap(callback);
-    }
-    return callback(value as T, 0);
+    return castArray(value).flatMap(callback);
+    // if (Array.isArray(value)) {
+    //     return value.flatMap(callback);
+    // }
+    // return callback(value as T, 0);
 }
 
 export const intersperse = <T>(values: readonly T[], separator: T): T[] =>

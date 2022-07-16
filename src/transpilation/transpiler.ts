@@ -8,7 +8,7 @@ import { getPlugins, Plugin } from "./plugins";
 import { resolveDependencies } from "./resolve";
 import { getProgramTranspileResult, TranspileOptions } from "./transpile";
 import { EmitFile, EmitHost, ProcessedFile } from "./utils";
-import * as performance from "../performance";
+import * as performance from "../measure-performance";
 
 export interface TranspilerOptions {
     emitHost?: EmitHost;

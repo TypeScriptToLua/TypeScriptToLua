@@ -7,7 +7,7 @@ import { isNonNull } from "../utils";
 import { Plugin } from "./plugins";
 import { getTransformers } from "./transformers";
 import { EmitHost, ProcessedFile } from "./utils";
-import * as performance from "../performance";
+import * as performance from "../measure-performance";
 
 export interface TranspileOptions {
     program: ts.Program;

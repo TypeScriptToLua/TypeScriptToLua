@@ -4,7 +4,7 @@ import { CompilerOptions } from "../CompilerOptions";
 import { Printer } from "../LuaPrinter";
 import { Visitors } from "../transformation/context";
 import { EmitFile, getConfigDirectory, ProcessedFile, resolvePlugin } from "./utils";
-import * as performance from "../performance";
+import * as performance from "../measure-performance";
 
 export interface Plugin {
     /**

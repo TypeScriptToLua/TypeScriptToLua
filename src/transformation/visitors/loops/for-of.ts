@@ -10,7 +10,7 @@ import {
 } from "../language-extensions/iterable";
 import { isRangeFunction, transformRangeStatement } from "../language-extensions/range";
 import { transformForInitializer, transformLoopBody } from "./utils";
-import { getIterableExtensionKindForNode } from "../../utils/language-extensions";
+import { getIterableExtensionKindForNode, IterableExtensionKind } from "../../utils/language-extensions";
 import { assertNever } from "../../../utils";
 
 function transformForOfArrayStatement(
@@ -48,16 +48,16 @@ export const transformForOfStatement: FunctionVisitor<ts.ForOfStatement> = (node
     if (ts.isCallExpression(node.expression) && isRangeFunction(context, node.expression)) {
         return transformRangeStatement(context, node, body);
     }
-    const iterableType = getIterableExtensionKindForNode(context, node.expression);
-    if (iterableType) {
-        if (iterableType === "Iterable") {
+    const iterableExtensionType = getIterableExtensionKindForNode(context, node.expression);
+    if (iterableExtensionType) {
+        if (iterableExtensionType === IterableExtensionKind.Iterable) {
             return transformForOfIterableStatement(context, node, body);
-        } else if (iterableType === "Pairs") {
+        } else if (iterableExtensionType === IterableExtensionKind.Pairs) {
             return transformForOfPairsIterableStatement(context, node, body);
-        } else if (iterableType === "PairsKey") {
+        } else if (iterableExtensionType === IterableExtensionKind.PairsKey) {
             return transformForOfPairsKeyIterableStatement(context, node, body);
         } else {
-            assertNever(iterableType);
+            assertNever(iterableExtensionType);
         }
     }
     if (isArrayType(context, context.checker.getTypeAtLocation(node.expression))) {

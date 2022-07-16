@@ -37,8 +37,8 @@ function transformTableDeleteExpression(
         args.unshift(node.expression.expression);
     }
 
-    // arg0[arg1] = nil
     const [table, accessExpression] = transformExpressionList(context, args);
+    // arg0[arg1] = nil
     context.addPrecedingStatements(
         lua.createAssignmentStatement(
             lua.createTableIndexExpression(table, accessExpression),
@@ -81,8 +81,8 @@ function transformTableHasExpression(
             ? transformWithTableArgument(context, node)
             : transformExpressionList(context, node.arguments);
 
-    // arg0[arg1]
     const [table, accessExpression] = args;
+    // arg0[arg1]
     const tableIndexExpression = lua.createTableIndexExpression(table, accessExpression);
 
     // arg0[arg1] ~= nil
@@ -104,8 +104,8 @@ function transformTableSetExpression(
             ? transformWithTableArgument(context, node)
             : transformExpressionList(context, node.arguments);
 
-    // arg0[arg1] = arg2
     const [table, accessExpression, value] = args;
+    // arg0[arg1] = arg2
     context.addPrecedingStatements(
         lua.createAssignmentStatement(lua.createTableIndexExpression(table, accessExpression), value, node)
     );
@@ -122,8 +122,8 @@ function transformTableAddExpression(
             ? transformWithTableArgument(context, node)
             : transformExpressionList(context, node.arguments);
 
-    // arg0[arg1] = true
     const [table, value] = args;
+    // arg0[arg1] = true
     context.addPrecedingStatements(
         lua.createAssignmentStatement(
             lua.createTableIndexExpression(table, value),

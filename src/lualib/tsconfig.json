@@ -12,8 +12,7 @@
     "tstl": {
         "luaLibImport": "none",
         "noHeader": true,
-        "luaPlugins": [{ "name": "../../dist/lualib-build/plugin.js" }],
-        "measurePerformance": true
+        "luaPlugins": [{ "name": "../../dist/lualib-build/plugin.js" }]
     },
     "include": [".", "../../language-extensions/index.d.ts"]
 }

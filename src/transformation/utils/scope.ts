@@ -40,6 +40,14 @@ export interface HoistingResult {
     hoistedIdentifiers: lua.Identifier[];
 }
 
+export function* walkScopesUp(context: TransformationContext): IterableIterator<Scope> {
+    const scopeStack = context.scopeStack;
+    for (let i = scopeStack.length - 1; i >= 0; --i) {
+        const scope = scopeStack[i];
+        yield scope;
+    }
+}
+
 export function markSymbolAsReferencedInCurrentScopes(
     context: TransformationContext,
     symbolId: lua.SymbolId,

@@ -165,42 +165,41 @@ class ResolutionContext {
         if (existingFile) return existingFile;
         if (existingFile === false) return undefined;
 
-        const file = searchForFile(this);
+        const file = this.searchForFileFromPath(resolvedPath);
         this.pathToFile.set(resolvedPath, file ?? false);
         return file;
+    }
 
-        function searchForFile(context: ResolutionContext) {
-            const possibleProjectFiles = [
-                resolvedPath, // JSON files need their extension as part of the import path, caught by this branch,
-                resolvedPath + ".ts", // Regular ts file
-                path.join(resolvedPath, "index.ts"), // Index ts file,
-                resolvedPath + ".tsx", // tsx file
-                path.join(resolvedPath, "index.tsx"), // tsx index
-            ];
+    private searchForFileFromPath(resolvedPath: string): string | undefined {
+        const possibleProjectFiles = [
+            resolvedPath, // JSON files need their extension as part of the import path, caught by this branch,
+            resolvedPath + ".ts", // Regular ts file
+            path.join(resolvedPath, "index.ts"), // Index ts file,
+            resolvedPath + ".tsx", // tsx file
+            path.join(resolvedPath, "index.tsx"), // tsx index
+        ];
 
-            for (const possibleFile of possibleProjectFiles) {
-                if (isProjectFile(possibleFile, context.program)) {
-                    return possibleFile;
-                }
+        for (const possibleFile of possibleProjectFiles) {
+            if (isProjectFile(possibleFile, this.program)) {
+                return possibleFile;
             }
+        }
 
-            // Check if this is a lua file in the project sources
-            const possibleLuaProjectFiles = [
-                resolvedPath + ".lua", // lua file in sources
-                path.join(resolvedPath, "index.lua"), // lua index file in sources
-                path.join(resolvedPath, "init.lua"), // lua looks for <require>/init.lua if it cannot find <require>.lua
-            ];
-            for (const possibleFile of possibleLuaProjectFiles) {
-                if (context.emitHost.fileExists(possibleFile)) {
-                    return possibleFile;
-                }
+        // Check if this is a lua file in the project sources
+        const possibleLuaProjectFiles = [
+            resolvedPath + ".lua", // lua file in sources
+            path.join(resolvedPath, "index.lua"), // lua index file in sources
+            path.join(resolvedPath, "init.lua"), // lua looks for <require>/init.lua if it cannot find <require>.lua
+        ];
+        for (const possibleFile of possibleLuaProjectFiles) {
+            if (this.emitHost.fileExists(possibleFile)) {
+                return possibleFile;
             }
         }
     }
 }
 
 export function resolveDependencies(program: ts.Program, files: ProcessedFile[], emitHost: EmitHost): ResolutionResult {
-    // const outFiles: ProcessedFileMap = new Map(files.map(file => [file.fileName, file]));
     const options = program.getCompilerOptions() as CompilerOptions;
 
     const resolutionContext = new ResolutionContext(program, options, emitHost);

@@ -54,16 +54,17 @@ export function endSection(name: string) {
     measure(name, "start " + name, "end " + name);
 }
 
-export function isEnabled() {
+export function isMeasurementEnabled() {
     return enabled;
 }
 
-export function enable() {
+export function enableMeasurement() {
     if (!enabled) {
         enabled = true;
     }
 }
-export function disable() {
+
+export function disableMeasurement() {
     if (enabled) {
         enabled = false;
         marks.clear();

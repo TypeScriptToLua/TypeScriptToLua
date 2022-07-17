@@ -3,7 +3,7 @@ import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { validateAssignment } from "../utils/assignment-validation";
 import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
-import { ScopeType } from "../utils/scope";
+import { ScopeType, walkScopesUp } from "../utils/scope";
 import { transformArguments } from "./call";
 import {
     returnsMultiType,
@@ -102,9 +102,7 @@ export function createReturnStatement(
 function isInTryCatch(context: TransformationContext): boolean {
     // Check if context is in a try or catch
     let insideTryCatch = false;
-    const scopeStack = context.scopeStack;
-    for (let i = scopeStack.length - 1; i >= 0; i--) {
-        const scope = scopeStack[i];
+    for (const scope of walkScopesUp(context)) {
         scope.functionReturned = true;
 
         if (scope.type === ScopeType.Function) {

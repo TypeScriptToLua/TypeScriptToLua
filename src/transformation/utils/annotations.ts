@@ -29,17 +29,17 @@ function collectAnnotations(source: ts.Symbol | ts.Signature, annotationsMap: An
     }
 }
 
-interface SymbolWithAnnotationMap extends ts.Symbol {
-    tstlAnnotationMap?: AnnotationsMap;
-}
+const symbolAnnotations = new WeakMap<ts.Symbol, AnnotationsMap>();
 
 export function getSymbolAnnotations(symbol: ts.Symbol): AnnotationsMap {
-    const withAnnotations = symbol as SymbolWithAnnotationMap;
-    if (withAnnotations.tstlAnnotationMap !== undefined) return withAnnotations.tstlAnnotationMap;
+    const known = symbolAnnotations.get(symbol);
+    if (known) return known;
 
     const annotationsMap: AnnotationsMap = new Map();
     collectAnnotations(symbol, annotationsMap);
-    return (withAnnotations.tstlAnnotationMap = annotationsMap);
+
+    symbolAnnotations.set(symbol, annotationsMap);
+    return annotationsMap;
 }
 
 export function getTypeAnnotations(type: ts.Type): AnnotationsMap {
@@ -58,17 +58,16 @@ export function getTypeAnnotations(type: ts.Type): AnnotationsMap {
     return annotationsMap;
 }
 
-interface NodeWithAnnotationMap extends ts.Node {
-    tstlAnnotationMap?: AnnotationsMap;
-}
-
+const nodeAnnotations = new WeakMap<ts.Node, AnnotationsMap>();
 export function getNodeAnnotations(node: ts.Node): AnnotationsMap {
-    const withAnnotations = node as NodeWithAnnotationMap;
-    if (withAnnotations.tstlAnnotationMap !== undefined) return withAnnotations.tstlAnnotationMap;
+    const known = nodeAnnotations.get(node);
+    if (known) return known;
 
     const annotationsMap: AnnotationsMap = new Map();
     collectAnnotationsFromTags(annotationsMap, ts.getAllJSDocTags(node, ts.isJSDocUnknownTag));
-    return (withAnnotations.tstlAnnotationMap = annotationsMap);
+
+    nodeAnnotations.set(node, annotationsMap);
+    return annotationsMap;
 }
 
 function collectAnnotationsFromTags(annotationsMap: AnnotationsMap, tags: readonly ts.JSDocTag[]) {
@@ -79,9 +78,10 @@ function collectAnnotationsFromTags(annotationsMap: AnnotationsMap, tags: readon
     }
 }
 
+const fileAnnotations = new WeakMap<ts.SourceFile, AnnotationsMap>();
 export function getFileAnnotations(sourceFile: ts.SourceFile): AnnotationsMap {
-    const withAnnotations = sourceFile as NodeWithAnnotationMap;
-    if (withAnnotations.tstlAnnotationMap !== undefined) return withAnnotations.tstlAnnotationMap;
+    const known = fileAnnotations.get(sourceFile);
+    if (known) return known;
 
     const annotationsMap: AnnotationsMap = new Map();
 
@@ -96,7 +96,9 @@ export function getFileAnnotations(sourceFile: ts.SourceFile): AnnotationsMap {
             }
         }
     }
-    return (withAnnotations.tstlAnnotationMap = annotationsMap);
+
+    fileAnnotations.set(sourceFile, annotationsMap);
+    return annotationsMap;
 }
 
 function getTagArgsFromComment(tag: ts.JSDocTag): string[] {

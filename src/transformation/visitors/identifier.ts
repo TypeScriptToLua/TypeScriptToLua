@@ -3,43 +3,15 @@ import * as lua from "../../LuaAST";
 import { transformBuiltinIdentifierExpression, checkForLuaLibType } from "../builtins";
 import { isPromiseClass, createPromiseIdentifier } from "../builtins/promise";
 import { FunctionVisitor, tempSymbolId, TransformationContext } from "../context";
-import {
-    invalidMultiFunctionUse,
-    invalidRangeUse,
-    invalidVarargUse,
-    invalidCallExtensionUse,
-} from "../utils/diagnostics";
+import { invalidCallExtensionUse } from "../utils/diagnostics";
 import { createExportedIdentifier, getSymbolExportScope } from "../utils/export";
 import { createSafeName, hasUnsafeIdentifierName } from "../utils/safe-names";
 import { getIdentifierSymbolId } from "../utils/symbols";
 import { isOptionalContinuation } from "./optional-chaining";
 import { isStandardLibraryType } from "../utils/typescript";
-import { getExtensionKindForNode, ExtensionKind, getExtensionKindForSymbol } from "../utils/language-extensions";
+import { getExtensionKindForNode, getExtensionKindForSymbol } from "../utils/language-extensions";
 import { callExtensions } from "./language-extensions/call-extension";
-
-function reportInvalidExtensionValue(
-    context: TransformationContext,
-    identifier: ts.Identifier,
-    extensionKind: ExtensionKind
-): void {
-    if (extensionKind === ExtensionKind.MultiFunction) {
-        context.diagnostics.push(invalidMultiFunctionUse(identifier));
-    } else if (extensionKind === ExtensionKind.RangeFunction) {
-        context.diagnostics.push(invalidRangeUse(identifier));
-    } else if (extensionKind === ExtensionKind.VarargConstant) {
-        context.diagnostics.push(invalidVarargUse(identifier));
-    }
-}
-
-const extensionKindToValueName: { [T in ExtensionKind]?: string } = {
-    [ExtensionKind.MultiFunction]: "$multi",
-    [ExtensionKind.RangeFunction]: "$range",
-    [ExtensionKind.VarargConstant]: "$vararg",
-};
-
-function isIdentifierExtensionValue(symbol: ts.Symbol | undefined, extensionKind: ExtensionKind): boolean {
-    return symbol !== undefined && extensionKindToValueName[extensionKind] === symbol.getName();
-}
+import { isIdentifierExtensionValue, reportInvalidExtensionValue } from "./language-extensions/identifier";
 
 export function transformIdentifier(context: TransformationContext, identifier: ts.Identifier): lua.Identifier {
     return transformNonValueIdentifier(context, identifier, context.checker.getSymbolAtLocation(identifier));
@@ -70,7 +42,7 @@ function transformNonValueIdentifier(
     const type = context.checker.getTypeAtLocation(identifier);
     if (isStandardLibraryType(context, type, undefined)) {
         checkForLuaLibType(context, type);
-        if (isPromiseClass(identifier)) {
+        if (isPromiseClass(context, identifier)) {
             return createPromiseIdentifier(identifier);
         }
     }

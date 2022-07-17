@@ -96,7 +96,7 @@ function performCompilation(
     options: tstl.CompilerOptions,
     configFileParsingDiagnostics?: readonly ts.Diagnostic[]
 ): void {
-    if (options.measurePerformance) performance.enable();
+    if (options.measurePerformance) performance.enableMeasurement();
 
     performance.startSection("createProgram");
 
@@ -167,7 +167,7 @@ function updateWatchCompilationHost(
         const program = builderProgram.getProgram();
         const options = builderProgram.getCompilerOptions() as tstl.CompilerOptions;
 
-        if (options.measurePerformance) performance.enable();
+        if (options.measurePerformance) performance.enableMeasurement();
 
         const configFileParsingDiagnostics: ts.Diagnostic[] = updateConfigFile(options);
 
@@ -209,13 +209,13 @@ function updateWatchCompilationHost(
 }
 
 function reportPerformance() {
-    if (performance.isEnabled()) {
+    if (performance.isMeasurementEnabled()) {
         console.log("Performance measurements: ");
         performance.forEachMeasure((name, duration) => {
             console.log(`  ${name}: ${duration.toFixed(2)}ms`);
         });
         console.log(`Total: ${performance.getTotalDuration().toFixed(2)}ms`);
-        performance.disable();
+        performance.disableMeasurement();
     }
 }
 

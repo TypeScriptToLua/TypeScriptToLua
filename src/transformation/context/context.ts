@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import { CompilerOptions, LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
-import { assert, castArrayFlatMap } from "../../utils";
+import { assert, castArray } from "../../utils";
 import { unsupportedNodeKind } from "../utils/diagnostics";
 import { unwrapVisitorResult, OneToManyVisitorResult } from "../utils/lua-ast";
 import { createSafeName } from "../utils/safe-names";
@@ -123,7 +123,7 @@ export class TransformationContext {
     }
 
     public transformStatements(node: StatementLikeNode | readonly StatementLikeNode[]): lua.Statement[] {
-        return castArrayFlatMap(node, n => {
+        return castArray(node).flatMap(n => {
             this.pushPrecedingStatements();
             const statements = this.transformNode(n) as lua.Statement[];
             const result = this.popPrecedingStatements();
@@ -133,7 +133,7 @@ export class TransformationContext {
     }
 
     public superTransformStatements(node: StatementLikeNode | readonly StatementLikeNode[]): lua.Statement[] {
-        return castArrayFlatMap(node, n => {
+        return castArray(node).flatMap(n => {
             this.pushPrecedingStatements();
             const statements = this.superTransformNode(n) as lua.Statement[];
             const result = this.popPrecedingStatements();

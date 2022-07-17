@@ -4,10 +4,12 @@ import { TransformationContext } from "../context";
 import { unsupportedProperty } from "../utils/diagnostics";
 import { importLuaLibFeature, LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { transformArguments } from "../visitors/call";
+import { isStandardLibraryType } from "../utils/typescript";
 
-/** Assumes that the type is already checked to be a standard library type. */
-export function isPromiseClass(node: ts.Identifier) {
-    return node.text === "Promise";
+export function isPromiseClass(context: TransformationContext, node: ts.Identifier) {
+    if (node.text !== "Promise") return false;
+    const type = context.checker.getTypeAtLocation(node);
+    return isStandardLibraryType(context, type, undefined);
 }
 
 export function createPromiseIdentifier(original: ts.Node) {

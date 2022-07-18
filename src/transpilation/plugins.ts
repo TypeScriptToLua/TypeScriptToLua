@@ -4,6 +4,7 @@ import { CompilerOptions } from "../CompilerOptions";
 import { Printer } from "../LuaPrinter";
 import { Visitors } from "../transformation/context";
 import { EmitFile, getConfigDirectory, ProcessedFile, resolvePlugin } from "./utils";
+import * as performance from "../measure-performance";
 
 export interface Plugin {
     /**
@@ -47,6 +48,7 @@ export interface Plugin {
 }
 
 export function getPlugins(program: ts.Program): { diagnostics: ts.Diagnostic[]; plugins: Plugin[] } {
+    performance.startSection("getPlugins");
     const diagnostics: ts.Diagnostic[] = [];
     const pluginsFromOptions: Plugin[] = [];
     const options = program.getCompilerOptions() as CompilerOptions;
@@ -72,6 +74,8 @@ export function getPlugins(program: ts.Program): { diagnostics: ts.Diagnostic[];
     if (options.tstlVerbose) {
         console.log(`Loaded ${pluginsFromOptions.length} plugins`);
     }
+
+    performance.endSection("getPlugins");
 
     return { diagnostics, plugins: pluginsFromOptions };
 }

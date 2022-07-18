@@ -1,15 +1,13 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
-import { annotationRemoved } from "../utils/diagnostics";
 import { addExportToIdentifier, createExportedIdentifier, getIdentifierExportScope } from "../utils/export";
 import {
     createHoistableVariableDeclarationStatement,
     createLocalOrExportedOrGlobalDeclaration,
 } from "../utils/lua-ast";
 import { createSafeName, isUnsafeName } from "../utils/safe-names";
-import { performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
+import { performHoisting, ScopeType } from "../utils/scope";
 import { getSymbolIdOfSymbol } from "../utils/symbols";
 import { transformIdentifier } from "./identifier";
 
@@ -47,17 +45,8 @@ function moduleHasEmittedBody(
     return false;
 }
 
-// Static context -> namespace dictionary keeping the current namespace for each transformation context
-const currentNamespaces = new WeakMap<TransformationContext, ts.ModuleDeclaration | undefined>();
-
 export const transformModuleDeclaration: FunctionVisitor<ts.ModuleDeclaration> = (node, context) => {
-    const annotations = getTypeAnnotations(context.checker.getTypeAtLocation(node));
-    // If phantom namespace elide the declaration and return the body
-    if (annotations.has(AnnotationKind.Phantom)) {
-        context.diagnostics.push(annotationRemoved(node, AnnotationKind.Phantom));
-    }
-
-    const currentNamespace = currentNamespaces.get(context);
+    const currentNamespace = context.currentNamespaces;
     const result: lua.Statement[] = [];
 
     const symbol = context.checker.getSymbolAtLocation(node.name);
@@ -115,20 +104,21 @@ export const transformModuleDeclaration: FunctionVisitor<ts.ModuleDeclaration> =
 
     // Set current namespace for nested NS
     // Keep previous namespace to reset after block transpilation
-    currentNamespaces.set(context, node);
+
+    context.currentNamespaces = node;
 
     // Transform moduleblock to block and visit it
     if (moduleHasEmittedBody(node)) {
-        pushScope(context, ScopeType.Block);
+        context.pushScope(ScopeType.Block);
         const statements = performHoisting(
             context,
             context.transformStatements(ts.isModuleBlock(node.body) ? node.body.statements : node.body)
         );
-        popScope(context);
+        context.popScope();
         result.push(lua.createDoStatement(statements));
     }
 
-    currentNamespaces.set(context, currentNamespace);
+    context.currentNamespaces = currentNamespace;
 
     return result;
 };

@@ -35,13 +35,11 @@ export function transformObjectConstructorCall(
     }
 }
 
-export function transformObjectPrototypeCall(
+export function tryTransformObjectPrototypeCall(
     context: TransformationContext,
     node: ts.CallExpression,
     calledMethod: ts.PropertyAccessExpression
 ): lua.Expression | undefined {
-    const signature = context.checker.getResolvedSignature(node);
-
     const name = calledMethod.name.text;
     switch (name) {
         case "toString":
@@ -53,6 +51,7 @@ export function transformObjectPrototypeCall(
             );
         case "hasOwnProperty":
             const expr = context.transformExpression(calledMethod.expression);
+            const signature = context.checker.getResolvedSignature(node);
             const parameters = transformArguments(context, node.arguments, signature);
             const rawGetIdentifier = lua.createIdentifier("rawget");
             const rawGetCall = lua.createCallExpression(rawGetIdentifier, [expr, ...parameters]);

@@ -39,7 +39,7 @@ export function getFirstDeclarationInFile(symbol: ts.Symbol, sourceFile: ts.Sour
     return declarations.length > 0 ? declarations.reduce((p, c) => (p.pos < c.pos ? p : c)) : undefined;
 }
 
-function isStandardLibraryDeclaration(context: TransformationContext, declaration: ts.Declaration): boolean {
+export function isStandardLibraryDeclaration(context: TransformationContext, declaration: ts.Declaration): boolean {
     const parseTreeNode = ts.getParseTreeNode(declaration) ?? declaration;
     const sourceFile = parseTreeNode.getSourceFile();
     if (!sourceFile) {

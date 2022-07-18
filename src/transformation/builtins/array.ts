@@ -4,7 +4,7 @@ import { TransformationContext } from "../context";
 import { unsupportedProperty } from "../utils/diagnostics";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { transformArguments, transformCallAndArguments } from "../visitors/call";
-import { isStringType, isNumberType, findFirstNonOuterParent } from "../utils/typescript";
+import { findFirstNonOuterParent, typeAlwaysHasSomeOfFlags } from "../utils/typescript";
 import { moveToPrecedingTemp } from "../visitors/expression-list";
 import { isUnpackCall, wrapInTable } from "../utils/lua-ast";
 
@@ -145,7 +145,10 @@ export function transformArrayPrototypeCall(
         case "join":
             const callerType = context.checker.getTypeAtLocation(calledMethod.expression);
             const elementType = context.checker.getElementTypeOfArrayType(callerType);
-            if (elementType && (isStringType(context, elementType) || isNumberType(context, elementType))) {
+            if (
+                elementType &&
+                typeAlwaysHasSomeOfFlags(context, elementType, ts.TypeFlags.StringLike | ts.TypeFlags.NumberLike)
+            ) {
                 const defaultSeparatorLiteral = lua.createStringLiteral(",");
                 const param = params[0];
                 const parameters = [

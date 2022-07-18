@@ -48,7 +48,7 @@ end"
 
 exports[`invalid $multi call (([a] = $multi(1)) => {}): diagnostics 1`] = `"main.ts(2,16): error TSTL: The $multi function must be called in a return statement."`;
 
-exports[`invalid $multi call (({ $multi });): code 1`] = `"local ____ = nil"`;
+exports[`invalid $multi call (({ $multi });): code 1`] = `"local ____ = {[\\"$multi\\"] = ____}"`;
 
 exports[`invalid $multi call (({ $multi });): diagnostics 1`] = `"main.ts(2,12): error TSTL: The $multi function must be called in a return statement."`;
 

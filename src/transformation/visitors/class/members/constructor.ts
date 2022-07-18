@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../../../LuaAST";
 import { TransformationContext } from "../../../context";
 import { createSelfIdentifier } from "../../../utils/lua-ast";
-import { popScope, pushScope, ScopeType } from "../../../utils/scope";
+import { ScopeType } from "../../../utils/scope";
 import { transformFunctionBodyContent, transformFunctionBodyHeader, transformParameters } from "../../function";
 import { transformIdentifier } from "../../identifier";
 import { transformClassInstanceFields } from "./fields";
@@ -28,7 +28,7 @@ export function transformConstructorDeclaration(
     }
 
     // Transform body
-    const scope = pushScope(context, ScopeType.Function);
+    const scope = context.pushScope(ScopeType.Function);
     const body = transformFunctionBodyContent(context, statement.body);
 
     const [params, dotsLiteral, restParamName] = transformParameters(
@@ -86,7 +86,7 @@ export function transformConstructorDeclaration(
 
     const constructorWasGenerated = statement.pos === -1;
 
-    popScope(context);
+    context.popScope();
 
     return lua.createAssignmentStatement(
         createConstructorName(className),

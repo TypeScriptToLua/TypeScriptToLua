@@ -2,7 +2,6 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { transformBuiltinCallExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { AnnotationKind, getTypeAnnotations, isTupleReturnCall } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
 import { ContextType, getDeclarationContextType } from "../utils/function-context";
 import { wrapInTable } from "../utils/lua-ast";
@@ -10,12 +9,12 @@ import { isValidLuaIdentifier } from "../utils/safe-names";
 import { isExpressionWithEvaluationEffect } from "../utils/typescript";
 import { transformElementAccessArgument } from "./access";
 import { isMultiReturnCall, shouldMultiReturnCallBeWrapped } from "./language-extensions/multi";
-import { annotationRemoved } from "../utils/diagnostics";
+import { unsupportedBuiltinOptionalCall } from "../utils/diagnostics";
 import { moveToPrecedingTemp, transformExpressionList } from "./expression-list";
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
 import { getOptionalContinuationData, transformOptionalChain } from "./optional-chaining";
-import { transformLanguageExtensionCallExpression } from "./language-extensions";
 import { transformImportExpression } from "./modules/import";
+import { transformLanguageExtensionCallExpression } from "./language-extensions/call-extension";
 
 export function validateArguments(
     context: TransformationContext,
@@ -27,9 +26,9 @@ export function validateArguments(
     }
     for (const [index, param] of params.entries()) {
         const signatureParameter = signature.parameters[index];
-        const paramType = context.checker.getTypeAtLocation(param);
         if (signatureParameter.valueDeclaration !== undefined) {
             const signatureType = context.checker.getTypeAtLocation(signatureParameter.valueDeclaration);
+            const paramType = context.checker.getTypeAtLocation(param);
             validateAssignment(context, param, paramType, signatureType, signatureParameter.name);
         }
     }
@@ -228,25 +227,16 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
         : undefined;
     const wrapResultInTable = isMultiReturnCall(context, node) && shouldMultiReturnCallBeWrapped(context, node);
 
-    if (isTupleReturnCall(context, node)) {
-        context.diagnostics.push(annotationRemoved(node, AnnotationKind.TupleReturn));
-    }
-
     const builtinOrExtensionResult =
-        transformBuiltinCallExpression(context, node, optionalContinuation !== undefined) ??
-        transformLanguageExtensionCallExpression(context, node, optionalContinuation !== undefined);
+        transformBuiltinCallExpression(context, node) ?? transformLanguageExtensionCallExpression(context, node);
     if (builtinOrExtensionResult) {
-        // unsupportedOptionalCall diagnostic already present
+        if (optionalContinuation !== undefined) {
+            context.diagnostics.push(unsupportedBuiltinOptionalCall(node));
+        }
         return wrapResultInTable ? wrapInTable(builtinOrExtensionResult) : builtinOrExtensionResult;
     }
 
     if (ts.isPropertyAccessExpression(calledExpression)) {
-        const ownerType = context.checker.getTypeAtLocation(calledExpression.expression);
-        const annotations = getTypeAnnotations(ownerType);
-        if (annotations.has(AnnotationKind.LuaTable)) {
-            context.diagnostics.push(annotationRemoved(node, AnnotationKind.LuaTable));
-        }
-
         const result = transformPropertyCall(context, node, calledExpression);
         return wrapResultInTable ? wrapInTable(result) : result;
     }
@@ -305,9 +295,5 @@ function isContextualCallExpression(context: TransformationContext, signature: t
 }
 
 export function getCalledExpression(node: ts.CallExpression): ts.Expression {
-    function unwrapExpression(expression: ts.Expression): ts.Expression {
-        expression = ts.skipOuterExpressions(expression);
-        return ts.isNonNullExpression(expression) ? unwrapExpression(expression.expression) : expression;
-    }
-    return unwrapExpression(node.expression);
+    return ts.skipOuterExpressions(node.expression);
 }

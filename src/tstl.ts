@@ -7,6 +7,7 @@ import { parseCommandLine } from "./cli/parse";
 import { createDiagnosticReporter } from "./cli/report";
 import { createConfigFileUpdater, locateConfigFile, parseConfigFileWithSystem } from "./cli/tsconfig";
 import { isBundleEnabled } from "./CompilerOptions";
+import * as performance from "./measure-performance";
 
 const shouldBePretty = ({ pretty }: ts.CompilerOptions = {}) =>
     pretty !== undefined ? (pretty as boolean) : ts.sys.writeOutputIsTTY?.() ?? false;
@@ -95,20 +96,27 @@ function performCompilation(
     options: tstl.CompilerOptions,
     configFileParsingDiagnostics?: readonly ts.Diagnostic[]
 ): void {
+    if (options.measurePerformance) performance.enableMeasurement();
+
+    performance.startSection("createProgram");
+
     const program = ts.createProgram({
         rootNames,
         options,
         projectReferences,
         configFileParsingDiagnostics,
     });
-
     const preEmitDiagnostics = ts.getPreEmitDiagnostics(program);
+
+    performance.endSection("createProgram");
 
     const { diagnostics: transpileDiagnostics, emitSkipped } = new tstl.Transpiler().emit({ program });
 
     const diagnostics = ts.sortAndDeduplicateDiagnostics([...preEmitDiagnostics, ...transpileDiagnostics]);
-
     diagnostics.forEach(reportDiagnostic);
+
+    if (options.measurePerformance) reportPerformance();
+
     const exitCode =
         diagnostics.filter(d => d.category === ts.DiagnosticCategory.Error).length === 0
             ? ts.ExitStatus.Success
@@ -158,6 +166,9 @@ function updateWatchCompilationHost(
     host.afterProgramCreate = builderProgram => {
         const program = builderProgram.getProgram();
         const options = builderProgram.getCompilerOptions() as tstl.CompilerOptions;
+
+        if (options.measurePerformance) performance.enableMeasurement();
+
         const configFileParsingDiagnostics: ts.Diagnostic[] = updateConfigFile(options);
 
         let sourceFiles: ts.SourceFile[] | undefined;
@@ -188,11 +199,24 @@ function updateWatchCompilationHost(
 
         diagnostics.forEach(reportDiagnostic);
 
+        if (options.measurePerformance) reportPerformance();
+
         const errors = diagnostics.filter(d => d.category === ts.DiagnosticCategory.Error);
         hadErrorLastTime = errors.length > 0;
 
         host.onWatchStatusChange!(cliDiagnostics.watchErrorSummary(errors.length), host.getNewLine(), options);
     };
+}
+
+function reportPerformance() {
+    if (performance.isMeasurementEnabled()) {
+        console.log("Performance measurements: ");
+        performance.forEachMeasure((name, duration) => {
+            console.log(`  ${name}: ${duration.toFixed(2)}ms`);
+        });
+        console.log(`Total: ${performance.getTotalDuration().toFixed(2)}ms`);
+        performance.disableMeasurement();
+    }
 }
 
 function checkNodeVersion(): void {

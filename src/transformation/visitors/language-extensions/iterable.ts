@@ -1,34 +1,22 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import * as extensions from "../../utils/language-extensions";
 import { TransformationContext } from "../../context";
 import { getVariableDeclarationBinding, transformForInitializer } from "../loops/utils";
 import { transformArrayBindingElement } from "../variable-declaration";
-import { invalidMultiIterableWithoutDestructuring } from "../../utils/diagnostics";
+import {
+    invalidMultiIterableWithoutDestructuring,
+    invalidPairsIterableWithoutDestructuring,
+} from "../../utils/diagnostics";
 import { cast } from "../../../utils";
 import { isMultiReturnType } from "./multi";
-
-export function isIterableType(type: ts.Type): boolean {
-    return extensions.isExtensionType(type, extensions.ExtensionKind.IterableType);
-}
-
-export function returnsIterableType(context: TransformationContext, node: ts.CallExpression): boolean {
-    const signature = context.checker.getResolvedSignature(node);
-    const type = signature?.getReturnType();
-    return type ? isIterableType(type) : false;
-}
-
-export function isIterableExpression(context: TransformationContext, expression: ts.Expression): boolean {
-    const type = context.checker.getTypeAtLocation(expression);
-    return isIterableType(type);
-}
 
 function transformForOfMultiIterableStatement(
     context: TransformationContext,
     statement: ts.ForOfStatement,
-    block: lua.Block
+    block: lua.Block,
+    luaIterator: lua.Expression,
+    invalidMultiUseDiagnostic: (node: ts.Node) => ts.Diagnostic
 ): lua.Statement {
-    const luaIterator = context.transformExpression(statement.expression);
     let identifiers: lua.Identifier[] = [];
 
     if (ts.isVariableDeclarationList(statement.initializer)) {
@@ -38,7 +26,7 @@ function transformForOfMultiIterableStatement(
         if (ts.isArrayBindingPattern(binding)) {
             identifiers = binding.elements.map(e => transformArrayBindingElement(context, e));
         } else {
-            context.diagnostics.push(invalidMultiIterableWithoutDestructuring(binding));
+            context.diagnostics.push(invalidMultiUseDiagnostic(binding));
         }
     } else if (ts.isArrayLiteralExpression(statement.initializer)) {
         // Variables NOT declared in for loop - catch iterator values in temps and assign
@@ -56,7 +44,7 @@ function transformForOfMultiIterableStatement(
             );
         }
     } else {
-        context.diagnostics.push(invalidMultiIterableWithoutDestructuring(statement.initializer));
+        context.diagnostics.push(invalidMultiUseDiagnostic(statement.initializer));
     }
 
     if (identifiers.length === 0) {
@@ -73,10 +61,46 @@ export function transformForOfIterableStatement(
 ): lua.Statement {
     const type = context.checker.getTypeAtLocation(statement.expression);
     if (type.aliasTypeArguments?.length === 2 && isMultiReturnType(type.aliasTypeArguments[0])) {
-        return transformForOfMultiIterableStatement(context, statement, block);
+        const luaIterator = context.transformExpression(statement.expression);
+        return transformForOfMultiIterableStatement(
+            context,
+            statement,
+            block,
+            luaIterator,
+            invalidMultiIterableWithoutDestructuring
+        );
     }
 
     const luaIterator = context.transformExpression(statement.expression);
     const identifier = transformForInitializer(context, statement.initializer, block);
     return lua.createForInStatement(block, [identifier], [luaIterator], statement);
+}
+
+export function transformForOfPairsIterableStatement(
+    context: TransformationContext,
+    statement: ts.ForOfStatement,
+    block: lua.Block
+): lua.Statement {
+    const pairsCall = lua.createCallExpression(lua.createIdentifier("pairs"), [
+        context.transformExpression(statement.expression),
+    ]);
+    return transformForOfMultiIterableStatement(
+        context,
+        statement,
+        block,
+        pairsCall,
+        invalidPairsIterableWithoutDestructuring
+    );
+}
+
+export function transformForOfPairsKeyIterableStatement(
+    context: TransformationContext,
+    statement: ts.ForOfStatement,
+    block: lua.Block
+): lua.Statement {
+    const pairsCall = lua.createCallExpression(lua.createIdentifier("pairs"), [
+        context.transformExpression(statement.expression),
+    ]);
+    const identifier = transformForInitializer(context, statement.initializer, block);
+    return lua.createForInStatement(block, [identifier], [pairsCall], statement);
 }

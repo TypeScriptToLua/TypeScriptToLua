@@ -23,8 +23,10 @@ interface ResolutionResult {
 }
 
 class ResolutionContext {
-    private resultsCache = new Map<string, ResolutionResult>();
     private noResolvePaths: Set<string>;
+
+    public diagnostics: ts.Diagnostic[] = [];
+    public resolvedFiles = new Map<string, ProcessedFile>();
 
     constructor(
         public readonly program: ts.Program,
@@ -34,83 +36,170 @@ class ResolutionContext {
         this.noResolvePaths = new Set(options.noResolvePaths);
     }
 
-    public resolve(file: ProcessedFile, required: string): ResolutionResult {
+    public addAndResolveDependencies(file: ProcessedFile): void {
+        if (this.resolvedFiles.has(file.fileName)) return;
+        this.resolvedFiles.set(file.fileName, file);
+
+        for (const required of findRequiredPaths(file.code)) {
+            // Do not resolve noResolution paths
+            if (required.startsWith("@NoResolution:")) {
+                // Remove @NoResolution prefix if not building in library mode
+                if (!isBuildModeLibrary(this.program)) {
+                    const path = required.replace("@NoResolution:", "");
+                    replaceRequireInCode(file, required, path);
+                    replaceRequireInSourceMap(file, required, path);
+                }
+
+                // Skip
+                continue;
+            }
+            // Try to resolve the import starting from the directory `file` is in
+            this.resolveImport(file, required);
+        }
+    }
+
+    public resolveImport(file: ProcessedFile, required: string): void {
+        // Do no resolve lualib - always use the lualib of the application entry point, not the lualib from external packages
+        if (required === "lualib_bundle") {
+            this.resolvedFiles.set("lualib_bundle", { fileName: "lualib_bundle", code: "" });
+            return;
+        }
+
         if (this.noResolvePaths.has(required)) {
             if (this.options.tstlVerbose) {
                 console.log(`Skipping module resolution of ${required} as it is in the tsconfig noResolvePaths.`);
             }
-            return { resolvedFiles: [], diagnostics: [] };
+            return;
         }
 
-        const resolvedDependency = resolveDependency(file, required, this.program, this.emitHost);
-        if (resolvedDependency) {
-            if (this.options.tstlVerbose) {
-                console.log(`Resolved ${required} to ${normalizeSlashes(resolvedDependency)}`);
+        const dependencyPath = this.resolveDependencyPath(file, required);
+        if (!dependencyPath) return this.couldNotResolveImport(required, file);
+
+        if (this.options.tstlVerbose) {
+            console.log(`Resolved ${required} to ${normalizeSlashes(dependencyPath)}`);
+        }
+
+        this.processDependency(dependencyPath);
+        // Figure out resolved require path and dependency output path
+        if (shouldRewriteRequires(dependencyPath, this.program)) {
+            const resolvedRequire = getEmitPathRelativeToOutDir(dependencyPath, this.program);
+            replaceRequireInCode(file, required, resolvedRequire);
+            replaceRequireInSourceMap(file, required, resolvedRequire);
+        }
+    }
+
+    public processedDependencies = new Set<string>();
+
+    private processDependency(dependencyPath: string): void {
+        if (this.processedDependencies.has(dependencyPath)) return;
+        this.processedDependencies.add(dependencyPath);
+
+        if (!shouldIncludeDependency(dependencyPath, this.program)) return;
+
+        // If dependency is not part of project, add dependency to output and resolve its dependencies recursively
+        const dependencyContent = this.emitHost.readFile(dependencyPath);
+        if (dependencyContent === undefined) {
+            this.diagnostics.push(couldNotReadDependency(dependencyPath));
+            return;
+        }
+
+        const dependency = {
+            fileName: dependencyPath,
+            code: dependencyContent,
+        };
+        this.addAndResolveDependencies(dependency);
+    }
+
+    private couldNotResolveImport(required: string, file: ProcessedFile): void {
+        const fallbackRequire = fallbackResolve(required, getSourceDir(this.program), path.dirname(file.fileName));
+        replaceRequireInCode(file, required, fallbackRequire);
+        replaceRequireInSourceMap(file, required, fallbackRequire);
+
+        this.diagnostics.push(
+            couldNotResolveRequire(required, path.relative(getProjectRoot(this.program), file.fileName))
+        );
+    }
+
+    private resolveDependencyPath(requiringFile: ProcessedFile, dependency: string): string | undefined {
+        const fileDirectory = path.dirname(requiringFile.fileName);
+        if (this.options.tstlVerbose) {
+            console.log(`Resolving "${dependency}" from ${normalizeSlashes(requiringFile.fileName)}`);
+        }
+
+        // Check if the import is relative
+        const isRelative = ["/", "./", "../"].some(p => dependency.startsWith(p));
+
+        // If the import is relative, always resolve it relative to the requiring file
+        // If the import is not relative, resolve it relative to options.baseUrl if it is set
+        const relativeTo = isRelative ? fileDirectory : this.options.baseUrl ?? fileDirectory;
+
+        // Check if file is a file in the project
+        const resolvedPath = path.join(relativeTo, dependency);
+        const fileFromPath = this.getFileFromPath(resolvedPath);
+        if (fileFromPath) return fileFromPath;
+
+        // Check if this is a sibling of a required lua file
+        if (requiringFile.fileName.endsWith(".lua")) {
+            const luaFilePath = resolveLuaPath(fileDirectory, dependency, this.emitHost);
+            if (luaFilePath) {
+                return luaFilePath;
             }
+        }
 
-            // Figure out resolved require path and dependency output path
-            const resolvedRequire = getEmitPathRelativeToOutDir(resolvedDependency, this.program);
+        // Not a TS file in our project sources, use resolver to check if we can find dependency
+        try {
+            const resolveResult = resolver.resolveSync({}, fileDirectory, dependency);
+            if (resolveResult) return resolveResult;
+        } catch (e) {
+            // resolveSync errors if it fails to resolve
+        }
 
-            if (shouldRewriteRequires(resolvedDependency, this.program)) {
-                replaceRequireInCode(file, required, resolvedRequire);
-                replaceRequireInSourceMap(file, required, resolvedRequire);
+        return undefined;
+    }
+
+    // value is false if already searched but not found
+    private pathToFile = new Map<string, string | false>();
+
+    private getFileFromPath(resolvedPath: string): string | undefined {
+        const existingFile = this.pathToFile.get(resolvedPath);
+        if (existingFile) return existingFile;
+        if (existingFile === false) return undefined;
+
+        const file = this.searchForFileFromPath(resolvedPath);
+        this.pathToFile.set(resolvedPath, file ?? false);
+        return file;
+    }
+
+    private searchForFileFromPath(resolvedPath: string): string | undefined {
+        const possibleProjectFiles = [
+            resolvedPath, // JSON files need their extension as part of the import path, caught by this branch,
+            resolvedPath + ".ts", // Regular ts file
+            path.join(resolvedPath, "index.ts"), // Index ts file,
+            resolvedPath + ".tsx", // tsx file
+            path.join(resolvedPath, "index.tsx"), // tsx index
+        ];
+
+        for (const possibleFile of possibleProjectFiles) {
+            if (isProjectFile(possibleFile, this.program)) {
+                return possibleFile;
             }
+        }
 
-            // Check cache to prevent resolving nested dependencies double to break dependency loops
-            if (this.resultsCache.has(resolvedDependency)) {
-                if (this.options.tstlVerbose) {
-                    console.log(`Resolution cache hit for ${normalizeSlashes(resolvedDependency)}`);
-                }
-                return this.resultsCache.get(resolvedDependency)!;
+        // Check if this is a lua file in the project sources
+        const possibleLuaProjectFiles = [
+            resolvedPath + ".lua", // lua file in sources
+            path.join(resolvedPath, "index.lua"), // lua index file in sources
+            path.join(resolvedPath, "init.lua"), // lua looks for <require>/init.lua if it cannot find <require>.lua
+        ];
+        for (const possibleFile of possibleLuaProjectFiles) {
+            if (this.emitHost.fileExists(possibleFile)) {
+                return possibleFile;
             }
-
-            // If dependency is not part of project, add dependency to output and resolve its dependencies recursively
-            if (shouldIncludeDependency(resolvedDependency, this.program)) {
-                // If dependency resolved successfully, read its content
-                const dependencyContent = this.emitHost.readFile(resolvedDependency);
-                if (dependencyContent === undefined) {
-                    return { resolvedFiles: [], diagnostics: [couldNotReadDependency(resolvedDependency)] };
-                }
-
-                const dependency = {
-                    fileName: resolvedDependency,
-                    code: dependencyContent,
-                };
-                const nestedDependencies = resolveFileDependencies(dependency, this);
-
-                // Cache result and return
-                const result = {
-                    resolvedFiles: [dependency, ...nestedDependencies.resolvedFiles],
-                    diagnostics: [...nestedDependencies.diagnostics],
-                };
-                this.resultsCache.set(resolvedDependency, result);
-                return result;
-            } else {
-                const result = {
-                    resolvedFiles: [],
-                    diagnostics: [],
-                };
-                this.resultsCache.set(resolvedDependency, result);
-                return result;
-            }
-        } else {
-            const fallbackRequire = fallbackResolve(required, getSourceDir(this.program), path.dirname(file.fileName));
-            replaceRequireInCode(file, required, fallbackRequire);
-            replaceRequireInSourceMap(file, required, fallbackRequire);
-
-            return {
-                resolvedFiles: [],
-                diagnostics: [
-                    couldNotResolveRequire(required, path.relative(getProjectRoot(this.program), file.fileName)),
-                ],
-            };
         }
     }
 }
 
 export function resolveDependencies(program: ts.Program, files: ProcessedFile[], emitHost: EmitHost): ResolutionResult {
-    const outFiles: ProcessedFile[] = [...files];
-    const diagnostics: ts.Diagnostic[] = [];
     const options = program.getCompilerOptions() as CompilerOptions;
 
     const resolutionContext = new ResolutionContext(program, options, emitHost);
@@ -120,120 +209,10 @@ export function resolveDependencies(program: ts.Program, files: ProcessedFile[],
         if (options.tstlVerbose) {
             console.log(`Resolving dependencies for ${normalizeSlashes(file.fileName)}`);
         }
-
-        const resolutionResult = resolveFileDependencies(file, resolutionContext);
-        outFiles.push(...resolutionResult.resolvedFiles);
-        diagnostics.push(...resolutionResult.diagnostics);
+        resolutionContext.addAndResolveDependencies(file);
     }
 
-    return { resolvedFiles: deduplicateResolvedFiles(outFiles), diagnostics };
-}
-
-function deduplicateResolvedFiles(files: ProcessedFile[]): ProcessedFile[] {
-    return [...new Map(files.map(f => [f.fileName, f])).values()];
-}
-
-function resolveFileDependencies(file: ProcessedFile, context: ResolutionContext): ResolutionResult {
-    const dependencies: ProcessedFile[] = [];
-    const diagnostics: ts.Diagnostic[] = [];
-
-    for (const required of findRequiredPaths(file.code)) {
-        // Do no resolve lualib - always use the lualib of the application entry point, not the lualib from external packages
-        if (required === "lualib_bundle") {
-            dependencies.push({ fileName: "lualib_bundle", code: "" });
-            continue;
-        }
-
-        // Do not resolve noResolution paths
-        if (required.startsWith("@NoResolution:")) {
-            // Remove @NoResolution prefix if not building in library mode
-            if (!isBuildModeLibrary(context.program)) {
-                const path = required.replace("@NoResolution:", "");
-                replaceRequireInCode(file, required, path);
-                replaceRequireInSourceMap(file, required, path);
-            }
-
-            // Skip
-            continue;
-        }
-
-        // Try to resolve the import starting from the directory `file` is in
-        const resolvedDependency = context.resolve(file, required);
-        dependencies.push(...resolvedDependency.resolvedFiles);
-        diagnostics.push(...resolvedDependency.diagnostics);
-    }
-    return { resolvedFiles: deduplicateResolvedFiles(dependencies), diagnostics };
-}
-
-function resolveDependency(
-    requiringFile: ProcessedFile,
-    dependency: string,
-    program: ts.Program,
-    emitHost: EmitHost
-): string | undefined {
-    const options = program.getCompilerOptions() as CompilerOptions;
-
-    const fileDirectory = path.dirname(requiringFile.fileName);
-    if (options.tstlVerbose) {
-        console.log(`Resolving "${dependency}" from ${normalizeSlashes(requiringFile.fileName)}`);
-    }
-
-    // Check if the import is relative
-    const isRelative = ["/", "./", "../"].some(p => dependency.startsWith(p));
-
-    // If the import is relative, always resolve it relative to the requiring file
-    // If the import is not relative, resolve it relative to options.baseUrl if it is set
-    const relativeTo = isRelative ? fileDirectory : options.baseUrl ?? fileDirectory;
-
-    // Check if file is a file in the project
-    const resolvedPath = path.join(relativeTo, dependency);
-
-    const possibleProjectFiles = [
-        resolvedPath, // JSON files need their extension as part of the import path, caught by this branch,
-        resolvedPath + ".ts", // Regular ts file
-        path.join(resolvedPath, "index.ts"), // Index ts file,
-        resolvedPath + ".tsx", // tsx file
-        path.join(resolvedPath, "index.tsx"), // tsx index
-    ];
-
-    for (const possibleFile of possibleProjectFiles) {
-        if (isProjectFile(possibleFile, program)) {
-            return possibleFile;
-        }
-    }
-
-    // Check if this is a lua file in the project sources
-    const possibleLuaProjectFiles = [
-        resolvedPath + ".lua", // lua file in sources
-        path.join(resolvedPath, "index.lua"), // lua index file in sources
-        path.join(resolvedPath, "init.lua"), // lua looks for <require>/init.lua if it cannot find <require>.lua
-    ];
-
-    for (const possibleFile of possibleLuaProjectFiles) {
-        if (emitHost.fileExists(possibleFile)) {
-            return possibleFile;
-        }
-    }
-
-    // Check if this is a sibling of a required lua file
-    if (requiringFile.fileName.endsWith(".lua")) {
-        const luaFilePath = resolveLuaPath(fileDirectory, dependency, emitHost);
-        if (luaFilePath) {
-            return luaFilePath;
-        }
-    }
-
-    // Not a TS file in our project sources, use resolver to check if we can find dependency
-    try {
-        const resolveResult = resolver.resolveSync({}, fileDirectory, dependency);
-        if (resolveResult) {
-            return resolveResult;
-        }
-    } catch (e) {
-        // resolveSync errors if it fails to resolve
-    }
-
-    return undefined;
+    return { resolvedFiles: [...resolutionContext.resolvedFiles.values()], diagnostics: resolutionContext.diagnostics };
 }
 
 function resolveLuaPath(fromPath: string, dependency: string, emitHost: EmitHost) {
@@ -270,21 +249,16 @@ function walkUpFileTreeUntil(fromDirectory: string, predicate: (dir: string) => 
 }
 
 function shouldRewriteRequires(resolvedDependency: string, program: ts.Program) {
-    return !isNodeModulesFile(resolvedDependency) || !isBuildModeLibrary(program);
+    return !isBuildModeLibrary(program) || !isNodeModulesFile(resolvedDependency);
 }
 
 function shouldIncludeDependency(resolvedDependency: string, program: ts.Program) {
     // Never include lua files (again) that are transpiled from project sources
-    if (!hasSourceFileInProject(resolvedDependency, program)) {
-        // Always include lua files not in node_modules (internal lua sources)
-        if (!isNodeModulesFile(resolvedDependency)) {
-            return true;
-        } else {
-            // Only include node_modules files if not in library mode
-            return !isBuildModeLibrary(program);
-        }
-    }
-    return false;
+    if (hasSourceFileInProject(resolvedDependency, program)) return false;
+    // Always include lua files not in node_modules (internal lua sources)
+    if (!isNodeModulesFile(resolvedDependency)) return true;
+    // Only include node_modules files if not in library mode
+    return !isBuildModeLibrary(program);
 }
 
 function isBuildModeLibrary(program: ts.Program) {

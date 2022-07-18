@@ -7,6 +7,7 @@ import { isNonNull } from "../utils";
 import { Plugin } from "./plugins";
 import { getTransformers } from "./transformers";
 import { EmitHost, ProcessedFile } from "./utils";
+import * as performance from "../measure-performance";
 
 export interface TranspileOptions {
     program: ts.Program;
@@ -25,6 +26,8 @@ export function getProgramTranspileResult(
     writeFileResult: ts.WriteFileCallback,
     { program, sourceFiles: targetSourceFiles, customTransformers = {}, plugins = [] }: TranspileOptions
 ): TranspileResult {
+    performance.startSection("beforeTransform");
+
     const options = program.getCompilerOptions() as CompilerOptions;
 
     if (options.tstlVerbose) {
@@ -56,6 +59,7 @@ export function getProgramTranspileResult(
         }
 
         if (preEmitDiagnostics.length > 0) {
+            performance.endSection("beforeTransform");
             return { diagnostics: preEmitDiagnostics, transpiledFiles };
         }
     }
@@ -69,15 +73,21 @@ export function getProgramTranspileResult(
 
     const visitorMap = createVisitorMap(plugins.map(p => p.visitors).filter(isNonNull));
     const printer = createPrinter(plugins.map(p => p.printer).filter(isNonNull));
+
     const processSourceFile = (sourceFile: ts.SourceFile) => {
         if (options.tstlVerbose) {
             console.log(`Transforming ${sourceFile.fileName}`);
         }
 
-        const { file, diagnostics: transformDiagnostics } = transformSourceFile(program, sourceFile, visitorMap);
+        performance.startSection("transpile");
 
+        const { file, diagnostics: transformDiagnostics } = transformSourceFile(program, sourceFile, visitorMap);
         diagnostics.push(...transformDiagnostics);
+
+        performance.endSection("transpile");
+
         if (!options.noEmit && !options.emitDeclarationOnly) {
+            performance.startSection("print");
             if (options.tstlVerbose) {
                 console.log(`Printing ${sourceFile.fileName}`);
             }
@@ -89,6 +99,7 @@ export function getProgramTranspileResult(
                 luaAst: file,
                 ...printResult,
             });
+            performance.endSection("print");
         }
     };
 
@@ -109,6 +120,8 @@ export function getProgramTranspileResult(
         }
     };
 
+    performance.endSection("beforeTransform");
+
     if (targetSourceFiles) {
         for (const file of targetSourceFiles) {
             if (isEmittableJsonFile(file)) {
@@ -124,6 +137,8 @@ export function getProgramTranspileResult(
         program.getSourceFiles().filter(isEmittableJsonFile).forEach(processSourceFile);
     }
 
+    performance.startSection("afterPrint");
+
     options.noEmit = oldNoEmit;
 
     if (options.noEmit || (options.noEmitOnError && diagnostics.length > 0)) {
@@ -136,6 +151,8 @@ export function getProgramTranspileResult(
             diagnostics.push(...pluginDiagnostics);
         }
     }
+
+    performance.endSection("afterPrint");
 
     return { diagnostics, transpiledFiles };
 }

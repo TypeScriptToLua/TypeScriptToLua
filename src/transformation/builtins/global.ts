@@ -5,24 +5,27 @@ import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isNumberType } from "../utils/typescript";
 import { transformArguments } from "../visitors/call";
 
-export function transformGlobalCall(
+export function tryTransformBuiltinGlobalCall(
     context: TransformationContext,
-    node: ts.CallExpression
+    node: ts.CallExpression,
+    expressionType: ts.Type
 ): lua.Expression | undefined {
-    const signature = context.checker.getResolvedSignature(node);
-    const parameters = transformArguments(context, node.arguments, signature);
-    const expressionType = context.checker.getTypeAtLocation(node.expression);
+    function getParameters() {
+        const signature = context.checker.getResolvedSignature(node);
+        return transformArguments(context, node.arguments, signature);
+    }
+
     const name = expressionType.symbol.name;
     switch (name) {
         case "SymbolConstructor":
-            return transformLuaLibFunction(context, LuaLibFeature.Symbol, node, ...parameters);
+            return transformLuaLibFunction(context, LuaLibFeature.Symbol, node, ...getParameters());
         case "NumberConstructor":
-            return transformLuaLibFunction(context, LuaLibFeature.Number, node, ...parameters);
+            return transformLuaLibFunction(context, LuaLibFeature.Number, node, ...getParameters());
         case "isNaN":
         case "isFinite":
             const numberParameters = isNumberType(context, expressionType)
-                ? parameters
-                : [transformLuaLibFunction(context, LuaLibFeature.Number, undefined, ...parameters)];
+                ? getParameters()
+                : [transformLuaLibFunction(context, LuaLibFeature.Number, undefined, ...getParameters())];
 
             return transformLuaLibFunction(
                 context,
@@ -31,8 +34,8 @@ export function transformGlobalCall(
                 ...numberParameters
             );
         case "parseFloat":
-            return transformLuaLibFunction(context, LuaLibFeature.ParseFloat, node, ...parameters);
+            return transformLuaLibFunction(context, LuaLibFeature.ParseFloat, node, ...getParameters());
         case "parseInt":
-            return transformLuaLibFunction(context, LuaLibFeature.ParseInt, node, ...parameters);
+            return transformLuaLibFunction(context, LuaLibFeature.ParseInt, node, ...getParameters());
     }
 }

@@ -2,7 +2,6 @@ import { SourceNode } from "source-map";
 import * as ts from "typescript";
 import * as tstl from "..";
 import * as path from "path";
-import { getUsedLuaLibFeatures } from "../transformation/utils/lualib";
 import { LuaLibFeature, LuaLibModulesInfo, luaLibModulesInfoFileName, resolveRecursiveLualibFeatures } from "../LuaLib";
 import { EmitHost, ProcessedFile } from "../transpilation/utils";
 import {
@@ -72,7 +71,7 @@ class LuaLibPlugin implements tstl.Plugin {
         // Transpile file as normal with tstl
         const fileResult = context.superTransformNode(file)[0] as tstl.File;
 
-        const usedFeatures = new Set<tstl.LuaLibFeature>(getUsedLuaLibFeatures(context));
+        const usedFeatures = new Set<tstl.LuaLibFeature>(context.usedLuaLibFeatures);
 
         // Get all imports in file
         const importNames = new Set<string>();

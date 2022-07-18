@@ -1,5 +1,5 @@
 import * as util from "../../util";
-import { invalidTableExtensionUse } from "../../../src/transformation/utils/diagnostics";
+import { invalidCallExtensionUse } from "../../../src/transformation/utils/diagnostics";
 
 describe("LuaTableGet & LuaTableSet extensions", () => {
     test("stand-alone function", () => {
@@ -78,7 +78,7 @@ describe("LuaTableGet & LuaTableSet extensions", () => {
             ${statement}
         `
             .withLanguageExtensions()
-            .expectDiagnosticsToMatchSnapshot([invalidTableExtensionUse.code]);
+            .expectDiagnosticsToMatchSnapshot([invalidCallExtensionUse.code]);
     });
 });
 
@@ -168,7 +168,7 @@ describe("LuaTableHas extension", () => {
             ${statement}
         `
             .withLanguageExtensions()
-            .expectDiagnosticsToMatchSnapshot([invalidTableExtensionUse.code]);
+            .expectDiagnosticsToMatchSnapshot([invalidCallExtensionUse.code]);
     });
 });
 

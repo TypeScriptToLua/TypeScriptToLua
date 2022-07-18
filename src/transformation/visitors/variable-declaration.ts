@@ -277,7 +277,7 @@ export function transformVariableDeclaration(
         if (!ts.isFunctionExpression(initializer) && !ts.isArrowFunction(initializer)) return false;
         // Skip named function expressions because they will have been wrapped already
         if (ts.isFunctionExpression(initializer) && initializer.name) return false;
-        return isFunctionTypeWithProperties(context.checker.getTypeAtLocation(statement.name));
+        return isFunctionTypeWithProperties(context, context.checker.getTypeAtLocation(statement.name));
     }
 }
 

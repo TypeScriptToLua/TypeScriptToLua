@@ -3,142 +3,111 @@ import { TransformationContext } from "../context";
 
 export enum ExtensionKind {
     MultiFunction = "MultiFunction",
-    MultiType = "MultiType",
     RangeFunction = "RangeFunction",
     VarargConstant = "VarargConstant",
-    IterableType = "IterableType",
-    PairsIterableType = "PairsIterableType",
-    PairsKeyIterableType = "PairsKeyIterableType",
-    AdditionOperatorType = "AdditionOperatorType",
-    AdditionOperatorMethodType = "AdditionOperatorMethodType",
-    SubtractionOperatorType = "SubtractionOperatorType",
-    SubtractionOperatorMethodType = "SubtractionOperatorMethodType",
-    MultiplicationOperatorType = "MultiplicationOperatorType",
-    MultiplicationOperatorMethodType = "MultiplicationOperatorMethodType",
-    DivisionOperatorType = "DivisionOperatorType",
-    DivisionOperatorMethodType = "DivisionOperatorMethodType",
-    ModuloOperatorType = "ModuloOperatorType",
-    ModuloOperatorMethodType = "ModuloOperatorMethodType",
-    PowerOperatorType = "PowerOperatorType",
-    PowerOperatorMethodType = "PowerOperatorMethodType",
-    FloorDivisionOperatorType = "FloorDivisionOperatorType",
-    FloorDivisionOperatorMethodType = "FloorDivisionOperatorMethodType",
-    BitwiseAndOperatorType = "BitwiseAndOperatorType",
-    BitwiseAndOperatorMethodType = "BitwiseAndOperatorMethodType",
-    BitwiseOrOperatorType = "BitwiseOrOperatorType",
-    BitwiseOrOperatorMethodType = "BitwiseOrOperatorMethodType",
-    BitwiseExclusiveOrOperatorType = "BitwiseExclusiveOrOperatorType",
-    BitwiseExclusiveOrOperatorMethodType = "BitwiseExclusiveOrOperatorMethodType",
-    BitwiseLeftShiftOperatorType = "BitwiseLeftShiftOperatorType",
-    BitwiseLeftShiftOperatorMethodType = "BitwiseLeftShiftOperatorMethodType",
-    BitwiseRightShiftOperatorType = "BitwiseRightShiftOperatorType",
-    BitwiseRightShiftOperatorMethodType = "BitwiseRightShiftOperatorMethodType",
-    ConcatOperatorType = "ConcatOperatorType",
-    ConcatOperatorMethodType = "ConcatOperatorMethodType",
-    LessThanOperatorType = "LessThanOperatorType",
-    LessThanOperatorMethodType = "LessThanOperatorMethodType",
-    GreaterThanOperatorType = "GreaterThanOperatorType",
-    GreaterThanOperatorMethodType = "GreaterThanOperatorMethodType",
-    NegationOperatorType = "NegationOperatorType",
-    NegationOperatorMethodType = "NegationOperatorMethodType",
-    BitwiseNotOperatorType = "BitwiseNotOperatorType",
-    BitwiseNotOperatorMethodType = "BitwiseNotOperatorMethodType",
-    LengthOperatorType = "LengthOperatorType",
-    LengthOperatorMethodType = "LengthOperatorMethodType",
-    TableNewType = "TableNewType",
-    TableDeleteType = "TableDeleteType",
-    TableDeleteMethodType = "TableDeleteMethodType",
-    TableGetType = "TableGetType",
-    TableGetMethodType = "TableGetMethodType",
-    TableHasType = "TableHasType",
-    TableHasMethodType = "TableHasMethodType",
-    TableSetType = "TableSetType",
-    TableSetMethodType = "TableSetMethodType",
-    TableAddType = "TableAddType",
-    TableAddMethodType = "TableAddMethodType",
+    AdditionOperatorType = "Addition",
+    AdditionOperatorMethodType = "AdditionMethod",
+    SubtractionOperatorType = "Subtraction",
+    SubtractionOperatorMethodType = "SubtractionMethod",
+    MultiplicationOperatorType = "Multiplication",
+    MultiplicationOperatorMethodType = "MultiplicationMethod",
+    DivisionOperatorType = "Division",
+    DivisionOperatorMethodType = "DivisionMethod",
+    ModuloOperatorType = "Modulo",
+    ModuloOperatorMethodType = "ModuloMethod",
+    PowerOperatorType = "Power",
+    PowerOperatorMethodType = "PowerMethod",
+    FloorDivisionOperatorType = "FloorDivision",
+    FloorDivisionOperatorMethodType = "FloorDivisionMethod",
+    BitwiseAndOperatorType = "BitwiseAnd",
+    BitwiseAndOperatorMethodType = "BitwiseAndMethod",
+    BitwiseOrOperatorType = "BitwiseOr",
+    BitwiseOrOperatorMethodType = "BitwiseOrMethod",
+    BitwiseExclusiveOrOperatorType = "BitwiseExclusiveOr",
+    BitwiseExclusiveOrOperatorMethodType = "BitwiseExclusiveOrMethod",
+    BitwiseLeftShiftOperatorType = "BitwiseLeftShift",
+    BitwiseLeftShiftOperatorMethodType = "BitwiseLeftShiftMethod",
+    BitwiseRightShiftOperatorType = "BitwiseRightShift",
+    BitwiseRightShiftOperatorMethodType = "BitwiseRightShiftMethod",
+    ConcatOperatorType = "Concat",
+    ConcatOperatorMethodType = "ConcatMethod",
+    LessThanOperatorType = "LessThan",
+    LessThanOperatorMethodType = "LessThanMethod",
+    GreaterThanOperatorType = "GreaterThan",
+    GreaterThanOperatorMethodType = "GreaterThanMethod",
+    NegationOperatorType = "Negation",
+    NegationOperatorMethodType = "NegationMethod",
+    BitwiseNotOperatorType = "BitwiseNot",
+    BitwiseNotOperatorMethodType = "BitwiseNotMethod",
+    LengthOperatorType = "Length",
+    LengthOperatorMethodType = "LengthMethod",
+    TableNewType = "TableNew",
+    TableDeleteType = "TableDelete",
+    TableDeleteMethodType = "TableDeleteMethod",
+    TableGetType = "TableGet",
+    TableGetMethodType = "TableGetMethod",
+    TableHasType = "TableHas",
+    TableHasMethodType = "TableHasMethod",
+    TableSetType = "TableSet",
+    TableSetMethodType = "TableSetMethod",
+    TableAddKeyType = "TableAddKey",
+    TableAddKeyMethodType = "TableAddKeyMethod",
+}
+const extensionValues: Set<string> = new Set(Object.values(ExtensionKind));
+
+export function getExtensionKindForType(context: TransformationContext, type: ts.Type): ExtensionKind | undefined {
+    const value = getPropertyValue(context, type, "__tstlExtension");
+    if (value && extensionValues.has(value)) {
+        return value as ExtensionKind;
+    }
 }
 
-const extensionKindToValueName: { [T in ExtensionKind]?: string } = {
-    [ExtensionKind.MultiFunction]: "$multi",
-    [ExtensionKind.RangeFunction]: "$range",
-    [ExtensionKind.VarargConstant]: "$vararg",
-};
+const excludedTypeFlags: ts.TypeFlags =
+    ((1 << 18) - 1) & // All flags from Any...Never
+    ts.TypeFlags.Index &
+    ts.TypeFlags.NonPrimitive;
 
-const extensionKindToTypeBrand: { [T in ExtensionKind]: string } = {
-    [ExtensionKind.MultiFunction]: "__luaMultiFunctionBrand",
-    [ExtensionKind.MultiType]: "__luaMultiReturnBrand",
-    [ExtensionKind.RangeFunction]: "__luaRangeFunctionBrand",
-    [ExtensionKind.VarargConstant]: "__luaVarargConstantBrand",
-    [ExtensionKind.IterableType]: "__luaIterableBrand",
-    [ExtensionKind.PairsIterableType]: "__luaPairsIterableBrand",
-    [ExtensionKind.PairsKeyIterableType]: "__luaPairsKeyIterableBrand",
-    [ExtensionKind.AdditionOperatorType]: "__luaAdditionBrand",
-    [ExtensionKind.AdditionOperatorMethodType]: "__luaAdditionMethodBrand",
-    [ExtensionKind.SubtractionOperatorType]: "__luaSubtractionBrand",
-    [ExtensionKind.SubtractionOperatorMethodType]: "__luaSubtractionMethodBrand",
-    [ExtensionKind.MultiplicationOperatorType]: "__luaMultiplicationBrand",
-    [ExtensionKind.MultiplicationOperatorMethodType]: "__luaMultiplicationMethodBrand",
-    [ExtensionKind.DivisionOperatorType]: "__luaDivisionBrand",
-    [ExtensionKind.DivisionOperatorMethodType]: "__luaDivisionMethodBrand",
-    [ExtensionKind.ModuloOperatorType]: "__luaModuloBrand",
-    [ExtensionKind.ModuloOperatorMethodType]: "__luaModuloMethodBrand",
-    [ExtensionKind.PowerOperatorType]: "__luaPowerBrand",
-    [ExtensionKind.PowerOperatorMethodType]: "__luaPowerMethodBrand",
-    [ExtensionKind.FloorDivisionOperatorType]: "__luaFloorDivisionBrand",
-    [ExtensionKind.FloorDivisionOperatorMethodType]: "__luaFloorDivisionMethodBrand",
-    [ExtensionKind.BitwiseAndOperatorType]: "__luaBitwiseAndBrand",
-    [ExtensionKind.BitwiseAndOperatorMethodType]: "__luaBitwiseAndMethodBrand",
-    [ExtensionKind.BitwiseOrOperatorType]: "__luaBitwiseOrBrand",
-    [ExtensionKind.BitwiseOrOperatorMethodType]: "__luaBitwiseOrMethodBrand",
-    [ExtensionKind.BitwiseExclusiveOrOperatorType]: "__luaBitwiseExclusiveOrBrand",
-    [ExtensionKind.BitwiseExclusiveOrOperatorMethodType]: "__luaBitwiseExclusiveOrMethodBrand",
-    [ExtensionKind.BitwiseLeftShiftOperatorType]: "__luaBitwiseLeftShiftBrand",
-    [ExtensionKind.BitwiseLeftShiftOperatorMethodType]: "__luaBitwiseLeftShiftMethodBrand",
-    [ExtensionKind.BitwiseRightShiftOperatorType]: "__luaBitwiseRightShiftBrand",
-    [ExtensionKind.BitwiseRightShiftOperatorMethodType]: "__luaBitwiseRightShiftMethodBrand",
-    [ExtensionKind.ConcatOperatorType]: "__luaConcatBrand",
-    [ExtensionKind.ConcatOperatorMethodType]: "__luaConcatMethodBrand",
-    [ExtensionKind.LessThanOperatorType]: "__luaLessThanBrand",
-    [ExtensionKind.LessThanOperatorMethodType]: "__luaLessThanMethodBrand",
-    [ExtensionKind.GreaterThanOperatorType]: "__luaGreaterThanBrand",
-    [ExtensionKind.GreaterThanOperatorMethodType]: "__luaGreaterThanMethodBrand",
-    [ExtensionKind.NegationOperatorType]: "__luaNegationBrand",
-    [ExtensionKind.NegationOperatorMethodType]: "__luaNegationMethodBrand",
-    [ExtensionKind.BitwiseNotOperatorType]: "__luaBitwiseNotBrand",
-    [ExtensionKind.BitwiseNotOperatorMethodType]: "__luaBitwiseNotMethodBrand",
-    [ExtensionKind.LengthOperatorType]: "__luaLengthBrand",
-    [ExtensionKind.LengthOperatorMethodType]: "__luaLengthMethodBrand",
-    [ExtensionKind.TableNewType]: "__luaTableNewBrand",
-    [ExtensionKind.TableDeleteType]: "__luaTableDeleteBrand",
-    [ExtensionKind.TableDeleteMethodType]: "__luaTableDeleteMethodBrand",
-    [ExtensionKind.TableGetType]: "__luaTableGetBrand",
-    [ExtensionKind.TableGetMethodType]: "__luaTableGetMethodBrand",
-    [ExtensionKind.TableHasType]: "__luaTableHasBrand",
-    [ExtensionKind.TableHasMethodType]: "__luaTableHasMethodBrand",
-    [ExtensionKind.TableSetType]: "__luaTableSetBrand",
-    [ExtensionKind.TableSetMethodType]: "__luaTableSetMethodBrand",
-    [ExtensionKind.TableAddType]: "__luaTableAddKeyBrand",
-    [ExtensionKind.TableAddMethodType]: "__luaTableAddKeyMethodBrand",
-};
-
-export function isExtensionType(type: ts.Type, extensionKind: ExtensionKind): boolean {
-    const typeBrand = extensionKindToTypeBrand[extensionKind];
-    return typeBrand !== undefined && type.getProperty(typeBrand) !== undefined;
+function getPropertyValue(context: TransformationContext, type: ts.Type, propertyName: string): string | undefined {
+    if (type.flags & excludedTypeFlags) return;
+    const property = type.getProperty(propertyName);
+    if (!property) return undefined;
+    const propertyType = context.checker.getTypeOfSymbolAtLocation(property, context.sourceFile);
+    if (propertyType.isStringLiteral()) return propertyType.value;
 }
 
-export function getExtensionKinds(type: ts.Type): ExtensionKind[] {
-    return (Object.keys(extensionKindToTypeBrand) as Array<keyof typeof extensionKindToTypeBrand>).filter(
-        e => type.getProperty(extensionKindToTypeBrand[e]) !== undefined
-    );
+export function getExtensionKindForNode(context: TransformationContext, node: ts.Node): ExtensionKind | undefined {
+    const type = context.checker.getTypeAtLocation(node);
+    return getExtensionKindForType(context, type);
 }
 
-export function isExtensionValue(
+export function getExtensionKindForSymbol(
     context: TransformationContext,
-    symbol: ts.Symbol,
-    extensionKind: ExtensionKind
-): boolean {
-    return (
-        symbol.getName() === extensionKindToValueName[extensionKind] &&
-        symbol.declarations?.some(d => isExtensionType(context.checker.getTypeAtLocation(d), extensionKind)) === true
-    );
+    symbol: ts.Symbol
+): ExtensionKind | undefined {
+    const type = context.checker.getTypeOfSymbolAtLocation(symbol, context.sourceFile);
+    return getExtensionKindForType(context, type);
+}
+
+export enum IterableExtensionKind {
+    Iterable = "Iterable",
+    Pairs = "Pairs",
+    PairsKey = "PairsKey",
+}
+
+export function getIterableExtensionTypeForType(
+    context: TransformationContext,
+    type: ts.Type
+): IterableExtensionKind | undefined {
+    const value = getPropertyValue(context, type, "__tstlIterable");
+    if (value && value in IterableExtensionKind) {
+        return value as IterableExtensionKind;
+    }
+}
+
+export function getIterableExtensionKindForNode(
+    context: TransformationContext,
+    node: ts.Node
+): IterableExtensionKind | undefined {
+    const type = context.checker.getTypeAtLocation(node);
+    return getIterableExtensionTypeForType(context, type);
 }

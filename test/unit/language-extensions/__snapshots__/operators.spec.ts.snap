@@ -2,23 +2,23 @@
 
 exports[`operator mapping - invalid use (const foo = (op as any)(1, 2);): code 1`] = `"foo = op(_G, 1, 2)"`;
 
-exports[`operator mapping - invalid use (const foo = (op as any)(1, 2);): diagnostics 1`] = `"main.ts(3,22): error TSTL: This function must always be directly called and cannot be referred to."`;
+exports[`operator mapping - invalid use (const foo = (op as any)(1, 2);): diagnostics 1`] = `"main.ts(3,22): error TSTL: This function must be called directly and cannot be referred to."`;
 
 exports[`operator mapping - invalid use (const foo = [op];): code 1`] = `"foo = {op}"`;
 
-exports[`operator mapping - invalid use (const foo = [op];): diagnostics 1`] = `"main.ts(3,22): error TSTL: This function must always be directly called and cannot be referred to."`;
+exports[`operator mapping - invalid use (const foo = [op];): diagnostics 1`] = `"main.ts(3,22): error TSTL: This function must be called directly and cannot be referred to."`;
 
 exports[`operator mapping - invalid use (const foo = \`\${op}\`): code 1`] = `"foo = tostring(op)"`;
 
-exports[`operator mapping - invalid use (const foo = \`\${op}\`): diagnostics 1`] = `"main.ts(3,24): error TSTL: This function must always be directly called and cannot be referred to."`;
+exports[`operator mapping - invalid use (const foo = \`\${op}\`): diagnostics 1`] = `"main.ts(3,24): error TSTL: This function must be called directly and cannot be referred to."`;
 
 exports[`operator mapping - invalid use (const foo: unknown = op;): code 1`] = `"foo = op"`;
 
-exports[`operator mapping - invalid use (const foo: unknown = op;): diagnostics 1`] = `"main.ts(3,30): error TSTL: This function must always be directly called and cannot be referred to."`;
+exports[`operator mapping - invalid use (const foo: unknown = op;): diagnostics 1`] = `"main.ts(3,30): error TSTL: This function must be called directly and cannot be referred to."`;
 
 exports[`operator mapping - invalid use (declare function foo(op: LuaAddition<number, number, number>): void; foo(op);): code 1`] = `"foo(_G, op)"`;
 
-exports[`operator mapping - invalid use (declare function foo(op: LuaAddition<number, number, number>): void; foo(op);): diagnostics 1`] = `"main.ts(3,82): error TSTL: This function must always be directly called and cannot be referred to."`;
+exports[`operator mapping - invalid use (declare function foo(op: LuaAddition<number, number, number>): void; foo(op);): diagnostics 1`] = `"main.ts(3,82): error TSTL: This function must be called directly and cannot be referred to."`;
 
 exports[`unsupported binary operator mapping (5.1 LuaBitwiseAnd): code 1`] = `"local ____ = left & right"`;
 

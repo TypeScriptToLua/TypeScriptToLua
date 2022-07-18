@@ -4,10 +4,11 @@ import { CompilerOptions, isBundleEnabled } from "../CompilerOptions";
 import { getLuaLibBundle } from "../LuaLib";
 import { normalizeSlashes, trimExtension } from "../utils";
 import { getBundleResult } from "./bundle";
-import { getPlugins } from "./plugins";
+import { getPlugins, Plugin } from "./plugins";
 import { resolveDependencies } from "./resolve";
 import { getProgramTranspileResult, TranspileOptions } from "./transpile";
 import { EmitFile, EmitHost, ProcessedFile } from "./utils";
+import * as performance from "../measure-performance";
 
 export interface TranspilerOptions {
     emitHost?: EmitHost;
@@ -24,27 +25,51 @@ export interface EmitResult {
 
 export class Transpiler {
     protected emitHost: EmitHost;
+
     constructor({ emitHost = ts.sys }: TranspilerOptions = {}) {
         this.emitHost = emitHost;
     }
 
     public emit(emitOptions: EmitOptions): EmitResult {
         const { program, writeFile = this.emitHost.writeFile, plugins: optionsPlugins = [] } = emitOptions;
-        const options = program.getCompilerOptions() as CompilerOptions;
 
         const { diagnostics: getPluginsDiagnostics, plugins: configPlugins } = getPlugins(program);
         const plugins = [...optionsPlugins, ...configPlugins];
 
-        const { diagnostics, transpiledFiles: freshFiles } = getProgramTranspileResult(this.emitHost, writeFile, {
-            ...emitOptions,
-            plugins,
-        });
+        const { diagnostics: transpileDiagnostics, transpiledFiles: freshFiles } = getProgramTranspileResult(
+            this.emitHost,
+            writeFile,
+            {
+                ...emitOptions,
+                plugins,
+            }
+        );
 
-        const { emitPlan } = this.getEmitPlan(program, diagnostics, freshFiles);
+        const { emitPlan } = this.getEmitPlan(program, transpileDiagnostics, freshFiles);
+
+        const emitDiagnostics = this.emitFiles(program, plugins, emitPlan, writeFile);
+
+        return {
+            diagnostics: getPluginsDiagnostics.concat(transpileDiagnostics, emitDiagnostics),
+            emitSkipped: emitPlan.length === 0,
+        };
+    }
+
+    private emitFiles(
+        program: ts.Program,
+        plugins: Plugin[],
+        emitPlan: EmitFile[],
+        writeFile: ts.WriteFileCallback
+    ): ts.Diagnostic[] {
+        performance.startSection("emit");
+
+        const options = program.getCompilerOptions() as CompilerOptions;
 
         if (options.tstlVerbose) {
             console.log("Emitting output");
         }
+
+        const diagnostics: ts.Diagnostic[] = [];
 
         for (const plugin of plugins) {
             if (plugin.beforeEmit) {
@@ -69,7 +94,9 @@ export class Transpiler {
             console.log("Emit finished!");
         }
 
-        return { diagnostics: getPluginsDiagnostics.concat(diagnostics), emitSkipped: emitPlan.length === 0 };
+        performance.endSection("emit");
+
+        return diagnostics;
     }
 
     protected getEmitPlan(
@@ -77,6 +104,7 @@ export class Transpiler {
         diagnostics: ts.Diagnostic[],
         files: ProcessedFile[]
     ): { emitPlan: EmitFile[] } {
+        performance.startSection("getEmitPlan");
         const options = program.getCompilerOptions() as CompilerOptions;
 
         if (options.tstlVerbose) {
@@ -112,6 +140,8 @@ export class Transpiler {
                 outputPath: getEmitPath(file.fileName, program),
             }));
         }
+
+        performance.endSection("getEmitPlan");
 
         return { emitPlan };
     }

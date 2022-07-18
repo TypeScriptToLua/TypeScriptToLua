@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
-import { popScope, pushScope, ScopeType, separateHoistedStatements } from "../utils/scope";
+import { ScopeType, separateHoistedStatements } from "../utils/scope";
 import { createShortCircuitBinaryExpressionPrecedingStatements } from "./binary-expression";
 
 const containsBreakOrReturn = (nodes: Iterable<ts.Node>): boolean => {
@@ -64,7 +64,7 @@ const coalesceCondition = (
 };
 
 export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (statement, context) => {
-    const scope = pushScope(context, ScopeType.Switch);
+    const scope = context.pushScope(ScopeType.Switch);
 
     // Give the switch and condition accumulator a unique name to prevent nested switches from acting up.
     const switchName = `____switch${scope.id}`;
@@ -242,7 +242,7 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
         statements.unshift(lua.createVariableDeclarationStatement(hoistedIdentifiers));
     }
 
-    popScope(context);
+    context.popScope();
 
     // Add the switch expression after hoisting
     const expression = context.transformExpression(statement.expression);

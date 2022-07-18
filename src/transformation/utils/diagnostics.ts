@@ -131,11 +131,7 @@ export const invalidMultiReturnAccess = createErrorDiagnosticFactory(
     "The LuaMultiReturn type can only be accessed via an element access expression of a numeric type."
 );
 
-export const invalidOperatorMappingUse = createErrorDiagnosticFactory(
-    "This function must always be directly called and cannot be referred to."
-);
-
-export const invalidTableExtensionUse = createErrorDiagnosticFactory(
+export const invalidCallExtensionUse = createErrorDiagnosticFactory(
     "This function must be called directly and cannot be referred to."
 );
 

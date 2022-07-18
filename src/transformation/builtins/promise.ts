@@ -3,12 +3,13 @@ import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { unsupportedProperty } from "../utils/diagnostics";
 import { importLuaLibFeature, LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
-import { isStandardLibraryType } from "../utils/typescript";
 import { transformArguments } from "../visitors/call";
+import { isStandardLibraryType } from "../utils/typescript";
 
 export function isPromiseClass(context: TransformationContext, node: ts.Identifier) {
+    if (node.text !== "Promise") return false;
     const type = context.checker.getTypeAtLocation(node);
-    return isStandardLibraryType(context, type, undefined) && node.text === "Promise";
+    return isStandardLibraryType(context, type, undefined);
 }
 
 export function createPromiseIdentifier(original: ts.Node) {

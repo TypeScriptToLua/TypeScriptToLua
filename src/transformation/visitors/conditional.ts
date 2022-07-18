@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
-import { performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
+import { performHoisting, ScopeType } from "../utils/scope";
 import { transformBlockOrStatement } from "./block";
 import { canBeFalsy } from "../utils/typescript";
 
@@ -63,10 +63,10 @@ export const transformConditionalExpression: FunctionVisitor<ts.ConditionalExpre
 };
 
 export function transformIfStatement(statement: ts.IfStatement, context: TransformationContext): lua.IfStatement {
-    pushScope(context, ScopeType.Conditional);
+    context.pushScope(ScopeType.Conditional);
     const condition = context.transformExpression(statement.expression);
     const statements = performHoisting(context, transformBlockOrStatement(context, statement.thenStatement));
-    popScope(context);
+    context.popScope();
     const ifBlock = lua.createBlock(statements);
 
     if (statement.elseStatement) {
@@ -90,12 +90,12 @@ export function transformIfStatement(statement: ts.IfStatement, context: Transfo
                 return lua.createIfStatement(condition, ifBlock, elseStatement);
             }
         } else {
-            pushScope(context, ScopeType.Conditional);
+            context.pushScope(ScopeType.Conditional);
             const elseStatements = performHoisting(
                 context,
                 transformBlockOrStatement(context, statement.elseStatement)
             );
-            popScope(context);
+            context.popScope();
             const elseBlock = lua.createBlock(elseStatements);
             return lua.createIfStatement(condition, ifBlock, elseBlock);
         }

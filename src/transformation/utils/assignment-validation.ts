@@ -34,15 +34,10 @@ export function validateAssignment(
 
     validateFunctionAssignment(context, node, fromType, toType, toName);
 
-    const fromTypeNode = context.checker.typeToTypeNode(fromType, undefined, undefined);
-    const toTypeNode = context.checker.typeToTypeNode(toType, undefined, undefined);
-    if (!fromTypeNode || !toTypeNode) {
-        return;
-    }
-
+    const checker = context.checker;
     if (
-        (ts.isArrayTypeNode(toTypeNode) || ts.isTupleTypeNode(toTypeNode)) &&
-        (ts.isArrayTypeNode(fromTypeNode) || ts.isTupleTypeNode(fromTypeNode))
+        (checker.isTupleType(toType) || checker.isArrayType(toType)) &&
+        (checker.isTupleType(fromType) || checker.isArrayType(fromType))
     ) {
         // Recurse into arrays/tuples
         const fromTypeArguments = (fromType as ts.TypeReference).typeArguments;
@@ -58,33 +53,39 @@ export function validateAssignment(
         }
     }
 
-    if (
-        (toType.flags & ts.TypeFlags.Object) !== 0 &&
-        (ts.isTypeLiteralNode(toTypeNode) ||
-            ((toType as ts.ObjectType).objectFlags & ts.ObjectFlags.ClassOrInterface) !== 0) &&
-        toType.symbol &&
-        toType.symbol.members &&
-        fromType.symbol &&
-        fromType.symbol.members
-    ) {
+    const fromMembers = fromType.symbol?.members;
+    const toMembers = toType.symbol?.members;
+
+    if (fromMembers && toMembers) {
         // Recurse into interfaces
-        toType.symbol.members.forEach((toMember, escapedMemberName) => {
-            if (fromType.symbol.members) {
-                const fromMember = fromType.symbol.members.get(escapedMemberName);
+        if (toMembers.size < fromMembers.size) {
+            toMembers.forEach((toMember, escapedMemberName) => {
+                const fromMember = fromMembers.get(escapedMemberName);
                 if (fromMember) {
-                    const toMemberType = context.checker.getTypeOfSymbolAtLocation(toMember, node);
-                    const fromMemberType = context.checker.getTypeOfSymbolAtLocation(fromMember, node);
-                    const memberName = ts.unescapeLeadingUnderscores(escapedMemberName);
-                    validateAssignment(
-                        context,
-                        node,
-                        fromMemberType,
-                        toMemberType,
-                        toName ? `${toName}.${memberName}` : memberName
-                    );
+                    validateMember(toMember, fromMember, escapedMemberName);
                 }
-            }
-        });
+            });
+        } else {
+            fromMembers.forEach((fromMember, escapedMemberName) => {
+                const toMember = toMembers.get(escapedMemberName);
+                if (toMember) {
+                    validateMember(toMember, fromMember, escapedMemberName);
+                }
+            });
+        }
+    }
+
+    function validateMember(toMember: ts.Symbol, fromMember: ts.Symbol, escapedMemberName: ts.__String): void {
+        const toMemberType = context.checker.getTypeOfSymbolAtLocation(toMember, node);
+        const fromMemberType = context.checker.getTypeOfSymbolAtLocation(fromMember, node);
+        const memberName = ts.unescapeLeadingUnderscores(escapedMemberName);
+        validateAssignment(
+            context,
+            node,
+            fromMemberType,
+            toMemberType,
+            toName ? `${toName}.${memberName}` : memberName
+        );
     }
 }
 

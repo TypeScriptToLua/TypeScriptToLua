@@ -3,11 +3,7 @@ import * as lua from "../../LuaAST";
 import { transformBuiltinPropertyAccessExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
-import {
-    annotationRemoved,
-    invalidMultiReturnAccess,
-    unsupportedOptionalCompileMembersOnly,
-} from "../utils/diagnostics";
+import { invalidMultiReturnAccess, unsupportedOptionalCompileMembersOnly } from "../utils/diagnostics";
 import { addToNumericExpression } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isArrayType, isNumberType, isStringType } from "../utils/typescript";
@@ -107,12 +103,6 @@ export function transformPropertyAccessExpressionWithCapture(
     const type = context.checker.getTypeAtLocation(node.expression);
     const isOptionalLeft = isOptionalContinuation(node.expression);
 
-    const annotations = getTypeAnnotations(type);
-
-    if (annotations.has(AnnotationKind.LuaTable)) {
-        context.diagnostics.push(annotationRemoved(node, AnnotationKind.LuaTable));
-    }
-
     const constEnumValue = tryGetConstEnumValue(context, node);
     if (constEnumValue) {
         return { expression: constEnumValue };
@@ -127,6 +117,7 @@ export function transformPropertyAccessExpressionWithCapture(
     }
 
     // Do not output path for member only enums
+    const annotations = getTypeAnnotations(type);
     if (annotations.has(AnnotationKind.CompileMembersOnly)) {
         if (isOptionalLeft) {
             context.diagnostics.push(unsupportedOptionalCompileMembersOnly(node));

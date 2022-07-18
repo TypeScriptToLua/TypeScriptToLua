@@ -40,13 +40,8 @@ export interface HoistingResult {
     hoistedIdentifiers: lua.Identifier[];
 }
 
-const scopeStacks = new WeakMap<TransformationContext, Scope[]>();
-function getScopeStack(context: TransformationContext): Scope[] {
-    return getOrUpdate(scopeStacks, context, () => []);
-}
-
 export function* walkScopesUp(context: TransformationContext): IterableIterator<Scope> {
-    const scopeStack = getScopeStack(context);
+    const scopeStack = context.scopeStack;
     for (let i = scopeStack.length - 1; i >= 0; --i) {
         const scope = scopeStack[i];
         yield scope;
@@ -58,7 +53,7 @@ export function markSymbolAsReferencedInCurrentScopes(
     symbolId: lua.SymbolId,
     identifier: ts.Identifier
 ): void {
-    for (const scope of getScopeStack(context)) {
+    for (const scope of context.scopeStack) {
         if (!scope.referencedSymbols) {
             scope.referencedSymbols = new Map();
         }
@@ -69,7 +64,7 @@ export function markSymbolAsReferencedInCurrentScopes(
 }
 
 export function peekScope(context: TransformationContext): Scope {
-    const scopeStack = getScopeStack(context);
+    const scopeStack = context.scopeStack;
     const scope = scopeStack[scopeStack.length - 1];
     assert(scope);
 
@@ -77,26 +72,12 @@ export function peekScope(context: TransformationContext): Scope {
 }
 
 export function findScope(context: TransformationContext, scopeTypes: ScopeType): Scope | undefined {
-    return [...getScopeStack(context)].reverse().find(s => scopeTypes & s.type);
-}
-
-const scopeIdCounters = new WeakMap<TransformationContext, number>();
-export function pushScope(context: TransformationContext, scopeType: ScopeType): Scope {
-    const nextScopeId = (scopeIdCounters.get(context) ?? 0) + 1;
-    scopeIdCounters.set(context, nextScopeId);
-
-    const scopeStack = getScopeStack(context);
-    const scope: Scope = { type: scopeType, id: nextScopeId };
-    scopeStack.push(scope);
-    return scope;
-}
-
-export function popScope(context: TransformationContext): Scope {
-    const scopeStack = getScopeStack(context);
-    const scope = scopeStack.pop();
-    assert(scope);
-
-    return scope;
+    for (let i = context.scopeStack.length - 1; i >= 0; --i) {
+        const scope = context.scopeStack[i];
+        if (scopeTypes & scope.type) {
+            return scope;
+        }
+    }
 }
 
 export function addScopeVariableDeclaration(scope: Scope, declaration: lua.VariableDeclarationStatement) {

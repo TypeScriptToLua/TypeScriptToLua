@@ -83,8 +83,6 @@ export function createReturnStatement(
     values: lua.Expression[],
     node: ts.Node
 ): lua.ReturnStatement {
-    const results = [...values];
-
     if (isInAsyncFunction(node)) {
         return lua.createReturnStatement([
             lua.createCallExpression(lua.createIdentifier("____awaiter_resolve"), [lua.createNilLiteral(), ...values]),
@@ -93,10 +91,10 @@ export function createReturnStatement(
 
     if (isInTryCatch(context)) {
         // Bubble up explicit return flag and check if we're inside a try/catch block
-        results.unshift(lua.createBooleanLiteral(true));
+        values = [lua.createBooleanLiteral(true), ...values];
     }
 
-    return lua.createReturnStatement(results, node);
+    return lua.createReturnStatement(values, node);
 }
 
 function isInTryCatch(context: TransformationContext): boolean {

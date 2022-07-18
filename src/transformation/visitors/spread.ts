@@ -1,7 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { AnnotationKind, isVarargType } from "../utils/annotations";
 import { createUnpackCall } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import {
@@ -13,7 +12,6 @@ import {
 } from "../utils/scope";
 import { isArrayType, findFirstNonOuterParent } from "../utils/typescript";
 import { isMultiReturnCall } from "./language-extensions/multi";
-import { annotationRemoved } from "../utils/diagnostics";
 import { isGlobalVarargConstant } from "./language-extensions/vararg";
 
 export function isOptimizedVarArgSpread(context: TransformationContext, symbol: ts.Symbol, identifier: ts.Identifier) {
@@ -65,9 +63,6 @@ export function isOptimizedVarArgSpread(context: TransformationContext, symbol: 
 export const transformSpreadElement: FunctionVisitor<ts.SpreadElement> = (node, context) => {
     const tsInnerExpression = ts.skipOuterExpressions(node.expression);
     if (ts.isIdentifier(tsInnerExpression)) {
-        if (isVarargType(context, tsInnerExpression)) {
-            context.diagnostics.push(annotationRemoved(node, AnnotationKind.Vararg));
-        }
         const symbol = context.checker.getSymbolAtLocation(tsInnerExpression);
         if (symbol && isOptimizedVarArgSpread(context, symbol, tsInnerExpression)) {
             return lua.createDotsLiteral(node);

@@ -67,7 +67,8 @@ function transformTableGetExpression(
             ? transformWithTableArgument(context, node)
             : transformExpressionList(context, node.arguments);
 
-    const [table, accessExpression] = args; // arg0[arg1]
+    const [table, accessExpression] = args;
+    // arg0[arg1]
     return lua.createTableIndexExpression(table, accessExpression, node);
 }
 

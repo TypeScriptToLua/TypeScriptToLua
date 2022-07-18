@@ -6,9 +6,9 @@ import { findFirstNodeAbove, getAllCallSignatures, inferAssignedType } from "./t
 
 export enum ContextType {
     None = 0,
-    Void = 0b01,
-    NonVoid = 0b10,
-    Mixed = 0b11,
+    Void = 1 << 0,
+    NonVoid = 1 << 1,
+    Mixed = Void | NonVoid,
 }
 
 function hasNoSelfAncestor(declaration: ts.Declaration): boolean {
@@ -35,19 +35,17 @@ function getExplicitThisParameter(signatureDeclaration: ts.SignatureDeclaration)
     }
 }
 
-interface SignatureDeclarationWithContextType extends ts.SignatureDeclarationBase {
-    tstlFunctionContextType?: ContextType;
-}
+const signatureDeclarationContextTypes = new WeakMap<ts.SignatureDeclaration, ContextType>();
 
 export function getDeclarationContextType(
     context: TransformationContext,
     signatureDeclaration: ts.SignatureDeclaration
 ): ContextType {
-    const withContextType = signatureDeclaration as SignatureDeclarationWithContextType;
-    if (withContextType.tstlFunctionContextType !== undefined) {
-        return withContextType.tstlFunctionContextType;
-    }
-    return (withContextType.tstlFunctionContextType = computeDeclarationContextType(context, signatureDeclaration));
+    const known = signatureDeclarationContextTypes.get(signatureDeclaration);
+    if (known !== undefined) return known;
+    const contextType = computeDeclarationContextType(context, signatureDeclaration);
+    signatureDeclarationContextTypes.set(signatureDeclaration, contextType);
+    return contextType;
 }
 
 function computeDeclarationContextType(context: TransformationContext, signatureDeclaration: ts.SignatureDeclaration) {
@@ -144,14 +142,14 @@ function getSignatureDeclarations(context: TransformationContext, signature: ts.
     return [signatureDeclaration];
 }
 
-interface TypeWithFunctionContext extends ts.Type {
-    tstlFunctionContextType?: ContextType;
-}
+const typeContextTypes = new WeakMap<ts.Type, ContextType>();
 
 export function getFunctionContextType(context: TransformationContext, type: ts.Type): ContextType {
-    const asCached = type as TypeWithFunctionContext;
-    if (asCached.tstlFunctionContextType !== undefined) return asCached.tstlFunctionContextType;
-    return (asCached.tstlFunctionContextType = computeFunctionContextType(context, type));
+    const known = typeContextTypes.get(type);
+    if (known !== undefined) return known;
+    const contextType = computeFunctionContextType(context, type);
+    typeContextTypes.set(type, contextType);
+    return contextType;
 }
 
 function computeFunctionContextType(context: TransformationContext, type: ts.Type): ContextType {

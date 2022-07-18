@@ -91,7 +91,7 @@ export function createReturnStatement(
 
     if (isInTryCatch(context)) {
         // Bubble up explicit return flag and check if we're inside a try/catch block
-        values.unshift(lua.createBooleanLiteral(true));
+        values = [lua.createBooleanLiteral(true), ...values];
     }
 
     return lua.createReturnStatement(values, node);

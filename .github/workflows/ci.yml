@@ -29,7 +29,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: Use Node.js 15.14.0
+      - name: Use Node.js 16.14.0
         uses: actions/setup-node@v1
         with:
           node-version: 16.14.0
@@ -59,16 +59,30 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: commit
-      - name: Use Node.js 12.13.1
+      - name: Use Node.js 16.14.0
         uses: actions/setup-node@v1
         with:
           node-version: 16.14.0
       # NPM
-      - name: NPM master
-        run: npm ci && npm run build
+      # install and build master
+      - name: npm ci master
+        run: npm ci
         working-directory: master
-      - name: NPM commit
-        run: npm ci && npm run build
+      - name: Use local tstl language extensions
+        run: npm i lua-types@latest && npm i -D file:.
+        working-directory: master
+      - name: Build master
+        run: npm run build
+        working-directory: master
+      # install and build commit
+      - name: npm ci commit
+        run: npm ci
+        working-directory: commit
+      - name: Use local tstl language extensions
+        run: npm i -D file:.
+        working-directory: commit
+      - name: Build commit
+        run: npm run build
         working-directory: commit
       # Benchmark directory setup
       - name: Ensure benchmark data dir exists

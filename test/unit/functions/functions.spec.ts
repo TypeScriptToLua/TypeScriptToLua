@@ -159,24 +159,31 @@ test("Class static dot method with parameter", () => {
     `.expectToMatchJsResult();
 });
 
-test("Function bind", () => {
+const functionTypeDeclarations = [
+    ["arrow", ": (...args: any) => any"],
+    ["call signature", ": { (...args: any): any; }"],
+    ["generic", ": Function"],
+    ["inferred", ""],
+];
+
+test.each(functionTypeDeclarations)("Function bind (%s)", (_, type) => {
     util.testFunction`
-        const abc = function (this: { a: number }, a: string, b: string) { return this.a + a + b; }
+        const abc${type} = function (this: { a: number }, a: string, b: string) { return this.a + a + b; }
         return abc.bind({ a: 4 }, "b")("c");
     `.expectToMatchJsResult();
 });
 
-test("Function apply", () => {
+test.each(functionTypeDeclarations)("Function apply (%s)", (_, type) => {
     util.testFunction`
-        const abc = function (this: { a: number }, a: string) { return this.a + a; }
+        const abc${type} = function (this: { a: number }, a: string) { return this.a + a; }
         return abc.apply({ a: 4 }, ["b"]);
     `.expectToMatchJsResult();
 });
 
 // Fix #1226: https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1226
-test("function apply without arguments should not lead to exception", () => {
+test.each(functionTypeDeclarations)("function apply without arguments should not lead to exception (%s)", (_, type) => {
     util.testFunction`
-        const f = function (this: number) { return this + 3; }
+        const f${type} = function (this: number) { return this + 3; }
         return f.apply(4);
     `.expectToMatchJsResult();
 });
@@ -193,9 +200,9 @@ test.each(["() => 4", "undefined"])("prototype call on nullable function (%p)", 
         .expectToMatchJsResult();
 });
 
-test("Function call", () => {
+test.each(functionTypeDeclarations)("Function call (%s)", (_, type) => {
     util.testFunction`
-        const abc = function (this: { a: number }, a: string) { return this.a + a; }
+        const abc${type} = function (this: { a: number }, a: string) { return this.a + a; }
         return abc.call({ a: 4 }, "b");
     `.expectToMatchJsResult();
 });

@@ -23,6 +23,10 @@
                     "default": "library",
                     "enum": ["default", "library"]
                 },
+                "extension": {
+                    "description": "File extension for the resulting Lua files. Defaults to \".lua\"",
+                    "type": "string"
+                },
                 "lua51AllowTryCatchInAsyncAwait": {
                     "description": "Disable the warning that try/catch is not allowed in async functions in Lua 5.1, in case you are using a patched 5.1 lua version that supports this.",
                     "type": "boolean",
@@ -40,13 +44,13 @@
                     "description": "Specifies how js standard features missing in lua are imported.",
                     "type": "string",
                     "default": "require",
-                    "enum": ["none", "always", "inline", "require"]
+                    "enum": ["none", "inline", "require"]
                 },
                 "luaTarget": {
                     "description": "Specifies the Lua version you want to generate code for.",
                     "type": "string",
                     "default": "universal",
-                    "enum": ["5.1", "5.2", "5.3", "JIT"]
+                    "enum": ["universal", "5.1", "5.2", "5.3", "JIT"]
                 },
                 "noImplicitGlobalVariables": {
                     "description": "Always declare all root-level variables as local, even if the file is not a module and they would be global in TypeScript.",
@@ -94,6 +98,10 @@
                             }
                         }
                     }
+                },
+                "measurePerformance": {
+                    "description": "Measure and report performance of the tstl compiler.",
+                    "type": "boolean"
                 }
             },
             "dependencies": {

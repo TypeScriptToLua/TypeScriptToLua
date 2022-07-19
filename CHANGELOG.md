@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.7.0
+
+- Added support for `LuaMap` and `LuaSet` language extensions that translate to very low level Lua table operations. See [our docs](https://typescripttolua.github.io/docs/advanced/language-extensions/#luamap-and-luaset) for more information.
+- Big performance improvements, speeding up TSTL translation by 2-3x. Thanks @GlassBricks!
+- Reduced the use of temorary variables.
+- Moved tsconfig-schema into main TypeScriptToLua repository.
+- Added support for array options in tstl CLI.
+- Fixed bug where promise `then` was not correctly forwarding the result value to chained promises.
+- Fixed a bug causing false positive errors from jsdoc documentation comments.
+- Fixed various calling context bugs.
+
 ## 1.6.0
 
 - **[Breaking]** Upgraded TypeScript to 4.7

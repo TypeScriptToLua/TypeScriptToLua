@@ -76,7 +76,11 @@ function getPropertyValue(context: TransformationContext, type: ts.Type, propert
 }
 
 export function getExtensionKindForNode(context: TransformationContext, node: ts.Node): ExtensionKind | undefined {
-    const type = context.checker.getTypeAtLocation(node);
+    const originalNode = ts.getOriginalNode(node);
+    let type = context.checker.getTypeAtLocation(originalNode);
+    if (ts.isOptionalChain(originalNode)) {
+        type = context.checker.getNonNullableType(type);
+    }
     return getExtensionKindForType(context, type);
 }
 

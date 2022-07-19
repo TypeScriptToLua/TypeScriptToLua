@@ -63,8 +63,8 @@ export function getExtensionKindForType(context: TransformationContext, type: ts
 }
 
 const excludedTypeFlags: ts.TypeFlags =
-    ((1 << 18) - 1) & // All flags from Any...Never
-    ts.TypeFlags.Index &
+    ((1 << 18) - 1) | // All flags from Any...Never
+    ts.TypeFlags.Index |
     ts.TypeFlags.NonPrimitive;
 
 function getPropertyValue(context: TransformationContext, type: ts.Type, propertyName: string): string | undefined {

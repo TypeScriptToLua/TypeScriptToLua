@@ -145,6 +145,8 @@ function tryTransformBuiltinPropertyCall(
         case "ReadonlyArray":
             return transformArrayPrototypeCall(context, node, calledMethod);
         case "Function":
+        case "CallableFunction":
+        case "NewableFunction":
             return transformFunctionPrototypeCall(context, node, calledMethod);
     }
 }

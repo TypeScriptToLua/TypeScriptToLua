@@ -424,3 +424,22 @@ describe("LuaTable extension interface", () => {
             .expectToEqual({ foo: 1, bar: 3, baz: 5 });
     });
 });
+
+test.each([
+    [undefined, undefined],
+    ["new LuaSet()", true],
+])("call on optional table with strictNullChecks (%s)", (value, expected) => {
+    util.testFunction`
+        function getFoo(): LuaSet<string> | undefined {
+            return ${value}
+        }
+        const foo = getFoo()
+        foo?.add("foo")
+        return foo?.has("foo")
+    `
+        .setOptions({
+            strictNullChecks: true,
+        })
+        .withLanguageExtensions()
+        .expectToEqual(expected);
+});

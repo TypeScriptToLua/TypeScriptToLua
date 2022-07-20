@@ -630,7 +630,7 @@ declare const LuaMap: (new <K extends AnyNotNil = AnyNotNil, V = any>() => LuaMa
  * @param K The type of the keys used to access the table.
  * @param V The type of the values stored in the table.
  */
-declare interface LuaReadonlyMap<K extends AnyNotNil = AnyNotNil, V = any> extends LuaPairsIterable<K, V> {
+declare interface ReadonlyLuaMap<K extends AnyNotNil = AnyNotNil, V = any> extends LuaPairsIterable<K, V> {
     get: LuaTableGetMethod<K, V>;
     has: LuaTableHasMethod<K>;
 }
@@ -660,6 +660,6 @@ declare const LuaSet: (new <T extends AnyNotNil = AnyNotNil>() => LuaSet<T>) & L
  *
  * @param T The type of the keys used to access the table.
  */
-declare interface LuaReadonlySet<T extends AnyNotNil = AnyNotNil> extends LuaPairsKeyIterable<T> {
+declare interface ReadonlyLuaSet<T extends AnyNotNil = AnyNotNil> extends LuaPairsKeyIterable<T> {
     has: LuaTableHasMethod<T>;
 }

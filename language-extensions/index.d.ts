@@ -663,3 +663,14 @@ declare const LuaSet: (new <T extends AnyNotNil = AnyNotNil>() => LuaSet<T>) & L
 declare interface LuaReadonlySet<T extends AnyNotNil = AnyNotNil> extends LuaPairsKeyIterable<T> {
     has: LuaTableHasMethod<T>;
 }
+
+interface ObjectConstructor {
+    /** Returns an array of keys of an object, when iterated with `pairs`. */
+    keys<K>(o: LuaPairsIterable<K, any> | LuaPairsKeyIterable<K>): K[];
+
+    /** Returns an array of values of an object, when iterated with `pairs`. */
+    values<V>(o: LuaPairsIterable<any, V>): V[];
+
+    /** Returns an array of key/values of an object, when iterated with `pairs`. */
+    entries<K, V>(o: LuaPairsIterable<K, V>): Array<[K, V]>;
+}

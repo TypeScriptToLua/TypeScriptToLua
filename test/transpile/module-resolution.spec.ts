@@ -525,3 +525,16 @@ test("require matches correct pattern", () => {
         .addExtraFile("c.lua", "return function(self, a) return a end")
         .expectToEqual({ addResult: 3 + 5, callResult: "foo" });
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1307
+test("lualib_module with parent directory import (#1307)", () => {
+    const projectDir = path.join(__dirname, "module-resolution", "project-with-dependency-with-same-file-names");
+    const inputProject = path.join(projectDir, "tsconfig.json");
+
+    util.testProject(inputProject).setMainFileName(path.join(projectDir, "index.ts")).expectToEqual({
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        BASE_CONSTANT: 123,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        FEATURE_CONSTANT: 456,
+    });
+});

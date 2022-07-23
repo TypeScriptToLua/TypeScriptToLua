@@ -1,9 +1,8 @@
 import * as path from "path";
 import * as util from "../../util";
 import * as tstl from "../../../src";
-import { invalidOperatorMappingUse } from "../../../src/transformation/utils/diagnostics";
 import { LuaTarget } from "../../../src";
-import { unsupportedForTarget } from "../../../src/transformation/utils/diagnostics";
+import { unsupportedForTarget, invalidCallExtensionUse } from "../../../src/transformation/utils/diagnostics";
 
 const operatorsProjectOptions: tstl.CompilerOptions = {
     luaTarget: LuaTarget.Lua54,
@@ -388,5 +387,5 @@ test.each([
         ${invalidCode}
     `
         .setOptions(operatorsProjectOptions)
-        .expectDiagnosticsToMatchSnapshot([invalidOperatorMappingUse.code]);
+        .expectDiagnosticsToMatchSnapshot([invalidCallExtensionUse.code]);
 });

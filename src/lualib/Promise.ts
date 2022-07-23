@@ -85,7 +85,7 @@ export class __TS__Promise<T> implements Promise<T> {
             }
         } else {
             // We always want to resolve our child promise if this promise is resolved, even if we have no handler
-            this.fulfilledCallbacks.push(() => resolve(undefined));
+            this.fulfilledCallbacks.push(v => resolve(v));
         }
 
         if (onRejected) {
@@ -96,6 +96,9 @@ export class __TS__Promise<T> implements Promise<T> {
                 // If promise already rejected, immediately call callback
                 internalCallback(this.rejectionReason);
             }
+        } else {
+            // We always want to reject our child promise if this promise is rejected, even if we have no handler
+            this.rejectedCallbacks.push(err => reject(err));
         }
 
         if (isFulfilled) {

@@ -1,27 +1,24 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
-import { assume } from "../../utils";
 import { TransformationContext } from "../context";
 import { createNaN } from "../utils/lua-ast";
 import { importLuaLibFeature, LuaLibFeature } from "../utils/lualib";
 import { getIdentifierSymbolId } from "../utils/symbols";
 import {
-    hasStandardLibrarySignature,
+    isStandardLibraryType,
+    isStandardLibraryDeclaration,
+    isStringType,
     isArrayType,
     isFunctionType,
-    isNullableType,
-    isNumberType,
-    isStandardLibraryType,
-    isStringType,
 } from "../utils/typescript";
-import { PropertyCallExpression } from "../visitors/call";
+import { getCalledExpression } from "../visitors/call";
 import { transformArrayConstructorCall, transformArrayProperty, transformArrayPrototypeCall } from "./array";
 import { transformConsoleCall } from "./console";
 import { transformFunctionPrototypeCall, transformFunctionProperty } from "./function";
-import { transformGlobalCall } from "./global";
+import { tryTransformBuiltinGlobalCall } from "./global";
 import { transformMathCall, transformMathProperty } from "./math";
 import { transformNumberConstructorCall, transformNumberPrototypeCall } from "./number";
-import { transformObjectConstructorCall, transformObjectPrototypeCall } from "./object";
+import { transformObjectConstructorCall, tryTransformObjectPrototypeCall } from "./object";
 import { transformPromiseConstructorCall } from "./promise";
 import { transformStringConstructorCall, transformStringProperty, transformStringPrototypeCall } from "./string";
 import { transformSymbolConstructorCall } from "./symbol";
@@ -34,10 +31,10 @@ export function transformBuiltinPropertyAccessExpression(
     const ownerType = context.checker.getTypeAtLocation(node.expression);
 
     if (ts.isIdentifier(node.expression) && isStandardLibraryType(context, ownerType, undefined)) {
-        switch (node.expression.text) {
+        switch (ownerType.symbol.name) {
             case "Math":
                 return transformMathProperty(context, node);
-            case "Symbol":
+            case "SymbolConstructor":
                 importLuaLibFeature(context, LuaLibFeature.Symbol);
         }
     }
@@ -57,105 +54,107 @@ export function transformBuiltinPropertyAccessExpression(
 
 export function transformBuiltinCallExpression(
     context: TransformationContext,
-    node: ts.CallExpression,
-    isOptionalCall: boolean
+    node: ts.CallExpression
 ): lua.Expression | undefined {
-    const unsupportedOptionalCall = () => {
-        context.diagnostics.push(unsupportedBuiltinOptionalCall(node));
-        return lua.createNilLiteral();
-    };
     const expressionType = context.checker.getTypeAtLocation(node.expression);
     if (ts.isIdentifier(node.expression) && isStandardLibraryType(context, expressionType, undefined)) {
         checkForLuaLibType(context, expressionType);
-        const result = transformGlobalCall(context, node);
-        if (result) {
-            if (isOptionalCall) return unsupportedOptionalCall();
-            return result;
-        }
+        const result = tryTransformBuiltinGlobalCall(context, node, expressionType);
+        if (result) return result;
     }
 
-    const expression = ts.getOriginalNode(node.expression);
-    if (!ts.isPropertyAccessExpression(expression)) {
-        return;
+    const calledMethod = ts.getOriginalNode(getCalledExpression(node));
+    if (ts.isPropertyAccessExpression(calledMethod)) {
+        const globalResult = tryTransformBuiltinGlobalMethodCall(context, node, calledMethod);
+        if (globalResult) return globalResult;
+
+        const prototypeResult = tryTransformBuiltinPropertyCall(context, node, calledMethod);
+        if (prototypeResult) return prototypeResult;
+
+        // object prototype call may work even without resolved signature/type (which the other builtin calls use)
+        // e.g. (foo as any).toString()
+        // prototype methods take precedence (e.g. number.toString(2))
+        const objectResult = tryTransformObjectPrototypeCall(context, node, calledMethod);
+        if (objectResult) return objectResult;
     }
+}
 
-    const isOptionalAccess = expression.questionDotToken;
-    assume<PropertyCallExpression>(node);
-    // If the function being called is of type owner.func, get the type of owner
-    const ownerType = context.checker.getTypeAtLocation(expression.expression);
+function tryTransformBuiltinGlobalMethodCall(
+    context: TransformationContext,
+    node: ts.CallExpression,
+    calledMethod: ts.PropertyAccessExpression
+) {
+    const ownerType = context.checker.getTypeAtLocation(calledMethod.expression);
+    if (!isStandardLibraryType(context, ownerType, undefined)) return;
 
-    if (isStandardLibraryType(context, ownerType, undefined)) {
-        const symbol = ownerType.getSymbol();
-        switch (symbol?.name) {
-            case "ArrayConstructor":
-                if (isOptionalCall || isOptionalAccess) return unsupportedOptionalCall();
-                return transformArrayConstructorCall(context, node);
-            case "Console":
-                if (isOptionalCall || isOptionalAccess) return unsupportedOptionalCall();
-                return transformConsoleCall(context, node);
-            case "Math":
-                if (isOptionalCall || isOptionalAccess) return unsupportedOptionalCall();
-                return transformMathCall(context, node);
-            case "StringConstructor":
-                if (isOptionalCall || isOptionalAccess) return unsupportedOptionalCall();
-                return transformStringConstructorCall(context, node);
-            case "ObjectConstructor":
-                if (isOptionalCall || isOptionalAccess) return unsupportedOptionalCall();
-                return transformObjectConstructorCall(context, node);
-            case "SymbolConstructor":
-                if (isOptionalCall || isOptionalAccess) return unsupportedOptionalCall();
-                return transformSymbolConstructorCall(context, node);
-            case "NumberConstructor":
-                if (isOptionalCall || isOptionalAccess) return unsupportedOptionalCall();
-                return transformNumberConstructorCall(context, node);
-            case "PromiseConstructor":
-                if (isOptionalCall || isOptionalAccess) return unsupportedOptionalCall();
-                return transformPromiseConstructorCall(context, node);
-        }
+    const ownerSymbol = ownerType.symbol;
+    if (!ownerSymbol || ownerSymbol.parent) return;
+
+    let result: lua.Expression | undefined;
+    switch (ownerSymbol.name) {
+        case "ArrayConstructor":
+            result = transformArrayConstructorCall(context, node, calledMethod);
+            break;
+        case "Console":
+            result = transformConsoleCall(context, node, calledMethod);
+            break;
+        case "Math":
+            result = transformMathCall(context, node, calledMethod);
+            break;
+        case "StringConstructor":
+            result = transformStringConstructorCall(context, node, calledMethod);
+            break;
+        case "ObjectConstructor":
+            result = transformObjectConstructorCall(context, node, calledMethod);
+            break;
+        case "SymbolConstructor":
+            result = transformSymbolConstructorCall(context, node, calledMethod);
+            break;
+        case "NumberConstructor":
+            result = transformNumberConstructorCall(context, node, calledMethod);
+            break;
+        case "PromiseConstructor":
+            result = transformPromiseConstructorCall(context, node, calledMethod);
+            break;
     }
-
-    const isStringFunction =
-        isStringType(context, ownerType) ||
-        (expression.questionDotToken && isNullableType(context, ownerType, isStringType));
-    if (isStringFunction && hasStandardLibrarySignature(context, node)) {
-        if (isOptionalCall) return unsupportedOptionalCall();
-        return transformStringPrototypeCall(context, node);
+    if (result && calledMethod.questionDotToken) {
+        // e.g. console?.log()
+        context.diagnostics.push(unsupportedBuiltinOptionalCall(calledMethod));
     }
+    return result;
+}
 
-    const isNumberFunction =
-        isNumberType(context, ownerType) ||
-        (expression.questionDotToken && isNullableType(context, ownerType, isNumberType));
-    if (isNumberFunction && hasStandardLibrarySignature(context, node)) {
-        if (isOptionalCall) return unsupportedOptionalCall();
-        return transformNumberPrototypeCall(context, node);
-    }
+function tryTransformBuiltinPropertyCall(
+    context: TransformationContext,
+    node: ts.CallExpression,
+    calledMethod: ts.PropertyAccessExpression
+) {
+    const signatureDeclaration = context.checker.getResolvedSignature(node)?.declaration;
+    if (!signatureDeclaration || !isStandardLibraryDeclaration(context, signatureDeclaration)) return;
 
-    const isArrayFunction =
-        isArrayType(context, ownerType) ||
-        (expression.questionDotToken && isNullableType(context, ownerType, isArrayType));
-    if (isArrayFunction && hasStandardLibrarySignature(context, node)) {
-        if (isOptionalCall) return unsupportedOptionalCall();
-        return transformArrayPrototypeCall(context, node);
-    }
+    const callSymbol = context.checker.getTypeAtLocation(signatureDeclaration).symbol;
+    const ownerSymbol = callSymbol.parent;
+    if (!ownerSymbol || ownerSymbol.parent) return;
 
-    const isFunctionFunction =
-        isFunctionType(ownerType) ||
-        (expression.questionDotToken && isNullableType(context, ownerType, (_, t) => isFunctionType(t)));
-    if (isFunctionFunction && hasStandardLibrarySignature(context, node)) {
-        if (isOptionalCall) return unsupportedOptionalCall();
-        return transformFunctionPrototypeCall(context, node);
-    }
-
-    const objectResult = transformObjectPrototypeCall(context, node, expression);
-    if (objectResult) {
-        if (isOptionalCall) return unsupportedOptionalCall();
-        return objectResult;
+    switch (ownerSymbol.name) {
+        case "String":
+            return transformStringPrototypeCall(context, node, calledMethod);
+        case "Number":
+            return transformNumberPrototypeCall(context, node, calledMethod);
+        case "Array":
+        case "ReadonlyArray":
+            return transformArrayPrototypeCall(context, node, calledMethod);
+        case "Function":
+        case "CallableFunction":
+        case "NewableFunction":
+            return transformFunctionPrototypeCall(context, node, calledMethod);
     }
 }
 
 export function transformBuiltinIdentifierExpression(
     context: TransformationContext,
-    node: ts.Identifier
+    node: ts.Identifier,
+    symbol: ts.Symbol | undefined
 ): lua.Expression | undefined {
     switch (node.text) {
         case "NaN":
@@ -167,7 +166,7 @@ export function transformBuiltinIdentifierExpression(
             return lua.createTableIndexExpression(math, huge, node);
 
         case "globalThis":
-            return lua.createIdentifier("_G", node, getIdentifierSymbolId(context, node), "globalThis");
+            return lua.createIdentifier("_G", node, getIdentifierSymbolId(context, node, symbol), "globalThis");
     }
 }
 
@@ -187,9 +186,10 @@ const builtinErrorTypeNames = new Set([
 ]);
 
 export function checkForLuaLibType(context: TransformationContext, type: ts.Type): void {
-    if (!type.symbol) return;
+    const symbol = type.symbol;
+    if (!symbol || symbol.parent) return;
+    const name = symbol.name;
 
-    const name = context.checker.getFullyQualifiedName(type.symbol);
     switch (name) {
         case "Map":
         case "MapConstructor":
@@ -206,6 +206,10 @@ export function checkForLuaLibType(context: TransformationContext, type: ts.Type
         case "WeakSet":
         case "WeakSetConstructor":
             importLuaLibFeature(context, LuaLibFeature.WeakSet);
+            return;
+        case "Promise":
+        case "PromiseConstructor":
+            importLuaLibFeature(context, LuaLibFeature.Promise);
             return;
     }
 

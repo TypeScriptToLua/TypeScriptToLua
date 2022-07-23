@@ -139,6 +139,8 @@ export function createLocalOrExportedOrGlobalDeclaration(
     let declaration: lua.VariableDeclarationStatement | undefined;
     let assignment: lua.AssignmentStatement | undefined;
 
+    const noImplicitGlobalVariables = context.options.noImplicitGlobalVariables === true;
+
     const isFunctionDeclaration = tsOriginal !== undefined && ts.isFunctionDeclaration(tsOriginal);
 
     const identifiers = castArray(lhs);
@@ -162,7 +164,7 @@ export function createLocalOrExportedOrGlobalDeclaration(
         const scope = peekScope(context);
         const isTopLevelVariable = scope.type === ScopeType.File;
 
-        if (context.isModule || !isTopLevelVariable) {
+        if (context.isModule || !isTopLevelVariable || noImplicitGlobalVariables) {
             const isLuaFunctionExpression = rhs && !Array.isArray(rhs) && lua.isFunctionExpression(rhs);
             const isSafeRecursiveFunctionDeclaration = isFunctionDeclaration && isLuaFunctionExpression;
             if (!isSafeRecursiveFunctionDeclaration && hasMultipleReferences(scope, lhs)) {
@@ -204,6 +206,8 @@ export function createLocalOrExportedOrGlobalDeclaration(
         }
     }
 
+    setJSDocComments(context, tsOriginal, declaration, assignment);
+
     if (declaration && assignment) {
         return [declaration, assignment];
     } else if (declaration) {
@@ -213,6 +217,103 @@ export function createLocalOrExportedOrGlobalDeclaration(
     } else {
         return [];
     }
+}
+
+/**
+ * Apply JSDoc comments to the newly-created Lua statement, if present.
+ * https://stackoverflow.com/questions/47429792/is-it-possible-to-get-comments-as-nodes-in-the-ast-using-the-typescript-compiler
+ */
+function setJSDocComments(
+    context: TransformationContext,
+    tsOriginal: ts.Node | undefined,
+    declaration: lua.VariableDeclarationStatement | undefined,
+    assignment: lua.AssignmentStatement | undefined
+) {
+    // Respect the vanilla TypeScript option of "removeComments":
+    // https://www.typescriptlang.org/tsconfig#removeComments
+    if (context.options.removeComments) {
+        return;
+    }
+
+    const docCommentArray = getJSDocCommentFromTSNode(context, tsOriginal);
+    if (docCommentArray === undefined) {
+        return;
+    }
+
+    if (declaration && assignment) {
+        declaration.leadingComments = docCommentArray;
+    } else if (declaration) {
+        declaration.leadingComments = docCommentArray;
+    } else if (assignment) {
+        assignment.leadingComments = docCommentArray;
+    }
+}
+
+function getJSDocCommentFromTSNode(
+    context: TransformationContext,
+    tsOriginal: ts.Node | undefined
+): string[] | undefined {
+    if (tsOriginal === undefined) {
+        return undefined;
+    }
+
+    // The "name" property is only on a subset of node types; we want to be permissive and get the
+    // comments from as many nodes as possible.
+    const node = tsOriginal as any;
+    if (node.name === undefined) {
+        return undefined;
+    }
+
+    const symbol = context.checker.getSymbolAtLocation(node.name);
+    if (symbol === undefined) {
+        return undefined;
+    }
+
+    // The TypeScript compiler separates JSDoc comments into the "documentation comment" and the
+    // "tags". The former is conventionally at the top of the comment, and the bottom is
+    // conventionally at the bottom. We need to get both from the TypeScript API and then combine
+    // them into one block of text.
+    const docCommentArray = symbol.getDocumentationComment(context.checker);
+    const docCommentText = ts.displayPartsToString(docCommentArray).trim();
+
+    const jsDocTagInfoArray = symbol.getJsDocTags(context.checker);
+    const jsDocTagsTextLines = jsDocTagInfoArray.map(jsDocTagInfo => {
+        let text = "@" + jsDocTagInfo.name;
+        if (jsDocTagInfo.text !== undefined) {
+            const tagDescriptionTextArray = jsDocTagInfo.text
+                .filter(symbolDisplayPart => symbolDisplayPart.text.trim() !== "")
+                .map(symbolDisplayPart => symbolDisplayPart.text.trim());
+            const tagDescriptionText = tagDescriptionTextArray.join(" ");
+            text += " " + tagDescriptionText;
+        }
+        return text;
+    });
+    const jsDocTagsText = jsDocTagsTextLines.join("\n");
+
+    const combined = (docCommentText + "\n\n" + jsDocTagsText).trim();
+    if (combined === "") {
+        return undefined;
+    }
+
+    // By default, TSTL will display comments immediately next to the "--" characters. We can make
+    // the comments look better if we separate them by a space (similar to what Prettier does in
+    // JavaScript/TypeScript).
+    const linesWithoutSpace = combined.split("\n");
+    const lines = linesWithoutSpace.map(line => ` ${line}`);
+
+    // We want to JSDoc comments to map on to LDoc comments:
+    // https://stevedonovan.github.io/ldoc/manual/doc.md.html
+    // LDoc comments require that the first line starts with three hyphens.
+    // Thus, need to add a hyphen to the first line.
+    const firstLine = lines[0];
+    if (firstLine.startsWith(" @")) {
+        lines.unshift("-");
+    } else {
+        lines.shift();
+        lines.unshift("-" + firstLine);
+    }
+
+    return lines;
 }
 
 export const createNaN = (tsOriginal?: ts.Node) =>

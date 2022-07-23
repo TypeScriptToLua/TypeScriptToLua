@@ -3,11 +3,9 @@ import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { assert } from "../../utils";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { AnnotationKind, getNodeAnnotations } from "../utils/annotations";
-import { annotationRemoved } from "../utils/diagnostics";
 import { createDefaultExportStringLiteral, hasDefaultExportModifier } from "../utils/export";
 import { ContextType, getFunctionContextType } from "../utils/function-context";
-import { getExtensionKinds } from "../utils/language-extensions";
+import { getExtensionKindForType } from "../utils/language-extensions";
 import {
     createExportsIdentifier,
     createLocalOrExportedOrGlobalDeclaration,
@@ -16,7 +14,7 @@ import {
 } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
-import { peekScope, performHoisting, popScope, pushScope, Scope, ScopeType } from "../utils/scope";
+import { peekScope, performHoisting, Scope, ScopeType } from "../utils/scope";
 import { isFunctionType } from "../utils/typescript";
 import { isAsyncFunction, wrapInAsyncAwaiter } from "./async-await";
 import { transformIdentifier } from "./identifier";
@@ -78,14 +76,14 @@ export function createCallableTable(functionExpression: lua.Expression): lua.Exp
     ]);
 }
 
-export function isFunctionTypeWithProperties(functionType: ts.Type) {
+export function isFunctionTypeWithProperties(context: TransformationContext, functionType: ts.Type): boolean {
     if (functionType.isUnion()) {
-        return functionType.types.some(isFunctionTypeWithProperties);
+        return functionType.types.some(t => isFunctionTypeWithProperties(context, t));
     } else {
         return (
             isFunctionType(functionType) &&
             functionType.getProperties().length > 0 &&
-            getExtensionKinds(functionType).length === 0 // ignore TSTL extension functions like $range
+            getExtensionKindForType(context, functionType) === undefined // ignore TSTL extension functions like $range
         );
     }
 }
@@ -161,14 +159,14 @@ export function transformFunctionBody(
     spreadIdentifier?: lua.Identifier,
     node?: ts.FunctionLikeDeclaration
 ): [lua.Statement[], Scope] {
-    const scope = pushScope(context, ScopeType.Function);
+    const scope = context.pushScope(ScopeType.Function);
     scope.node = node;
     let bodyStatements = transformFunctionBodyContent(context, body);
     if (node && isAsyncFunction(node)) {
-        bodyStatements = wrapInAsyncAwaiter(context, bodyStatements);
+        bodyStatements = [lua.createReturnStatement([wrapInAsyncAwaiter(context, bodyStatements)])];
     }
     const headerStatements = transformFunctionBodyHeader(context, scope, parameters, spreadIdentifier);
-    popScope(context);
+    context.popScope();
     return [[...headerStatements, ...bodyStatements], scope];
 }
 
@@ -273,10 +271,6 @@ export function transformFunctionLikeDeclaration(
         return lua.createNilLiteral();
     }
 
-    if (getNodeAnnotations(node).has(AnnotationKind.TupleReturn)) {
-        context.diagnostics.push(annotationRemoved(node, AnnotationKind.TupleReturn));
-    }
-
     const [functionExpression, functionScope] = transformFunctionToExpression(context, node);
 
     const isNamedFunctionExpression = ts.isFunctionExpression(node) && node.name;
@@ -292,7 +286,7 @@ export function transformFunctionLikeDeclaration(
             // Only handle if the name is actually referenced inside the function
             if (isReferenced) {
                 const nameIdentifier = transformIdentifier(context, node.name);
-                if (isFunctionTypeWithProperties(context.checker.getTypeAtLocation(node))) {
+                if (isFunctionTypeWithProperties(context, context.checker.getTypeAtLocation(node))) {
                     context.addPrecedingStatements([
                         lua.createVariableDeclarationStatement(nameIdentifier),
                         lua.createAssignmentStatement(nameIdentifier, createCallableTable(functionExpression)),
@@ -307,16 +301,12 @@ export function transformFunctionLikeDeclaration(
         }
     }
 
-    return isNamedFunctionExpression && isFunctionTypeWithProperties(context.checker.getTypeAtLocation(node))
+    return isNamedFunctionExpression && isFunctionTypeWithProperties(context, context.checker.getTypeAtLocation(node))
         ? createCallableTable(functionExpression)
         : functionExpression;
 }
 
 export const transformFunctionDeclaration: FunctionVisitor<ts.FunctionDeclaration> = (node, context) => {
-    if (getNodeAnnotations(node).has(AnnotationKind.TupleReturn)) {
-        context.diagnostics.push(annotationRemoved(node, AnnotationKind.TupleReturn));
-    }
-
     // Don't transform functions without body (overload declarations)
     if (node.body === undefined) {
         return undefined;
@@ -347,7 +337,7 @@ export const transformFunctionDeclaration: FunctionVisitor<ts.FunctionDeclaratio
 
     // Wrap functions with properties into a callable table
     const wrappedFunction =
-        node.name && isFunctionTypeWithProperties(context.checker.getTypeAtLocation(node.name))
+        node.name && isFunctionTypeWithProperties(context, context.checker.getTypeAtLocation(node.name))
             ? createCallableTable(functionExpression)
             : functionExpression;
 

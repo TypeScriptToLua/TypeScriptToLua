@@ -204,6 +204,12 @@ module.exports = {
                             match: false,
                         },
                     },
+                    {
+                        /* Ignore properties that require quotes */
+                        selector: "objectLiteralProperty",
+                        modifiers: ["requiresQuotes"],
+                        format: null,
+                    },
                 ],
             },
         },

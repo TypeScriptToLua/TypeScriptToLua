@@ -9,3 +9,7 @@ yarn.lock
 
 benchmark/data/*
 benchmark/dist/*
+
+# v8 cpu profiles
+*-.log
+*.cpuprofile

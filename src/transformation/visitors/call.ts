@@ -2,7 +2,6 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { transformBuiltinCallExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { AnnotationKind, getTypeAnnotations, isTupleReturnCall } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
 import { ContextType, getDeclarationContextType } from "../utils/function-context";
 import { wrapInTable } from "../utils/lua-ast";
@@ -10,14 +9,12 @@ import { isValidLuaIdentifier } from "../utils/safe-names";
 import { isExpressionWithEvaluationEffect } from "../utils/typescript";
 import { transformElementAccessArgument } from "./access";
 import { isMultiReturnCall, shouldMultiReturnCallBeWrapped } from "./language-extensions/multi";
-import { annotationRemoved } from "../utils/diagnostics";
+import { unsupportedBuiltinOptionalCall } from "../utils/diagnostics";
 import { moveToPrecedingTemp, transformExpressionList } from "./expression-list";
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
 import { getOptionalContinuationData, transformOptionalChain } from "./optional-chaining";
-import { transformLanguageExtensionCallExpression } from "./language-extensions";
 import { transformImportExpression } from "./modules/import";
-
-export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
+import { transformLanguageExtensionCallExpression } from "./language-extensions/call-extension";
 
 export function validateArguments(
     context: TransformationContext,
@@ -29,9 +26,9 @@ export function validateArguments(
     }
     for (const [index, param] of params.entries()) {
         const signatureParameter = signature.parameters[index];
-        const paramType = context.checker.getTypeAtLocation(param);
         if (signatureParameter.valueDeclaration !== undefined) {
             const signatureType = context.checker.getTypeAtLocation(signatureParameter.valueDeclaration);
+            const paramType = context.checker.getTypeAtLocation(param);
             validateAssignment(context, param, paramType, signatureType, signatureParameter.name);
         }
     }
@@ -126,7 +123,7 @@ export function transformContextualCallExpression(
     if (ts.isOptionalChain(node)) {
         return transformOptionalChain(context, node);
     }
-    const left = ts.isCallExpression(node) ? node.expression : node.tag;
+    const left = ts.isCallExpression(node) ? getCalledExpression(node) : node.tag;
 
     let [argPrecedingStatements, transformedArguments] = transformInPrecedingStatementScope(context, () =>
         transformArguments(context, args, signature)
@@ -176,10 +173,14 @@ export function transformContextualCallExpression(
     }
 }
 
-function transformPropertyCall(context: TransformationContext, node: PropertyCallExpression): lua.Expression {
+function transformPropertyCall(
+    context: TransformationContext,
+    node: ts.CallExpression,
+    calledMethod: ts.PropertyAccessExpression
+): lua.Expression {
     const signature = context.checker.getResolvedSignature(node);
 
-    if (node.expression.expression.kind === ts.SyntaxKind.SuperKeyword) {
+    if (calledMethod.expression.kind === ts.SyntaxKind.SuperKeyword) {
         // Super calls take the format of super.call(self,...)
         const parameters = transformArguments(context, node.arguments, signature, ts.factory.createThis());
         return lua.createCallExpression(context.transformExpression(node.expression), parameters);
@@ -211,7 +212,9 @@ function transformElementCall(context: TransformationContext, node: ts.CallExpre
 }
 
 export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node, context) => {
-    if (node.expression.kind === ts.SyntaxKind.ImportKeyword) {
+    const calledExpression = getCalledExpression(node);
+
+    if (calledExpression.kind === ts.SyntaxKind.ImportKeyword) {
         return transformImportExpression(node, context);
     }
 
@@ -219,35 +222,26 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
         return transformOptionalChain(context, node);
     }
 
-    const optionalContinuation = ts.isIdentifier(node.expression)
-        ? getOptionalContinuationData(node.expression)
+    const optionalContinuation = ts.isIdentifier(calledExpression)
+        ? getOptionalContinuationData(calledExpression)
         : undefined;
     const wrapResultInTable = isMultiReturnCall(context, node) && shouldMultiReturnCallBeWrapped(context, node);
 
-    if (isTupleReturnCall(context, node)) {
-        context.diagnostics.push(annotationRemoved(node, AnnotationKind.TupleReturn));
-    }
-
     const builtinOrExtensionResult =
-        transformBuiltinCallExpression(context, node, optionalContinuation !== undefined) ??
-        transformLanguageExtensionCallExpression(context, node, optionalContinuation !== undefined);
+        transformBuiltinCallExpression(context, node) ?? transformLanguageExtensionCallExpression(context, node);
     if (builtinOrExtensionResult) {
-        // unsupportedOptionalCall diagnostic already present
+        if (optionalContinuation !== undefined) {
+            context.diagnostics.push(unsupportedBuiltinOptionalCall(node));
+        }
         return wrapResultInTable ? wrapInTable(builtinOrExtensionResult) : builtinOrExtensionResult;
     }
 
-    if (ts.isPropertyAccessExpression(node.expression)) {
-        const ownerType = context.checker.getTypeAtLocation(node.expression.expression);
-        const annotations = getTypeAnnotations(ownerType);
-        if (annotations.has(AnnotationKind.LuaTable)) {
-            context.diagnostics.push(annotationRemoved(node, AnnotationKind.LuaTable));
-        }
-
-        const result = transformPropertyCall(context, node as PropertyCallExpression);
+    if (ts.isPropertyAccessExpression(calledExpression)) {
+        const result = transformPropertyCall(context, node, calledExpression);
         return wrapResultInTable ? wrapInTable(result) : result;
     }
 
-    if (ts.isElementAccessExpression(node.expression)) {
+    if (ts.isElementAccessExpression(calledExpression)) {
         const result = transformElementCall(context, node);
         return wrapResultInTable ? wrapInTable(result) : result;
     }
@@ -255,7 +249,7 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     const signature = context.checker.getResolvedSignature(node);
 
     // Handle super calls properly
-    if (node.expression.kind === ts.SyntaxKind.SuperKeyword) {
+    if (calledExpression.kind === ts.SyntaxKind.SuperKeyword) {
         const parameters = transformArguments(context, node.arguments, signature, ts.factory.createThis());
 
         return lua.createCallExpression(
@@ -267,21 +261,18 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
         );
     }
 
-    const signatureDeclaration = signature?.getDeclaration();
-
     let callPath: lua.Expression;
     let parameters: lua.Expression[];
-    const isContextualCall =
-        !signatureDeclaration || getDeclarationContextType(context, signatureDeclaration) !== ContextType.Void;
+    const isContextualCall = isContextualCallExpression(context, signature);
     if (!isContextualCall) {
-        [callPath, parameters] = transformCallAndArguments(context, node.expression, node.arguments, signature);
+        [callPath, parameters] = transformCallAndArguments(context, calledExpression, node.arguments, signature);
     } else {
         // if is optionalContinuation, context will be handled by transformOptionalChain.
         const useGlobalContext = !context.isStrict && optionalContinuation === undefined;
         const callContext = useGlobalContext ? ts.factory.createIdentifier("_G") : ts.factory.createNull();
         [callPath, parameters] = transformCallAndArguments(
             context,
-            node.expression,
+            calledExpression,
             node.arguments,
             signature,
             callContext
@@ -294,3 +285,15 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     }
     return wrapResultInTable ? wrapInTable(callExpression) : callExpression;
 };
+
+function isContextualCallExpression(context: TransformationContext, signature: ts.Signature | undefined): boolean {
+    const declaration = signature?.getDeclaration();
+    if (!declaration) {
+        return !context.options.noImplicitSelf;
+    }
+    return getDeclarationContextType(context, declaration) !== ContextType.Void;
+}
+
+export function getCalledExpression(node: ts.CallExpression): ts.Expression {
+    return ts.skipOuterExpressions(node.expression);
+}

@@ -162,4 +162,4 @@ export interface ObjectVisitor<T extends ts.Node> {
 }
 
 export type Visitors = { [P in keyof NodesBySyntaxKind]?: Visitor<NodesBySyntaxKind[P]> };
-export type VisitorMap = Map<ts.SyntaxKind, Array<ObjectVisitor<ts.Node>>>;
+export type VisitorMap = Map<ts.SyntaxKind, Array<FunctionVisitor<ts.Node>>>;

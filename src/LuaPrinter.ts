@@ -241,6 +241,7 @@ export class LuaPrinter {
             // Inline lualib features
             sourceChunks.push("-- Lua Library inline imports\n");
             sourceChunks.push(loadInlineLualibFeatures(file.luaLibFeatures, this.emitHost));
+            sourceChunks.push("-- End of Lua Library inline imports\n");
         }
 
         if (this.options.sourceMapTraceback && !isBundleEnabled(this.options)) {

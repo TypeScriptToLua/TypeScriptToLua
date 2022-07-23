@@ -1,5 +1,42 @@
 # Changelog
 
+## 1.7.0
+
+- Added support for `LuaMap` and `LuaSet` language extensions that translate to very low level Lua table operations. See [our docs](https://typescripttolua.github.io/docs/advanced/language-extensions/#luamap-and-luaset) for more information.
+- Big performance improvements, speeding up TSTL translation by 2-3x. Thanks @GlassBricks!
+- Reduced the use of temorary variables.
+- Moved tsconfig-schema into main TypeScriptToLua repository.
+- Added support for array options in tstl CLI.
+- Fixed bug where promise `then` was not correctly forwarding the result value to chained promises.
+- Fixed a bug causing false positive errors from jsdoc documentation comments.
+- Fixed various calling context bugs.
+
+## 1.6.0
+
+- **[Breaking]** Upgraded TypeScript to 4.7
+- Fixed a bug where EmitOptions plugins were ignored
+- Fixed a bug where sometimes function calls (like those to a custom jsx factory) would have a context argument even though `noImplicitSelf` was specified.
+- Fixed a bug where sometimes `noImplicitSelf` was ignored because of incorrect file path separators.
+- Fixed lualib_bundle files not correctly being included from node_module packages.
+- Fixed compound assignment operators (e.g. ??= or ||=) not correctly updating the lhs if used as expression instead of statement.
+
+## 1.5.0
+
+- Added support for `Array.from` and `Array.of`
+- Added support for `beforeEmit` hook to plugins that runs after tstl is totally done, but before emitting the result.
+  - For more info about plugin hooks, see: https://typescripttolua.github.io/docs/api/plugins
+- Added support for import expressions (`import("./module").then(m => m.foo());`)
+- Added tsconfig setting `lua51AllowTryCatchInAsyncAwait` to disable restrictions on try/catch in combination with async/await in 5.1 (default: false)
+- Added tsconfig setting `noImplicitGlobalVariables` to disable tstl making variables global in non-module files.
+- Various lualib optimizations
+- JSDoc comments from input TS are now also part of output Lua as LDoc comments.
+  - Can be disabled with `removeComments` tsconfig setting.
+- Rewrote how try/catch works in async functions, fixing many bugs.
+- Fixed a bug where methods with non-null expressions (i.e. `obj.method!()`) would not pass the correct self parameter, causing runtime errors.
+- Fixed a bug where symlinked node_modules (for example when using `npm link`) were not recognized as external dependencies by module resolution.
+- Fixed a bug with sourcemap traceback leading to invalid lua
+- Improved sourcemap traceback interaction with `loadstring`
+
 ## 1.4.0
 
 - Upgraded to TypeScript 4.6

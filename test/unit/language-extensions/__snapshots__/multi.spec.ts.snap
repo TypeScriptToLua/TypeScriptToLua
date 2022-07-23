@@ -48,7 +48,7 @@ end"
 
 exports[`invalid $multi call (([a] = $multi(1)) => {}): diagnostics 1`] = `"main.ts(2,16): error TSTL: The $multi function must be called in a return statement."`;
 
-exports[`invalid $multi call (({ $multi });): code 1`] = `"local ____ = nil"`;
+exports[`invalid $multi call (({ $multi });): code 1`] = `"local ____ = {[\\"$multi\\"] = ____}"`;
 
 exports[`invalid $multi call (({ $multi });): diagnostics 1`] = `"main.ts(2,12): error TSTL: The $multi function must be called in a return statement."`;
 
@@ -61,7 +61,7 @@ end"
 
 exports[`invalid $multi call (const [a = 0] = $multi()): diagnostics 1`] = `"main.ts(2,25): error TSTL: The $multi function must be called in a return statement."`;
 
-exports[`invalid $multi call (const {} = $multi();): code 1`] = `"local _____24multi_result_0 = {{____(_G)}}"`;
+exports[`invalid $multi call (const {} = $multi();): code 1`] = `"local ____temp_0 = {{____(_G)}}"`;
 
 exports[`invalid $multi call (const {} = $multi();): diagnostics 1`] = `"main.ts(2,20): error TSTL: The $multi function must be called in a return statement."`;
 
@@ -219,10 +219,10 @@ local function multi(self, ...)
     return ...
 end
 local a
-local _____24multi_result_0 = {____(nil, 1)}
-a = _____24multi_result_0[1]
+local ____temp_0 = {____(nil, 1)}
+a = ____temp_0[1]
 ____exports.a = a
-if _____24multi_result_0 then
+if ____temp_0 then
     a = a + 1
     ____exports.a = a
 end

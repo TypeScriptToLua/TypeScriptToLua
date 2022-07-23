@@ -59,6 +59,14 @@ describe("command line", () => {
         });
     });
 
+    describe("array-of-objects options", () => {
+        test.each([["{"], ["{}"], ["0"], ["''"]])("should error on invalid value (%s)", value => {
+            const result = tstl.parseCommandLine(["--luaPlugins", value]);
+
+            expect(result.errors).toHaveDiagnostics();
+        });
+    });
+
     describe("boolean options", () => {
         test.each([true, false])("should parse booleans (%p)", value => {
             const result = tstl.parseCommandLine(["--noHeader", value.toString()]);
@@ -125,6 +133,12 @@ describe("command line", () => {
 
             ["extension", ".lua", { extension: ".lua" }],
             ["extension", "scar", { extension: "scar" }],
+
+            ["luaPlugins", '[{ "name": "a" }]', { luaPlugins: [{ name: "a" }] }],
+            ["luaPlugins", '[{ "name": "a" },{ "name": "b" }]', { luaPlugins: [{ name: "a" }, { name: "b" }] }],
+
+            ["noResolvePaths", "path1", { noResolvePaths: ["path1"] }],
+            ["noResolvePaths", "path1,path2", { noResolvePaths: ["path1", "path2"] }],
         ])("--%s %s", (optionName, value, expected) => {
             const result = tstl.parseCommandLine([`--${optionName}`, value]);
 

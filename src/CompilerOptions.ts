@@ -29,6 +29,7 @@ export interface TypeScriptToLuaOptions {
     luaTarget?: LuaTarget;
     luaLibImport?: LuaLibImportKind;
     luaPlugins?: LuaPluginImport[];
+    noImplicitGlobalVariables?: boolean;
     noImplicitSelf?: boolean;
     noHeader?: boolean;
     noResolvePaths?: string[];
@@ -36,6 +37,7 @@ export interface TypeScriptToLuaOptions {
     sourceMapTraceback?: boolean;
     tstlVerbose?: boolean;
     lua51AllowTryCatchInAsyncAwait?: boolean;
+    measurePerformance?: boolean;
 }
 
 export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> &

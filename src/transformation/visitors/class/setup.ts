@@ -55,13 +55,13 @@ export function createClassSetup(
     result.push(
         lua.createAssignmentStatement(
             lua.createTableIndexExpression(lua.cloneIdentifier(localClassName), lua.createStringLiteral("name")),
-            getReflectionClassName(context, statement, className),
+            getReflectionClassName(statement, className),
             statement
         )
     );
 
     if (extendsType) {
-        const extendedNode = getExtendedNode(context, statement);
+        const extendedNode = getExtendedNode(statement);
         assert(extendedNode);
         result.push(
             lua.createExpressionStatement(
@@ -80,7 +80,6 @@ export function createClassSetup(
 }
 
 export function getReflectionClassName(
-    context: TransformationContext,
     declaration: ts.ClassLikeDeclarationBase,
     className: lua.Identifier
 ): lua.Expression {
@@ -92,7 +91,7 @@ export function getReflectionClassName(
         return lua.createStringLiteral("default");
     }
 
-    if (getExtendedNode(context, declaration)) {
+    if (getExtendedNode(declaration)) {
         return lua.createTableIndexExpression(className, lua.createStringLiteral("name"));
     }
 

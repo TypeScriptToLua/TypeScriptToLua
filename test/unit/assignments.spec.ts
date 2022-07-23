@@ -135,6 +135,17 @@ test.each([
     `.expectToMatchJsResult();
 });
 
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1277
+test("Compound assignment as expression (#1277)", () => {
+    util.testFunction`
+        let foo = {
+            bar: false as any
+        }
+        const result = foo.bar ||= true;
+        return { result, foo };
+    `.expectToMatchJsResult();
+});
+
 test.each([
     "++o.p",
     "o.p++",
@@ -417,7 +428,7 @@ test.each([
         * x.y ||= z is translated to x.y || (x.y = z).
         * x.y &&= z is translated to x.y && (x.y = z).
         * x.y ||= z is translated to x.y !== undefined && (x.y = z).
-        
+
         Test if setter in Lua is called same nr of times as in JS.
     */
     util.testModule`
@@ -449,7 +460,7 @@ test.each([
         * x.y ||= z is translated to x.y || (x.y = z).
         * x.y &&= z is translated to x.y && (x.y = z).
         * x.y ||= z is translated to x.y !== undefined && (x.y = z).
-        
+
         Test if setter in Lua is called same nr of times as in JS.
     */
     util.testModule`

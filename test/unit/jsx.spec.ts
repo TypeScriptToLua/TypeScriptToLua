@@ -288,6 +288,18 @@ describe("jsx", () => {
             .addExtraFile("myJsx.ts", customJsxLib)
             .expectToMatchJsResult();
     });
+    test("custom JSX factory with noImplicitSelf", () => {
+        testJsx`
+            return <a><b>c</b></a>
+        `
+            .setTsHeader(
+                `function createElement(tag: string | Function, props: { [key: string]: string | boolean }, ...children: any[]) {
+                return { tag, children };
+            }`
+            )
+            .setOptions({ jsxFactory: "createElement", noImplicitSelf: true })
+            .expectToMatchJsResult();
+    });
     test("custom fragment factory", () => {
         testJsx`
             return <><b>c</b></>

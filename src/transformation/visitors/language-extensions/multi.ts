@@ -1,16 +1,20 @@
 import * as ts from "typescript";
 import * as extensions from "../../utils/language-extensions";
+import {
+    getExtensionKindForNode,
+    getIterableExtensionKindForNode,
+    IterableExtensionKind,
+} from "../../utils/language-extensions";
 import { TransformationContext } from "../../context";
 import { findFirstNodeAbove } from "../../utils/typescript";
-import { isIterableExpression } from "./iterable";
-import { invalidMultiFunctionUse } from "../../utils/diagnostics";
 
+const multiReturnExtensionName = "__tstlMultiReturn";
 export function isMultiReturnType(type: ts.Type): boolean {
-    return extensions.isExtensionType(type, extensions.ExtensionKind.MultiType);
+    return type.getProperty(multiReturnExtensionName) !== undefined;
 }
 
 export function canBeMultiReturnType(type: ts.Type): boolean {
-    return isMultiReturnType(type) || (type.isUnion() && type.types.some(canBeMultiReturnType));
+    return isMultiReturnType(type) || (type.isUnion() && type.types.some(t => canBeMultiReturnType(t)));
 }
 
 export function isMultiFunctionCall(context: TransformationContext, expression: ts.CallExpression): boolean {
@@ -28,8 +32,11 @@ export function isMultiReturnCall(context: TransformationContext, expression: ts
 }
 
 export function isMultiFunctionNode(context: TransformationContext, node: ts.Node): boolean {
-    const symbol = context.checker.getSymbolAtLocation(node);
-    return symbol ? extensions.isExtensionValue(context, symbol, extensions.ExtensionKind.MultiFunction) : false;
+    return (
+        ts.isIdentifier(node) &&
+        node.text === "$multi" &&
+        getExtensionKindForNode(context, node) === extensions.ExtensionKind.MultiFunction
+    );
 }
 
 export function isInMultiReturnFunction(context: TransformationContext, node: ts.Node) {
@@ -85,29 +92,12 @@ export function shouldMultiReturnCallBeWrapped(context: TransformationContext, n
     }
 
     // LuaIterable in for...of
-    if (ts.isForOfStatement(node.parent) && isIterableExpression(context, node)) {
+    if (
+        ts.isForOfStatement(node.parent) &&
+        getIterableExtensionKindForNode(context, node) === IterableExtensionKind.Iterable
+    ) {
         return false;
     }
 
     return true;
-}
-
-export function findMultiAssignmentViolations(
-    context: TransformationContext,
-    node: ts.ObjectLiteralExpression
-): ts.Node[] {
-    const result: ts.Node[] = [];
-
-    for (const element of node.properties) {
-        if (!ts.isShorthandPropertyAssignment(element)) continue;
-        const valueSymbol = context.checker.getShorthandAssignmentValueSymbol(element);
-        if (valueSymbol) {
-            if (extensions.isExtensionValue(context, valueSymbol, extensions.ExtensionKind.MultiFunction)) {
-                context.diagnostics.push(invalidMultiFunctionUse(element));
-                result.push(element);
-            }
-        }
-    }
-
-    return result;
 }

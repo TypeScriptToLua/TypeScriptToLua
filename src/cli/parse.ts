@@ -18,7 +18,7 @@ interface CommandLineOptionOfEnum extends CommandLineOptionBase {
 }
 
 interface CommandLineOptionOfPrimitive extends CommandLineOptionBase {
-    type: "boolean" | "string" | "object" | "array";
+    type: "boolean" | "string" | "json-array-of-objects" | "array";
 }
 
 type CommandLineOption = CommandLineOptionOfEnum | CommandLineOptionOfPrimitive;
@@ -59,6 +59,12 @@ export const optionDeclarations: CommandLineOption[] = [
         choices: Object.values(LuaTarget),
     },
     {
+        name: "noImplicitGlobalVariables",
+        description:
+            'Specify to prevent implicitly turning "normal" variants into global variables in the transpiled output.',
+        type: "boolean",
+    },
+    {
         name: "noImplicitSelf",
         description: 'If "this" is implicitly considered an any type, do not generate a self parameter.',
         type: "boolean",
@@ -76,7 +82,7 @@ export const optionDeclarations: CommandLineOption[] = [
     {
         name: "luaPlugins",
         description: "List of TypeScriptToLua plugins.",
-        type: "object",
+        type: "json-array-of-objects",
     },
     {
         name: "tstlVerbose",
@@ -91,6 +97,11 @@ export const optionDeclarations: CommandLineOption[] = [
     {
         name: "lua51AllowTryCatchInAsyncAwait",
         description: "Always allow try/catch in async/await functions for Lua 5.1.",
+        type: "boolean",
+    },
+    {
+        name: "measurePerformance",
+        description: "Measure performance of the tstl compiler.",
         type: "boolean",
     },
 ];
@@ -118,7 +129,7 @@ export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): 
                 continue;
             }
 
-            const { error, value } = readValue(option, rawValue);
+            const { error, value } = readValue(option, rawValue, OptionSource.TsConfig);
             if (error) parsedConfigFile.errors.push(error);
             if (parsedConfigFile.options[name] === undefined) parsedConfigFile.options[name] = value;
         }
@@ -158,9 +169,9 @@ function updateParsedCommandLine(parsedCommandLine: ts.ParsedCommandLine, args: 
             if (error) parsedCommandLine.errors.push(error);
             parsedCommandLine.options[option.name] = value;
             if (consumed) {
-                i += 1;
                 // Values of custom options are parsed as a file name, exclude them
-                parsedCommandLine.fileNames = parsedCommandLine.fileNames.filter(f => f !== value);
+                parsedCommandLine.fileNames = parsedCommandLine.fileNames.filter(f => f !== args[i + 1]);
+                i += 1;
             }
         }
     }
@@ -190,7 +201,12 @@ function readCommandLineArgument(option: CommandLineOption, value: any): Command
         };
     }
 
-    return { ...readValue(option, value), consumed: true };
+    return { ...readValue(option, value, OptionSource.CommandLine), consumed: true };
+}
+
+enum OptionSource {
+    CommandLine,
+    TsConfig,
 }
 
 interface ReadValueResult {
@@ -198,13 +214,12 @@ interface ReadValueResult {
     value: any;
 }
 
-function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
+function readValue(option: CommandLineOption, value: unknown, source: OptionSource): ReadValueResult {
     if (value === null) return { value };
 
     switch (option.type) {
         case "boolean":
-        case "string":
-        case "object": {
+        case "string": {
             if (typeof value !== option.type) {
                 return {
                     value: undefined,
@@ -214,15 +229,44 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
 
             return { value };
         }
-        case "array": {
-            if (!Array.isArray(value)) {
+        case "array":
+        case "json-array-of-objects": {
+            const isInvalidNonCliValue = source === OptionSource.TsConfig && !Array.isArray(value);
+            const isInvalidCliValue = source === OptionSource.CommandLine && typeof value !== "string";
+
+            if (isInvalidNonCliValue || isInvalidCliValue) {
                 return {
                     value: undefined,
                     error: cliDiagnostics.compilerOptionRequiresAValueOfType(option.name, option.type),
                 };
             }
 
-            return { value };
+            const shouldParseValue = source === OptionSource.CommandLine && typeof value === "string";
+            if (!shouldParseValue) return { value };
+
+            if (option.type === "array") {
+                const array = value.split(",");
+                return { value: array };
+            }
+
+            try {
+                const objects = JSON.parse(value);
+                if (!Array.isArray(objects)) {
+                    return {
+                        value: undefined,
+                        error: cliDiagnostics.compilerOptionRequiresAValueOfType(option.name, option.type),
+                    };
+                }
+
+                return { value: objects };
+            } catch (e) {
+                if (!(e instanceof SyntaxError)) throw e;
+
+                return {
+                    value: undefined,
+                    error: cliDiagnostics.compilerOptionCouldNotParseJson(option.name, e.message),
+                };
+            }
         }
         case "enum": {
             if (typeof value !== "string") {

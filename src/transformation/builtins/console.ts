@@ -2,25 +2,25 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { unsupportedProperty } from "../utils/diagnostics";
-import { PropertyCallExpression, transformArguments } from "../visitors/call";
+import { transformArguments } from "../visitors/call";
 
 const isStringFormatTemplate = (node: ts.Expression) => ts.isStringLiteral(node) && node.text.includes("%");
 
 export function transformConsoleCall(
     context: TransformationContext,
-    expression: PropertyCallExpression
+    node: ts.CallExpression,
+    calledMethod: ts.PropertyAccessExpression
 ): lua.Expression | undefined {
-    const method = expression.expression;
-    const methodName = method.name.text;
-    const signature = context.checker.getResolvedSignature(expression);
-    const parameters = transformArguments(context, expression.arguments, signature);
+    const methodName = calledMethod.name.text;
+    const signature = context.checker.getResolvedSignature(node);
+    const parameters = transformArguments(context, node.arguments, signature);
 
     switch (methodName) {
         case "error":
         case "info":
         case "log":
         case "warn":
-            if (expression.arguments.length > 0 && isStringFormatTemplate(expression.arguments[0])) {
+            if (node.arguments.length > 0 && isStringFormatTemplate(node.arguments[0])) {
                 // print(string.format([arguments]))
                 const stringFormatCall = lua.createCallExpression(
                     lua.createTableIndexExpression(lua.createIdentifier("string"), lua.createStringLiteral("format")),
@@ -31,7 +31,7 @@ export function transformConsoleCall(
             // print([arguments])
             return lua.createCallExpression(lua.createIdentifier("print"), parameters);
         case "assert":
-            if (expression.arguments.length > 1 && isStringFormatTemplate(expression.arguments[1])) {
+            if (node.arguments.length > 1 && isStringFormatTemplate(node.arguments[1])) {
                 // assert([condition], string.format([arguments]))
                 const stringFormatCall = lua.createCallExpression(
                     lua.createTableIndexExpression(lua.createIdentifier("string"), lua.createStringLiteral("format")),
@@ -42,7 +42,7 @@ export function transformConsoleCall(
             // assert()
             return lua.createCallExpression(lua.createIdentifier("assert"), parameters);
         case "trace":
-            if (expression.arguments.length > 0 && isStringFormatTemplate(expression.arguments[0])) {
+            if (node.arguments.length > 0 && isStringFormatTemplate(node.arguments[0])) {
                 // print(debug.traceback(string.format([arguments])))
                 const stringFormatCall = lua.createCallExpression(
                     lua.createTableIndexExpression(lua.createIdentifier("string"), lua.createStringLiteral("format")),
@@ -61,6 +61,6 @@ export function transformConsoleCall(
             );
             return lua.createCallExpression(lua.createIdentifier("print"), [debugTracebackCall]);
         default:
-            context.diagnostics.push(unsupportedProperty(method.name, "console", methodName));
+            context.diagnostics.push(unsupportedProperty(calledMethod.name, "console", methodName));
     }
 }

@@ -33,6 +33,11 @@ export const compilerOptionRequiresAValueOfType = createCommandLineError(
     (name: string, type: string) => `Compiler option '${name}' requires a value of type ${type}.`
 );
 
+export const compilerOptionCouldNotParseJson = createCommandLineError(
+    5025,
+    (name: string, error: string) => `Compiler option '${name}' failed to parse the given JSON value: '${error}'.`
+);
+
 export const optionProjectCannotBeMixedWithSourceFilesOnACommandLine = createCommandLineError(
     5042,
     () => "Option 'project' cannot be mixed with source files on a command line."

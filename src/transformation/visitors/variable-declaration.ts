@@ -12,6 +12,7 @@ import { createCallableTable, isFunctionTypeWithProperties } from "./function";
 import { transformIdentifier } from "./identifier";
 import { isMultiReturnCall } from "./language-extensions/multi";
 import { transformPropertyName } from "./literal";
+import { moveToPrecedingTemp } from "./expression-list";
 
 export function transformArrayBindingElement(
     context: TransformationContext,
@@ -38,7 +39,7 @@ export function transformArrayBindingElement(
 export function transformBindingPattern(
     context: TransformationContext,
     pattern: ts.BindingPattern,
-    table: lua.Identifier,
+    table: lua.Expression,
     propertyAccessStack: ts.PropertyName[] = []
 ): lua.Statement[] {
     const result: lua.Statement[] = [];
@@ -165,21 +166,20 @@ export function transformBindingVariableDeclaration(
         ts.isBindingElement(e) && (!ts.isIdentifier(e.name) || e.dotDotDotToken);
 
     if (ts.isObjectBindingPattern(bindingPattern) || bindingPattern.elements.some(isComplexBindingElement)) {
-        let table: lua.Identifier;
-        if (initializer !== undefined && ts.isIdentifier(initializer)) {
-            table = transformIdentifier(context, initializer);
-        } else {
+        let table: lua.Expression;
+        if (initializer) {
             // Contain the expression in a temporary variable
-            if (initializer) {
-                table = context.createTempNameForNode(initializer);
-                let expression = context.transformExpression(initializer);
-                if (isMultiReturnCall(context, initializer)) {
-                    expression = wrapInTable(expression);
-                }
-                statements.push(lua.createVariableDeclarationStatement(table, expression));
-            } else {
-                table = lua.createAnonymousIdentifier();
+            let expression = context.transformExpression(initializer);
+            if (isMultiReturnCall(context, initializer)) {
+                expression = wrapInTable(expression);
             }
+            const [moveStatements, movedExpr] = transformInPrecedingStatementScope(context, () =>
+                moveToPrecedingTemp(context, expression, initializer)
+            );
+            statements.push(...moveStatements);
+            table = movedExpr;
+        } else {
+            table = lua.createAnonymousIdentifier();
         }
         statements.push(...transformBindingPattern(context, bindingPattern, table));
         return statements;
@@ -277,7 +277,7 @@ export function transformVariableDeclaration(
         if (!ts.isFunctionExpression(initializer) && !ts.isArrowFunction(initializer)) return false;
         // Skip named function expressions because they will have been wrapped already
         if (ts.isFunctionExpression(initializer) && initializer.name) return false;
-        return isFunctionTypeWithProperties(context.checker.getTypeAtLocation(statement.name));
+        return isFunctionTypeWithProperties(context, context.checker.getTypeAtLocation(statement.name));
     }
 }
 

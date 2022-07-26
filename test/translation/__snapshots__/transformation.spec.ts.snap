@@ -39,15 +39,12 @@ do
 end
 do
     local ____xyz = require(\\"xyz\\")
-    local abc = ____xyz.abc
-    local def = ____xyz.def
-    ____exports.abc = abc
-    ____exports.def = def
+    ____exports.abc = ____xyz.abc
+    ____exports.def = ____xyz.def
 end
 do
     local ____xyz = require(\\"xyz\\")
-    local def = ____xyz.abc
-    ____exports.def = def
+    ____exports.def = ____xyz.abc
 end
 return ____exports"
 `;
@@ -113,65 +110,70 @@ end"
 `;
 
 exports[`Transformation (modulesImportAll) 1`] = `
-"local ____exports = {}
-local Test = require(\\"test\\")
-local ____ = Test
+"local ____imports = {}
+local ____exports = {}
+____imports.Test = require(\\"test\\")
+local ____ = ____imports.Test
 return ____exports"
 `;
 
 exports[`Transformation (modulesImportNamed) 1`] = `
-"local ____exports = {}
+"local ____imports = {}
+local ____exports = {}
 local ____test = require(\\"test\\")
-local TestClass = ____test.TestClass
-local ____ = TestClass
+____imports.TestClass = ____test.TestClass
+local ____ = ____imports.TestClass
 return ____exports"
 `;
 
 exports[`Transformation (modulesImportNamedSpecialChars) 1`] = `
-"local ____exports = {}
+"local ____imports = {}
+local ____exports = {}
 local ____kebab_2Dmodule = require(\\"kebab-module\\")
-local TestClass1 = ____kebab_2Dmodule.TestClass1
+____imports.TestClass1 = ____kebab_2Dmodule.TestClass1
 local ____dollar_24module = require(\\"dollar$module\\")
-local TestClass2 = ____dollar_24module.TestClass2
+____imports.TestClass2 = ____dollar_24module.TestClass2
 local ____singlequote_27module = require(\\"singlequote'module\\")
-local TestClass3 = ____singlequote_27module.TestClass3
+____imports.TestClass3 = ____singlequote_27module.TestClass3
 local ____hash_23module = require(\\"hash#module\\")
-local TestClass4 = ____hash_23module.TestClass4
+____imports.TestClass4 = ____hash_23module.TestClass4
 local ____space_20module = require(\\"space module\\")
-local TestClass5 = ____space_20module.TestClass5
-local ____ = TestClass1
-local ____ = TestClass2
-local ____ = TestClass3
-local ____ = TestClass4
-local ____ = TestClass5
+____imports.TestClass5 = ____space_20module.TestClass5
+local ____ = ____imports.TestClass1
+local ____ = ____imports.TestClass2
+local ____ = ____imports.TestClass3
+local ____ = ____imports.TestClass4
+local ____ = ____imports.TestClass5
 return ____exports"
 `;
 
 exports[`Transformation (modulesImportRenamed) 1`] = `
-"local ____exports = {}
+"local ____imports = {}
+local ____exports = {}
 local ____test = require(\\"test\\")
-local RenamedClass = ____test.TestClass
-local ____ = RenamedClass
+____imports.RenamedClass = ____test.TestClass
+local ____ = ____imports.RenamedClass
 return ____exports"
 `;
 
 exports[`Transformation (modulesImportRenamedSpecialChars) 1`] = `
-"local ____exports = {}
+"local ____imports = {}
+local ____exports = {}
 local ____kebab_2Dmodule = require(\\"kebab-module\\")
-local RenamedClass1 = ____kebab_2Dmodule.TestClass
+____imports.RenamedClass1 = ____kebab_2Dmodule.TestClass
 local ____dollar_24module = require(\\"dollar$module\\")
-local RenamedClass2 = ____dollar_24module.TestClass
+____imports.RenamedClass2 = ____dollar_24module.TestClass
 local ____singlequote_27module = require(\\"singlequote'module\\")
-local RenamedClass3 = ____singlequote_27module.TestClass
+____imports.RenamedClass3 = ____singlequote_27module.TestClass
 local ____hash_23module = require(\\"hash#module\\")
-local RenamedClass4 = ____hash_23module.TestClass
+____imports.RenamedClass4 = ____hash_23module.TestClass
 local ____space_20module = require(\\"space module\\")
-local RenamedClass5 = ____space_20module.TestClass
-local ____ = RenamedClass1
-local ____ = RenamedClass2
-local ____ = RenamedClass3
-local ____ = RenamedClass4
-local ____ = RenamedClass5
+____imports.RenamedClass5 = ____space_20module.TestClass
+local ____ = ____imports.RenamedClass1
+local ____ = ____imports.RenamedClass2
+local ____ = ____imports.RenamedClass3
+local ____ = ____imports.RenamedClass4
+local ____ = ____imports.RenamedClass5
 return ____exports"
 `;
 
@@ -278,8 +280,9 @@ end"
 `;
 
 exports[`Transformation (unusedDefaultWithNamespaceImport) 1`] = `
-"local ____exports = {}
-local x = require(\\"module\\")
-local ____ = x
+"local ____imports = {}
+local ____exports = {}
+____imports.x = require(\\"module\\")
+local ____ = ____imports.x
 return ____exports"
 `;

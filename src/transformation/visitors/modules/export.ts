@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import { assert } from "../../../utils";
+import { assert, cast } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import {
     createDefaultExportExpression,
@@ -145,20 +145,21 @@ function transformExportSpecifiersFrom(
 
     // Wrap in block to prevent imports from hoisting out of `do` statement
     const [block] = transformScopeBlock(context, ts.factory.createBlock([importDeclaration]), ScopeType.Block);
-    const result = block.statements;
+    const [requireStatement, ...importAssignments] = block.statements;
 
     // Now the module is imported, add the imports to the export table
+    const assignments = [];
     for (const specifier of exportSpecifiers) {
-        result.push(
+        assignments.push(
             lua.createAssignmentStatement(
                 createExportedIdentifier(context, transformIdentifier(context, specifier.name)),
-                transformIdentifier(context, specifier.name)
+                cast(importAssignments[assignments.length], lua.isAssignmentStatement).right
             )
         );
     }
 
     // Wrap this in a DoStatement to prevent polluting the scope.
-    return lua.createDoStatement(result, statement);
+    return lua.createDoStatement([requireStatement, ...assignments], statement);
 }
 
 export const getExported = (context: TransformationContext, exportSpecifiers: ts.NamedExports) =>

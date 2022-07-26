@@ -291,3 +291,22 @@ test("import expression", () => {
         .setOptions({ module: ts.ModuleKind.ESNext })
         .expectToMatchJsResult();
 });
+
+test("imports table", () => {
+    util.testModule`
+        import { var1, var2 } from "./otherFile";
+        const var3 = var1 + var2;
+        export { var1, var2, var3 }
+    `
+        .addExtraFile(
+            "otherFile.ts",
+            `
+            export const var1 = 3;
+            export const var2 = 5;`
+        )
+        .expectToEqual({
+            var1: 3,
+            var2: 5,
+            var3: 8
+        });
+});

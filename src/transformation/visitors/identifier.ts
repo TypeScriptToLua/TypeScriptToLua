@@ -12,15 +12,16 @@ import { isStandardLibraryType } from "../utils/typescript";
 import { getExtensionKindForNode, getExtensionKindForSymbol } from "../utils/language-extensions";
 import { callExtensions } from "./language-extensions/call-extension";
 import { isIdentifierExtensionValue, reportInvalidExtensionValue } from "./language-extensions/identifier";
+import { createImportedIdentifier, isSymbolImported } from "../utils/import";
 
 export function transformIdentifier(context: TransformationContext, identifier: ts.Identifier): lua.Identifier {
-    return transformNonValueIdentifier(context, identifier, context.checker.getSymbolAtLocation(identifier));
+    return transformNonValueIdentifier(context, identifier, context.checker.getSymbolAtLocation(identifier)) as lua.Identifier;
 }
 function transformNonValueIdentifier(
     context: TransformationContext,
     identifier: ts.Identifier,
     symbol: ts.Symbol | undefined
-) {
+): lua.Expression {
     if (isOptionalContinuation(identifier)) {
         return lua.createIdentifier(identifier.text, undefined, tempSymbolId);
     }
@@ -52,7 +53,9 @@ function transformNonValueIdentifier(
         : identifier.text;
 
     const symbolId = getIdentifierSymbolId(context, identifier, symbol);
-    return lua.createIdentifier(text, identifier, symbolId, identifier.text);
+    const luaIdentifier = lua.createIdentifier(text, identifier, symbolId, identifier.text);
+
+    return symbol && isSymbolImported(symbol) ? createImportedIdentifier(luaIdentifier, identifier) : luaIdentifier;
 }
 
 export function transformIdentifierWithSymbol(

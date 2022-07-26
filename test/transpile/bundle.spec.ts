@@ -90,7 +90,7 @@ describe("bundle with source maps", () => {
         }> = [
             {
                 file: "index",
-                luaPattern: "____exports.myNumber = getNumber(",
+                luaPattern: "____exports.myNumber = ____imports.getNumber(",
                 typeScriptPattern: "const myNumber = getNumber(",
             },
             {

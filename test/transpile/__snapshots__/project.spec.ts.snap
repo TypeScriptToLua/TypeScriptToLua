@@ -33,10 +33,11 @@ return ____exports
   },
   Object {
     "filePath": "index.lua",
-    "lua": "local ____exports = {}
+    "lua": "local ____imports = {}
+local ____exports = {}
 local ____otherFile = require(\\"otherFile\\")
-local getNumber = ____otherFile.getNumber
-local myNumber = getNumber(nil)
+____imports.getNumber = ____otherFile.getNumber
+local myNumber = ____imports.getNumber(nil)
 setAPIValue(myNumber * 5)
 return ____exports
 ",

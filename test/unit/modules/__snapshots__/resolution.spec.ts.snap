@@ -1,9 +1,10 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`doesn't resolve paths out of root dir: code 1`] = `
-"local ____exports = {}
-local module = require(\\"module\\")
-local ____ = module
+"local ____imports = {}
+local ____exports = {}
+____imports.module = require(\\"module\\")
+local ____ = ____imports.module
 return ____exports"
 `;
 

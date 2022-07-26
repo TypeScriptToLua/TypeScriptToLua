@@ -29,6 +29,8 @@ export const transformSourceFileNode: FunctionVisitor<ts.SourceFile> = (node, co
         context.pushScope(ScopeType.File);
 
         statements = performHoisting(context, context.transformStatements(node.statements));
+        const hasImports = context.scopeStack[0].importStatements?.some(lua.isAssignmentStatement);
+
         context.popScope();
 
         if (context.isModule) {
@@ -37,6 +39,15 @@ export const transformSourceFileNode: FunctionVisitor<ts.SourceFile> = (node, co
             if (!hasExportEquals(node)) {
                 statements.unshift(
                     lua.createVariableDeclarationStatement(createExportsIdentifier(), lua.createTableExpression())
+                );
+            }
+
+            if (hasImports) {
+                statements.unshift(
+                    lua.createVariableDeclarationStatement(
+                        lua.createIdentifier("____imports"),
+                        lua.createTableExpression()
+                    )
                 );
             }
 

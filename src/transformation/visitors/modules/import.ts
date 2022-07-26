@@ -45,14 +45,14 @@ function transformImportSpecifier(
     context: TransformationContext,
     importSpecifier: ts.ImportSpecifier,
     moduleTableName: lua.Identifier
-): lua.VariableDeclarationStatement {
+): lua.AssignmentStatement {
     const leftIdentifier = transformIdentifier(context, importSpecifier.name);
     const propertyName = transformPropertyName(
         context,
         importSpecifier.propertyName ? importSpecifier.propertyName : importSpecifier.name
     );
 
-    return lua.createVariableDeclarationStatement(
+    return lua.createAssignmentStatement(
         leftIdentifier,
         lua.createTableIndexExpression(moduleTableName, propertyName),
         importSpecifier
@@ -93,7 +93,7 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
     if (statement.importClause.name) {
         if (shouldBeImported(context, statement.importClause)) {
             const propertyName = createDefaultExportStringLiteral(statement.importClause.name);
-            const defaultImportAssignmentStatement = lua.createVariableDeclarationStatement(
+            const defaultImportAssignmentStatement = lua.createAssignmentStatement(
                 transformIdentifier(context, statement.importClause.name),
                 lua.createTableIndexExpression(importUniqueName, propertyName),
                 statement.importClause.name
@@ -108,7 +108,7 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
     // local module = require("module")
     if (statement.importClause.namedBindings && ts.isNamespaceImport(statement.importClause.namedBindings)) {
         if (context.resolver.isReferencedAliasDeclaration(statement.importClause.namedBindings)) {
-            const requireStatement = lua.createVariableDeclarationStatement(
+            const requireStatement = lua.createAssignmentStatement(
                 transformIdentifier(context, statement.importClause.namedBindings.name),
                 requireCall,
                 statement

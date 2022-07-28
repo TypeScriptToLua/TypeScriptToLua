@@ -538,3 +538,25 @@ test("lualib_module with parent directory import (#1307)", () => {
         FEATURE_CONSTANT: 456,
     });
 });
+
+test.only("supports paths configuration", () => {
+    // Package root
+    const baseProjectPath = path.resolve(__dirname, "module-resolution", "monorepo-with-paths");
+    // myprogram package
+    const projectPath = path.join(baseProjectPath, "myprogram");
+    const projectTsConfig = path.join(projectPath, "tsconfig.json");
+    const mainFile = path.join(projectPath, "main.ts");
+
+    util.testProject(projectTsConfig).setMainFileName(mainFile).expectToHaveNoDiagnostics().expectToEqual({ foo: 314, bar: 271 });
+});
+
+test.only("supports complicated paths configuration", () => {
+    // Package root
+    const baseProjectPath = path.resolve(__dirname, "module-resolution", "monorepo-complicated");
+    // myprogram package
+    const projectPath = path.join(baseProjectPath, "packages", "myprogram");
+    const projectTsConfig = path.join(projectPath, "tsconfig.json");
+    const mainFile = path.join(projectPath, "src", "main.ts");
+
+    util.testProject(projectTsConfig).setMainFileName(mainFile).expectToHaveNoDiagnostics().expectToEqual({ foo: 314, bar: 271 });
+});

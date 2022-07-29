@@ -239,7 +239,7 @@ describe("LuaIterable with array value type", () => {
     test("basic destructuring", () => {
         util.testFunction`
             ${testIterable}
-            const results: Array<string[]> = [];
+            const results = [];
             for (const [x, y] of testIterable()) {
                 results.push([x, y]);
             }
@@ -252,7 +252,7 @@ describe("LuaIterable with array value type", () => {
     test("destructure with external control variable", () => {
         util.testFunction`
             ${testIterable}
-            const results: Array<string[]> = [];
+            const results = []
             let x: string, y: string;
             for ([x, y] of testIterable()) {
                 results.push([x, y]);
@@ -360,7 +360,7 @@ describe("LuaIterable with LuaMultiReturn value type", () => {
         util.testFunction`
             ${testIterable}
             const results = [];
-            let x: string, y: string;
+            let x: string, y: any;
             for ([x, y] of testIterable()) {
                 results.push([x, y]);
             }

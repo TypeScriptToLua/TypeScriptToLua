@@ -17,6 +17,7 @@ function transformForOfMultiIterableStatement(
     luaIterator: lua.Expression,
     invalidMultiUseDiagnostic: (node: ts.Node) => ts.Diagnostic
 ): lua.Statement {
+    context.pushPrecedingStatements();
     let identifiers: lua.Identifier[] = [];
 
     if (ts.isVariableDeclarationList(statement.initializer)) {
@@ -50,6 +51,8 @@ function transformForOfMultiIterableStatement(
     if (identifiers.length === 0) {
         identifiers.push(lua.createAnonymousIdentifier());
     }
+
+    block.statements.unshift(...context.popPrecedingStatements());
 
     return lua.createForInStatement(block, identifiers, [luaIterator], statement);
 }

@@ -147,6 +147,16 @@ class ResolutionContext {
         const fileFromPath = this.getFileFromPath(resolvedPath);
         if (fileFromPath) return fileFromPath;
 
+        if (this.options.paths && this.options.baseUrl) {
+            // If no file found yet and paths are present, try to find project file via paths mappings
+            const fileFromPaths = this.tryGetModuleNameFromPaths(
+                dependencyPath,
+                this.options.paths,
+                this.options.baseUrl
+            );
+            if (fileFromPaths) return fileFromPaths;
+        }
+
         // Not a TS file in our project sources, use resolver to check if we can find dependency
         try {
             const resolveResult = resolver.resolveSync({}, fileDirectory, dependencyPath);
@@ -219,6 +229,40 @@ class ResolutionContext {
         for (const possibleFile of possibleLuaProjectFiles) {
             if (this.emitHost.fileExists(possibleFile)) {
                 return possibleFile;
+            }
+        }
+    }
+
+    // Taken from TS and modified: https://github.com/microsoft/TypeScript/blob/88a1e3a1dd8d2d86e844ff1c16d5f041cebcfdb9/src/compiler/moduleSpecifiers.ts#L562
+    private tryGetModuleNameFromPaths(relativeToBaseUrl: string, paths: ts.MapLike<string[]>, baseUrl: string) {
+        const relativeImport = removeTrailingDirectorySeparator(normalizeSlashes(relativeToBaseUrl));
+        for (const [importPattern, targetPatterns] of Object.entries(paths)) {
+            const pattern = removeFileExtension(normalizeSlashes(importPattern));
+            const indexOfStar = pattern.indexOf("*");
+            if (indexOfStar !== -1) {
+                // Try to match <prefix>*<suffix> to relativeImport
+                const prefix = pattern.substring(0, indexOfStar);
+                const suffix = pattern.substring(indexOfStar + 1);
+                if (
+                    (relativeImport.length >= prefix.length + suffix.length &&
+                        relativeImport.startsWith(prefix) &&
+                        relativeImport.endsWith(suffix)) ||
+                    (!suffix && relativeImport === removeTrailingDirectorySeparator(prefix))
+                ) {
+                    // If import matches <prefix>*<suffix>, extract the matched * path
+                    const matchedStar = relativeImport.substring(prefix.length, relativeImport.length - suffix.length);
+                    // Try to resolve to the target patterns with filled in * pattern
+                    for (const target of targetPatterns) {
+                        const file = this.getFileFromPath(path.join(baseUrl, target.replace("*", matchedStar)));
+                        if (file) return file;
+                    }
+                }
+            } else if (pattern === relativeImport) {
+                // If there is no * pattern, check for exact matches and try those targets
+                for (const target of targetPatterns) {
+                    const file = this.getFileFromPath(path.join(baseUrl, target));
+                    if (file) return file;
+                }
             }
         }
     }
@@ -339,4 +383,12 @@ function fallbackResolve(required: string, sourceRootDir: string, fileDir: strin
 
 function luaRequireToPath(requirePath: string): string {
     return requirePath.replace(/\./g, path.sep);
+}
+
+function removeFileExtension(path: string) {
+    return path.includes(".") ? trimExtension(path) : path;
+}
+
+function removeTrailingDirectorySeparator(path: string) {
+    return path.endsWith("/") || path.endsWith("\\") ? path.substring(0, -1) : path;
 }

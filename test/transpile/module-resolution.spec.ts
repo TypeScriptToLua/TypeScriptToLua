@@ -2,7 +2,8 @@ import * as path from "path";
 import * as tstl from "../../src";
 import * as util from "../util";
 import * as ts from "typescript";
-import { BuildMode, transpileProject } from "../../src";
+import { BuildMode } from "../../src";
+import { normalizeSlashes } from "../../src/utils";
 
 describe("basic module resolution", () => {
     const projectPath = path.resolve(__dirname, "module-resolution", "project-with-node-modules");
@@ -236,8 +237,8 @@ describe("module resolution project with dependencies built by tstl library mode
     const projectPath = path.resolve(__dirname, "module-resolution", "project-with-tstl-library-modules");
 
     // First compile dependencies into node_modules. NOTE: Actually writing to disk, very slow
-    transpileProject(path.join(projectPath, "dependency1-ts", "tsconfig.json"));
-    transpileProject(path.join(projectPath, "dependency2-ts", "tsconfig.json"));
+    tstl.transpileProject(path.join(projectPath, "dependency1-ts", "tsconfig.json"));
+    tstl.transpileProject(path.join(projectPath, "dependency2-ts", "tsconfig.json"));
 
     const expectedResult = {
         dependency1IndexResult: "function in dependency 1 index: dependency1OtherFileFunc in dependency1/d1otherfile",
@@ -539,7 +540,7 @@ test("lualib_module with parent directory import (#1307)", () => {
     });
 });
 
-test.only("supports paths configuration", () => {
+test("supports paths configuration", () => {
     // Package root
     const baseProjectPath = path.resolve(__dirname, "module-resolution", "monorepo-with-paths");
     // myprogram package
@@ -547,10 +548,22 @@ test.only("supports paths configuration", () => {
     const projectTsConfig = path.join(projectPath, "tsconfig.json");
     const mainFile = path.join(projectPath, "main.ts");
 
-    util.testProject(projectTsConfig).setMainFileName(mainFile).expectToHaveNoDiagnostics().expectToEqual({ foo: 314, bar: 271 });
+    const luaResult = util
+        .testProject(projectTsConfig)
+        .setMainFileName(mainFile)
+        .expectToHaveNoDiagnostics()
+        .getLuaResult();
+
+    expect(snapshotPaths(luaResult.transpiledFiles)).toMatchSnapshot();
+
+    // Bundle to have all files required to execute and check result
+    util.testProject(projectTsConfig)
+        .setMainFileName(mainFile)
+        .setOptions({ luaBundle: "bundle.lua", luaBundleEntry: mainFile })
+        .expectToEqual({ foo: 314, bar: 271 });
 });
 
-test.only("supports complicated paths configuration", () => {
+test("supports complicated paths configuration", () => {
     // Package root
     const baseProjectPath = path.resolve(__dirname, "module-resolution", "monorepo-complicated");
     // myprogram package
@@ -558,5 +571,22 @@ test.only("supports complicated paths configuration", () => {
     const projectTsConfig = path.join(projectPath, "tsconfig.json");
     const mainFile = path.join(projectPath, "src", "main.ts");
 
-    util.testProject(projectTsConfig).setMainFileName(mainFile).expectToHaveNoDiagnostics().expectToEqual({ foo: 314, bar: 271 });
+    const luaResult = util
+        .testProject(projectTsConfig)
+        .setMainFileName(mainFile)
+        .expectToHaveNoDiagnostics()
+        .getLuaResult();
+
+    expect(snapshotPaths(luaResult.transpiledFiles)).toMatchSnapshot();
+
+    // Bundle to have all files required to execute
+    util.testProject(projectTsConfig)
+        .setMainFileName(mainFile)
+        .setOptions({ luaBundle: "bundle.lua", luaBundleEntry: mainFile })
+        .debug()
+        .expectToEqual({ foo: 314, bar: 271 });
 });
+
+function snapshotPaths(files: tstl.TranspiledFile[]) {
+    return files.map(f => normalizeSlashes(f.outPath).split("module-resolution")[1]).sort();
+}

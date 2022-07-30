@@ -5,5 +5,5 @@
         "paths": {
             "mypackage": ["mypackage"]
         }
-    },
+    }
 }

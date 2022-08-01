@@ -289,5 +289,6 @@ test("import expression", () => {
     `
         .addExtraFile("module.ts", 'export function foo() { return "foo"; }')
         .setOptions({ module: ts.ModuleKind.ESNext })
+        .expectToEqual({ result: "foo" })
         .expectToMatchJsResult();
 });

@@ -183,7 +183,7 @@ function transformPropertyCall(
     if (calledMethod.expression.kind === ts.SyntaxKind.SuperKeyword) {
         // Super calls take the format of super.call(self,...)
         const parameters = transformArguments(context, node.arguments, signature, ts.factory.createThis());
-        return lua.createCallExpression(context.transformExpression(node.expression), parameters);
+        return lua.createCallExpression(context.transformExpression(node.expression), parameters, node);
     }
 
     const signatureDeclaration = signature?.getDeclaration();

@@ -583,7 +583,6 @@ test("supports complicated paths configuration", () => {
     util.testProject(projectTsConfig)
         .setMainFileName(mainFile)
         .setOptions({ luaBundle: "bundle.lua", luaBundleEntry: mainFile })
-        .debug()
         .expectToEqual({ foo: 314, bar: 271 });
 });
 

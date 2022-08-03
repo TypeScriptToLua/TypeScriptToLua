@@ -167,6 +167,7 @@ export const transformImportEqualsDeclaration: FunctionVisitor<ts.ImportEqualsDe
 export const transformImportExpression: FunctionVisitor<ts.CallExpression> = (node, context) => {
     importLuaLibFeature(context, LuaLibFeature.Promise);
 
-    const importPath = node.arguments.map(a => context.transformExpression(a));
-    return lua.createCallExpression(createStaticPromiseFunctionAccessor("resolve", node), importPath, node);
+    const moduleRequire =
+        node.arguments.length > 0 ? createModuleRequire(context, node.arguments[0], node) : lua.createNilLiteral();
+    return lua.createCallExpression(createStaticPromiseFunctionAccessor("resolve", node), [moduleRequire], node);
 };

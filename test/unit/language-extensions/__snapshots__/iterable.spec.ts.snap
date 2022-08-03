@@ -4,7 +4,7 @@ exports[`LuaIterable with LuaMultiReturn value type invalid LuaIterable<LuaMulti
 "local ____exports = {}
 function ____exports.__main(self)
     local function testIterable()
-        local strsArray = {{\\"a1\\", \\"a2\\"}, {\\"b1\\", \\"b2\\"}, {\\"c1\\", \\"c2\\"}}
+        local strsArray = {{\\"a1\\", {a = \\"a\\"}}, {\\"b1\\", {a = \\"b\\"}}, {\\"c1\\", {a = \\"c\\"}}}
         local i = 0
         return function()
             local ____i_0 = i
@@ -27,7 +27,7 @@ exports[`LuaIterable with LuaMultiReturn value type invalid LuaIterable<LuaMulti
 "local ____exports = {}
 function ____exports.__main(self)
     local function testIterable()
-        local strsArray = {{\\"a1\\", \\"a2\\"}, {\\"b1\\", \\"b2\\"}, {\\"c1\\", \\"c2\\"}}
+        local strsArray = {{\\"a1\\", {a = \\"a\\"}}, {\\"b1\\", {a = \\"b\\"}}, {\\"c1\\", {a = \\"c\\"}}}
         local i = 0
         return function()
             local ____i_0 = i

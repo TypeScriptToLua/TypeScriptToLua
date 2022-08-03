@@ -207,7 +207,7 @@ function transformElementCall(context: TransformationContext, node: ts.CallExpre
     } else {
         // No context
         const [expression, parameters] = transformCallAndArguments(context, node.expression, node.arguments, signature);
-        return lua.createCallExpression(expression, parameters);
+        return lua.createCallExpression(expression, parameters, node);
     }
 }
 
@@ -257,7 +257,8 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
                 context.transformExpression(ts.factory.createSuper()),
                 lua.createStringLiteral("____constructor")
             ),
-            parameters
+            parameters,
+            node
         );
     }
 

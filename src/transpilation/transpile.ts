@@ -61,7 +61,7 @@ export function getProgramTranspileResult(
         }
     }
 
-    diagnostics.push(...ts.getPreEmitDiagnostics(program));
+    // diagnostics.push(...ts.getPreEmitDiagnostics(program));
 
     if (options.noEmitOnError) {
         const preEmitDiagnostics = [

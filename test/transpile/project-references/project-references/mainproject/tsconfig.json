@@ -11,7 +11,9 @@
     ],
     "tstl": {
         "luaTarget": "JIT",
-        "sourceMapTraceback": true
+        "sourceMapTraceback": true,
+        "luaBundle": "bundle.lua",
+        "luaBundleEntry": "main.ts"
     },
     "include": ["src/**/*.ts"]
 }

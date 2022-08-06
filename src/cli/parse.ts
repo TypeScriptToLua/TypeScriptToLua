@@ -135,6 +135,8 @@ export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): 
         }
     }
 
+    Object.assign(parsedConfigFile.options, { projectReferences: parsedConfigFile.projectReferences });
+
     return parsedConfigFile;
 }
 

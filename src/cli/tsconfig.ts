@@ -41,6 +41,14 @@ export function parseConfigFileWithSystem(
     commandLineOptions?: CompilerOptions,
     system = ts.sys
 ): ParsedCommandLine {
+    if (!system.fileExists(configFileName)) {
+        return {
+            options: {},
+            fileNames: [configFileName],
+            errors: [cliDiagnostics.theSpecifiedPathDoesNotExist(configFileName)],
+        };
+    }
+
     const parsedConfigFile = ts.parseJsonSourceFileConfigFileContent(
         ts.readJsonConfigFile(configFileName, system.readFile),
         system,

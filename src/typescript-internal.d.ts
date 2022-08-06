@@ -20,7 +20,7 @@ declare module "typescript" {
         build?: boolean;
         configFile?: TsConfigSourceFile;
         configFilePath?: string;
-        projectReferences?: string[];
+        projectReferences?: ProjectReference[];
     }
 
     interface TypeChecker {

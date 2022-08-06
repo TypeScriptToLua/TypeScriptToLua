@@ -583,7 +583,9 @@ class ExpressionTestBuilder extends AccessorTestBuilder {
 class ProjectTestBuilder extends ModuleTestBuilder {
     constructor(private tsConfig: string) {
         super("");
-        this.setOptions({ configFilePath: this.tsConfig, ...tstl.parseConfigFileWithSystem(this.tsConfig) });
+        const options = { configFilePath: this.tsConfig };
+        Object.assign(options, tstl.parseConfigFileWithSystem(this.tsConfig));
+        this.setOptions(options);
     }
 
     @memoize

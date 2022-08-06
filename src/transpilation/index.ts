@@ -19,11 +19,10 @@ export function transpileFiles(
     writeFile?: ts.WriteFileCallback
 ): EmitResult {
     const program = ts.createProgram(rootNames, options);
-    const preEmitDiagnostics = ts.getPreEmitDiagnostics(program);
     const { diagnostics: transpileDiagnostics, emitSkipped } = new Transpiler().emit({ program, writeFile });
-    const diagnostics = ts.sortAndDeduplicateDiagnostics([...preEmitDiagnostics, ...transpileDiagnostics]);
+    const diagnostics = ts.sortAndDeduplicateDiagnostics(transpileDiagnostics);
 
-    return { diagnostics: [...diagnostics], emitSkipped };
+    return { diagnostics, emitSkipped };
 }
 
 export function transpileProject(
@@ -96,10 +95,9 @@ export function transpileVirtualProject(
     options: CompilerOptions = {}
 ): TranspileVirtualProjectResult {
     const program = createVirtualProgram(files, options);
-    const preEmitDiagnostics = ts.getPreEmitDiagnostics(program);
     const collector = createEmitOutputCollector();
     const { diagnostics: transpileDiagnostics } = new Transpiler().emit({ program, writeFile: collector.writeFile });
-    const diagnostics = ts.sortAndDeduplicateDiagnostics([...preEmitDiagnostics, ...transpileDiagnostics]);
+    const diagnostics = ts.sortAndDeduplicateDiagnostics(transpileDiagnostics);
 
     return { diagnostics: [...diagnostics], transpiledFiles: collector.files };
 }

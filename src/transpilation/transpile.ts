@@ -8,6 +8,7 @@ import { Plugin } from "./plugins";
 import { getTransformers } from "./transformers";
 import { EmitHost, ProcessedFile } from "./utils";
 import * as performance from "../measure-performance";
+import { parseConfigFileWithSystem } from "../cli/tsconfig";
 
 export interface TranspileOptions {
     program: ts.Program;
@@ -30,12 +31,37 @@ export function getProgramTranspileResult(
 
     const options = program.getCompilerOptions() as CompilerOptions;
 
-    if (options.tstlVerbose) {
-        console.log("Parsing project settings");
-    }
+    if (options.tstlVerbose) console.log("Parsing project settings");
 
     const diagnostics = validateOptions(options);
+
     let transpiledFiles: ProcessedFile[] = [];
+
+    if (options.build) {
+        for (const projectReferences of options.projectReferences ?? [])
+        {
+            if (options.tstlVerbose) console.log(`Build mode: Checking reference ${projectReferences.path}`);
+
+            const tsConfigPath = path.join(projectReferences.path, "tsconfig.json");
+            // Parse reference path but stay in build mode
+            const parseResult = parseConfigFileWithSystem(tsConfigPath, { build: true });
+            diagnostics.push(...parseResult.errors);
+
+            if (parseResult.errors.length === 0) {
+                const referenceProgram = ts.createProgram(parseResult.fileNames, parseResult.options);
+                const referencePreEmitDiagnostics = ts.getPreEmitDiagnostics(referenceProgram);
+                const { diagnostics: referenceDiagnostics, transpiledFiles: referenceFiles } = getProgramTranspileResult(emitHost, writeFileResult, { program: referenceProgram });
+                diagnostics.push(...referencePreEmitDiagnostics, ...referenceDiagnostics);
+
+                if (projectReferences.prepend)
+                {
+                    transpiledFiles.push(...referenceFiles);
+                }
+            }
+        }
+    }
+
+    diagnostics.push(...ts.getPreEmitDiagnostics(program));
 
     if (options.noEmitOnError) {
         const preEmitDiagnostics = [

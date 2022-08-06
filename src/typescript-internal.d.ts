@@ -17,8 +17,10 @@ declare module "typescript" {
     }
 
     interface CompilerOptions {
+        build?: boolean;
         configFile?: TsConfigSourceFile;
         configFilePath?: string;
+        projectReferences?: string[];
     }
 
     interface TypeChecker {

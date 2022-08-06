@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "rootDir": "src",
+        "outDir": "../../dist",
+        "strict": true
+    },
+    "references": [
+        {
+            "path": "../dependency"
+        }
+    ],
+    "tstl": {
+        "luaTarget": "JIT",
+        "sourceMapTraceback": true
+    },
+    "include": ["src/**/*.ts"]
+}

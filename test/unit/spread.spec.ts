@@ -478,3 +478,43 @@ describe("vararg spread in IIFE", () => {
         `.expectToMatchJsResult();
     });
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1244
+test.each(["pairs", "ipairs"])("can spread %s (#1244)", func => {
+    util.testFunction`
+        const arr = ["a", "b", "c"];
+        return [...${func}(arr)];
+    `
+        .withLanguageExtensions()
+        .setTsHeader(
+            `
+            declare function ipairs<T>(this: void, t: T): LuaIterable<LuaMultiReturn<[number, NonNullable<T[keyof T]>]>>;
+            declare function pairs<T>(this: void, t: T): LuaIterable<LuaMultiReturn<[keyof T, NonNullable<T[keyof T]>]>>;
+            `
+        )
+        .expectToEqual([
+            [1, "a"],
+            [2, "b"],
+            [3, "c"],
+        ]);
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1244
+test.each(["LuaTable", "LuaMap"])("can spread %s (#1244)", type => {
+    const result: Array<[string, string]> = util.testFunction`
+        const tbl = new ${type}();
+        tbl.set("foo", "bar");
+        tbl.set("fizz", "buzz");
+        return [...pairs(tbl)];
+    `
+        .withLanguageExtensions()
+        .setTsHeader(
+            "declare function pairs<T>(this: void, t: T): LuaIterable<LuaMultiReturn<[keyof T, NonNullable<T[keyof T]>]>>;"
+        )
+        .getLuaExecutionResult();
+
+    // We don't know the order so match like this
+    expect(result).toHaveLength(2);
+    expect(result.some(([k, v]) => k === "foo" && v === "bar")).toBe(true);
+    expect(result.some(([k, v]) => k === "fizz" && v === "buzz")).toBe(true);
+});

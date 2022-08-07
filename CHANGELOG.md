@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.8.0
+
+- Added support for the [tsconfig.json paths](https://www.typescriptlang.org/tsconfig#paths) configuration option.
+- Fixed spreading lua iterables & iterators translating to incorrect lua.
+  - You can now write things like `[...pairs(obj)]`.
+- Fixed a bug in module resolution resolving the wrong lua files when having the same file names in nested directories.
+- Fixed a bug causing temporary variables for nested destructuring in loop variables to be outside the loop, instead of inside.
+- Fixed import expressions not actually requiring their import.
+- Fixed `super` calls not being source-mapped correctly.
+
 ## 1.7.0
 
 - Added support for `LuaMap` and `LuaSet` language extensions that translate to very low level Lua table operations. See [our docs](https://typescripttolua.github.io/docs/advanced/language-extensions/#luamap-and-luaset) for more information.

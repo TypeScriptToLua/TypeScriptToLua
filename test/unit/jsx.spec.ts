@@ -1,6 +1,8 @@
 import * as util from "../util";
 import { TestBuilder } from "../util";
 import { JsxEmit } from "typescript";
+import { unsupportedJsxEmit } from "../../src/transpilation/diagnostics";
+import { unsupportedNodeKind } from "../../src/transformation/utils/diagnostics";
 
 // language=TypeScript
 const reactLib = `
@@ -368,6 +370,6 @@ describe("jsx", () => {
             .setOptions({
                 jsx: JsxEmit.Preserve,
             })
-            .expectToHaveDiagnostics();
+            .expectToHaveDiagnostics([unsupportedJsxEmit.code, unsupportedNodeKind.code]);
     });
 });

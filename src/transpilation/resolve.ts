@@ -126,6 +126,15 @@ class ResolutionContext {
             console.log(`Resolving "${dependency}" from ${normalizeSlashes(requiringFile.fileName)}`);
         }
 
+        const requiredFromLuaFile = requiringFile.fileName.endsWith(".lua");
+        const dependencyPath = requiredFromLuaFile ? luaRequireToPath(dependency) : dependency;
+
+        if (requiredFromLuaFile && isNodeModulesFile(requiringFile.fileName)) {
+            // If requiring file is in lua module, try to resolve sibling in that file first
+            const resolvedNodeModulesFile = this.resolveLuaDependencyPathFromNodeModules(requiringFile, dependencyPath);
+            if (resolvedNodeModulesFile) return resolvedNodeModulesFile;
+        }
+
         // Check if the import is relative
         const isRelative = ["/", "./", "../"].some(p => dependency.startsWith(p));
 
@@ -134,24 +143,50 @@ class ResolutionContext {
         const relativeTo = isRelative ? fileDirectory : this.options.baseUrl ?? fileDirectory;
 
         // Check if file is a file in the project
-        const resolvedPath = path.join(relativeTo, dependency);
+        const resolvedPath = path.join(relativeTo, dependencyPath);
         const fileFromPath = this.getFileFromPath(resolvedPath);
         if (fileFromPath) return fileFromPath;
 
-        // Check if this is a sibling of a required lua file
-        if (requiringFile.fileName.endsWith(".lua")) {
-            const luaFilePath = resolveLuaPath(fileDirectory, dependency, this.emitHost);
-            if (luaFilePath) {
-                return luaFilePath;
-            }
+        if (this.options.paths && this.options.baseUrl) {
+            // If no file found yet and paths are present, try to find project file via paths mappings
+            const fileFromPaths = this.tryGetModuleNameFromPaths(
+                dependencyPath,
+                this.options.paths,
+                this.options.baseUrl
+            );
+            if (fileFromPaths) return fileFromPaths;
         }
 
         // Not a TS file in our project sources, use resolver to check if we can find dependency
         try {
-            const resolveResult = resolver.resolveSync({}, fileDirectory, dependency);
+            const resolveResult = resolver.resolveSync({}, fileDirectory, dependencyPath);
             if (resolveResult) return resolveResult;
         } catch (e) {
             // resolveSync errors if it fails to resolve
+        }
+
+        return undefined;
+    }
+
+    private resolveLuaDependencyPathFromNodeModules(
+        requiringFile: ProcessedFile,
+        dependency: string
+    ): string | undefined {
+        // We don't know for sure where the lua root is, so guess it is at package root
+        const splitPath = path.normalize(requiringFile.fileName).split(path.sep);
+        let packageRootIndex = splitPath.lastIndexOf("node_modules") + 2;
+        let packageRoot = splitPath.slice(0, packageRootIndex).join(path.sep);
+
+        while (packageRootIndex < splitPath.length) {
+            // Try to find lua file relative to currently guessed Lua root
+            const resolvedPath = path.join(packageRoot, dependency);
+            const fileFromPath = this.getFileFromPath(resolvedPath);
+            if (fileFromPath) {
+                return fileFromPath;
+            } else {
+                // Did not find file at current root, try again one directory deeper
+                packageRoot = path.join(packageRoot, splitPath[packageRootIndex++]);
+            }
         }
 
         return undefined;
@@ -197,6 +232,40 @@ class ResolutionContext {
             }
         }
     }
+
+    // Taken from TS and modified: https://github.com/microsoft/TypeScript/blob/88a1e3a1dd8d2d86e844ff1c16d5f041cebcfdb9/src/compiler/moduleSpecifiers.ts#L562
+    private tryGetModuleNameFromPaths(relativeToBaseUrl: string, paths: ts.MapLike<string[]>, baseUrl: string) {
+        const relativeImport = removeTrailingDirectorySeparator(normalizeSlashes(relativeToBaseUrl));
+        for (const [importPattern, targetPatterns] of Object.entries(paths)) {
+            const pattern = removeFileExtension(normalizeSlashes(importPattern));
+            const indexOfStar = pattern.indexOf("*");
+            if (indexOfStar !== -1) {
+                // Try to match <prefix>*<suffix> to relativeImport
+                const prefix = pattern.substring(0, indexOfStar);
+                const suffix = pattern.substring(indexOfStar + 1);
+                if (
+                    (relativeImport.length >= prefix.length + suffix.length &&
+                        relativeImport.startsWith(prefix) &&
+                        relativeImport.endsWith(suffix)) ||
+                    (!suffix && relativeImport === removeTrailingDirectorySeparator(prefix))
+                ) {
+                    // If import matches <prefix>*<suffix>, extract the matched * path
+                    const matchedStar = relativeImport.substring(prefix.length, relativeImport.length - suffix.length);
+                    // Try to resolve to the target patterns with filled in * pattern
+                    for (const target of targetPatterns) {
+                        const file = this.getFileFromPath(path.join(baseUrl, target.replace("*", matchedStar)));
+                        if (file) return file;
+                    }
+                }
+            } else if (pattern === relativeImport) {
+                // If there is no * pattern, check for exact matches and try those targets
+                for (const target of targetPatterns) {
+                    const file = this.getFileFromPath(path.join(baseUrl, target));
+                    if (file) return file;
+                }
+            }
+        }
+    }
 }
 
 export function resolveDependencies(program: ts.Program, files: ProcessedFile[], emitHost: EmitHost): ResolutionResult {
@@ -213,39 +282,6 @@ export function resolveDependencies(program: ts.Program, files: ProcessedFile[],
     }
 
     return { resolvedFiles: [...resolutionContext.resolvedFiles.values()], diagnostics: resolutionContext.diagnostics };
-}
-
-function resolveLuaPath(fromPath: string, dependency: string, emitHost: EmitHost) {
-    const splitDependency = dependency.split(".");
-    if (splitDependency.length === 1) {
-        // If dependency has just one part (the file), look for a lua file with that name
-        const fileDirectory = walkUpFileTreeUntil(fromPath, dir =>
-            emitHost.fileExists(path.join(dir, dependency) + ".lua")
-        );
-        if (fileDirectory) {
-            return path.join(fileDirectory, dependency) + ".lua";
-        }
-    } else {
-        // If dependency has multiple parts, look for the first directory of the require path, which must be in the lua root
-        const luaRoot = walkUpFileTreeUntil(fromPath, dir =>
-            emitHost.directoryExists(path.join(dir, splitDependency[0]))
-        );
-        if (luaRoot) {
-            return path.join(luaRoot, dependency.replace(/\./g, path.sep)) + ".lua";
-        }
-    }
-}
-
-function walkUpFileTreeUntil(fromDirectory: string, predicate: (dir: string) => boolean) {
-    const currentDir = path.normalize(fromDirectory).split(path.sep);
-    while (currentDir.length > 0) {
-        const dir = currentDir.join(path.sep);
-        if (predicate(dir)) {
-            return dir;
-        }
-        currentDir.pop();
-    }
-    return undefined;
 }
 
 function shouldRewriteRequires(resolvedDependency: string, program: ts.Program) {
@@ -268,7 +304,7 @@ function isBuildModeLibrary(program: ts.Program) {
 function findRequiredPaths(code: string): string[] {
     // Find all require("<path>") paths in a lua code string
     const paths: string[] = [];
-    const pattern = /(^|\s|;|=)require\("(.+?)"\)/g;
+    const pattern = /(^|\s|;|=|\()require\("(.+?)"\)/g;
     // eslint-disable-next-line @typescript-eslint/ban-types
     let match: RegExpExecArray | null;
     while ((match = pattern.exec(code))) {
@@ -285,7 +321,7 @@ function replaceRequireInCode(file: ProcessedFile, originalRequire: string, newR
     const escapedRequire = originalRequire.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
 
     file.code = file.code.replace(
-        new RegExp(`(^|\\s|;|=)require\\("${escapedRequire}"\\)`),
+        new RegExp(`(^|\\s|;|=|\\()require\\("${escapedRequire}"\\)`),
         `$1require("${requirePath}")`
     );
 }
@@ -343,4 +379,16 @@ function fallbackResolve(required: string, sourceRootDir: string, fileDir: strin
             .filter(s => s !== "." && s !== "..")
             .join(path.sep)
     );
+}
+
+function luaRequireToPath(requirePath: string): string {
+    return requirePath.replace(/\./g, path.sep);
+}
+
+function removeFileExtension(path: string) {
+    return path.includes(".") ? trimExtension(path) : path;
+}
+
+function removeTrailingDirectorySeparator(path: string) {
+    return path.endsWith("/") || path.endsWith("\\") ? path.substring(0, -1) : path;
 }

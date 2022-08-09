@@ -239,7 +239,7 @@ describe("LuaIterable with array value type", () => {
     test("basic destructuring", () => {
         util.testFunction`
             ${testIterable}
-            const results: Array<string[]> = [];
+            const results = [];
             for (const [x, y] of testIterable()) {
                 results.push([x, y]);
             }
@@ -252,7 +252,7 @@ describe("LuaIterable with array value type", () => {
     test("destructure with external control variable", () => {
         util.testFunction`
             ${testIterable}
-            const results: Array<string[]> = [];
+            const results = []
             let x: string, y: string;
             for ([x, y] of testIterable()) {
                 results.push([x, y]);
@@ -326,8 +326,8 @@ describe("LuaIterable with array value type", () => {
 
 describe("LuaIterable with LuaMultiReturn value type", () => {
     const testIterable = `
-    function testIterable(this: void): LuaIterable<LuaMultiReturn<string[]>> {
-        const strsArray = [["a1", "a2"], ["b1", "b2"], ["c1", "c2"]];
+    function testIterable(this: void): LuaIterable<LuaMultiReturn<[string, {a: string}]>> {
+        const strsArray = [["a1", {a: "a"}], ["b1", {a: "b"}], ["c1", {a: "c"}]];
         let i = 0;
         return (() => {
             const strs = strsArray[i++];
@@ -338,15 +338,15 @@ describe("LuaIterable with LuaMultiReturn value type", () => {
     }
     `;
     const testResults = [
-        ["a1", "a2"],
-        ["b1", "b2"],
-        ["c1", "c2"],
+        ["a1", { a: "a" }],
+        ["b1", { a: "b" }],
+        ["c1", { a: "c" }],
     ];
 
     test("basic destructuring", () => {
         util.testFunction`
             ${testIterable}
-            const results: Array<string[]> = [];
+            const results = [];
             for (const [x, y] of testIterable()) {
                 results.push([x, y]);
             }
@@ -359,8 +359,8 @@ describe("LuaIterable with LuaMultiReturn value type", () => {
     test("destructure with external control variable", () => {
         util.testFunction`
             ${testIterable}
-            const results: Array<string[]> = [];
-            let x: string, y: string;
+            const results = [];
+            let x: string, y: any;
             for ([x, y] of testIterable()) {
                 results.push([x, y]);
             }
@@ -374,7 +374,7 @@ describe("LuaIterable with LuaMultiReturn value type", () => {
         util.testFunction`
             ${testIterable}
             function forward() { return testIterable(); }
-            const results: Array<string[]> = [];
+            const results = [];
             for (const [x, y] of forward()) {
                 results.push([x, y]);
             }
@@ -388,7 +388,7 @@ describe("LuaIterable with LuaMultiReturn value type", () => {
         util.testFunction`
             ${testIterable}
             function forward() { const iter = testIterable(); return iter; }
-            const results: Array<string[]> = [];
+            const results = [];
             for (const [x, y] of forward()) {
                 results.push([x, y]);
             }
@@ -402,7 +402,7 @@ describe("LuaIterable with LuaMultiReturn value type", () => {
         util.testFunction`
             ${testIterable}
             const forward = () => testIterable();
-            const results: Array<string[]> = [];
+            const results = [];
             for (const [x, y] of forward()) {
                 results.push([x, y]);
             }
@@ -415,7 +415,7 @@ describe("LuaIterable with LuaMultiReturn value type", () => {
     test("destructure manual use", () => {
         util.testFunction`
             ${testIterable}
-            const results: Array<string[]> = [];
+            const results = [];
             const iter = testIterable();
             while (true) {
                 const [x, y] = iter();
@@ -428,6 +428,23 @@ describe("LuaIterable with LuaMultiReturn value type", () => {
         `
             .withLanguageExtensions()
             .expectToEqual(testResults);
+    });
+
+    test("nested destructuring", () => {
+        util.testFunction`
+            ${testIterable}
+            const results = [];
+            for (const [x, {a}] of testIterable()) {
+                results.push([x, a]);
+            }
+            return results;
+        `
+            .withLanguageExtensions()
+            .expectToEqual([
+                ["a1", "a"],
+                ["b1", "b"],
+                ["c1", "c"],
+            ]);
     });
 
     test.each(["for (const s of testIterable()) {}", "let s; for (s of testIterable()) {}"])(

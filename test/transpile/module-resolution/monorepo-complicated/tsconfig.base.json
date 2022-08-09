@@ -1,0 +1,10 @@
+{
+    "compilerOptions": {
+        "rootDir": ".",
+        "baseUrl": ".",
+        "paths": {
+            "mypackage": ["packages/mypackage/src/index.ts"],
+            "mypackage/*": ["packages/mypackage/src/*"]
+        }
+    }
+}

@@ -98,6 +98,10 @@ export enum IterableExtensionKind {
     PairsKey = "PairsKey",
 }
 
+export function isLuaIterable(context: TransformationContext, type: ts.Type): boolean {
+    return getPropertyValue(context, type, "__tstlIterable") !== undefined;
+}
+
 export function getIterableExtensionTypeForType(
     context: TransformationContext,
     type: ts.Type

@@ -46,6 +46,7 @@ export enum LuaLibFeature {
     InstanceOfObject = "InstanceOfObject",
     IsLua50 = "IsLua50",
     Iterator = "Iterator",
+    LuaIteratorSpread = "LuaIteratorSpread",
     Map = "Map",
     Match = "Match",
     MathAtan2 = "MathAtan2",

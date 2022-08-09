@@ -1,0 +1,7 @@
+{
+    "extends": "../../tsconfig.base.json",
+    "compilerOptions": {
+        "outDir": "../../dist/packages/tstl-program"
+    },
+    "include": ["./src/**/*.ts"]
+}

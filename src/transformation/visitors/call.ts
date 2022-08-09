@@ -183,7 +183,7 @@ function transformPropertyCall(
     if (calledMethod.expression.kind === ts.SyntaxKind.SuperKeyword) {
         // Super calls take the format of super.call(self,...)
         const parameters = transformArguments(context, node.arguments, signature, ts.factory.createThis());
-        return lua.createCallExpression(context.transformExpression(node.expression), parameters);
+        return lua.createCallExpression(context.transformExpression(node.expression), parameters, node);
     }
 
     const signatureDeclaration = signature?.getDeclaration();
@@ -207,7 +207,7 @@ function transformElementCall(context: TransformationContext, node: ts.CallExpre
     } else {
         // No context
         const [expression, parameters] = transformCallAndArguments(context, node.expression, node.arguments, signature);
-        return lua.createCallExpression(expression, parameters);
+        return lua.createCallExpression(expression, parameters, node);
     }
 }
 
@@ -257,7 +257,8 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
                 context.transformExpression(ts.factory.createSuper()),
                 lua.createStringLiteral("____constructor")
             ),
-            parameters
+            parameters,
+            node
         );
     }
 

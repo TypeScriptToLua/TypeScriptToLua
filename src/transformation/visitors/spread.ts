@@ -2,6 +2,7 @@ import * as ts from "typescript";
 import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
+import { isLuaIterable } from "../utils/language-extensions";
 import { createUnpackCall } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import {
@@ -76,6 +77,10 @@ export const transformSpreadElement: FunctionVisitor<ts.SpreadElement> = (node, 
     if (isMultiReturnCall(context, tsInnerExpression)) return innerExpression;
 
     const type = context.checker.getTypeAtLocation(node.expression); // not ts-inner expression, in case of casts
+    if (isLuaIterable(context, type)) {
+        return transformLuaLibFunction(context, LuaLibFeature.LuaIteratorSpread, node, innerExpression);
+    }
+
     if (isArrayType(context, type)) {
         return createUnpackCall(context, innerExpression, node);
     }

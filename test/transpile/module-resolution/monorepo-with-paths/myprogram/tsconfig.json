@@ -1,9 +1,0 @@
-{
-    "compilerOptions": {
-        "baseUrl": "..",
-        "outDir": "dist",
-        "paths": {
-            "mypackage": ["mypackage"]
-        }
-    }
-}

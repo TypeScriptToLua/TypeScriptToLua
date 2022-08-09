@@ -87,5 +87,9 @@ export function validateOptions(options: CompilerOptions): ts.Diagnostic[] {
         diagnostics.push(diagnosticFactories.unsupportedJsxEmit());
     }
 
+    if (options.paths && !options.baseUrl) {
+        diagnostics.push(diagnosticFactories.pathsWithoutBaseUrl());
+    }
+
     return diagnostics;
 }

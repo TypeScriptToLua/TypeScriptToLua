@@ -4,6 +4,7 @@ import * as util from "../util";
 import * as ts from "typescript";
 import { BuildMode } from "../../src";
 import { normalizeSlashes } from "../../src/utils";
+import { pathsWithoutBaseUrl } from "../../src/transpilation/diagnostics";
 
 describe("basic module resolution", () => {
     const projectPath = path.resolve(__dirname, "module-resolution", "project-with-node-modules");
@@ -542,7 +543,7 @@ test("lualib_module with parent directory import (#1307)", () => {
 
 test("supports paths configuration", () => {
     // Package root
-    const baseProjectPath = path.resolve(__dirname, "module-resolution", "monorepo-with-paths");
+    const baseProjectPath = path.resolve(__dirname, "module-resolution", "paths-simple");
     // myprogram package
     const projectPath = path.join(baseProjectPath, "myprogram");
     const projectTsConfig = path.join(projectPath, "tsconfig.json");
@@ -565,7 +566,7 @@ test("supports paths configuration", () => {
 
 test("supports complicated paths configuration", () => {
     // Package root
-    const baseProjectPath = path.resolve(__dirname, "module-resolution", "monorepo-complicated");
+    const baseProjectPath = path.resolve(__dirname, "module-resolution", "paths-base-tsconfig");
     // myprogram package
     const projectPath = path.join(baseProjectPath, "packages", "myprogram");
     const projectTsConfig = path.join(projectPath, "tsconfig.json");
@@ -584,6 +585,10 @@ test("supports complicated paths configuration", () => {
         .setMainFileName(mainFile)
         .setOptions({ luaBundle: "bundle.lua", luaBundleEntry: mainFile })
         .expectToEqual({ foo: 314, bar: 271 });
+});
+
+test("paths without baseUrl is error", () => {
+    util.testFunction``.setOptions({ paths: {} }).expectToHaveDiagnostics([pathsWithoutBaseUrl.code]);
 });
 
 function snapshotPaths(files: tstl.TranspiledFile[]) {

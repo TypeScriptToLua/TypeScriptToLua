@@ -512,3 +512,15 @@ test("top-level function declaration is global", () => {
         .addExtraFile("a.ts", 'function foo() { return "foo" }')
         .expectToEqual({ result: "foo" });
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1325
+test("call expression should not throw (#1325)", () => {
+    util.testModule`
+        function test<T>(iterator:Iterator<T>) {
+            iterator.return();
+        }
+    `
+        .setOptions({ target: 99 })
+        .expectToHaveNoDiagnostics()
+        .debug();
+});

@@ -133,7 +133,7 @@ function tryTransformBuiltinPropertyCall(
     if (!signatureDeclaration || !isStandardLibraryDeclaration(context, signatureDeclaration)) return;
 
     const callSymbol = context.checker.getTypeAtLocation(signatureDeclaration).symbol;
-    if (!callSymbol) return;
+    if (!callSymbol) return; // Should not be required but can apparently happen, see #1325
     const ownerSymbol = callSymbol.parent;
     if (!ownerSymbol || ownerSymbol.parent) return;
 

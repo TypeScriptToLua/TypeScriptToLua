@@ -4,13 +4,7 @@ import { TransformationContext } from "../context";
 import { createNaN } from "../utils/lua-ast";
 import { importLuaLibFeature, LuaLibFeature } from "../utils/lualib";
 import { getIdentifierSymbolId } from "../utils/symbols";
-import {
-    isStandardLibraryType,
-    isStandardLibraryDeclaration,
-    isStringType,
-    isArrayType,
-    isFunctionType,
-} from "../utils/typescript";
+import { isStandardLibraryType, isStringType, isArrayType, isFunctionType } from "../utils/typescript";
 import { getCalledExpression } from "../visitors/call";
 import { transformArrayConstructorCall, transformArrayProperty, transformArrayPrototypeCall } from "./array";
 import { transformConsoleCall } from "./console";
@@ -85,9 +79,7 @@ function tryTransformBuiltinGlobalMethodCall(
     calledMethod: ts.PropertyAccessExpression
 ) {
     const ownerType = context.checker.getTypeAtLocation(calledMethod.expression);
-    if (!isStandardLibraryType(context, ownerType, undefined)) return;
-
-    const ownerSymbol = ownerType.symbol;
+    const ownerSymbol = tryGetStandardLibrarySymbolOfType(context, ownerType);
     if (!ownerSymbol || ownerSymbol.parent) return;
 
     let result: lua.Expression | undefined;
@@ -129,10 +121,9 @@ function tryTransformBuiltinPropertyCall(
     node: ts.CallExpression,
     calledMethod: ts.PropertyAccessExpression
 ) {
-    const signatureDeclaration = context.checker.getResolvedSignature(node)?.declaration;
-    if (!signatureDeclaration || !isStandardLibraryDeclaration(context, signatureDeclaration)) return;
-
-    const callSymbol = context.checker.getTypeAtLocation(signatureDeclaration).symbol;
+    const functionType = context.checker.getTypeAtLocation(node.expression);
+    const callSymbol = tryGetStandardLibrarySymbolOfType(context, functionType);
+    if (!callSymbol) return;
     const ownerSymbol = callSymbol.parent;
     if (!ownerSymbol || ownerSymbol.parent) return;
 
@@ -216,4 +207,17 @@ export function checkForLuaLibType(context: TransformationContext, type: ts.Type
     if (builtinErrorTypeNames.has(name)) {
         importLuaLibFeature(context, LuaLibFeature.Error);
     }
+}
+
+function tryGetStandardLibrarySymbolOfType(context: TransformationContext, type: ts.Type): ts.Symbol | undefined {
+    if (type.isUnionOrIntersection()) {
+        for (const subType of type.types) {
+            const symbol = tryGetStandardLibrarySymbolOfType(context, subType);
+            if (symbol) return symbol;
+        }
+    } else if (isStandardLibraryType(context, type, undefined)) {
+        return type.symbol;
+    }
+
+    return undefined;
 }

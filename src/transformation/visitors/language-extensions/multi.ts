@@ -14,7 +14,11 @@ export function isMultiReturnType(type: ts.Type): boolean {
 }
 
 export function canBeMultiReturnType(type: ts.Type): boolean {
-    return isMultiReturnType(type) || (type.isUnion() && type.types.some(t => canBeMultiReturnType(t)));
+    return (
+        (type.flags & ts.TypeFlags.Any) !== 0 ||
+        isMultiReturnType(type) ||
+        (type.isUnion() && type.types.some(t => canBeMultiReturnType(t)))
+    );
 }
 
 export function isMultiFunctionCall(context: TransformationContext, expression: ts.CallExpression): boolean {

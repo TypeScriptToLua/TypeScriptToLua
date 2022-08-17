@@ -5,7 +5,7 @@ import { CompilerOptions } from "../CompilerOptions";
 import { escapeString, tstlHeader } from "../LuaPrinter";
 import { cast, formatPathToLuaPath, isNonNull, trimExtension } from "../utils";
 import { couldNotFindBundleEntryPoint } from "./diagnostics";
-import { getEmitOutDir, getEmitPathRelativeToOutDir, getSourceDir } from "./transpiler";
+import { getEmitOutDir, getEmitPathRelativeToOutDir, getProjectRoot } from "./transpiler";
 import { EmitFile, ProcessedFile } from "./utils";
 
 const createModulePath = (pathToResolve: string, program: ts.Program) =>
@@ -85,7 +85,7 @@ export function getBundleResult(program: ts.Program, files: ProcessedFile[]): [t
     const entryModule = cast(options.luaBundleEntry, isNonNull);
 
     // Resolve project settings relative to project file.
-    const resolvedEntryModule = path.resolve(getSourceDir(program), entryModule);
+    const resolvedEntryModule = path.resolve(getProjectRoot(program), entryModule);
     const outputPath = path.resolve(getEmitOutDir(program), bundleFile);
 
     if (program.getSourceFile(resolvedEntryModule) === undefined && program.getSourceFile(entryModule) === undefined) {

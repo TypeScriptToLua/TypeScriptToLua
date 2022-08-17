@@ -89,7 +89,9 @@ test.each([
     { condition: false, lhs: 4, rhs: 5 },
     { condition: 3, lhs: 4, rhs: 5 },
 ])("Ternary Conditional (%p)", ({ condition, lhs, rhs }) => {
-    util.testExpressionTemplate`${condition} ? ${lhs} : ${rhs}`.expectToMatchJsResult();
+    util.testExpressionTemplate`${condition} ? ${lhs} : ${rhs}`
+        .ignoreDiagnostics([truthyOnlyConditionalValue.code])
+        .expectToMatchJsResult();
 });
 
 test.each(["true", "false", "a < 4", "a == 8"])("Ternary Conditional Delayed (%p)", condition => {
@@ -147,6 +149,7 @@ test.each(["string", "number", "string | number"])(
             if (condition) {}
         `
             .setTsHeader(`declare var condition: ${type};`)
+            .setOptions({ strict: true })
             .expectToHaveDiagnostics([truthyOnlyConditionalValue.code]);
     }
 );
@@ -158,6 +161,7 @@ test.each(["string", "number", "string | number"])(
             while (condition) {}
         `
             .setTsHeader(`declare var condition: ${type};`)
+            .setOptions({ strict: true })
             .expectToHaveDiagnostics([truthyOnlyConditionalValue.code]);
     }
 );
@@ -169,6 +173,7 @@ test.each(["string", "number", "string | number"])(
             do {} while (condition)
         `
             .setTsHeader(`declare var condition: ${type};`)
+            .setOptions({ strict: true })
             .expectToHaveDiagnostics([truthyOnlyConditionalValue.code]);
     }
 );
@@ -178,6 +183,7 @@ test.each(["string", "number", "string | number"])(
     type => {
         util.testExpression`condition ? 1 : 0`
             .setTsHeader(`declare var condition: ${type};`)
+            .setOptions({ strict: true })
             .expectToHaveDiagnostics([truthyOnlyConditionalValue.code]);
     }
 );

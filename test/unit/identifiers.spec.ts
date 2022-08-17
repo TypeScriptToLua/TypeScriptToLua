@@ -302,7 +302,7 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
 
     test("variable (elseif)", () => {
         util.testFunction`
-            const elseif = "foobar";
+            const elseif: string | undefined = "foobar";
             if (false) {
             } else if (elseif) {
                 return elseif;
@@ -350,7 +350,7 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
 
     test("variable (then)", () => {
         util.testFunction`
-            const then = "foobar";
+            const then: string | undefined = "foobar";
             if (then) {
                 return then;
             }

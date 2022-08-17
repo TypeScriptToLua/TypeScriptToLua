@@ -99,7 +99,7 @@ export function getBundleResult(program: ts.Program, files: ProcessedFile[]): [t
     const moduleTable = createModuleTableNode(moduleTableEntries);
 
     // return require("<entry module path>")
-    const entryPoint = `return require(${createModulePath(entryModule, program)}, ...)\n`;
+    const entryPoint = `return require(${createModulePath(resolvedEntryModule, program)}, ...)\n`;
 
     const footers: string[] = [];
     if (options.sourceMapTraceback) {

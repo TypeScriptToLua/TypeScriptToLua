@@ -15,7 +15,7 @@ import { formatPathToLuaPath, normalizeSlashes } from "../src/utils";
 const luaLib = fs.readFileSync(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"), "utf8");
 
 function jsonLib(target: tstl.LuaTarget): string {
-    const fileName = target === tstl.LuaTarget.Lua50 ? "json.5.0.lua" : "json.lua";
+    const fileName = target === tstl.LuaTarget.Lua50 ? "json.50.lua" : "json.lua";
     return fs.readFileSync(path.join(__dirname, fileName), "utf8");
 }
 

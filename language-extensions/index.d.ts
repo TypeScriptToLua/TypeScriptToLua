@@ -631,7 +631,7 @@ declare const LuaMap: (new <K extends AnyNotNil = AnyNotNil, V = any>() => LuaMa
  * @param V The type of the values stored in the table.
  */
 declare interface ReadonlyLuaMap<K extends AnyNotNil = AnyNotNil, V = any> extends LuaPairsIterable<K, V> {
-    get: LuaTableGetMethod<K, V>;
+    get: LuaTableGetMethod<K, V | undefined>;
     has: LuaTableHasMethod<K>;
 }
 

@@ -2,16 +2,16 @@
 
 exports[`supports complicated paths configuration 1`] = `
 Array [
-  "/monorepo-complicated/dist/packages/tstl-program/packages/mypackage/src/bar.lua",
-  "/monorepo-complicated/dist/packages/tstl-program/packages/mypackage/src/index.lua",
-  "/monorepo-complicated/dist/packages/tstl-program/packages/myprogram/src/main.lua",
+  "/paths-base-tsconfig/dist/packages/tstl-program/packages/mypackage/src/bar.lua",
+  "/paths-base-tsconfig/dist/packages/tstl-program/packages/mypackage/src/index.lua",
+  "/paths-base-tsconfig/dist/packages/tstl-program/packages/myprogram/src/main.lua",
 ]
 `;
 
 exports[`supports paths configuration 1`] = `
 Array [
-  "/monorepo-with-paths/myprogram/dist/mypackage/bar.lua",
-  "/monorepo-with-paths/myprogram/dist/mypackage/index.lua",
-  "/monorepo-with-paths/myprogram/dist/myprogram/main.lua",
+  "/paths-simple/myprogram/dist/mypackage/bar.lua",
+  "/paths-simple/myprogram/dist/mypackage/index.lua",
+  "/paths-simple/myprogram/dist/myprogram/main.lua",
 ]
 `;

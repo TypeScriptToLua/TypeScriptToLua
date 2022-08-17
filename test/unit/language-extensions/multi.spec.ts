@@ -184,6 +184,36 @@ test("forward $multi call in ArrowFunction body", () => {
         .expectToEqual([1, 2]);
 });
 
+test("$multi call in function typed as any", () => {
+    util.testFunction`
+        function foo(): any { return $multi(1, 2); }
+        return foo()
+    `
+        .withLanguageExtensions()
+        .expectToHaveNoDiagnostics()
+        .expectToEqual(1);
+});
+
+test("$multi call cast to any", () => {
+    util.testFunction`
+        function foo() { return $multi(1, 2) as any; }
+        return foo()
+    `
+        .withLanguageExtensions()
+        .expectToHaveNoDiagnostics()
+        .expectToEqual(1);
+});
+
+test("$multi call cast to MultiReturn type", () => {
+    util.testFunction`
+        function foo() { return $multi(1, 2) as unknown as LuaMultiReturn<number[]>; }
+        return foo()
+    `
+        .withLanguageExtensions()
+        .expectToHaveNoDiagnostics()
+        .expectToEqual(1);
+});
+
 test.each(["0", "i"])("allow LuaMultiReturn numeric access (%s)", expression => {
     util.testFunction`
         ${multiFunction}

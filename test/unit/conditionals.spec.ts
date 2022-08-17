@@ -1,6 +1,6 @@
 import * as tstl from "../../src";
-import { truthyOnlyConditionalValue } from "../../src/transformation/utils/diagnostics";
 import * as util from "../util";
+import { truthyOnlyConditionalValue } from "../../src/transformation/utils/diagnostics";
 
 test.each([0, 1])("if (%p)", inp => {
     util.testFunction`

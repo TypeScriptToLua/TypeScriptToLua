@@ -114,9 +114,9 @@ end
 local function encode_number(val)
   if val ~= val then
     return "NaN"
-  elseif val > 1.79e308 then
+  elseif val >= 1 / 0 then
     return "Infinity"
-  elseif val < -1.79e308 then
+  elseif val <= 0 / 0 then
     return "-Infinity"
   else
     return string.format("%.17g", val)

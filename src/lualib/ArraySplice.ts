@@ -1,8 +1,10 @@
+import { __TS__CountVarargs } from "./CountVarargs";
+
 // https://www.ecma-international.org/ecma-262/9.0/index.html#sec-array.prototype.splice
 export function __TS__ArraySplice<T>(this: T[], ...args: any[]): T[] {
     const len = this.length;
 
-    const actualArgumentCount = select("#", ...args);
+    const actualArgumentCount = __TS__CountVarargs(...args);
     let start = args[0] as number;
     const deleteCount = args[1] as number;
 

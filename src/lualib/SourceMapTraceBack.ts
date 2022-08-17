@@ -1,6 +1,9 @@
 // TODO: In the future, change this to __TS__RegisterFileInfo and provide tstl interface to
 // get some metadata about transpilation.
 
+import { __TS__IsLua50 } from "./IsLua50";
+import { __TS__Match } from "./Match";
+
 interface SourceMap {
     [line: number]: number | { line: number; file: string };
 }
@@ -18,6 +21,8 @@ export function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap
             let trace: string;
             if (thread === undefined && message === undefined && level === undefined) {
                 trace = originalTraceback();
+            } else if (__TS__IsLua50) {
+                trace = originalTraceback(message, level);
             } else {
                 trace = originalTraceback(thread, message, level);
             }
@@ -47,7 +52,7 @@ export function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap
             const stringReplacer = (file: string, line: string) => {
                 const fileSourceMap: SourceMap = globalThis.__TS__sourcemap[file];
                 if (fileSourceMap && fileSourceMap[line]) {
-                    const chunkName = string.match(file, '%[string "([^"]+)"%]')[0];
+                    const chunkName = __TS__Match(file, '%[string "([^"]+)"%]')[0];
                     const [sourceName] = string.gsub(chunkName, ".lua$", ".ts");
                     const data = fileSourceMap[line];
                     if (typeof data === "number") {

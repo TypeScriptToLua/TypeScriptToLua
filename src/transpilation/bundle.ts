@@ -87,8 +87,10 @@ export function getBundleResult(program: ts.Program, files: ProcessedFile[]): [t
     // Resolve project settings relative to project file.
     const resolvedEntryModule = path.resolve(getProjectRoot(program), entryModule);
     const outputPath = path.resolve(getEmitOutDir(program), bundleFile);
+    const entryModuleFilePath =
+        program.getSourceFile(entryModule)?.fileName ?? program.getSourceFile(resolvedEntryModule)?.fileName;
 
-    if (program.getSourceFile(resolvedEntryModule) === undefined && program.getSourceFile(entryModule) === undefined) {
+    if (entryModuleFilePath === undefined) {
         diagnostics.push(couldNotFindBundleEntryPoint(entryModule));
     }
 
@@ -99,7 +101,7 @@ export function getBundleResult(program: ts.Program, files: ProcessedFile[]): [t
     const moduleTable = createModuleTableNode(moduleTableEntries);
 
     // return require("<entry module path>")
-    const entryPoint = `return require(${createModulePath(resolvedEntryModule, program)}, ...)\n`;
+    const entryPoint = `return require(${createModulePath(entryModuleFilePath ?? entryModule, program)}, ...)\n`;
 
     const footers: string[] = [];
     if (options.sourceMapTraceback) {

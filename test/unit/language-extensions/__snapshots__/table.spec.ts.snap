@@ -91,21 +91,21 @@ exports[`LuaTableHas extension invalid use method assignment ("LuaMap<string, nu
 has = ____table.has"
 `;
 
-exports[`LuaTableHas extension invalid use method assignment ("LuaMap<string, number>"): diagnostics 1`] = `"main.ts(3,25): error TSTL: This function must be called directly and cannot be referred to."`;
+exports[`LuaTableHas extension invalid use method assignment ("LuaMap<string, number>"): diagnostics 1`] = `"main.ts(3,29): error TSTL: This function must be called directly and cannot be referred to."`;
 
 exports[`LuaTableHas extension invalid use method assignment ("LuaSet<string>"): code 1`] = `
 "____table = {}
 has = ____table.has"
 `;
 
-exports[`LuaTableHas extension invalid use method assignment ("LuaSet<string>"): diagnostics 1`] = `"main.ts(3,25): error TSTL: This function must be called directly and cannot be referred to."`;
+exports[`LuaTableHas extension invalid use method assignment ("LuaSet<string>"): diagnostics 1`] = `"main.ts(3,29): error TSTL: This function must be called directly and cannot be referred to."`;
 
 exports[`LuaTableHas extension invalid use method assignment ("LuaTable<string, number>"): code 1`] = `
 "____table = {}
 has = ____table.has"
 `;
 
-exports[`LuaTableHas extension invalid use method assignment ("LuaTable<string, number>"): diagnostics 1`] = `"main.ts(3,25): error TSTL: This function must be called directly and cannot be referred to."`;
+exports[`LuaTableHas extension invalid use method assignment ("LuaTable<string, number>"): diagnostics 1`] = `"main.ts(3,29): error TSTL: This function must be called directly and cannot be referred to."`;
 
 exports[`LuaTableHas extension invalid use method expression ("LuaMap<string, number>"): code 1`] = `
 "local ____lualib = require(\\"lualib_bundle\\")
@@ -114,7 +114,7 @@ ____table = {}
 __TS__ArrayMap({\\"a\\", \\"b\\", \\"c\\"}, ____table.has)"
 `;
 
-exports[`LuaTableHas extension invalid use method expression ("LuaMap<string, number>"): diagnostics 1`] = `"main.ts(3,33): error TSTL: This function must be called directly and cannot be referred to."`;
+exports[`LuaTableHas extension invalid use method expression ("LuaMap<string, number>"): diagnostics 1`] = `"main.ts(3,37): error TSTL: This function must be called directly and cannot be referred to."`;
 
 exports[`LuaTableHas extension invalid use method expression ("LuaSet<string>"): code 1`] = `
 "local ____lualib = require(\\"lualib_bundle\\")
@@ -123,7 +123,7 @@ ____table = {}
 __TS__ArrayMap({\\"a\\", \\"b\\", \\"c\\"}, ____table.has)"
 `;
 
-exports[`LuaTableHas extension invalid use method expression ("LuaSet<string>"): diagnostics 1`] = `"main.ts(3,33): error TSTL: This function must be called directly and cannot be referred to."`;
+exports[`LuaTableHas extension invalid use method expression ("LuaSet<string>"): diagnostics 1`] = `"main.ts(3,37): error TSTL: This function must be called directly and cannot be referred to."`;
 
 exports[`LuaTableHas extension invalid use method expression ("LuaTable<string, number>"): code 1`] = `
 "local ____lualib = require(\\"lualib_bundle\\")
@@ -132,4 +132,4 @@ ____table = {}
 __TS__ArrayMap({\\"a\\", \\"b\\", \\"c\\"}, ____table.has)"
 `;
 
-exports[`LuaTableHas extension invalid use method expression ("LuaTable<string, number>"): diagnostics 1`] = `"main.ts(3,33): error TSTL: This function must be called directly and cannot be referred to."`;
+exports[`LuaTableHas extension invalid use method expression ("LuaTable<string, number>"): diagnostics 1`] = `"main.ts(3,37): error TSTL: This function must be called directly and cannot be referred to."`;

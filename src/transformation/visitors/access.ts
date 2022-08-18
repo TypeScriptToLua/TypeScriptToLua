@@ -149,7 +149,7 @@ export function transformPropertyAccessExpressionWithCapture(
         return { expression: builtinResult };
     }
 
-    if (ts.isIdentifier(node.expression) && (!ts.isCallExpression(node.parent) || node.parent.expression !== node)) {
+    if (ts.isIdentifier(node.expression) && node.parent && (!ts.isCallExpression(node.parent) || node.parent.expression !== node)) {
         // Check if this is a method call extension that is not used as a call
         const extensionType = getExtensionKindForNode(context, node);
         if (extensionType && callExtensions.has(extensionType)) {

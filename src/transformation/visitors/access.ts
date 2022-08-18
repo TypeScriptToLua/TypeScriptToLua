@@ -3,7 +3,11 @@ import * as lua from "../../LuaAST";
 import { transformBuiltinPropertyAccessExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
-import { invalidCallExtensionUse, invalidMultiReturnAccess, unsupportedOptionalCompileMembersOnly } from "../utils/diagnostics";
+import {
+    invalidCallExtensionUse,
+    invalidMultiReturnAccess,
+    unsupportedOptionalCompileMembersOnly,
+} from "../utils/diagnostics";
 import { getExtensionKindForNode } from "../utils/language-extensions";
 import { addToNumericExpression } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
@@ -148,8 +152,7 @@ export function transformPropertyAccessExpressionWithCapture(
     if (ts.isIdentifier(node.expression) && (!ts.isCallExpression(node.parent) || node.parent.expression !== node)) {
         // Check if this is a method call extension that is not used as a call
         const extensionType = getExtensionKindForNode(context, node);
-        if (extensionType && callExtensions.has(extensionType))
-        {
+        if (extensionType && callExtensions.has(extensionType)) {
             context.diagnostics.push(invalidCallExtensionUse(node));
         }
     }

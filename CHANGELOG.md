@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.9.0
+
+- Added a warning when trying to use a type in a condition that can never be false in Lua, such as numbers or strings. (Only when `strictNullChecks` is enabled.)
+- Fixed some missing and misplaced errors when trying to reference LuaTable/LuaMap/LuaSet functions without calling them.
+- Fixed a bug in the `get()` type of `ReadOnlyLuaMap`. It is now typed the same as `LuaMap`, i.e. it can return `undefined`.
+- Fixed an issue in bundling that could sometimes lead to invalid bundle entry requires.
+- Added a warning when using `paths` without specifying `baseUrl`.
+- Fixed exception while checking for standard library types.
+
 ## 1.8.0
 
 - Added support for the [tsconfig.json paths](https://www.typescriptlang.org/tsconfig#paths) configuration option.

@@ -237,7 +237,9 @@ export class LuaPrinter {
         const luaLibImport = this.options.luaLibImport ?? LuaLibImportKind.Require;
         if (luaLibImport === LuaLibImportKind.Require && file.luaLibFeatures.size > 0) {
             // Import lualib features
-            sourceChunks = this.printStatementArray(loadImportedLualibFeatures(file.luaLibFeatures, luaTarget, this.emitHost));
+            sourceChunks = this.printStatementArray(
+                loadImportedLualibFeatures(file.luaLibFeatures, luaTarget, this.emitHost)
+            );
         } else if (luaLibImport === LuaLibImportKind.Inline && file.luaLibFeatures.size > 0) {
             // Inline lualib features
             sourceChunks.push("-- Lua Library inline imports\n");

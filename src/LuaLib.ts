@@ -1,6 +1,7 @@
 import * as path from "path";
 import { EmitHost } from "./transpilation";
 import * as lua from "./LuaAST";
+import { LuaTarget } from "./CompilerOptions";
 
 export enum LuaLibFeature {
     ArrayConcat = "ArrayConcat",
@@ -113,9 +114,10 @@ export type LuaLibModulesInfo = Record<LuaLibFeature, LuaLibFeatureInfo>;
 
 export const luaLibModulesInfoFileName = "lualib_module_info.json";
 let luaLibModulesInfo: LuaLibModulesInfo | undefined;
-export function getLuaLibModulesInfo(emitHost: EmitHost): LuaLibModulesInfo {
+export function getLuaLibModulesInfo(luaTarget: LuaTarget, emitHost: EmitHost): LuaLibModulesInfo {
     if (luaLibModulesInfo === undefined) {
-        const lualibPath = path.resolve(__dirname, `../dist/lualib/${luaLibModulesInfoFileName}`);
+        const lualibDir = `../dist/${luaTarget === LuaTarget.Lua50 ? "lualib-lua50" : "lualib"}`;
+        const lualibPath = path.resolve(__dirname, `${lualibDir}/${luaLibModulesInfoFileName}`);
         const result = emitHost.readFile(lualibPath);
         if (result !== undefined) {
             luaLibModulesInfo = JSON.parse(result) as LuaLibModulesInfo;
@@ -126,8 +128,9 @@ export function getLuaLibModulesInfo(emitHost: EmitHost): LuaLibModulesInfo {
     return luaLibModulesInfo;
 }
 
-export function readLuaLibFeature(feature: LuaLibFeature, emitHost: EmitHost): string {
-    const featurePath = path.resolve(__dirname, `../dist/lualib/${feature}.lua`);
+export function readLuaLibFeature(feature: LuaLibFeature, luaTarget: LuaTarget, emitHost: EmitHost): string {
+    const lualibDir = `../dist/${luaTarget === LuaTarget.Lua50 ? "lualib-lua50" : "lualib"}`;
+    const featurePath = path.resolve(__dirname, `${lualibDir}/${feature}.lua`);
     const luaLibFeature = emitHost.readFile(featurePath);
     if (luaLibFeature === undefined) {
         throw new Error(`Could not load lualib feature from '${featurePath}'`);
@@ -137,8 +140,9 @@ export function readLuaLibFeature(feature: LuaLibFeature, emitHost: EmitHost): s
 
 export function resolveRecursiveLualibFeatures(
     features: Iterable<LuaLibFeature>,
+    luaTarget: LuaTarget,
     emitHost: EmitHost,
-    luaLibModulesInfo: LuaLibModulesInfo = getLuaLibModulesInfo(emitHost)
+    luaLibModulesInfo: LuaLibModulesInfo = getLuaLibModulesInfo(luaTarget, emitHost)
 ): LuaLibFeature[] {
     const loadedFeatures = new Set<LuaLibFeature>();
     const result: LuaLibFeature[] = [];
@@ -162,19 +166,27 @@ export function resolveRecursiveLualibFeatures(
     return result;
 }
 
-export function loadInlineLualibFeatures(features: Iterable<LuaLibFeature>, emitHost: EmitHost): string {
+export function loadInlineLualibFeatures(
+    features: Iterable<LuaLibFeature>,
+    luaTarget: LuaTarget,
+    emitHost: EmitHost
+): string {
     let result = "";
 
-    for (const feature of resolveRecursiveLualibFeatures(features, emitHost)) {
-        const luaLibFeature = readLuaLibFeature(feature, emitHost);
+    for (const feature of resolveRecursiveLualibFeatures(features, luaTarget, emitHost)) {
+        const luaLibFeature = readLuaLibFeature(feature, luaTarget, emitHost);
         result += luaLibFeature + "\n";
     }
 
     return result;
 }
 
-export function loadImportedLualibFeatures(features: Iterable<LuaLibFeature>, emitHost: EmitHost): lua.Statement[] {
-    const luaLibModuleInfo = getLuaLibModulesInfo(emitHost);
+export function loadImportedLualibFeatures(
+    features: Iterable<LuaLibFeature>,
+    luaTarget: LuaTarget,
+    emitHost: EmitHost
+): lua.Statement[] {
+    const luaLibModuleInfo = getLuaLibModulesInfo(luaTarget, emitHost);
 
     const imports = Array.from(features).flatMap(feature => luaLibModuleInfo[feature].exports);
 
@@ -201,9 +213,10 @@ export function loadImportedLualibFeatures(features: Iterable<LuaLibFeature>, em
 }
 
 let luaLibBundleContent: string;
-export function getLuaLibBundle(emitHost: EmitHost): string {
+export function getLuaLibBundle(luaTarget: LuaTarget, emitHost: EmitHost): string {
     if (luaLibBundleContent === undefined) {
-        const lualibPath = path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua");
+        const lualibDir = `../dist/${luaTarget === LuaTarget.Lua50 ? "lualib-lua50" : "lualib"}`;
+        const lualibPath = path.resolve(__dirname, `${lualibDir}/lualib_bundle.lua`);
         const result = emitHost.readFile(lualibPath);
         if (result !== undefined) {
             luaLibBundleContent = result;

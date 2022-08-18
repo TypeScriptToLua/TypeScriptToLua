@@ -5,6 +5,7 @@ import { transformInPrecedingStatementScope } from "../utils/preceding-statement
 import { performHoisting, ScopeType } from "../utils/scope";
 import { transformBlockOrStatement } from "./block";
 import { canBeFalsy } from "../utils/typescript";
+import { truthyOnlyConditionalValue } from "../utils/diagnostics";
 
 type EvaluatedExpression = [precedingStatemens: lua.Statement[], value: lua.Expression];
 
@@ -39,6 +40,9 @@ function transformProtectedConditionalExpression(
 }
 
 export const transformConditionalExpression: FunctionVisitor<ts.ConditionalExpression> = (expression, context) => {
+    // Check if we need to add diagnostic about Lua truthiness
+    checkOnlyTruthyCondition(expression.condition, context);
+
     const condition = transformInPrecedingStatementScope(context, () =>
         context.transformExpression(expression.condition)
     );
@@ -64,6 +68,10 @@ export const transformConditionalExpression: FunctionVisitor<ts.ConditionalExpre
 
 export function transformIfStatement(statement: ts.IfStatement, context: TransformationContext): lua.IfStatement {
     context.pushScope(ScopeType.Conditional);
+
+    // Check if we need to add diagnostic about Lua truthiness
+    checkOnlyTruthyCondition(statement.expression, context);
+
     const condition = context.transformExpression(statement.expression);
     const statements = performHoisting(context, transformBlockOrStatement(context, statement.thenStatement));
     context.popScope();
@@ -102,4 +110,10 @@ export function transformIfStatement(statement: ts.IfStatement, context: Transfo
     }
 
     return lua.createIfStatement(condition, ifBlock);
+}
+
+export function checkOnlyTruthyCondition(condition: ts.Expression, context: TransformationContext) {
+    if (!canBeFalsy(context, context.checker.getTypeAtLocation(condition))) {
+        context.diagnostics.push(truthyOnlyConditionalValue(condition));
+    }
 }

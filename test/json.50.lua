@@ -77,10 +77,12 @@ local function encode_table(val, stack)
     -- Treat as array -- check keys are valid and it is not sparse
     local n = 0
     for k in pairs(val) do
-      if type(k) ~= "number" then
-        error("invalid table: mixed or invalid key types")
+      if k ~= "n" then
+        if type(k) ~= "number" then
+            error("invalid table: mixed or invalid key types")
+        end
+        n = n + 1
       end
-      n = n + 1
     end
     if n ~= table.getn(val) then
       error("invalid table: sparse array")
@@ -107,7 +109,7 @@ end
 
 
 local function encode_string(val)
-  return '"' .. val:gsub('[%z\1-\31\\"]', escape_char) .. '"'
+  return '"' .. string.gsub(val, '[%z\1-\31\\"]', escape_char) .. '"'
 end
 
 

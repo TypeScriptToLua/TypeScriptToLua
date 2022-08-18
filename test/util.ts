@@ -9,10 +9,13 @@ import * as ts from "typescript";
 import * as vm from "vm";
 import * as tstl from "../src";
 import { createEmitOutputCollector } from "../src/transpilation/output-collector";
-import { EmitHost, getEmitOutDir, transpileProject } from "../src";
+import { EmitHost, getEmitOutDir, LuaTarget, transpileProject } from "../src";
 import { formatPathToLuaPath, normalizeSlashes } from "../src/utils";
 
-const luaLib = fs.readFileSync(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"), "utf8");
+function readLuaLib(target: tstl.LuaTarget) {
+    const luaLibDir = `../dist/${target === LuaTarget.Lua50 ? "lualib-lua50" : "lualib"}`;
+    return fs.readFileSync(path.resolve(__dirname, `${luaLibDir}/lualib_bundle.lua`), "utf8");
+}
 
 function jsonLib(target: tstl.LuaTarget): string {
     const fileName = target === tstl.LuaTarget.Lua50 ? "json.50.lua" : "json.lua";
@@ -425,7 +428,7 @@ export abstract class TestBuilder {
             this.options.luaLibImport === tstl.LuaLibImportKind.Require ||
             mainFile.includes('require("lualib_bundle")')
         ) {
-            this.injectLuaFile(L, lua, lauxlib, "lualib_bundle", luaLib);
+            this.injectLuaFile(L, lua, lauxlib, "lualib_bundle", readLuaLib(luaTarget));
         }
 
         // Load all transpiled files into Lua's package cache

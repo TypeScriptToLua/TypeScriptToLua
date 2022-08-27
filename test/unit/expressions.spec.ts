@@ -153,6 +153,14 @@ test("Non-null expression", () => {
     `.expectToMatchJsResult();
 });
 
+test("Typescript 4.7 instantiation expression", () => {
+    util.testFunction`
+        function foo<T>(x: T): T { return x; }
+        const bar = foo<number>;
+        return bar(3);
+    `.expectToMatchJsResult();
+});
+
 test.each([
     '"foobar"',
     "17",

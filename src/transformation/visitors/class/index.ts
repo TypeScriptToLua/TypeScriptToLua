@@ -187,11 +187,11 @@ function transformClassLikeDeclaration(
     result.push(...decorationStatements);
 
     // Decorate the class
-    if (classDeclaration.decorators) {
+    if (ts.canHaveDecorators(classDeclaration) && ts.getDecorators(classDeclaration)) {
         const decoratingExpression = createDecoratingExpression(
             context,
             classDeclaration.kind,
-            classDeclaration.decorators.map(d => transformDecoratorExpression(context, d)),
+            ts.getDecorators(classDeclaration)?.map(d => transformDecoratorExpression(context, d)) ?? [],
             localClassName
         );
         const decoratingStatement = lua.createAssignmentStatement(localClassName, decoratingExpression);

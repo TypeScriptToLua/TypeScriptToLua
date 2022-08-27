@@ -1,4 +1,4 @@
-const isCI = require("is-ci");
+const isCI = process.env.GITHUB_ACTIONS !== undefined;
 
 /** @type {Partial<import("@jest/types").Config.DefaultOptions>} */
 module.exports = {

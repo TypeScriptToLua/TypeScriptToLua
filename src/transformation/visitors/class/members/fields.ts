@@ -12,13 +12,15 @@ export function createPropertyDecoratingExpression(
     node: ts.PropertyDeclaration | ts.AccessorDeclaration,
     className: lua.Identifier
 ): lua.Expression | undefined {
-    if (!node.decorators) return;
+    if (!ts.canHaveDecorators(node)) return;
+    const decorators = ts.getDecorators(node);
+    if (!decorators) return;
     const propertyName = transformPropertyName(context, node.name);
     const propertyOwnerTable = transformMemberExpressionOwnerName(node, className);
     return createDecoratingExpression(
         context,
         node.kind,
-        node.decorators.map(d => transformDecoratorExpression(context, d)),
+        decorators.map(d => transformDecoratorExpression(context, d)),
         propertyOwnerTable,
         propertyName
     );

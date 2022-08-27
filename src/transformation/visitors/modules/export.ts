@@ -136,12 +136,7 @@ function transformExportSpecifiersFrom(
         )
     );
 
-    const importDeclaration = ts.factory.createImportDeclaration(
-        statement.decorators,
-        statement.modifiers,
-        importClause,
-        moduleSpecifier
-    );
+    const importDeclaration = ts.factory.createImportDeclaration(statement.modifiers, importClause, moduleSpecifier);
 
     // Wrap in block to prevent imports from hoisting out of `do` statement
     const [block] = transformScopeBlock(context, ts.factory.createBlock([importDeclaration]), ScopeType.Block);

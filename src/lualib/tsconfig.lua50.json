@@ -17,5 +17,5 @@
         "luaTarget": "5.0",
         "luaPlugins": [{ "name": "../../dist/lualib-build/plugin.js" }]
     },
-    "include": ["../lualib", "../../language-extensions/index.d.ts"]
+    "include": [".", "../../language-extensions/index.d.ts"]
 }

@@ -26,7 +26,7 @@
     "types": "dist/index.d.ts",
     "scripts": {
         "build": "tsc && npm run build-lualib",
-        "build-lualib": "node dist/tstl.js -p src/lualib/tsconfig.json && node dist/tstl.js -p src/lualib-lua50/tsconfig.json",
+        "build-lualib": "node dist/tstl.js -p src/lualib/tsconfig.json && node dist/tstl.js -p src/lualib/tsconfig.lua50.json",
         "pretest": "npm run lint && npm run check:language-extensions && npm run build-lualib",
         "test": "jest",
         "lint": "npm run lint:eslint && npm run lint:prettier",

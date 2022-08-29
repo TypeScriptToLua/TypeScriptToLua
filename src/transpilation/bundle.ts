@@ -13,8 +13,8 @@ const createModulePath = (pathToResolve: string, program: ts.Program) =>
 
 // Override `require` to read from ____modules table.
 function requireOverride(options: CompilerOptions) {
-    const isLua50 = options.luaTarget === LuaTarget.Lua50;
-    return `
+    if (options.luaTarget === LuaTarget.Lua50) {
+        return `
 local ____modules = {}
 local ____moduleCache = {}
 local ____originalRequire = require
@@ -24,9 +24,7 @@ local function require(file, ...)
     end
     if ____modules[file] then
         local module = ____modules[file]
-        ____moduleCache[file] = { value = (${isLua50 ? "table.getn(arg)" : 'select("#", ...)'} > 0) and module(${
-        isLua50 ? "unpack(arg)" : "..."
-    }) or module(file) }
+        ____moduleCache[file] = { value = (table.getn(arg) > 0) and module(unpack(arg)) or module(file) }
         return ____moduleCache[file].value
     else
         if ____originalRequire then
@@ -37,6 +35,29 @@ local function require(file, ...)
     end
 end
 `;
+    } else {
+        return `
+local ____modules = {}
+local ____moduleCache = {}
+local ____originalRequire = require
+local function require(file, ...)
+    if ____moduleCache[file] then
+        return ____moduleCache[file].value
+    end
+    if ____modules[file] then
+        local module = ____modules[file]
+        ____moduleCache[file] = { value = (select("#", ...) > 0) and module(...) or module(file) }
+        return ____moduleCache[file].value
+    else
+        if ____originalRequire then
+            return ____originalRequire(file)
+        else
+            error("module '" .. file .. "' not found")
+        end
+    end
+end
+`;
+    }
 }
 
 export const sourceMapTracebackBundlePlaceholder = "{#SourceMapTracebackBundle}";

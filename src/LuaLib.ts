@@ -112,12 +112,16 @@ export interface LuaLibFeatureInfo {
 }
 export type LuaLibModulesInfo = Record<LuaLibFeature, LuaLibFeatureInfo>;
 
+export function resolveLuaLibDir(luaTarget: LuaTarget) {
+    const luaLibDir = luaTarget === LuaTarget.Lua50 ? "lualib-lua50" : "lualib";
+    return path.resolve(__dirname, path.join("..", "dist", luaLibDir));
+}
+
 export const luaLibModulesInfoFileName = "lualib_module_info.json";
 let luaLibModulesInfo: LuaLibModulesInfo | undefined;
 export function getLuaLibModulesInfo(luaTarget: LuaTarget, emitHost: EmitHost): LuaLibModulesInfo {
     if (luaLibModulesInfo === undefined) {
-        const lualibDir = `../dist/${luaTarget === LuaTarget.Lua50 ? "lualib-lua50" : "lualib"}`;
-        const lualibPath = path.resolve(__dirname, `${lualibDir}/${luaLibModulesInfoFileName}`);
+        const lualibPath = path.join(resolveLuaLibDir(luaTarget), luaLibModulesInfoFileName);
         const result = emitHost.readFile(lualibPath);
         if (result !== undefined) {
             luaLibModulesInfo = JSON.parse(result) as LuaLibModulesInfo;
@@ -129,8 +133,7 @@ export function getLuaLibModulesInfo(luaTarget: LuaTarget, emitHost: EmitHost): 
 }
 
 export function readLuaLibFeature(feature: LuaLibFeature, luaTarget: LuaTarget, emitHost: EmitHost): string {
-    const lualibDir = `../dist/${luaTarget === LuaTarget.Lua50 ? "lualib-lua50" : "lualib"}`;
-    const featurePath = path.resolve(__dirname, `${lualibDir}/${feature}.lua`);
+    const featurePath = path.join(resolveLuaLibDir(luaTarget), `${feature}.lua`);
     const luaLibFeature = emitHost.readFile(featurePath);
     if (luaLibFeature === undefined) {
         throw new Error(`Could not load lualib feature from '${featurePath}'`);
@@ -215,8 +218,7 @@ export function loadImportedLualibFeatures(
 let luaLibBundleContent: string;
 export function getLuaLibBundle(luaTarget: LuaTarget, emitHost: EmitHost): string {
     if (luaLibBundleContent === undefined) {
-        const lualibDir = `../dist/${luaTarget === LuaTarget.Lua50 ? "lualib-lua50" : "lualib"}`;
-        const lualibPath = path.resolve(__dirname, `${lualibDir}/lualib_bundle.lua`);
+        const lualibPath = path.join(resolveLuaLibDir(luaTarget), "lualib_bundle.lua");
         const result = emitHost.readFile(lualibPath);
         if (result !== undefined) {
             luaLibBundleContent = result;

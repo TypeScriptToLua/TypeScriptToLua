@@ -9,12 +9,12 @@ import * as ts from "typescript";
 import * as vm from "vm";
 import * as tstl from "../src";
 import { createEmitOutputCollector } from "../src/transpilation/output-collector";
-import { EmitHost, getEmitOutDir, LuaTarget, transpileProject } from "../src";
+import { EmitHost, getEmitOutDir, transpileProject } from "../src";
 import { formatPathToLuaPath, normalizeSlashes } from "../src/utils";
+import { resolveLuaLibDir } from "../src/LuaLib";
 
 function readLuaLib(target: tstl.LuaTarget) {
-    const luaLibDir = `../dist/${target === LuaTarget.Lua50 ? "lualib-lua50" : "lualib"}`;
-    return fs.readFileSync(path.resolve(__dirname, `${luaLibDir}/lualib_bundle.lua`), "utf8");
+    return fs.readFileSync(path.join(resolveLuaLibDir(target), "lualib_bundle.lua"), "utf8");
 }
 
 function jsonLib(target: tstl.LuaTarget): string {

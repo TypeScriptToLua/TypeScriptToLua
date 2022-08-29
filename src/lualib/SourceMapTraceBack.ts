@@ -1,7 +1,6 @@
 // TODO: In the future, change this to __TS__RegisterFileInfo and provide tstl interface to
 // get some metadata about transpilation.
 
-import { __TS__IsLua50 } from "./IsLua50";
 import { __TS__Match } from "./Match";
 
 interface SourceMap {
@@ -21,7 +20,8 @@ export function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap
             let trace: string;
             if (thread === undefined && message === undefined && level === undefined) {
                 trace = originalTraceback();
-            } else if (__TS__IsLua50) {
+            } else if (string.sub(_VERSION, 7, 7) === "0") {
+                // For Lua 5.0, which doesn't support the thread argument.
                 trace = originalTraceback(message, level);
             } else {
                 trace = originalTraceback(thread, message, level);

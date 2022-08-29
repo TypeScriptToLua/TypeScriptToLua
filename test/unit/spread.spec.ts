@@ -4,7 +4,6 @@ import { formatCode } from "../util";
 
 // TODO: Make some utils for testing other targets
 const expectUnpack: util.TapCallback = builder => expect(builder.getMainLuaCodeChunk()).toMatch(/[^.]unpack\(/);
-const expectArg: util.TapCallback = builder => expect(builder.getMainLuaCodeChunk()).toMatch(/ arg/);
 const expectTableUnpack: util.TapCallback = builder => expect(builder.getMainLuaCodeChunk()).toContain("table.unpack");
 const expectLualibUnpack: util.TapCallback = builder => expect(builder.getMainLuaCodeChunk()).toContain("__TS__Unpack");
 
@@ -77,7 +76,7 @@ describe("in function call", () => {
         {
             [tstl.LuaTarget.Universal]: builder => builder.tap(expectLualibUnpack).expectToMatchJsResult(),
             [tstl.LuaTarget.LuaJIT]: builder => builder.tap(expectUnpack),
-            [tstl.LuaTarget.Lua50]: builder => builder.tap(expectArg).expectToMatchJsResult(),
+            [tstl.LuaTarget.Lua50]: builder => builder.tap(expectUnpack).expectToMatchJsResult(),
             [tstl.LuaTarget.Lua51]: builder => builder.tap(expectUnpack).expectToMatchJsResult(),
             [tstl.LuaTarget.Lua52]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
             [tstl.LuaTarget.Lua53]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),

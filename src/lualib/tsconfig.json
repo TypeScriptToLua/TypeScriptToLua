@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "outDir": "../../dist/lualib",
+        "outDir": "../../dist/lualib/universal",
         "target": "esnext",
         "lib": ["esnext"],
         "types": ["lua-types/5.4"],

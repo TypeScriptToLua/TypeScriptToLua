@@ -112,8 +112,8 @@ export interface LuaLibFeatureInfo {
 export type LuaLibModulesInfo = Record<LuaLibFeature, LuaLibFeatureInfo>;
 
 export function resolveLuaLibDir(luaTarget: LuaTarget) {
-    const luaLibDir = luaTarget === LuaTarget.Lua50 ? "lualib-lua50" : "lualib";
-    return path.resolve(__dirname, path.join("..", "dist", luaLibDir));
+    const luaLibDir = luaTarget === LuaTarget.Lua50 ? "5.0" : "universal";
+    return path.resolve(__dirname, path.join("..", "dist", "lualib", luaLibDir));
 }
 
 export const luaLibModulesInfoFileName = "lualib_module_info.json";

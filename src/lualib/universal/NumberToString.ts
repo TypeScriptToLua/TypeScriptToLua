@@ -1,14 +1,5 @@
 const radixChars = "0123456789abcdefghijklmnopqrstuvwxyz";
 
-function modf(this: void, x: number): LuaMultiReturn<[number, number]> {
-    if (math.modf) {
-        return math.modf(x);
-    } else {
-        const integral = x > 0 ? Math.floor(x) : Math.ceil(x);
-        return $multi(integral, x - integral);
-    }
-}
-
 // https://www.ecma-international.org/ecma-262/10.0/index.html#sec-number.prototype.tostring
 export function __TS__NumberToString(this: number, radix?: number): string {
     if (radix === undefined || radix === 10 || this === Infinity || this === -Infinity || this !== this) {
@@ -20,7 +11,7 @@ export function __TS__NumberToString(this: number, radix?: number): string {
         throw "toString() radix argument must be between 2 and 36";
     }
 
-    let [integer, fraction] = modf(Math.abs(this));
+    let [integer, fraction] = math.modf(Math.abs(this));
 
     let result = "";
     if (radix === 8) {

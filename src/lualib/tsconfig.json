@@ -5,6 +5,7 @@
         "lib": ["esnext"],
         "types": ["lua-types/5.4"],
         "skipLibCheck": true,
+        "rootDirs": [".", "universal"],
 
         "noUnusedLocals": true,
         "noUnusedParameters": true
@@ -14,5 +15,5 @@
         "noHeader": true,
         "luaPlugins": [{ "name": "../../dist/lualib-build/plugin.js" }]
     },
-    "include": [".", "../../language-extensions/index.d.ts"]
+    "include": ["*.ts", "universal/*.ts", "declarations", "../../language-extensions/index.d.ts"]
 }

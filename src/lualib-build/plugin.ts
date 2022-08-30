@@ -42,6 +42,16 @@ class LuaLibPlugin implements tstl.Plugin {
             emitBOM
         );
 
+        // Flatten the output folder structure; we do not want to keep the target-specific directories
+        for (const file of result) {
+            let outPath = file.fileName;
+            while (outPath.includes("lualib") && path.basename(path.dirname(outPath)) !== "lualib") {
+                const upOne = path.join(path.dirname(outPath), "..", path.basename(outPath));
+                outPath = path.normalize(upOne);
+            }
+            file.fileName = outPath;
+        }
+
         // Create map of result files keyed by their 'lualib name'
         const exportedLualibFeatures = new Map(result.map(f => [path.basename(f.fileName).split(".")[0], f.code]));
 

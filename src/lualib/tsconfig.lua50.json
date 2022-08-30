@@ -3,10 +3,9 @@
         "outDir": "../../dist/lualib-lua50",
         "target": "esnext",
         "lib": ["esnext"],
-        // Counterintuitively, we do not build with the 5.0 types as they are incompatible with
-        // branches written for the universal target. For now, the 5.4 types work for both targets.
-        "types": ["lua-types/5.4"],
+        "types": ["lua-types/5.0"],
         "skipLibCheck": true,
+        "rootDirs": [".", "5.0"],
 
         "noUnusedLocals": true,
         "noUnusedParameters": true
@@ -17,5 +16,5 @@
         "luaTarget": "5.0",
         "luaPlugins": [{ "name": "../../dist/lualib-build/plugin.js" }]
     },
-    "include": [".", "../../language-extensions/index.d.ts"]
+    "include": ["*.ts", "5.0/*.ts", "declarations", "../../language-extensions/index.d.ts"]
 }

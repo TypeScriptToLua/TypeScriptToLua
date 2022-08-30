@@ -5,6 +5,7 @@ module.exports = {
         project: [
             "test/tsconfig.json",
             "src/lualib/tsconfig.json",
+            "src/lualib/tsconfig.lua50.json",
             "benchmark/tsconfig.json",
             "language-extensions/tsconfig.json",
         ],

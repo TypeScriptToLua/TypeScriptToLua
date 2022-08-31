@@ -6,7 +6,6 @@ module.exports = {
     collectCoverageFrom: [
         "<rootDir>/src/**/*",
         "!<rootDir>/src/lualib/**/*",
-        "!<rootDir>/src/lualib-lua50/**/*",
         // https://github.com/facebook/jest/issues/5274
         "!<rootDir>/src/tstl.ts",
     ],

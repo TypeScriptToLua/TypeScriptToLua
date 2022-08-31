@@ -68,7 +68,7 @@ export function testEachVersion<T extends TestBuilder>(
         const testName = name === undefined ? version : `${name} [${version}]`;
         defineTest(testName, () => {
             const builder = common();
-            builder.setOptions({ luaTarget: version, luaLibImport: tstl.LuaLibImportKind.Inline });
+            builder.setOptions({ luaTarget: version });
             if (typeof specialBuilder === "function") {
                 specialBuilder(builder);
             }

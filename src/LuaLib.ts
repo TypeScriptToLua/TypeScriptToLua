@@ -214,17 +214,17 @@ export function loadImportedLualibFeatures(
     return statements;
 }
 
-let luaLibBundleContent: string;
+const luaLibBundleContent = new Map<LuaTarget, string>();
 export function getLuaLibBundle(luaTarget: LuaTarget, emitHost: EmitHost): string {
-    if (luaLibBundleContent === undefined) {
+    if (!luaLibBundleContent.has(luaTarget)) {
         const lualibPath = path.join(resolveLuaLibDir(luaTarget), "lualib_bundle.lua");
         const result = emitHost.readFile(lualibPath);
         if (result !== undefined) {
-            luaLibBundleContent = result;
+            luaLibBundleContent.set(luaTarget, result);
         } else {
             throw new Error(`Could not load lualib bundle from '${lualibPath}'`);
         }
     }
 
-    return luaLibBundleContent;
+    return luaLibBundleContent.get(luaTarget) as string;
 }

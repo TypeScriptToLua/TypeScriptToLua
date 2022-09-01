@@ -69,7 +69,7 @@ jobs:
         run: npm ci
         working-directory: master
       - name: Use local tstl language extensions
-        run: npm i lua-types@latest && npm i -D file:.
+        run: npm i lua-types@latest --legacy-peer-deps && npm i -D file:.
         working-directory: master
       - name: Build master
         run: npm run build

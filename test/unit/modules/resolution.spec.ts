@@ -87,6 +87,33 @@ test("doesn't resolve paths out of root dir", () => {
         .expectDiagnosticsToMatchSnapshot([couldNotResolveRequire.code]);
 });
 
+test("resolves non-standard requires", () => {
+    const { transpiledFiles } = util.testModule`
+        export * from "./externalLua";
+    `
+        .addExtraFile("externalLua.d.ts", "export const foo = 3;")
+        .addExtraFile(
+            "externalLua.lua",
+            `
+                require("requiredLuaFile1") -- standard
+                require('requiredLuaFile2') -- single quote
+                require'requiredLuaFile3'   -- no parentheses
+                require"requiredLuaFile4"   -- no parentheses double quote
+                require "requiredLuaFile5"  -- no parentheses and space
+            `
+        )
+        .addExtraFile("requiredLuaFile1.lua", "")
+        .addExtraFile("requiredLuaFile2.lua", "")
+        .addExtraFile("requiredLuaFile3.lua", "")
+        .addExtraFile("requiredLuaFile4.lua", "")
+        .addExtraFile("requiredLuaFile5.lua", "")
+        .expectToHaveNoDiagnostics()
+        .getLuaResult();
+
+    // Expect main.lua, externalLua.lua and all 5 required lua files in there
+    expect(transpiledFiles.map(f => f.outPath)).toHaveLength(7);
+});
+
 test.each([
     {
         declarationStatement: `

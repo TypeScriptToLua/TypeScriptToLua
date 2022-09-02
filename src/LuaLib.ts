@@ -51,7 +51,7 @@ export enum LuaLibFeature {
     Match = "Match",
     MathAtan2 = "MathAtan2",
     MathSign = "MathSign",
-    Modulo = "Modulo",
+    Modulo50 = "Modulo50",
     New = "New",
     Number = "Number",
     NumberIsFinite = "NumberIsFinite",

@@ -1,5 +1,6 @@
 import { __TS__CountVarargs } from "./CountVarargs";
 import { GeneratorIterator } from "./GeneratorIterator";
+import { __TS__Unpack } from "./Unpack";
 
 function generatorIterator(this: GeneratorIterator) {
     return this;
@@ -20,7 +21,7 @@ export function __TS__Generator(this: void, fn: (this: void, ...args: any[]) => 
         const argsLength = __TS__CountVarargs(...args);
         return {
             // Using explicit this there, since we don't pass arguments after the first nil and context is likely to be nil
-            ____coroutine: coroutine.create(() => fn(...unpack(args, 1, argsLength))),
+            ____coroutine: coroutine.create(() => fn(...__TS__Unpack(args, 1, argsLength))),
             [Symbol.iterator]: generatorIterator,
             next: generatorNext,
         };

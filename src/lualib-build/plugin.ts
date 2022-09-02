@@ -57,7 +57,7 @@ class LuaLibPlugin implements tstl.Plugin {
 
         // Figure out the order required in the bundle by recursively resolving all dependency features
         const allFeatures = Object.values(LuaLibFeature) as LuaLibFeature[];
-        const luaTarget = options.luaTarget ?? tstl.LuaTarget.Lua54;
+        const luaTarget = options.luaTarget ?? tstl.LuaTarget.Universal;
         const orderedFeatures = resolveRecursiveLualibFeatures(allFeatures, luaTarget, emitHost, luaLibModuleInfo);
 
         // Concatenate lualib files into bundle with exports table and add lualib_bundle.lua to results

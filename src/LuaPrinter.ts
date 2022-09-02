@@ -233,7 +233,7 @@ export class LuaPrinter {
             sourceChunks.push(tstlHeader);
         }
 
-        const luaTarget = this.options.luaTarget ?? LuaTarget.Lua54;
+        const luaTarget = this.options.luaTarget ?? LuaTarget.Universal;
         const luaLibImport = this.options.luaLibImport ?? LuaLibImportKind.Require;
         if (luaLibImport === LuaLibImportKind.Require && file.luaLibFeatures.size > 0) {
             // Import lualib features

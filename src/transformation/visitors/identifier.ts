@@ -31,7 +31,10 @@ function transformNonValueIdentifier(
 
     if (extensionKind) {
         if (callExtensions.has(extensionKind)) {
-            context.diagnostics.push(invalidCallExtensionUse(identifier));
+            // Avoid putting duplicate diagnostic on the name of a variable declaration, due to the inferred type
+            if (!(ts.isVariableDeclaration(identifier.parent) && identifier.parent.name === identifier)) {
+                context.diagnostics.push(invalidCallExtensionUse(identifier));
+            }
             // fall through
         } else if (isIdentifierExtensionValue(symbol, extensionKind)) {
             reportInvalidExtensionValue(context, identifier, extensionKind);

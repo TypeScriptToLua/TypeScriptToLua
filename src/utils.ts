@@ -5,7 +5,7 @@ import * as path from "path";
 export function castArray<T>(value: T | T[]): T[];
 export function castArray<T>(value: T | readonly T[]): readonly T[];
 export function castArray<T>(value: T | readonly T[]): readonly T[] {
-    return Array.isArray(value) ? value : [value];
+    return Array.isArray(value) ? value : [value as T];
 }
 
 export const intersperse = <T>(values: readonly T[], separator: T): T[] =>

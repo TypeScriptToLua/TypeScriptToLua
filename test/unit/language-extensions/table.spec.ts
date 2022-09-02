@@ -170,6 +170,30 @@ describe("LuaTableHas extension", () => {
             .withLanguageExtensions()
             .expectDiagnosticsToMatchSnapshot([invalidCallExtensionUse.code]);
     });
+
+    test.each(["LuaTable<string, number>", "LuaMap<string, number>", "LuaSet<string>"])(
+        "invalid use method assignment (%p)",
+        type => {
+            util.testModule`
+                const table = new ${type}();
+                const has = table.has;
+            `
+                .withLanguageExtensions()
+                .expectDiagnosticsToMatchSnapshot([invalidCallExtensionUse.code]);
+        }
+    );
+
+    test.each(["LuaTable<string, number>", "LuaMap<string, number>", "LuaSet<string>"])(
+        "invalid use method expression (%p)",
+        type => {
+            util.testModule`
+                const table = new ${type}();
+                ["a", "b", "c"].map(table.has);
+            `
+                .withLanguageExtensions()
+                .expectDiagnosticsToMatchSnapshot([invalidCallExtensionUse.code]);
+        }
+    );
 });
 
 describe("LuaTableDelete extension", () => {

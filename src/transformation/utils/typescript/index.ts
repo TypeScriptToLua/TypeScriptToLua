@@ -91,7 +91,7 @@ export function isExpressionWithEvaluationEffect(node: ts.Expression): boolean {
 
 export function getFunctionTypeForCall(context: TransformationContext, node: ts.CallExpression) {
     const signature = context.checker.getResolvedSignature(node);
-    if (!signature || !signature.declaration) {
+    if (!signature?.declaration) {
         return;
     }
     const typeDeclaration = findFirstNodeAbove(signature.declaration, ts.isTypeAliasDeclaration);
@@ -110,7 +110,7 @@ export function isConstIdentifier(context: TransformationContext, node: ts.Node)
         return false;
     }
     const symbol = context.checker.getSymbolAtLocation(identifier);
-    if (!symbol || !symbol.declarations) {
+    if (!symbol?.declarations) {
         return false;
     }
     return symbol.declarations.some(

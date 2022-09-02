@@ -37,7 +37,9 @@ expect.extend({
                 const message = this.isNot
                     ? diagnosticMessages
                     : expected
-                    ? `Expected:\n${expected.join("\n")}\nReceived:\n${diagnostics.map(diag => diag.code).join("\n")}\n`
+                    ? `Expected:\n${expected.join("\n")}\nReceived:\n${diagnostics
+                          .map(diag => diag.code)
+                          .join("\n")}\n\n${diagnosticMessages}\n`
                     : `Received: ${this.utils.printReceived([])}\n`;
 
                 return matcherHint + "\n\n" + message;

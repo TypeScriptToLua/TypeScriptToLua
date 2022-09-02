@@ -118,18 +118,18 @@ export function resolveLuaLibDir(luaTarget: LuaTarget) {
 }
 
 export const luaLibModulesInfoFileName = "lualib_module_info.json";
-const luaLibModulesInfo = new Map<LuaTarget, LuaLibModulesInfo>();
+const luaLibModulesInfo = new Map<string, LuaLibModulesInfo>();
 export function getLuaLibModulesInfo(luaTarget: LuaTarget, emitHost: EmitHost): LuaLibModulesInfo {
-    if (!luaLibModulesInfo.has(luaTarget)) {
-        const lualibPath = path.join(resolveLuaLibDir(luaTarget), luaLibModulesInfoFileName);
+    const lualibPath = path.join(resolveLuaLibDir(luaTarget), luaLibModulesInfoFileName);
+    if (!luaLibModulesInfo.has(lualibPath)) {
         const result = emitHost.readFile(lualibPath);
         if (result !== undefined) {
-            luaLibModulesInfo.set(luaTarget, JSON.parse(result) as LuaLibModulesInfo);
+            luaLibModulesInfo.set(lualibPath, JSON.parse(result) as LuaLibModulesInfo);
         } else {
             throw new Error(`Could not load lualib dependencies from '${lualibPath}'`);
         }
     }
-    return luaLibModulesInfo.get(luaTarget) as LuaLibModulesInfo;
+    return luaLibModulesInfo.get(lualibPath) as LuaLibModulesInfo;
 }
 
 export function readLuaLibFeature(feature: LuaLibFeature, luaTarget: LuaTarget, emitHost: EmitHost): string {

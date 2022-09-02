@@ -20,8 +20,11 @@ export function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap
             let trace: string;
             if (thread === undefined && message === undefined && level === undefined) {
                 trace = originalTraceback();
-            } else {
+            } else if (_VERSION.includes("Lua 5.0")) {
                 trace = originalTraceback(`[Level ${level}] ${message}`);
+            } else {
+                // @ts-ignore Fails when compiled with Lua 5.0 types
+                trace = originalTraceback(thread, message, level);
             }
 
             if (typeof trace !== "string") {

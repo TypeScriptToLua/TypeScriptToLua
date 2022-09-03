@@ -1,0 +1,23 @@
+{
+    "name": "@typescript-to-lua/language-extensions",
+    "version": "1.0.0",
+    "description": "Language extensions used by typescript-to-lua",
+    "repository": "https://github.com/TypeScriptToLua/TypeScriptToLua",
+    "homepage": "https://typescripttolua.github.io/",
+    "bugs": {
+        "url": "https://github.com/TypeScriptToLua/TypeScriptToLua/issues"
+    },
+    "license": "MIT",
+    "keywords": [
+        "typescript",
+        "lua",
+        "tstl",
+        "transpiler",
+        "language extensions"
+    ],
+    "files": [
+        "**.d.ts"
+    ],
+    "main": "",
+    "types": "index.d.ts"
+}

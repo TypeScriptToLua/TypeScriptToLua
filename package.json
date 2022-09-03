@@ -18,8 +18,7 @@
         "dist/**/*.js",
         "dist/**/*.lua",
         "dist/**/*.ts",
-        "dist/lualib/**/*.json",
-        "language-extensions/**/*.ts"
+        "dist/lualib/**/*.json"
     ],
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -46,6 +45,7 @@
         "typescript": "~4.8.2"
     },
     "dependencies": {
+        "@typescript-to-lua/language-extensions": "1.0.0",
         "enhanced-resolve": "^5.8.2",
         "resolve": "^1.15.1",
         "source-map": "^0.7.3"
@@ -56,8 +56,8 @@
         "@types/jest": "^27.5.2",
         "@types/node": "^13.7.7",
         "@types/resolve": "1.14.0",
-        "@typescript-eslint/eslint-plugin": "^5.35.1",
-        "@typescript-eslint/parser": "^5.35.1",
+        "@typescript-eslint/eslint-plugin": "^5.36.1",
+        "@typescript-eslint/parser": "^5.36.1",
         "eslint": "^8.23.0",
         "eslint-plugin-import": "^2.26.0",
         "eslint-plugin-jest": "^26.8.7",
@@ -65,7 +65,7 @@
         "javascript-stringify": "^2.0.1",
         "jest": "^28.1.3",
         "jest-circus": "^29.0.1",
-        "lua-types": "^2.12.2",
+        "lua-types": "^2.13.0-beta.0",
         "lua-wasm-bindings": "^0.3.1",
         "prettier": "^2.3.2",
         "ts-jest": "^28.0.8",

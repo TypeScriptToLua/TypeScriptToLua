@@ -7,6 +7,6 @@
         "editorconfig.editorconfig",
         "esbenp.prettier-vscode"
     ],
-    "postCreateCommand": "npm ci --legacy-peer-deps",
+    "postCreateCommand": "npm ci",
     "remoteUser": "node"
 }

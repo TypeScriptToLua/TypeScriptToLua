@@ -40,8 +40,12 @@ export function transformFunctionProperty(
 ): lua.Expression | undefined {
     switch (node.name.text) {
         case "length":
-            if (context.luaTarget === LuaTarget.Lua51 || context.luaTarget === LuaTarget.Universal) {
-                context.diagnostics.push(unsupportedForTarget(node, "function.length", LuaTarget.Lua51));
+            if (
+                context.luaTarget === LuaTarget.Lua50 ||
+                context.luaTarget === LuaTarget.Lua51 ||
+                context.luaTarget === LuaTarget.Universal
+            ) {
+                context.diagnostics.push(unsupportedForTarget(node, "function.length", context.luaTarget));
             }
 
             // debug.getinfo(fn)

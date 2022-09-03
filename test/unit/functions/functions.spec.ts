@@ -224,14 +224,17 @@ test.each([
     `.expectToMatchJsResult();
 });
 
-test.each([tstl.LuaTarget.Lua51, tstl.LuaTarget.Universal])("function.length unsupported (%p)", luaTarget => {
-    util.testFunction`
-        function fn() {}
-        return fn.length;
-    `
-        .setOptions({ luaTarget })
-        .expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]);
-});
+test.each([tstl.LuaTarget.Lua50, tstl.LuaTarget.Lua51, tstl.LuaTarget.Universal])(
+    "function.length unsupported (%p)",
+    luaTarget => {
+        util.testFunction`
+            function fn() {}
+            return fn.length;
+        `
+            .setOptions({ luaTarget })
+            .expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]);
+    }
+);
 
 test("Recursive function definition", () => {
     util.testFunction`

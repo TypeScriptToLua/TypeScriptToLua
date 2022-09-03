@@ -1,3 +1,5 @@
+import { __TS__MathModf } from "./MathModf";
+
 const radixChars = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 // https://www.ecma-international.org/ecma-262/10.0/index.html#sec-number.prototype.tostring
@@ -11,7 +13,7 @@ export function __TS__NumberToString(this: number, radix?: number): string {
         throw "toString() radix argument must be between 2 and 36";
     }
 
-    let [integer, fraction] = math.modf(Math.abs(this));
+    let [integer, fraction] = __TS__MathModf(Math.abs(this));
 
     let result = "";
     if (radix === 8) {

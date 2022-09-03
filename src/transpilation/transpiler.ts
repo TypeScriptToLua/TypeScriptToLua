@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as ts from "typescript";
-import { CompilerOptions, isBundleEnabled } from "../CompilerOptions";
+import { CompilerOptions, isBundleEnabled, LuaTarget } from "../CompilerOptions";
 import { getLuaLibBundle } from "../LuaLib";
 import { normalizeSlashes, trimExtension } from "../utils";
 import { getBundleResult } from "./bundle";
@@ -126,7 +126,8 @@ export class Transpiler {
 
             // Add lualib bundle to source dir 'virtually', will be moved to correct output dir in emitPlan
             const fileName = normalizeSlashes(path.resolve(getSourceDir(program), "lualib_bundle.lua"));
-            resolutionResult.resolvedFiles.unshift({ fileName, code: getLuaLibBundle(this.emitHost) });
+            const luaTarget = options.luaTarget ?? LuaTarget.Universal;
+            resolutionResult.resolvedFiles.unshift({ fileName, code: getLuaLibBundle(luaTarget, this.emitHost) });
         }
 
         let emitPlan: EmitFile[];

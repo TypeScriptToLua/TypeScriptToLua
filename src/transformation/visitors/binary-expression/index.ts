@@ -1,4 +1,5 @@
 import * as ts from "typescript";
+import { LuaTarget } from "../../../CompilerOptions";
 import * as lua from "../../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { wrapInToStringForConcat } from "../../utils/lua-ast";
@@ -66,6 +67,10 @@ function transformBinaryOperationWithNoPrecedingStatements(
     if (operator === ts.SyntaxKind.QuestionQuestionToken) {
         assert(ts.isBinaryExpression(node));
         return transformNullishCoalescingOperationNoPrecedingStatements(context, node, left, right);
+    }
+
+    if (operator === ts.SyntaxKind.PercentToken && context.luaTarget === LuaTarget.Lua50) {
+        return transformLuaLibFunction(context, LuaLibFeature.Modulo50, node, left, right);
     }
 
     let luaOperator = simpleOperatorsToLua[operator];

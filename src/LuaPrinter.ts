@@ -1,7 +1,7 @@
 import * as path from "path";
 import { Mapping, SourceMapGenerator, SourceNode } from "source-map";
 import * as ts from "typescript";
-import { CompilerOptions, isBundleEnabled, LuaLibImportKind } from "./CompilerOptions";
+import { CompilerOptions, isBundleEnabled, LuaLibImportKind, LuaTarget } from "./CompilerOptions";
 import * as lua from "./LuaAST";
 import { loadInlineLualibFeatures, LuaLibFeature, loadImportedLualibFeatures } from "./LuaLib";
 import { isValidLuaIdentifier, shouldAllowUnicode } from "./transformation/utils/safe-names";
@@ -233,14 +233,17 @@ export class LuaPrinter {
             sourceChunks.push(tstlHeader);
         }
 
+        const luaTarget = this.options.luaTarget ?? LuaTarget.Universal;
         const luaLibImport = this.options.luaLibImport ?? LuaLibImportKind.Require;
         if (luaLibImport === LuaLibImportKind.Require && file.luaLibFeatures.size > 0) {
             // Import lualib features
-            sourceChunks = this.printStatementArray(loadImportedLualibFeatures(file.luaLibFeatures, this.emitHost));
+            sourceChunks = this.printStatementArray(
+                loadImportedLualibFeatures(file.luaLibFeatures, luaTarget, this.emitHost)
+            );
         } else if (luaLibImport === LuaLibImportKind.Inline && file.luaLibFeatures.size > 0) {
             // Inline lualib features
             sourceChunks.push("-- Lua Library inline imports\n");
-            sourceChunks.push(loadInlineLualibFeatures(file.luaLibFeatures, this.emitHost));
+            sourceChunks.push(loadInlineLualibFeatures(file.luaLibFeatures, luaTarget, this.emitHost));
             sourceChunks.push("-- End of Lua Library inline imports\n");
         }
 
@@ -583,6 +586,8 @@ export class LuaPrinter {
                 return this.printNilLiteral(expression as lua.NilLiteral);
             case lua.SyntaxKind.DotsKeyword:
                 return this.printDotsLiteral(expression as lua.DotsLiteral);
+            case lua.SyntaxKind.ArgKeyword:
+                return this.printArgLiteral(expression as lua.ArgLiteral);
             case lua.SyntaxKind.TrueKeyword:
             case lua.SyntaxKind.FalseKeyword:
                 return this.printBooleanLiteral(expression as lua.BooleanLiteral);
@@ -623,6 +628,10 @@ export class LuaPrinter {
 
     public printDotsLiteral(expression: lua.DotsLiteral): SourceNode {
         return this.createSourceNode(expression, "...");
+    }
+
+    public printArgLiteral(expression: lua.ArgLiteral): SourceNode {
+        return this.createSourceNode(expression, "arg");
     }
 
     public printBooleanLiteral(expression: lua.BooleanLiteral): SourceNode {

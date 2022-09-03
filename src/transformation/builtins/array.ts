@@ -1,4 +1,5 @@
 import * as ts from "typescript";
+import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { unsupportedProperty } from "../utils/diagnostics";
@@ -29,6 +30,18 @@ export function transformArrayConstructorCall(
     }
 }
 
+function createTableLengthExpression(context: TransformationContext, expression: lua.Expression, node?: ts.Expression) {
+    if (context.luaTarget === LuaTarget.Lua50) {
+        const tableGetn = lua.createTableIndexExpression(
+            lua.createIdentifier("table"),
+            lua.createStringLiteral("getn")
+        );
+        return lua.createCallExpression(tableGetn, [expression], node);
+    } else {
+        return lua.createUnaryExpression(expression, lua.SyntaxKind.LengthOperator, node);
+    }
+}
+
 /**
  * Optimized single element Array.push
  *
@@ -47,7 +60,7 @@ function transformSingleElementArrayPush(
 
     // #array + 1
     let lengthExpression: lua.Expression = lua.createBinaryExpression(
-        lua.createUnaryExpression(arrayIdentifier, lua.SyntaxKind.LengthOperator),
+        createTableLengthExpression(context, arrayIdentifier),
         lua.createNumericLiteral(1),
         lua.SyntaxKind.AdditionOperator
     );
@@ -180,11 +193,11 @@ export function transformArrayPrototypeCall(
 export function transformArrayProperty(
     context: TransformationContext,
     node: ts.PropertyAccessExpression
-): lua.UnaryExpression | undefined {
+): lua.Expression | undefined {
     switch (node.name.text) {
         case "length":
             const expression = context.transformExpression(node.expression);
-            return lua.createUnaryExpression(expression, lua.SyntaxKind.LengthOperator, node);
+            return createTableLengthExpression(context, expression, node);
         default:
             return undefined;
     }

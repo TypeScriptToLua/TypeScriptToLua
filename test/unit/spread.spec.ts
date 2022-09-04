@@ -76,6 +76,7 @@ describe("in function call", () => {
         {
             [tstl.LuaTarget.Universal]: builder => builder.tap(expectLualibUnpack).expectToMatchJsResult(),
             [tstl.LuaTarget.LuaJIT]: builder => builder.tap(expectUnpack),
+            [tstl.LuaTarget.Lua50]: builder => builder.tap(expectUnpack).expectToMatchJsResult(),
             [tstl.LuaTarget.Lua51]: builder => builder.tap(expectUnpack).expectToMatchJsResult(),
             [tstl.LuaTarget.Lua52]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
             [tstl.LuaTarget.Lua53]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
@@ -88,6 +89,7 @@ describe("in array literal", () => {
     util.testEachVersion(undefined, () => util.testExpression`[...[0, 1, 2]]`, {
         [tstl.LuaTarget.Universal]: builder => builder.tap(expectLualibUnpack).expectToMatchJsResult(),
         [tstl.LuaTarget.LuaJIT]: builder => builder.tap(expectUnpack),
+        [tstl.LuaTarget.Lua50]: builder => builder.tap(expectUnpack).expectToMatchJsResult(),
         [tstl.LuaTarget.Lua51]: builder => builder.tap(expectUnpack).expectToMatchJsResult(),
         [tstl.LuaTarget.Lua52]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
         [tstl.LuaTarget.Lua53]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
@@ -133,58 +135,55 @@ describe("in object literal", () => {
 });
 
 describe("vararg spread optimization", () => {
-    test("basic use", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "basic use",
+        () => util.testFunction`
             function pick(...args: string[]) { return args[1]; }
             function test(...args: string[]) {
                 return pick(...args);
             }
-            return test("a", "b", "c");
-        `
-            .expectLuaToMatchSnapshot()
-            .expectToMatchJsResult();
-    });
+            return test("a", "b", "c");`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 
-    test("body-less arrow function", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "body-less arrow function",
+        () => util.testFunction`
             function pick(...args: string[]) { return args[1]; }
             const test = (...args: string[]) => pick(...args);
-            return test("a", "b", "c");
-        `
-            .expectLuaToMatchSnapshot()
-            .expectToMatchJsResult();
-    });
+            return test("a", "b", "c");`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 
-    test("if statement", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "if statement",
+        () => util.testFunction`
             function pick(...args: string[]) { return args[1]; }
             function test(...args: string[]) {
                 if (true) {
                     return pick(...args);
                 }
             }
-            return test("a", "b", "c");
-        `
-            .expectLuaToMatchSnapshot()
-            .expectToMatchJsResult();
-    });
+            return test("a", "b", "c");`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 
-    test("loop statement", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "loop statement",
+        () => util.testFunction`
             function pick(...args: string[]) { return args[1]; }
             function test(...args: string[]) {
                 do {
                     return pick(...args);
                 } while (false);
             }
-            return test("a", "b", "c");
-        `
-            .expectLuaToMatchSnapshot()
-            .expectToMatchJsResult();
-    });
+            return test("a", "b", "c");`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 
-    test("block statement", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "block statement",
+        () => util.testFunction`
             function pick(...args: string[]) { return args[1]; }
             function test(...args: string[]) {
                 let result: string;
@@ -193,14 +192,13 @@ describe("vararg spread optimization", () => {
                 }
                 return result;
             }
-            return test("a", "b", "c");
-        `
-            .expectLuaToMatchSnapshot()
-            .expectToMatchJsResult();
-    });
+            return test("a", "b", "c");`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 
-    test("finally clause", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "finally clause",
+        () => util.testFunction`
             function pick(...args: string[]) { return args[1]; }
             function test(...args: string[]) {
                 try {
@@ -210,11 +208,9 @@ describe("vararg spread optimization", () => {
                     return pick(...args);
                 }
             }
-            return test("a" ,"b", "c");
-        `
-            .expectLuaToMatchSnapshot()
-            .expectToMatchJsResult();
-    });
+            return test("a" ,"b", "c");`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 
     test("$multi", () => {
         util.testFunction`
@@ -231,68 +227,66 @@ describe("vararg spread optimization", () => {
             .expectToEqual("b");
     });
 
-    test("curry", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "curry",
+        () => util.testFunction`
             function test<A extends any[]>(fn: (...args: A) => void, ...args: A) {
                 return fn(...args);
             }
-            return test((arg: string) => arg, "foobar");
-        `
-            .expectLuaToMatchSnapshot()
-            .expectToMatchJsResult();
-    });
+            return test((arg: string) => arg, "foobar");`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 
-    test("curry with indirect type", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "curry with indirect type",
+        () => util.testFunction`
             function test<A extends any[]>(obj: {fn: (...args: A) => void}, ...args: A) {
                 const fn = obj.fn;
                 return fn(...args);
             }
-            return test({fn: (arg: string) => arg}, "foobar");
-        `
-            .expectLuaToMatchSnapshot()
-            .expectToMatchJsResult();
-    });
+            return test({fn: (arg: string) => arg}, "foobar");`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 
-    test("function type declared inside scope", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "function type declared inside scope",
+        () => util.testFunction`
             function test<A extends any[]>(...args: A) {
                 const fn: (...args: A) => A[0] = (...args) => args[0];
                 return fn(...args);
             }
-            test("foobar");
-        `
-            .expectLuaToMatchSnapshot()
-            .expectToMatchJsResult();
-    });
+            test("foobar");`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 
-    test("With cast", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "With cast",
+        () => util.testFunction`
             function pick(...args: any[]) { return args[1]; }
             function test<F extends (...args: any)=>any>(...args: Parameters<F>) {
                 return pick(...(args as any[]));
             }
-            return test<(...args: string[])=>void>("a", "b", "c");
-        `
-            .expectLuaToMatchSnapshot()
-            .expectToMatchJsResult();
-    });
+            return test<(...args: string[])=>void>("a", "b", "c");`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 });
 
 describe("vararg spread de-optimization", () => {
-    test("array modification", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "array modification",
+        () => util.testFunction`
             function pick(...args: string[]) { return args[1]; }
             function test(...args: string[]) {
                 args[1] = "foobar";
                 return pick(...args);
             }
-            return test("a", "b", "c");
-        `.expectToMatchJsResult();
-    });
+            return test("a", "b", "c");`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 
-    test("array modification in hoisted function", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "array modification in hoisted function",
+        () => util.testFunction`
             function pick(...args: string[]) { return args[1]; }
             function test(...args: string[]) {
                 hoisted();
@@ -300,12 +294,13 @@ describe("vararg spread de-optimization", () => {
                 function hoisted() { args[1] = "foobar"; }
                 return result;
             }
-            return test("a", "b", "c");
-        `.expectToMatchJsResult();
-    });
+            return test("a", "b", "c");`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 
-    test("array modification in secondary hoisted function", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "array modification in secondary hoisted function",
+        () => util.testFunction`
             function pick(...args: string[]) { return args[1]; }
             function test(...args: string[]) {
                 function triggersHoisted() { hoisted(); }
@@ -314,103 +309,112 @@ describe("vararg spread de-optimization", () => {
                 function hoisted() { args[1] = "foobar"; }
                 return result;
             }
-            return test("a", "b", "c");
-        `.expectToMatchJsResult();
-    });
+            return test("a", "b", "c");`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 });
 
 describe("vararg spread in IIFE", () => {
-    test("comma operator", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "comma operator",
+        () => util.testFunction`
             function dummy() { return "foobar"; }
             function pick(...args: string[]) { return args[1]; }
             function test(...args: string[]) {
                 return (dummy(), pick(...args));
             }
-            return test("a", "b", "c");
-        `.expectToMatchJsResult();
-    });
+            return test("a", "b", "c");`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 
-    test("assignment expression", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "assignment expression",
+        () => util.testFunction`
             function pick(...args: string[]) { return args[1]; }
             function test(...args: string[]) {
                 let x: string;
                 return (x = pick(...args));
             }
-            return test("a", "b", "c");
-        `.expectToMatchJsResult();
-    });
+            return test("a", "b", "c");`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 
-    test("destructured assignment expression", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "destructured assignment expression",
+        () => util.testFunction`
             function pick(...args: string[]) { return [args[1]]; }
             function test(...args: string[]) {
                 let x: string;
                 return ([x] = pick(...args));
             }
-            return test("a", "b", "c");
-        `.expectToMatchJsResult();
-    });
+            return test("a", "b", "c");`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 
-    test("property-access assignment expression", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "property-access assignment expression",
+        () => util.testFunction`
             function pick(...args: string[]) { return args[1]; }
             function test(...args: string[]) {
                 let x: {val?: string} = {};
                 return (x.val = pick(...args));
             }
-            return test("a", "b", "c");
-        `.expectToMatchJsResult();
-    });
+            return test("a", "b", "c");`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 
-    test("binary compound assignment", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "binary compound assignment",
+        () => util.testFunction`
             function pick(...args: number[]) { return args[1]; }
             function test(...args: number[]) {
                 let x = 1;
                 return x += pick(...args);
             }
-            return test(1, 2, 3);
-        `.expectToMatchJsResult();
-    });
+            return test(1, 2, 3);`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 
-    test("postfix unary compound assignment", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "postfix unary compound assignment",
+        () => util.testFunction`
             function pick(...args: number[]) { return args[1]; }
             function test(...args: number[]) {
                 let x = [7, 8, 9];
                 return x[pick(...args)]++;
             }
-            return test(1, 2, 3);
-        `.expectToMatchJsResult();
-    });
+            return test(1, 2, 3);`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 
-    test("prefix unary compound assignment", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "prefix unary compound assignment",
+        () => util.testFunction`
             function pick(...args: number[]) { return args[1]; }
             function test(...args: number[]) {
                 let x = [7, 8, 9];
                 return ++x[pick(...args)];
             }
-            return test(1, 2, 3);
-        `.expectToMatchJsResult();
-    });
+            return test(1, 2, 3);`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 
-    test("try clause", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "try clause",
+        () => util.testFunction`
             function pick(...args: string[]) { return args[1]; }
             function test(...args: string[]) {
                 try {
                     return pick(...args)
                 } catch {}
             }
-            return test("a" ,"b", "c");
-        `.expectToMatchJsResult();
-    });
+            return test("a" ,"b", "c");`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 
-    test("catch clause", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "catch clause",
+        () => util.testFunction`
             function pick(...args: string[]) { return args[1]; }
             function test(...args: string[]) {
                 try {
@@ -419,64 +423,69 @@ describe("vararg spread in IIFE", () => {
                     return pick(...args)
                 }
             }
-            return test("a" ,"b", "c");
-        `.expectToMatchJsResult();
-    });
+            return test("a" ,"b", "c");`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 
-    test("class expression", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "class expression",
+        () => util.testFunction`
             function pick(...args: string[]) { return args[1]; }
             function test(...args: string[]) {
                 const fooClass = class Foo { foo = pick(...args); };
                 return new fooClass().foo;
             }
-            return test("a" ,"b", "c");
-        `.expectToMatchJsResult();
-    });
+            return test("a" ,"b", "c");`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 
-    test("self-referencing function expression", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "self-referencing function expression",
+        () => util.testFunction`
             function pick(...args: string[]) { return args[1]; }
             const test = function testName(...args: string[]) {
                 return \`\${typeof testName}:\${pick(...args)}\`;
             }
-            return test("a" ,"b", "c");
-        `.expectToMatchJsResult();
-    });
+            return test("a" ,"b", "c");`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 
-    test("method indirect access (access args)", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "method indirect access (access args)",
+        () => util.testFunction`
             const obj = { $method: () => obj.arg, arg: "foobar" };
             function getObj(...args: string[]) { obj.arg = args[1]; return obj; }
             function test(...args: string[]) {
                 return getObj(...args).$method();
             }
-            return test("a" ,"b", "c");
-        `.expectToMatchJsResult();
-    });
+            return test("a" ,"b", "c");`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 
-    test("method indirect access (method args)", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "method indirect access (method args)",
+        () => util.testFunction`
             const obj = { $pick: (...args: string[]) => args[1] };
             function getObj() { return obj; }
             function test(...args: string[]) {
                 return getObj().$pick(...args);
             }
-            return test("a" ,"b", "c");
-        `.expectToMatchJsResult();
-    });
+            return test("a" ,"b", "c");`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 
-    test("tagged template method indirect access", () => {
-        util.testFunction`
+    util.testEachVersion(
+        "tagged template method indirect access",
+        () => util.testFunction`
             const obj = { $tag: (t: TemplateStringsArray, ...args: string[]) => args[1] };
             function getObj() { return obj; }
             function pick(...args: string[]): string { return args[1]; }
             function test(...args: string[]) {
                 return getObj().$tag\`FOO\${pick(...args)}BAR\`;
             }
-            return test("a" ,"b", "c");
-        `.expectToMatchJsResult();
-    });
+            return test("a" ,"b", "c");`,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
 });
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1244

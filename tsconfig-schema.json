@@ -50,7 +50,7 @@
                     "description": "Specifies the Lua version you want to generate code for.",
                     "type": "string",
                     "default": "universal",
-                    "enum": ["universal", "5.1", "5.2", "5.3", "JIT"]
+                    "enum": ["5.0", "universal", "5.1", "5.2", "5.3", "JIT"]
                 },
                 "noImplicitGlobalVariables": {
                     "description": "Always declare all root-level variables as local, even if the file is not a module and they would be global in TypeScript.",

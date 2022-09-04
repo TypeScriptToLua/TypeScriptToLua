@@ -1,7 +1,7 @@
 {
     "extends": "./tsconfig.json",
     "compilerOptions": {
-        "types": ["lua-types/jit"]
+        "types": ["lua-types/jit", "@typescript-to-lua/language-extensions"]
     },
     "tstl": {
         "luaTarget": "JIT"

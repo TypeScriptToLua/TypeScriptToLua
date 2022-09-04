@@ -541,6 +541,8 @@ describe("try/catch in async function", () => {
         // Cannot execute LuaJIT with test runner
         {
             ...util.expectEachVersionExceptJit(builder => builder.expectToEqual({ result: 4 })),
+            [LuaTarget.Lua50]: builder =>
+                builder.expectToHaveDiagnostics([unsupportedForTargetButOverrideAvailable.code]),
             [LuaTarget.Lua51]: builder =>
                 builder.expectToHaveDiagnostics([unsupportedForTargetButOverrideAvailable.code]),
         }
@@ -565,6 +567,8 @@ describe("try/catch in async function", () => {
             ...util.expectEachVersionExceptJit(builder =>
                 builder.expectToEqual({ reason: "an error occurred in the async function: test error" })
             ),
+            [LuaTarget.Lua50]: builder =>
+                builder.expectToHaveDiagnostics([unsupportedForTargetButOverrideAvailable.code]),
             [LuaTarget.Lua51]: builder =>
                 builder.expectToHaveDiagnostics([unsupportedForTargetButOverrideAvailable.code]),
         }
@@ -593,6 +597,8 @@ describe("try/catch in async function", () => {
             ...util.expectEachVersionExceptJit(builder =>
                 builder.expectToEqual({ reason: "an error occurred in the async function: test error" })
             ),
+            [LuaTarget.Lua50]: builder =>
+                builder.expectToHaveDiagnostics([unsupportedForTargetButOverrideAvailable.code]),
             [LuaTarget.Lua51]: builder =>
                 builder.expectToHaveDiagnostics([unsupportedForTargetButOverrideAvailable.code]),
         }

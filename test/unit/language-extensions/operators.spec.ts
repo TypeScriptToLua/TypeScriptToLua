@@ -113,7 +113,7 @@ test.each(binaryMathOperatorTests)(
     }
 );
 
-const luaTargetsPre53 = [LuaTarget.Lua51, LuaTarget.Lua52, LuaTarget.LuaJIT, LuaTarget.Universal];
+const luaTargetsPre53 = [LuaTarget.Lua50, LuaTarget.Lua51, LuaTarget.Lua52, LuaTarget.LuaJIT, LuaTarget.Universal];
 
 const operatorTypesPost53 = [
     "LuaFloorDivision",

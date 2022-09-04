@@ -1,4 +1,5 @@
 import * as ts from "typescript";
+import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { unsupportedProperty } from "../utils/diagnostics";
@@ -177,11 +178,19 @@ export function transformStringConstructorCall(
 export function transformStringProperty(
     context: TransformationContext,
     node: ts.PropertyAccessExpression
-): lua.UnaryExpression | undefined {
+): lua.Expression | undefined {
     switch (node.name.text) {
         case "length":
             const expression = context.transformExpression(node.expression);
-            return lua.createUnaryExpression(expression, lua.SyntaxKind.LengthOperator, node);
+            if (context.luaTarget === LuaTarget.Lua50) {
+                const stringLen = lua.createTableIndexExpression(
+                    lua.createIdentifier("string"),
+                    lua.createStringLiteral("len")
+                );
+                return lua.createCallExpression(stringLen, [expression], node);
+            } else {
+                return lua.createUnaryExpression(expression, lua.SyntaxKind.LengthOperator, node);
+            }
         default:
             context.diagnostics.push(unsupportedProperty(node.name, "string", node.name.text));
     }

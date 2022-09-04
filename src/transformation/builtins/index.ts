@@ -17,6 +17,7 @@ import { transformPromiseConstructorCall } from "./promise";
 import { transformStringConstructorCall, transformStringProperty, transformStringPrototypeCall } from "./string";
 import { transformSymbolConstructorCall } from "./symbol";
 import { unsupportedBuiltinOptionalCall } from "../utils/diagnostics";
+import { LuaTarget } from "../../CompilerOptions";
 
 export function transformBuiltinPropertyAccessExpression(
     context: TransformationContext,
@@ -152,9 +153,15 @@ export function transformBuiltinIdentifierExpression(
             return createNaN(node);
 
         case "Infinity":
-            const math = lua.createIdentifier("math");
-            const huge = lua.createStringLiteral("huge");
-            return lua.createTableIndexExpression(math, huge, node);
+            if (context.luaTarget === LuaTarget.Lua50) {
+                const one = lua.createNumericLiteral(1);
+                const zero = lua.createNumericLiteral(0);
+                return lua.createBinaryExpression(one, zero, lua.SyntaxKind.DivisionOperator);
+            } else {
+                const math = lua.createIdentifier("math");
+                const huge = lua.createStringLiteral("huge");
+                return lua.createTableIndexExpression(math, huge, node);
+            }
 
         case "globalThis":
             return lua.createIdentifier("_G", node, getIdentifierSymbolId(context, node, symbol), "globalThis");

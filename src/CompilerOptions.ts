@@ -53,6 +53,7 @@ export enum LuaLibImportKind {
 
 export enum LuaTarget {
     Universal = "universal",
+    Lua50 = "5.0",
     Lua51 = "5.1",
     Lua52 = "5.2",
     Lua53 = "5.3",

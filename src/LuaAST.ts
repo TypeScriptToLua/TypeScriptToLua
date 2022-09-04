@@ -32,6 +32,7 @@ export enum SyntaxKind {
     NumericLiteral,
     NilKeyword,
     DotsKeyword,
+    ArgKeyword,
     TrueKeyword,
     FalseKeyword,
     FunctionExpression,
@@ -544,6 +545,18 @@ export function createDotsLiteral(tsOriginal?: ts.Node): DotsLiteral {
     return createNode(SyntaxKind.DotsKeyword, tsOriginal) as DotsLiteral;
 }
 
+export interface ArgLiteral extends Expression {
+    kind: SyntaxKind.ArgKeyword;
+}
+
+export function isArgLiteral(node: Node): node is ArgLiteral {
+    return node.kind === SyntaxKind.ArgKeyword;
+}
+
+export function createArgLiteral(tsOriginal?: ts.Node): ArgLiteral {
+    return createNode(SyntaxKind.ArgKeyword, tsOriginal) as ArgLiteral;
+}
+
 // StringLiteral / NumberLiteral
 // TODO TS uses the export interface "LiteralLikeNode" with a "text: string" member
 // but since we don't parse from text I think we can simplify by just having a value member
@@ -581,10 +594,11 @@ export function createStringLiteral(value: string, tsOriginal?: ts.Node): String
 
 export function isLiteral(
     node: Node
-): node is NilLiteral | DotsLiteral | BooleanLiteral | NumericLiteral | StringLiteral {
+): node is NilLiteral | DotsLiteral | ArgLiteral | BooleanLiteral | NumericLiteral | StringLiteral {
     return (
         isNilLiteral(node) ||
         isDotsLiteral(node) ||
+        isArgLiteral(node) ||
         isBooleanLiteral(node) ||
         isNumericLiteral(node) ||
         isStringLiteral(node)

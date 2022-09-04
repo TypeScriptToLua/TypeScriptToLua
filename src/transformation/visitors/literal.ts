@@ -9,6 +9,7 @@ import { isArrayType } from "../utils/typescript";
 import { transformFunctionLikeDeclaration } from "./function";
 import { moveToPrecedingTemp, transformExpressionList } from "./expression-list";
 import { transformIdentifierWithSymbol } from "./identifier";
+import { LuaTarget } from "../../CompilerOptions";
 
 // TODO: Move to object-literal.ts?
 export function transformPropertyName(context: TransformationContext, node: ts.PropertyName): lua.Expression {
@@ -31,11 +32,17 @@ export function createShorthandIdentifier(
     return transformIdentifierWithSymbol(context, propertyIdentifier, valueSymbol);
 }
 
-const transformNumericLiteralExpression: FunctionVisitor<ts.NumericLiteral> = expression => {
+const transformNumericLiteralExpression: FunctionVisitor<ts.NumericLiteral> = (expression, context) => {
     if (expression.text === "Infinity") {
-        const math = lua.createIdentifier("math");
-        const huge = lua.createStringLiteral("huge");
-        return lua.createTableIndexExpression(math, huge, expression);
+        if (context.luaTarget === LuaTarget.Lua50) {
+            const one = lua.createNumericLiteral(1);
+            const zero = lua.createNumericLiteral(0);
+            return lua.createBinaryExpression(one, zero, lua.SyntaxKind.DivisionOperator);
+        } else {
+            const math = lua.createIdentifier("math");
+            const huge = lua.createStringLiteral("huge");
+            return lua.createTableIndexExpression(math, huge, expression);
+        }
     }
 
     return lua.createNumericLiteral(Number(expression.text), expression);

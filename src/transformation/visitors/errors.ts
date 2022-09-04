@@ -16,7 +16,10 @@ import { createReturnStatement } from "./return";
 const transformAsyncTry: FunctionVisitor<ts.TryStatement> = (statement, context) => {
     const [tryBlock] = transformScopeBlock(context, statement.tryBlock, ScopeType.Try);
 
-    if (context.options.luaTarget === LuaTarget.Lua51 && !context.options.lua51AllowTryCatchInAsyncAwait) {
+    if (
+        (context.options.luaTarget === LuaTarget.Lua50 || context.options.luaTarget === LuaTarget.Lua51) &&
+        !context.options.lua51AllowTryCatchInAsyncAwait
+    ) {
         context.diagnostics.push(
             unsupportedForTargetButOverrideAvailable(
                 statement,
@@ -79,7 +82,10 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
 
     const [tryBlock, tryScope] = transformScopeBlock(context, statement.tryBlock, ScopeType.Try);
 
-    if (context.options.luaTarget === LuaTarget.Lua51 && isInGeneratorFunction(statement)) {
+    if (
+        (context.options.luaTarget === LuaTarget.Lua50 || context.options.luaTarget === LuaTarget.Lua51) &&
+        isInGeneratorFunction(statement)
+    ) {
         context.diagnostics.push(
             unsupportedForTarget(statement, "try/catch inside generator functions", LuaTarget.Lua51)
         );

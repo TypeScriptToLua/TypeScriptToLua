@@ -1,5 +1,17 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`function.length unsupported ("5.0"): code 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local function fn(self)
+    end
+    return debug.getinfo(fn).nparams - 1
+end
+return ____exports"
+`;
+
+exports[`function.length unsupported ("5.0"): diagnostics 1`] = `"main.ts(3,20): error TSTL: function.length is/are not supported for target Lua 5.0."`;
+
 exports[`function.length unsupported ("5.1"): code 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
@@ -10,7 +22,7 @@ end
 return ____exports"
 `;
 
-exports[`function.length unsupported ("5.1"): diagnostics 1`] = `"main.ts(3,16): error TSTL: function.length is/are not supported for target Lua 5.1."`;
+exports[`function.length unsupported ("5.1"): diagnostics 1`] = `"main.ts(3,20): error TSTL: function.length is/are not supported for target Lua 5.1."`;
 
 exports[`function.length unsupported ("universal"): code 1`] = `
 "local ____exports = {}
@@ -22,7 +34,7 @@ end
 return ____exports"
 `;
 
-exports[`function.length unsupported ("universal"): diagnostics 1`] = `"main.ts(3,16): error TSTL: function.length is/are not supported for target Lua 5.1."`;
+exports[`function.length unsupported ("universal"): diagnostics 1`] = `"main.ts(3,20): error TSTL: function.length is/are not supported for target Lua universal."`;
 
 exports[`missing declaration name: code 1`] = `
 "function ____(self)

@@ -17,14 +17,21 @@ function getErrorStack(constructor: () => any): string {
         }
     }
 
-    return debug.traceback(undefined, level);
+    if (_VERSION.includes("Lua 5.0")) {
+        return debug.traceback(`[Level ${level}]`);
+    } else {
+        // @ts-ignore Fails when compiled with Lua 5.0 types
+        return debug.traceback(undefined, level);
+    }
 }
 
 function wrapErrorToString<T extends Error>(getDescription: (this: T) => string): (this: T) => string {
     return function (this: Error): string {
         const description = getDescription.call(this);
         const caller = debug.getinfo(3, "f");
-        if (_VERSION === "Lua 5.1" || (caller && caller.func !== error)) {
+        // @ts-ignore Fails when compiled with Lua 5.0 types
+        const isClassicLua = _VERSION.includes("Lua 5.0") || _VERSION === "Lua 5.1";
+        if (isClassicLua || (caller && caller.func !== error)) {
             return description;
         } else {
             return `${description}\n${this.stack}`;

@@ -72,7 +72,9 @@ export function createUnpackCall(
     }
 
     const unpack =
-        context.luaTarget === LuaTarget.Lua51 || context.luaTarget === LuaTarget.LuaJIT
+        context.luaTarget === LuaTarget.Lua50 ||
+        context.luaTarget === LuaTarget.Lua51 ||
+        context.luaTarget === LuaTarget.LuaJIT
             ? lua.createIdentifier("unpack")
             : lua.createTableIndexExpression(lua.createIdentifier("table"), lua.createStringLiteral("unpack"));
 

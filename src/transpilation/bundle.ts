@@ -1,7 +1,7 @@
 import * as path from "path";
 import { SourceNode } from "source-map";
 import * as ts from "typescript";
-import { CompilerOptions } from "../CompilerOptions";
+import { CompilerOptions, LuaTarget } from "../CompilerOptions";
 import { escapeString, tstlHeader } from "../LuaPrinter";
 import { cast, formatPathToLuaPath, isNonNull, trimExtension } from "../utils";
 import { couldNotFindBundleEntryPoint } from "./diagnostics";
@@ -12,7 +12,12 @@ const createModulePath = (pathToResolve: string, program: ts.Program) =>
     escapeString(formatPathToLuaPath(trimExtension(getEmitPathRelativeToOutDir(pathToResolve, program))));
 
 // Override `require` to read from ____modules table.
-const requireOverride = `
+function requireOverride(options: CompilerOptions) {
+    const runModule =
+        options.luaTarget === LuaTarget.Lua50
+            ? "(table.getn(arg) > 0) and module(unpack(arg)) or module(file)"
+            : '(select("#", ...) > 0) and module(...) or module(file)';
+    return `
 local ____modules = {}
 local ____moduleCache = {}
 local ____originalRequire = require
@@ -22,7 +27,7 @@ local function require(file, ...)
     end
     if ____modules[file] then
         local module = ____modules[file]
-        ____moduleCache[file] = { value = (select("#", ...) > 0) and module(...) or module(file) }
+        ____moduleCache[file] = { value = ${runModule} }
         return ____moduleCache[file].value
     else
         if ____originalRequire then
@@ -33,6 +38,7 @@ local function require(file, ...)
     end
 end
 `;
+}
 
 export const sourceMapTracebackBundlePlaceholder = "{#SourceMapTracebackBundle}";
 
@@ -101,7 +107,8 @@ export function getBundleResult(program: ts.Program, files: ProcessedFile[]): [t
     const moduleTable = createModuleTableNode(moduleTableEntries);
 
     // return require("<entry module path>")
-    const entryPoint = `return require(${createModulePath(entryModuleFilePath ?? entryModule, program)}, ...)\n`;
+    const args = options.luaTarget === LuaTarget.Lua50 ? "unpack(arg == nil and {} or arg)" : "...";
+    const entryPoint = `return require(${createModulePath(entryModuleFilePath ?? entryModule, program)}, ${args})\n`;
 
     const footers: string[] = [];
     if (options.sourceMapTraceback) {
@@ -110,7 +117,7 @@ export function getBundleResult(program: ts.Program, files: ProcessedFile[]): [t
         footers.push(`${sourceMapTracebackBundlePlaceholder}\n`);
     }
 
-    const sourceChunks = [requireOverride, moduleTable, ...footers, entryPoint];
+    const sourceChunks = [requireOverride(options), moduleTable, ...footers, entryPoint];
 
     if (!options.noHeader) {
         sourceChunks.unshift(tstlHeader);

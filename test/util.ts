@@ -11,14 +11,25 @@ import * as tstl from "../src";
 import { createEmitOutputCollector } from "../src/transpilation/output-collector";
 import { EmitHost, getEmitOutDir, transpileProject } from "../src";
 import { formatPathToLuaPath, normalizeSlashes } from "../src/utils";
+import { resolveLuaLibDir } from "../src/LuaLib";
 
-const jsonLib = fs.readFileSync(path.join(__dirname, "json.lua"), "utf8");
-const luaLib = fs.readFileSync(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"), "utf8");
+function readLuaLib(target: tstl.LuaTarget) {
+    return fs.readFileSync(path.join(resolveLuaLibDir(target), "lualib_bundle.lua"), "utf8");
+}
+
+function jsonLib(target: tstl.LuaTarget): string {
+    const fileName = target === tstl.LuaTarget.Lua50 ? "json.50.lua" : "json.lua";
+    return fs.readFileSync(path.join(__dirname, fileName), "utf8");
+}
 
 // Using `test` directly makes eslint-plugin-jest consider this file as a test
 const defineTest = test;
 
 function getLuaBindingsForVersion(target: tstl.LuaTarget): { lauxlib: LauxLib; lua: Lua; lualib: LuaLib } {
+    if (target === tstl.LuaTarget.Lua50) {
+        const { lauxlib, lua, lualib } = require("lua-wasm-bindings/dist/lua.50");
+        return { lauxlib, lua, lualib };
+    }
     if (target === tstl.LuaTarget.Lua51) {
         const { lauxlib, lua, lualib } = require("lua-wasm-bindings/dist/lua.51");
         return { lauxlib, lua, lualib };
@@ -70,6 +81,7 @@ export function expectEachVersionExceptJit<T>(
 ): Record<tstl.LuaTarget, ((builder: T) => void) | boolean> {
     return {
         [tstl.LuaTarget.Universal]: expectation,
+        [tstl.LuaTarget.Lua50]: expectation,
         [tstl.LuaTarget.Lua51]: expectation,
         [tstl.LuaTarget.Lua52]: expectation,
         [tstl.LuaTarget.Lua53]: expectation,
@@ -402,20 +414,21 @@ export abstract class TestBuilder {
         // Main file
         const mainFile = this.getMainLuaCodeChunk();
 
-        const { lauxlib, lua, lualib } = getLuaBindingsForVersion(this.options.luaTarget ?? tstl.LuaTarget.Lua54);
+        const luaTarget = this.options.luaTarget ?? tstl.LuaTarget.Lua54;
+        const { lauxlib, lua, lualib } = getLuaBindingsForVersion(luaTarget);
 
         const L = lauxlib.luaL_newstate();
         lualib.luaL_openlibs(L);
 
         // Load modules
         // Json
-        this.packagePreloadLuaFile(L, lua, lauxlib, "json", jsonLib);
+        this.injectLuaFile(L, lua, lauxlib, "json", jsonLib(luaTarget));
         // Lua lib
         if (
             this.options.luaLibImport === tstl.LuaLibImportKind.Require ||
             mainFile.includes('require("lualib_bundle")')
         ) {
-            this.packagePreloadLuaFile(L, lua, lauxlib, "lualib_bundle", luaLib);
+            this.injectLuaFile(L, lua, lauxlib, "lualib_bundle", readLuaLib(luaTarget));
         }
 
         // Load all transpiled files into Lua's package cache
@@ -423,7 +436,7 @@ export abstract class TestBuilder {
         for (const transpiledFile of transpiledFiles) {
             if (transpiledFile.lua) {
                 const filePath = path.relative(getEmitOutDir(this.getProgram()), transpiledFile.outPath);
-                this.packagePreloadLuaFile(L, lua, lauxlib, filePath, transpiledFile.lua);
+                this.injectLuaFile(L, lua, lauxlib, filePath, transpiledFile.lua);
             }
         }
 
@@ -454,12 +467,20 @@ end)());`;
         }
     }
 
-    private packagePreloadLuaFile(state: LuaState, lua: Lua, lauxlib: LauxLib, fileName: string, fileContent: string) {
-        // Adding source Lua to the package.preload cache will allow require to find it
-        lua.lua_getglobal(state, "package");
-        lua.lua_getfield(state, -1, "preload");
-        lauxlib.luaL_loadstring(state, fileContent);
-        lua.lua_setfield(state, -2, formatPathToLuaPath(fileName.replace(".lua", "")));
+    private injectLuaFile(state: LuaState, lua: Lua, lauxlib: LauxLib, fileName: string, fileContent: string) {
+        const modName = formatPathToLuaPath(fileName.replace(".lua", ""));
+        if (this.options.luaTarget === tstl.LuaTarget.Lua50) {
+            // Adding source Lua to the _LOADED cache will allow require to find it
+            lua.lua_getglobal(state, "_LOADED");
+            lauxlib.luaL_dostring(state, fileContent);
+            lua.lua_setfield(state, -2, modName);
+        } else {
+            // Adding source Lua to the package.preload cache will allow require to find it
+            lua.lua_getglobal(state, "package");
+            lua.lua_getfield(state, -1, "preload");
+            lauxlib.luaL_loadstring(state, fileContent);
+            lua.lua_setfield(state, -2, modName);
+        }
     }
 
     private executeJs(): any {

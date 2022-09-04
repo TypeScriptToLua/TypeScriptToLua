@@ -1,4 +1,5 @@
 import * as ts from "typescript";
+import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { assert } from "../../utils";
 import { FunctionVisitor, TransformationContext } from "../context";
@@ -140,7 +141,8 @@ export function transformFunctionBodyHeader(
 
     // Push spread operator here
     if (spreadIdentifier && isRestParameterReferenced(spreadIdentifier, bodyScope)) {
-        const spreadTable = wrapInTable(lua.createDotsLiteral());
+        const spreadTable =
+            context.luaTarget === LuaTarget.Lua50 ? lua.createArgLiteral() : wrapInTable(lua.createDotsLiteral());
         headerStatements.push(lua.createVariableDeclarationStatement(spreadIdentifier, spreadTable));
     }
 

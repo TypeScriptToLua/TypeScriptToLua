@@ -118,6 +118,7 @@ function transformUnaryOperator(context: TransformationContext, node: ts.CallExp
 
 function checkHasLua53(context: TransformationContext, node: ts.CallExpression, kind: ExtensionKind) {
     const isBefore53 =
+        context.luaTarget === LuaTarget.Lua50 ||
         context.luaTarget === LuaTarget.Lua51 ||
         context.luaTarget === LuaTarget.Lua52 ||
         context.luaTarget === LuaTarget.LuaJIT ||

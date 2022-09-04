@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.10.0
+
+- **[Breaking]** Upgraded TypeScript to 4.8.
+- **[Breaking]** Changed how language-extensions are distributed, you should now put `"types": ["@typescript-to-lua/language-extensions"]` in your tsconfig.json (instead of "typescript-to-lua/...").
+- Added support for **Lua 5.0**, thanks for the effort @YoRyan!
+- Added support for TypeScript 4.7 [instantiation expressions](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-7.html#instantiation-expressions).
+- Fixed a bug causing some `require` uses not being recognized my module resolution, leading to missing files in the output.
+
 ## 1.9.0
 
 - Added a warning when trying to use a type in a condition that can never be false in Lua, such as numbers or strings. (Only when `strictNullChecks` is enabled.)

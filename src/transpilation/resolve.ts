@@ -304,11 +304,11 @@ function isBuildModeLibrary(program: ts.Program) {
 function findRequiredPaths(code: string): string[] {
     // Find all require("<path>") paths in a lua code string
     const paths: string[] = [];
-    const pattern = /(^|\s|;|=|\()require\("(.+?)"\)/g;
+    const pattern = /(^|\s|;|=|\()require\s*\(?(["|'])(.+?)\2\)?/g;
     // eslint-disable-next-line @typescript-eslint/ban-types
     let match: RegExpExecArray | null;
     while ((match = pattern.exec(code))) {
-        paths.push(match[2]);
+        paths.push(match[3]);
     }
 
     return paths;
@@ -321,7 +321,7 @@ function replaceRequireInCode(file: ProcessedFile, originalRequire: string, newR
     const escapedRequire = originalRequire.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
 
     file.code = file.code.replace(
-        new RegExp(`(^|\\s|;|=|\\()require\\("${escapedRequire}"\\)`),
+        new RegExp(`(^|\\s|;|=|\\()require\\s*\\(?["|']${escapedRequire}["|']\\)?`),
         `$1require("${requirePath}")`
     );
 }

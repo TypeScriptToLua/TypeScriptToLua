@@ -1,7 +1,7 @@
 {
     "extends": "./tsconfig.json",
     "compilerOptions": {
-        "types": ["lua-types/5.3"]
+        "types": ["lua-types/5.3", "@typescript-to-lua/language-extensions"]
     },
     "tstl": {
         "luaTarget": "5.3"

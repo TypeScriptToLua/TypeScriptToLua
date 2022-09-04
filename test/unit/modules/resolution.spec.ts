@@ -100,6 +100,8 @@ test("resolves non-standard requires", () => {
                 require'requiredLuaFile3'   -- no parentheses
                 require"requiredLuaFile4"   -- no parentheses double quote
                 require "requiredLuaFile5"  -- no parentheses and space
+                require "requiredLua'File6"  -- no parentheses and space
+                require 'requiredLua"File7'  -- no parentheses and space
             `
         )
         .addExtraFile("requiredLuaFile1.lua", "")
@@ -107,11 +109,13 @@ test("resolves non-standard requires", () => {
         .addExtraFile("requiredLuaFile3.lua", "")
         .addExtraFile("requiredLuaFile4.lua", "")
         .addExtraFile("requiredLuaFile5.lua", "")
+        .addExtraFile("requiredLua'File6.lua", "")
+        .addExtraFile('requiredLua"File7.lua', "")
         .expectToHaveNoDiagnostics()
         .getLuaResult();
 
-    // Expect main.lua, externalLua.lua and all 5 required lua files in there
-    expect(transpiledFiles.map(f => f.outPath)).toHaveLength(7);
+    // Expect main.lua, externalLua.lua and all 7 required lua files in there
+    expect(transpiledFiles.map(f => f.outPath)).toHaveLength(9);
 });
 
 test.each([

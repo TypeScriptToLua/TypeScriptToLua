@@ -304,11 +304,11 @@ function isBuildModeLibrary(program: ts.Program) {
 function findRequiredPaths(code: string): string[] {
     // Find all require("<path>") paths in a lua code string
     const paths: string[] = [];
-    const pattern = /(^|\s|;|=|\()require\s*\(?["|'](.+?)["|']\)?/g;
+    const pattern = /(^|\s|;|=|\()require\s*\(?(["|'])(.+?)\2\)?/g;
     // eslint-disable-next-line @typescript-eslint/ban-types
     let match: RegExpExecArray | null;
     while ((match = pattern.exec(code))) {
-        paths.push(match[2]);
+        paths.push(match[3]);
     }
 
     return paths;

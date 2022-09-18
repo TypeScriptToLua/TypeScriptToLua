@@ -253,7 +253,7 @@ describe("optional chaining function calls", () => {
                 const result = func?.(i++);
         `
             .setOptions({
-                alwaysStrict: strict,
+                strict,
                 target: ScriptTarget.ES5,
             })
             .expectToMatchJsResult();

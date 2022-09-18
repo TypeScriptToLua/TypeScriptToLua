@@ -113,6 +113,9 @@ export function transformIfStatement(statement: ts.IfStatement, context: Transfo
 }
 
 export function checkOnlyTruthyCondition(condition: ts.Expression, context: TransformationContext) {
+    if (context.options.strictNullChecks === false) return; // This check is not valid if everything could implicitly be nil
+    if (ts.isElementAccessExpression(condition)) return; // Array index could always implicitly return nil
+
     if (!canBeFalsy(context, context.checker.getTypeAtLocation(condition))) {
         context.diagnostics.push(truthyOnlyConditionalValue(condition));
     }

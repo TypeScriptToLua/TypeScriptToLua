@@ -154,6 +154,15 @@ test.each(["string", "number", "string | number"])(
     }
 );
 
+test.each(["string", "number", "string | number"])("Warning can be disabled when strict is true (%p)", type => {
+    util.testFunction`
+            if (condition) {}
+        `
+        .setTsHeader(`declare var condition: ${type};`)
+        .setOptions({ strict: true, strictNullChecks: false })
+        .expectToHaveNoDiagnostics();
+});
+
 test.each(["string", "number", "string | number"])(
     "Warning when using while statement that cannot evaluate to false undefined or null (%p)",
     type => {
@@ -187,3 +196,10 @@ test.each(["string", "number", "string | number"])(
             .expectToHaveDiagnostics([truthyOnlyConditionalValue.code]);
     }
 );
+
+test.each(["string", "number", "string | number"])("No warning when using element index in condition (%p)", type => {
+    util.testExpression`condition[0] ? 1 : 0`
+        .setTsHeader(`declare var condition: ${type}[];`)
+        .setOptions({ strict: true })
+        .expectToHaveNoDiagnostics();
+});

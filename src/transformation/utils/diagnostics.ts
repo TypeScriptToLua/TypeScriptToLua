@@ -146,7 +146,7 @@ export const annotationDeprecated = createWarningDiagnosticFactory(
 );
 
 export const truthyOnlyConditionalValue = createWarningDiagnosticFactory(
-    "Numbers and strings will always evaluate to true in Lua. Explicitly check the value with ===."
+    "Only false and nil evaluate to 'false' in Lua, everything else is considered 'true'. Explicitly compare the value with ===."
 );
 
 export const notAllowedOptionalAssignment = createErrorDiagnosticFactory(

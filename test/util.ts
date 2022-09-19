@@ -456,9 +456,9 @@ export abstract class TestBuilder {
         // Lua lib
         if (
             this.options.luaLibImport === tstl.LuaLibImportKind.Require ||
-            mainFile.includes('require("lualib_bundle")')
+            mainFile.includes(`require("${(this.options.luaLibName ?? "lualib_bundle")}")`)
         ) {
-            this.injectLuaFile(L, lua, lauxlib, "lualib_bundle", readLuaLib(luaTarget));
+            this.injectLuaFile(L, lua, lauxlib, (this.options.luaLibName ?? "lualib_bundle"), readLuaLib(luaTarget));
         }
 
         // Load all transpiled files into Lua's package cache

@@ -229,7 +229,8 @@ export function loadInlineLualibFeatures(
 export function loadImportedLualibFeatures(
     features: Iterable<LuaLibFeature>,
     luaTarget: LuaTarget,
-    emitHost: EmitHost
+    emitHost: EmitHost,
+    luaLibName: string
 ): lua.Statement[] {
     const luaLibModuleInfo = getLuaLibModulesInfo(luaTarget, emitHost);
 
@@ -239,7 +240,7 @@ export function loadImportedLualibFeatures(
     }
 
     const requireCall = lua.createCallExpression(lua.createIdentifier("require"), [
-        lua.createStringLiteral("lualib_bundle"),
+        lua.createStringLiteral(luaLibName),
     ]);
 
     const luaLibId = lua.createIdentifier("____lualib");

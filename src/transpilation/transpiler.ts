@@ -90,6 +90,13 @@ export class Transpiler {
             }
         }
 
+        for (const plugin of plugins) {
+            if (plugin.afterEmit) {
+                const beforeEmitPluginDiagnostics = plugin.afterEmit(program, options, this.emitHost, emitPlan) ?? [];
+                diagnostics.push(...beforeEmitPluginDiagnostics);
+            }
+        }
+
         if (options.tstlVerbose) {
             console.log("Emit finished!");
         }

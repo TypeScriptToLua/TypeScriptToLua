@@ -45,6 +45,16 @@ export interface Plugin {
         emitHost: EmitHost,
         result: EmitFile[]
     ) => ts.Diagnostic[] | void;
+
+    /**
+     * This function is called after translating the input program to Lua, after resolving dependencies, after bundling and writing files to disk.
+     */
+    afterEmit?: (
+        program: ts.Program,
+        options: CompilerOptions,
+        emitHost: EmitHost,
+        result: EmitFile[]
+    ) => ts.Diagnostic[] | void;
 }
 
 export function getPlugins(program: ts.Program): { diagnostics: ts.Diagnostic[]; plugins: Plugin[] } {

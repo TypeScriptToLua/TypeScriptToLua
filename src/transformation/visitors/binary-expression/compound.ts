@@ -158,7 +158,7 @@ export function transformCompoundAssignment(
             operatorExpression,
             rightPrecedingStatements
         );
-        return { statements: [tmpDeclaration, ...precedingStatements, ...assignStatements], result: tmpIdentifier };
+        return {statements: [tmpDeclaration, ...precedingStatements, ...assignStatements], result: tmpIdentifier};
     } else {
         if (rightPrecedingStatements.length > 0 && isSetterSkippingCompoundAssignmentOperator(operator)) {
             return {
@@ -183,7 +183,7 @@ export function transformCompoundAssignment(
             operatorExpression,
             precedingStatements
         );
-        return { statements, result: left };
+        return {statements, result: left};
     }
 }
 
@@ -196,7 +196,7 @@ export function transformCompoundAssignmentExpression(
     operator: CompoundAssignmentToken,
     isPostfix: boolean
 ): lua.Expression {
-    const { statements, result } = transformCompoundAssignment(context, expression, lhs, rhs, operator, isPostfix);
+    const {statements, result} = transformCompoundAssignment(context, expression, lhs, rhs, operator, isPostfix);
     context.addPrecedingStatements(statements);
     return result;
 }

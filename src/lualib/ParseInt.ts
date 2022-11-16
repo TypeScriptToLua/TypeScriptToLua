@@ -10,8 +10,8 @@ export function __TS__ParseInt(this: void, numberString: string, base?: number):
         if (hexMatch) {
             base = 16;
             numberString = __TS__Match(hexMatch, "-")[0]
-                ? "-" + numberString.substr(hexMatch.length)
-                : numberString.substr(hexMatch.length);
+                ? "-" + numberString.substring(hexMatch.length)
+                : numberString.substring(hexMatch.length);
         }
     }
 
@@ -22,7 +22,7 @@ export function __TS__ParseInt(this: void, numberString: string, base?: number):
 
     // Calculate string match pattern to use
     const allowedDigits =
-        base <= 10 ? parseIntBasePattern.substring(0, base) : parseIntBasePattern.substr(0, 10 + 2 * (base - 10));
+        base <= 10 ? parseIntBasePattern.substring(0, base) : parseIntBasePattern.substring(0, 10 + 2 * (base - 10));
     const pattern = `^%s*(-?[${allowedDigits}]*)`;
 
     // Try to parse with Lua tonumber

@@ -1,17 +1,17 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
-import { TransformationContext } from "../context";
-import { createModuleLocalNameIdentifier } from "../visitors/namespace";
-import { createExportsIdentifier } from "./lua-ast";
-import { getSymbolInfo } from "./symbols";
-import { findFirstNodeAbove } from "./typescript";
+import {TransformationContext} from "../context";
+import {createModuleLocalNameIdentifier} from "../visitors/namespace";
+import {createExportsIdentifier} from "./lua-ast";
+import {getSymbolInfo} from "./symbols";
+import {findFirstNodeAbove} from "./typescript";
 
 export function hasDefaultExportModifier(node: ts.Node): boolean {
-    return (node.modifiers ?? []).some(modifier => modifier.kind === ts.SyntaxKind.DefaultKeyword);
+    return ts.canHaveModifiers(node) && node.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.DefaultKeyword) === true;
 }
 
 export function hasExportModifier(node: ts.Node): boolean {
-    return (node.modifiers ?? []).some(modifier => modifier.kind === ts.SyntaxKind.ExportKeyword);
+    return ts.canHaveModifiers(node) && node.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.ExportKeyword) === true;
 }
 
 export const createDefaultExportStringLiteral = (original?: ts.Node): lua.StringLiteral =>
@@ -90,7 +90,7 @@ export function getExportedSymbolsFromScope(
     }
 
     // ts.Iterator is not a ES6-compatible iterator, because TypeScript targets ES5
-    const it: Iterable<ts.Symbol> = { [Symbol.iterator]: () => scopeSymbol.exports!.values() };
+    const it: Iterable<ts.Symbol> = {[Symbol.iterator]: () => scopeSymbol.exports!.values()};
     return [...it];
 }
 

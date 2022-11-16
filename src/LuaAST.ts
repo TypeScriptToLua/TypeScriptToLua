@@ -5,7 +5,7 @@
 // because we don't create the AST from text
 
 import * as ts from "typescript";
-import { LuaLibFeature } from "./transformation/utils/lualib";
+import { LuaLibFeature } from "./LuaLib";
 import { castArray } from "./utils";
 
 export enum SyntaxKind {

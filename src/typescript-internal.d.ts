@@ -35,8 +35,6 @@ declare module "typescript" {
         parent?: Symbol;
     }
 
-    function getObjectFlags(type: Type): ObjectFlags;
-
     function transformJsx(context: TransformationContext): (x: SourceFile) => SourceFile;
 
     export type OuterExpression =

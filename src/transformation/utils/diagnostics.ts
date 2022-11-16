@@ -1,7 +1,7 @@
 import * as ts from "typescript";
-import { LuaTarget, TypeScriptToLuaOptions } from "../../CompilerOptions";
-import { createSerialDiagnosticFactory } from "../../utils";
-import { AnnotationKind } from "./annotations";
+import {LuaTarget, TypeScriptToLuaOptions} from "../../CompilerOptions";
+import {createSerialDiagnosticFactory} from "../../utils";
+import {AnnotationKind} from "./annotations";
 
 type MessageProvider<TArgs extends any[]> = string | ((...args: TArgs) => string);
 
@@ -119,12 +119,6 @@ export const invalidMultiFunctionReturnType = createErrorDiagnosticFactory(
     "The $multi function cannot be cast to a non-LuaMultiReturn type."
 );
 
-export const invalidMultiTypeToNonArrayLiteral = createErrorDiagnosticFactory("Expected an array literal.");
-
-export const invalidMultiTypeToEmptyPatternOrArrayLiteral = createErrorDiagnosticFactory(
-    "There must be one or more elements specified here."
-);
-
 export const invalidMultiReturnAccess = createErrorDiagnosticFactory(
     "The LuaMultiReturn type can only be accessed via an element access expression of a numeric type."
 );
@@ -132,13 +126,6 @@ export const invalidMultiReturnAccess = createErrorDiagnosticFactory(
 export const invalidCallExtensionUse = createErrorDiagnosticFactory(
     "This function must be called directly and cannot be referred to."
 );
-
-export const annotationRemoved = createErrorDiagnosticFactory(
-    (kind: AnnotationKind) =>
-        `'@${kind}' has been removed and will no longer have any effect.` +
-        `See https://typescripttolua.github.io/docs/advanced/compiler-annotations#${kind.toLowerCase()} for more information.`
-);
-
 export const annotationDeprecated = createWarningDiagnosticFactory(
     (kind: AnnotationKind) =>
         `'@${kind}' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile. ` +

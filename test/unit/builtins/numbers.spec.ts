@@ -1,8 +1,6 @@
 import * as util from "../../util";
 
 test.each([
-    "NaN === NaN",
-    "NaN !== NaN",
     "NaN + NaN",
     "NaN - NaN",
     "NaN * NaN",
@@ -119,12 +117,12 @@ test.each(["Infinity", "-Infinity", "   -Infinity"])("parseFloat handles Infinit
 });
 
 test.each([
-    { numberString: "36", base: 8 },
-    { numberString: "-36", base: 8 },
-    { numberString: "100010101101", base: 2 },
-    { numberString: "-100010101101", base: 2 },
-    { numberString: "3F", base: 16 },
-])("parseInt with base (%p)", ({ numberString, base }) => {
+    {numberString: "36", base: 8},
+    {numberString: "-36", base: 8},
+    {numberString: "100010101101", base: 2},
+    {numberString: "-100010101101", base: 2},
+    {numberString: "3F", base: 16},
+])("parseInt with base (%p)", ({numberString, base}) => {
     util.testExpression`parseInt("${numberString}", ${base})`.expectToMatchJsResult();
 });
 
@@ -137,10 +135,10 @@ test.each([1, 37, -100])("parseInt with invalid base (%p)", base => {
 });
 
 test.each([
-    { numberString: "36px", base: 8 },
-    { numberString: "10001010110231", base: 2 },
-    { numberString: "3Fcolor", base: 16 },
-])("parseInt with base and trailing text (%p)", ({ numberString, base }) => {
+    {numberString: "36px", base: 8},
+    {numberString: "10001010110231", base: 2},
+    {numberString: "3Fcolor", base: 16},
+])("parseInt with base and trailing text (%p)", ({numberString, base}) => {
     util.testExpression`parseInt("${numberString}", ${base})`.expectToMatchJsResult();
 });
 
@@ -152,6 +150,6 @@ test.each(["42", "undefined"])("prototype call on nullable number (%p)", value =
         }
         return toString(${value});
     `
-        .setOptions({ strictNullChecks: true })
+        .setOptions({strictNullChecks: true})
         .expectToMatchJsResult();
 });

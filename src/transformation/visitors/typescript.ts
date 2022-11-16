@@ -1,6 +1,6 @@
 import * as ts from "typescript";
-import { FunctionVisitor, Visitors } from "../context";
-import { validateAssignment } from "../utils/assignment-validation";
+import {FunctionVisitor, Visitors} from "../context";
+import {validateAssignment} from "../utils/assignment-validation";
 
 const transformAssertionExpression: FunctionVisitor<ts.AssertionExpression> = (expression, context) => {
     if (!ts.isConstTypeReference(expression.type)) {
@@ -21,6 +21,7 @@ export const typescriptVisitors: Visitors = {
 
     [ts.SyntaxKind.NonNullExpression]: (node, context) => context.transformExpression(node.expression),
     [ts.SyntaxKind.ExpressionWithTypeArguments]: (node, context) => context.transformExpression(node.expression),
+    [ts.SyntaxKind.SatisfiesExpression]: (node, context) => context.transformExpression(node.expression),
     [ts.SyntaxKind.AsExpression]: transformAssertionExpression,
     [ts.SyntaxKind.TypeAssertionExpression]: transformAssertionExpression,
     [ts.SyntaxKind.NotEmittedStatement]: () => undefined,

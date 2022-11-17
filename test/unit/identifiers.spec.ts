@@ -285,6 +285,18 @@ describe("unicode identifiers in supporting environments (luajit)", () => {
     });
 });
 
+test("unicode export class", () => {
+    util.testModule`
+        export class 你好 {}
+    `.expectLuaToMatchSnapshot();
+});
+
+test("unicode export default class", () => {
+    util.testModule`
+        export default class 你好 {}
+    `.expectLuaToMatchSnapshot();
+});
+
 describe("lua keyword as identifier doesn't interfere with lua's value", () => {
     test("variable (nil)", () => {
         util.testFunction`

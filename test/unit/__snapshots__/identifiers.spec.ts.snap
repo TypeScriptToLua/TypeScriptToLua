@@ -248,6 +248,30 @@ exports[`undeclared identifier must be a valid lua identifier (object literal sh
 
 exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("ɥɣɎɌͼƛಠ"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'ɥɣɎɌͼƛಠ'. Ambient identifiers must be valid lua identifiers."`;
 
+exports[`unicode export class 1`] = `
+"local ____lualib = require(\\"lualib_bundle\\")
+local __TS__Class = ____lualib.__TS__Class
+local ____exports = {}
+____exports[\\"你好\\"] = __TS__Class()
+local _____4F60_597D = ____exports[\\"你好\\"]
+_____4F60_597D.name = \\"你好\\"
+function _____4F60_597D.prototype.____constructor(self)
+end
+return ____exports"
+`;
+
+exports[`unicode export default class 1`] = `
+"local ____lualib = require(\\"lualib_bundle\\")
+local __TS__Class = ____lualib.__TS__Class
+local ____exports = {}
+____exports.default = __TS__Class()
+local _____4F60_597D = ____exports.default
+_____4F60_597D.name = \\"你好\\"
+function _____4F60_597D.prototype.____constructor(self)
+end
+return ____exports"
+`;
+
 exports[`unicode identifiers in supporting environments (luajit) destructuring property name ("_̀ः٠‿") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)

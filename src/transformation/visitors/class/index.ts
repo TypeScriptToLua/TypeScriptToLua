@@ -27,9 +27,9 @@ import { LuaTarget } from "../../../CompilerOptions";
 export const transformClassDeclaration: FunctionVisitor<ts.ClassLikeDeclaration> = (declaration, context) => {
     // If declaration is a default export, transform to export variable assignment instead
     if (hasDefaultExportModifier(declaration)) {
-        const left = createDefaultExportExpression(declaration);
-        const right = transformClassAsExpression(declaration, context);
-        return [lua.createAssignmentStatement(left, right, declaration)];
+        // Class declaration including assignment to ____exports.default are in preceding statements
+        transformClassAsExpression(declaration, context);
+        return [];
     }
 
     const { statements } = transformClassLikeDeclaration(declaration, context);

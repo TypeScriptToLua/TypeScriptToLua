@@ -145,19 +145,19 @@ export interface Node extends TextRange {
 
 export function createNode(kind: SyntaxKind, tsOriginal?: ts.Node): Node {
     if (tsOriginal === undefined) {
-        return {kind, flags: NodeFlags.None};
+        return { kind, flags: NodeFlags.None };
     }
 
     const sourcePosition = getSourcePosition(tsOriginal);
     if (sourcePosition) {
-        return {kind, line: sourcePosition.line, column: sourcePosition.column, flags: NodeFlags.None};
+        return { kind, line: sourcePosition.line, column: sourcePosition.column, flags: NodeFlags.None };
     } else {
-        return {kind, flags: NodeFlags.None};
+        return { kind, flags: NodeFlags.None };
     }
 }
 
 export function cloneNode<T extends Node>(node: T): T {
-    return {...node};
+    return { ...node };
 }
 
 export function setNodePosition<T extends Node>(node: T, position: TextRange): T {
@@ -186,17 +186,17 @@ function getSourcePosition(sourceNode: ts.Node): TextRange | undefined {
     const parseTreeNode = ts.getParseTreeNode(sourceNode) ?? sourceNode;
     const sourceFile = parseTreeNode.getSourceFile();
     if (sourceFile !== undefined && parseTreeNode.pos >= 0) {
-        const {line, character} = ts.getLineAndCharacterOfPosition(
+        const { line, character } = ts.getLineAndCharacterOfPosition(
             sourceFile,
             parseTreeNode.pos + parseTreeNode.getLeadingTriviaWidth()
         );
 
-        return {line, column: character};
+        return { line, column: character };
     }
 }
 
 export function getOriginalPos(node: Node): TextRange {
-    return {line: node.line, column: node.column};
+    return { line: node.line, column: node.column };
 }
 
 export function setNodeFlags<T extends Node>(node: T, flags: NodeFlags): T {

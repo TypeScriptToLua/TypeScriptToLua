@@ -1,4 +1,4 @@
-import {__TS__CloneDescriptor} from "./CloneDescriptor";
+import { __TS__CloneDescriptor } from "./CloneDescriptor";
 
 function descriptorIndex(this: any, key: string): void {
     const value = rawget(this, key);

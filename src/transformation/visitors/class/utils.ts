@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import {TransformationContext} from "../../context";
+import { TransformationContext } from "../../context";
 
 export function isStaticNode(node: ts.HasModifiers): boolean {
     return node.modifiers?.some(m => m.kind === ts.SyntaxKind.StaticKeyword) === true;

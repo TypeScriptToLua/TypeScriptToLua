@@ -178,7 +178,7 @@ test("Typescript 4.9 satisfies expression", () => {
         const foo = { a: 1 } satisfies { a: number };
         return foo.a;
     `.expectToMatchJsResult();
-})
+});
 
 test.each([
     '"foobar"',

@@ -1,9 +1,9 @@
 import * as ts from "typescript";
-import {LuaTarget} from "../../../CompilerOptions";
+import { LuaTarget } from "../../../CompilerOptions";
 import * as lua from "../../../LuaAST";
-import {assertNever} from "../../../utils";
-import {TransformationContext} from "../../context";
-import {unsupportedForTarget, unsupportedRightShiftOperator} from "../../utils/diagnostics";
+import { assertNever } from "../../../utils";
+import { TransformationContext } from "../../context";
+import { unsupportedForTarget, unsupportedRightShiftOperator } from "../../utils/diagnostics";
 
 export type BitOperator = ts.ShiftOperator | ts.BitwiseOperator;
 export const isBitOperator = (operator: ts.BinaryOperator): operator is BitOperator =>

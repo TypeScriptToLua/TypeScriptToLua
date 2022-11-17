@@ -1,12 +1,12 @@
 import * as path from "path";
-import {Mapping, SourceMapGenerator, SourceNode} from "source-map";
+import { Mapping, SourceMapGenerator, SourceNode } from "source-map";
 import * as ts from "typescript";
-import {CompilerOptions, isBundleEnabled, LuaLibImportKind, LuaTarget} from "./CompilerOptions";
+import { CompilerOptions, isBundleEnabled, LuaLibImportKind, LuaTarget } from "./CompilerOptions";
 import * as lua from "./LuaAST";
-import {loadImportedLualibFeatures, loadInlineLualibFeatures, LuaLibFeature} from "./LuaLib";
-import {isValidLuaIdentifier, shouldAllowUnicode} from "./transformation/utils/safe-names";
-import {EmitHost, getEmitPath} from "./transpilation";
-import {intersperse, normalizeSlashes} from "./utils";
+import { loadImportedLualibFeatures, loadInlineLualibFeatures, LuaLibFeature } from "./LuaLib";
+import { isValidLuaIdentifier, shouldAllowUnicode } from "./transformation/utils/safe-names";
+import { EmitHost, getEmitPath } from "./transpilation";
+import { intersperse, normalizeSlashes } from "./utils";
 
 // https://www.lua.org/pil/2.4.html
 // https://www.ecma-international.org/ecma-262/10.0/index.html#table-34
@@ -179,7 +179,7 @@ export class LuaPrinter {
 
         const sourceRoot = this.options.sourceRoot
             ? // According to spec, sourceRoot is simply prepended to the source name, so the slash should be included
-            `${this.options.sourceRoot.replace(/[\\/]+$/, "")}/`
+              `${this.options.sourceRoot.replace(/[\\/]+$/, "")}/`
             : "";
         const rootSourceNode = this.printFile(file);
         const sourceMap = this.buildSourceMap(sourceRoot, rootSourceNode);
@@ -195,7 +195,7 @@ export class LuaPrinter {
             code = code.replace(LuaPrinter.sourceMapTracebackPlaceholder, stackTraceOverride);
         }
 
-        return {code, sourceMap: sourceMap.toString(), sourceMapNode: rootSourceNode};
+        return { code, sourceMap: sourceMap.toString(), sourceMapNode: rootSourceNode };
     }
 
     private printInlineSourceMap(sourceMap: SourceMapGenerator): string {
@@ -272,7 +272,7 @@ export class LuaPrinter {
     }
 
     protected createSourceNode(node: lua.Node, chunks: SourceChunk | SourceChunk[], name?: string): SourceNode {
-        const {line, column} = lua.getOriginalPos(node);
+        const { line, column } = lua.getOriginalPos(node);
 
         return line !== undefined && column !== undefined
             ? new SourceNode(line + 1, column, this.relativeSourcePath, chunks, name)
@@ -892,8 +892,8 @@ export class LuaPrinter {
             if (isNewMapping(sourceNode)) {
                 currentMapping = {
                     source: sourceNode.source,
-                    original: {line: sourceNode.line, column: sourceNode.column},
-                    generated: {line: generatedLine, column: generatedColumn},
+                    original: { line: sourceNode.line, column: sourceNode.column },
+                    generated: { line: generatedLine, column: generatedColumn },
                     name: sourceNode.name,
                 };
                 map.addMapping(currentMapping);

@@ -1,7 +1,7 @@
 import * as ts from "typescript";
-import {LuaTarget, TypeScriptToLuaOptions} from "../../CompilerOptions";
-import {createSerialDiagnosticFactory} from "../../utils";
-import {AnnotationKind} from "./annotations";
+import { LuaTarget, TypeScriptToLuaOptions } from "../../CompilerOptions";
+import { createSerialDiagnosticFactory } from "../../utils";
+import { AnnotationKind } from "./annotations";
 
 type MessageProvider<TArgs extends any[]> = string | ((...args: TArgs) => string);
 

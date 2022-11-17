@@ -1,6 +1,6 @@
 import * as ts from "typescript";
-import {FunctionVisitor, Visitors} from "../context";
-import {validateAssignment} from "../utils/assignment-validation";
+import { FunctionVisitor, Visitors } from "../context";
+import { validateAssignment } from "../utils/assignment-validation";
 
 const transformAssertionExpression: FunctionVisitor<ts.AssertionExpression> = (expression, context) => {
     if (!ts.isConstTypeReference(expression.type)) {

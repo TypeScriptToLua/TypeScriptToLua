@@ -48,7 +48,7 @@ jobs:
       - name: Lua Install
         run: sudo apt-get install lua5.3 luajit
       - name: Add Brew to Path (Required since Nov 2022)
-        run: eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+        run: eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" >> $GITHUB_PATH
       - name: Glow Install
         run: brew install glow
       # Checkout master & commit

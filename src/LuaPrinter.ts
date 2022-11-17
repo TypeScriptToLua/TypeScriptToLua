@@ -3,7 +3,7 @@ import { Mapping, SourceMapGenerator, SourceNode } from "source-map";
 import * as ts from "typescript";
 import { CompilerOptions, isBundleEnabled, LuaLibImportKind, LuaTarget } from "./CompilerOptions";
 import * as lua from "./LuaAST";
-import { loadInlineLualibFeatures, LuaLibFeature, loadImportedLualibFeatures } from "./LuaLib";
+import { loadImportedLualibFeatures, loadInlineLualibFeatures, LuaLibFeature } from "./LuaLib";
 import { isValidLuaIdentifier, shouldAllowUnicode } from "./transformation/utils/safe-names";
 import { EmitHost, getEmitPath } from "./transpilation";
 import { intersperse, normalizeSlashes } from "./utils";
@@ -899,9 +899,9 @@ export class LuaPrinter {
                 map.addMapping(currentMapping);
             }
 
-            for (const chunk of sourceNode.children) {
+            for (const chunk of sourceNode.children as SourceChunk[]) {
                 if (typeof chunk === "string") {
-                    const lines = (chunk as string).split("\n");
+                    const lines = chunk.split("\n");
                     if (lines.length > 1) {
                         generatedLine += lines.length - 1;
                         generatedColumn = 0;

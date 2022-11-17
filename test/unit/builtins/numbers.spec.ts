@@ -1,8 +1,6 @@
 import * as util from "../../util";
 
 test.each([
-    "NaN === NaN",
-    "NaN !== NaN",
     "NaN + NaN",
     "NaN - NaN",
     "NaN * NaN",

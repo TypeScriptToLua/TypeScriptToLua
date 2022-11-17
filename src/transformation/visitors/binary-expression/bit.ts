@@ -49,6 +49,7 @@ function transformBitOperatorToLuaOperator(
             return lua.SyntaxKind.BitwiseLeftShiftOperator;
         case ts.SyntaxKind.GreaterThanGreaterThanToken:
             context.diagnostics.push(unsupportedRightShiftOperator(node));
+            return lua.SyntaxKind.BitwiseRightShiftOperator;
         case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
             return lua.SyntaxKind.BitwiseRightShiftOperator;
     }
@@ -66,6 +67,7 @@ export function transformBinaryBitOperation(
         case LuaTarget.Lua50:
         case LuaTarget.Lua51:
             context.diagnostics.push(unsupportedForTarget(node, "Bitwise operations", context.luaTarget));
+            return transformBinaryBitLibOperation(node, left, right, operator, "bit");
 
         case LuaTarget.LuaJIT:
             return transformBinaryBitLibOperation(node, left, right, operator, "bit");
@@ -111,6 +113,7 @@ export function transformUnaryBitOperation(
         case LuaTarget.Lua50:
         case LuaTarget.Lua51:
             context.diagnostics.push(unsupportedForTarget(node, "Bitwise operations", context.luaTarget));
+            return transformUnaryBitLibOperation(node, expression, operator, "bit");
 
         case LuaTarget.LuaJIT:
             return transformUnaryBitLibOperation(node, expression, operator, "bit");

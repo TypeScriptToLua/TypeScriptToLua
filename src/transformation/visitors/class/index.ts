@@ -116,7 +116,7 @@ function transformClassLikeDeclaration(
         // Generate a constructor if none was defined in a base class
         const constructorResult = transformConstructorDeclaration(
             context,
-            ts.factory.createConstructorDeclaration([], [], [], ts.factory.createBlock([], true)),
+            ts.factory.createConstructorDeclaration([], [], ts.factory.createBlock([], true)),
             localClassName,
             instanceFields,
             classDeclaration

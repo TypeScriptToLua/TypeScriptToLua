@@ -7,11 +7,17 @@ import { getSymbolInfo } from "./symbols";
 import { findFirstNodeAbove } from "./typescript";
 
 export function hasDefaultExportModifier(node: ts.Node): boolean {
-    return (node.modifiers ?? []).some(modifier => modifier.kind === ts.SyntaxKind.DefaultKeyword);
+    return (
+        ts.canHaveModifiers(node) &&
+        node.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.DefaultKeyword) === true
+    );
 }
 
 export function hasExportModifier(node: ts.Node): boolean {
-    return (node.modifiers ?? []).some(modifier => modifier.kind === ts.SyntaxKind.ExportKeyword);
+    return (
+        ts.canHaveModifiers(node) &&
+        node.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.ExportKeyword) === true
+    );
 }
 
 export const createDefaultExportStringLiteral = (original?: ts.Node): lua.StringLiteral =>

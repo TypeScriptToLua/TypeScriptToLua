@@ -73,8 +73,7 @@ export function __TS__SetDescriptor(
     if (value !== undefined) rawset(target, key, undefined);
 
     if (!rawget(metatable, "_descriptors")) metatable._descriptors = {};
-    const descriptor = __TS__CloneDescriptor(desc);
-    metatable._descriptors[key] = descriptor;
+    metatable._descriptors[key] = __TS__CloneDescriptor(desc);
     metatable.__index = descriptorIndex;
     metatable.__newindex = descriptorNewIndex;
 }

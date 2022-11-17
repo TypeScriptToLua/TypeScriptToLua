@@ -3,7 +3,7 @@ import * as lua from "../../../LuaAST";
 import { cast, assertNever } from "../../../utils";
 import { TransformationContext } from "../../context";
 import { transformInPrecedingStatementScope } from "../../utils/preceding-statements";
-import { transformBinaryOperation } from "../binary-expression";
+import { transformBinaryOperation } from "./index";
 import { transformAssignmentWithRightPrecedingStatements } from "./assignments";
 
 function isLuaExpressionWithSideEffect(expression: lua.Expression) {

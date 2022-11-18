@@ -23,13 +23,17 @@ import { createMethodDecoratingExpression, transformMethodDeclaration } from "./
 import { getExtendedNode, getExtendedType, isStaticNode } from "./utils";
 import { createClassSetup } from "./setup";
 import { LuaTarget } from "../../../CompilerOptions";
+import { transformInPrecedingStatementScope } from "../../utils/preceding-statements";
 
 export const transformClassDeclaration: FunctionVisitor<ts.ClassLikeDeclaration> = (declaration, context) => {
     // If declaration is a default export, transform to export variable assignment instead
     if (hasDefaultExportModifier(declaration)) {
-        const left = createDefaultExportExpression(declaration);
-        const right = transformClassAsExpression(declaration, context);
-        return [lua.createAssignmentStatement(left, right, declaration)];
+        // Class declaration including assignment to ____exports.default are in preceding statements
+        const [precedingStatements] = transformInPrecedingStatementScope(context, () => {
+            transformClassAsExpression(declaration, context);
+            return [];
+        });
+        return precedingStatements;
     }
 
     const { statements } = transformClassLikeDeclaration(declaration, context);

@@ -287,14 +287,34 @@ describe("unicode identifiers in supporting environments (luajit)", () => {
 
 test("unicode export class", () => {
     util.testModule`
-        export class 你好 {}
-    `.expectLuaToMatchSnapshot();
+        import { 你好 } from "./utfclass";
+        export const result = new 你好().hello();
+    `
+        .addExtraFile(
+            "utfclass.ts",
+            `export class 你好 {
+                hello() {
+                    return "你好";
+                }
+            }`
+        )
+        .expectToEqual({ result: "你好" });
 });
 
 test("unicode export default class", () => {
     util.testModule`
-        export default class 你好 {}
-    `.expectLuaToMatchSnapshot();
+        import c from "./utfclass";
+        export const result = new c().hello();
+    `
+        .addExtraFile(
+            "utfclass.ts",
+            `export default class 你好 {
+                hello() {
+                    return "你好";
+                }
+            }`
+        )
+        .expectToEqual({ result: "你好" });
 });
 
 describe("lua keyword as identifier doesn't interfere with lua's value", () => {

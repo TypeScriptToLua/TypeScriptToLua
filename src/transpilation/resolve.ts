@@ -161,8 +161,12 @@ class ResolutionContext {
         try {
             const resolveResult = resolver.resolveSync({}, fileDirectory, dependencyPath);
             if (resolveResult) return resolveResult;
-        } catch (e) {
+        } catch (e: any) {
             // resolveSync errors if it fails to resolve
+            if (this.options.tstlVerbose && e.details) {
+                // Output resolver log
+                console.log(e.details);
+            }
         }
 
         return undefined;

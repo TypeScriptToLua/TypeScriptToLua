@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.11.0
+
+- **[Breaking]** Upgraded TypeScript to 4.9.
+- `--tstlVerbose` now prints more resolver output when failing to resolve Lua sources.
+- Fixed a bug breaking default exported classes with unicode names
+- Relaxed conditions for the always-true warning to false positives.
+
 ## 1.10.0
 
 - **[Breaking]** Upgraded TypeScript to 4.8.

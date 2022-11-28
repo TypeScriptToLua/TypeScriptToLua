@@ -70,7 +70,8 @@ function transformBinaryOperationWithNoPrecedingStatements(
     }
 
     if (operator === ts.SyntaxKind.PercentToken && context.luaTarget === LuaTarget.Lua50) {
-        return transformLuaLibFunction(context, LuaLibFeature.Modulo50, node, left, right);
+        const mathMod = lua.createTableIndexExpression(lua.createIdentifier("math"), lua.createStringLiteral("mod"));
+        return lua.createCallExpression(mathMod, [left, right], node);
     }
 
     let luaOperator = simpleOperatorsToLua[operator];

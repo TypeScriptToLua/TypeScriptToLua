@@ -10,6 +10,7 @@ export function __TS__Symbol(this: void, description?: string | number): symbol 
 
 export const Symbol = {
     iterator: __TS__Symbol("Symbol.iterator"),
+    asyncIterator: __TS__Symbol("Symbol.asyncIterator"),
     hasInstance: __TS__Symbol("Symbol.hasInstance"),
 
     // Not implemented

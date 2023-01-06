@@ -8,6 +8,7 @@ import { getEmitPathRelativeToOutDir, getProjectRoot, getSourceDir } from "./tra
 import { formatPathToLuaPath, normalizeSlashes, trimExtension } from "../utils";
 import { couldNotReadDependency, couldNotResolveRequire } from "./diagnostics";
 import { BuildMode, CompilerOptions } from "../CompilerOptions";
+import { findLuaRequires } from "./find-lua-requires";
 
 const resolver = resolve.ResolverFactory.createResolver({
     extensions: [".lua"],
@@ -314,6 +315,9 @@ function findRequiredPaths(code: string): string[] {
     while ((match = pattern.exec(code))) {
         paths.push(match[3]);
     }
+
+    const test = findLuaRequires(code);
+    console.log(test);
 
     return paths;
 }

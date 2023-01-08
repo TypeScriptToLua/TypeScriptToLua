@@ -13,10 +13,10 @@ function findRequire(lua: string, offset: number): LuaRequire[] {
 
     while (offset < lua.length) {
         const c = lua[offset];
-        if (c === "r") {
+        if (c === "r" && (offset === 0 || isWhitespace(lua[offset - 1]) || lua[offset - 1] === "]")) {
             const m = matchRequire(lua, offset);
             if (m.matched) {
-                offset = m.match.to;
+                offset = m.match.to + 1;
                 result.push(m.match);
             } else {
                 offset = m.end;
@@ -73,7 +73,7 @@ function matchRequire(lua: string, offset: number): MatchResult<LuaRequire> {
 
     offset++;
 
-    return { matched: true, match: { from: start, to: offset, requirePath: requireString } };
+    return { matched: true, match: { from: start, to: offset - 1, requirePath: requireString } };
 }
 
 function readString(lua: string, offset: number, delimiter: string): { value: string; offset: number } {
@@ -107,13 +107,14 @@ function readString(lua: string, offset: number, delimiter: string): { value: st
 }
 
 function skipWhitespace(lua: string, offset: number): number {
-    while (
-        offset < lua.length &&
-        (lua[offset] === " " || lua[offset] === "\t" || lua[offset] === "\r" || lua[offset] === "\n")
-    ) {
+    while (offset < lua.length && isWhitespace(lua[offset])) {
         offset++;
     }
     return offset;
+}
+
+function isWhitespace(c: string): boolean {
+    return c === " " || c === "\t" || c === "\r" || c === "\n";
 }
 
 function skipComment(lua: string, offset: number): number {

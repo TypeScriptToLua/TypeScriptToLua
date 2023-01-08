@@ -13,6 +13,19 @@ test("can find requires", () => {
     expect(requirePaths(findLuaRequires(lua))).toEqual(["req1", "req2", "req3"]);
 });
 
+test("has correct offsets", () => {
+    const lua = `
+        require("req1")
+        require('req2')
+        local r3 = require("req3")
+    `;
+    const requires = findLuaRequires(lua);
+    expect(requires).toHaveLength(3);
+    expect(lua.substring(requires[0].from, requires[0].to + 1)).toBe('require("req1")');
+    expect(lua.substring(requires[1].from, requires[1].to + 1)).toBe("require('req2')");
+    expect(lua.substring(requires[2].from, requires[2].to + 1)).toBe('require("req3")');
+});
+
 test("ignores requires that should not be included", () => {
     const lua = `
         require("req1")
@@ -92,7 +105,7 @@ describe("single-line comments", () => {
     });
 });
 
-describe("single-line comments", () => {
+describe("multi-line comments", () => {
     test("comment at end of file", () => {
         expect(findLuaRequires("--[[]]")).toEqual([]);
     });

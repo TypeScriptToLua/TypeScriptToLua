@@ -411,7 +411,7 @@ test("module resolution should not rewrite @NoResolution requires in library mod
 });
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1050
-test("module resolution should not try to resolve resolve-like functions", () => {
+test("module resolution should not try to resolve require-like functions", () => {
     util.testModule`
         function custom_require(this: void, value: string) {
             return value;

@@ -22,12 +22,10 @@ function findRequire(lua: string, offset: number): LuaRequire[] {
                 offset = m.end;
             }
         } else if (c === '"' || c === "'") {
-            offset = offset + readString(lua, offset, c).length + 2; // Skip string and surrounding quotes
+            offset = readString(lua, offset, c).offset; // Skip string and surrounding quotes
         } else if (c === "-" && offset + 1 < lua.length && lua[offset + 1] === "-") {
             offset = skipComment(lua, offset);
-        }
-        else
-        {
+        } else {
             offset++;
         }
     }
@@ -64,8 +62,8 @@ function matchRequire(lua: string, offset: number): MatchResult<LuaRequire> {
         return { matched: false, end: offset };
     }
 
-    const requireString = readString(lua, offset, lua[offset]);
-    offset += requireString.length + 2; // Skip string and surrounding quotes
+    const { value: requireString, offset: offsetAfterString } = readString(lua, offset, lua[offset]);
+    offset = offsetAfterString; // Skip string and surrounding quotes
 
     offset = skipWhitespace(lua, offset);
 
@@ -78,26 +76,34 @@ function matchRequire(lua: string, offset: number): MatchResult<LuaRequire> {
     return { matched: true, match: { from: start, to: offset, requirePath: requireString } };
 }
 
-function readString(lua: string, offset: number, delimiter: string): string {
+function readString(lua: string, offset: number, delimiter: string): { value: string; offset: number } {
     expect(lua, offset, delimiter);
     offset++;
 
-    const start = offset;
+    let start = offset;
+    let result = "";
 
     let escaped = false;
     while (offset < lua.length && (lua[offset] !== delimiter || escaped)) {
         if (lua[offset] === "\\" && !escaped) {
             escaped = true;
         } else {
+            if (lua[offset] === delimiter) {
+                result += lua.slice(start, offset - 1);
+                start = offset;
+            }
             escaped = false;
         }
 
         offset++;
     }
 
-    expect(lua, offset, delimiter);
+    if (offset < lua.length) {
+        expect(lua, offset, delimiter);
+    }
 
-    return lua.slice(start, offset);
+    result += lua.slice(start, offset);
+    return { value: result, offset: offset + 1 };
 }
 
 function skipWhitespace(lua: string, offset: number): number {

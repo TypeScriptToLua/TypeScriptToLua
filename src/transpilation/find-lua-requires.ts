@@ -50,13 +50,22 @@ function matchRequire(lua: string, offset: number): MatchResult<LuaRequire> {
 
     offset = skipWhitespace(lua, offset);
 
-    if (offset > lua.length || lua[offset] !== "(") {
+    let hasParentheses = false;
+
+    if (offset > lua.length) {
         return { matched: false, end: offset };
+    } else {
+        if (lua[offset] === "(") {
+            hasParentheses = true;
+            offset++;
+            offset = skipWhitespace(lua, offset);
+        } else if (lua[offset] === '"' || lua[offset] === "'") {
+            // require without parentheses
+        } else {
+            // otherwise fail match
+            return { matched: false, end: offset };
+        }
     }
-
-    offset++;
-
-    offset = skipWhitespace(lua, offset);
 
     if (offset > lua.length || (lua[offset] !== '"' && lua[offset] !== "'")) {
         return { matched: false, end: offset };
@@ -65,13 +74,15 @@ function matchRequire(lua: string, offset: number): MatchResult<LuaRequire> {
     const { value: requireString, offset: offsetAfterString } = readString(lua, offset, lua[offset]);
     offset = offsetAfterString; // Skip string and surrounding quotes
 
-    offset = skipWhitespace(lua, offset);
+    if (hasParentheses) {
+        offset = skipWhitespace(lua, offset);
 
-    if (offset > lua.length || lua[offset] !== ")") {
-        return { matched: false, end: offset };
+        if (offset > lua.length || lua[offset] !== ")") {
+            return { matched: false, end: offset };
+        }
+
+        offset++;
     }
-
-    offset++;
 
     return { matched: true, match: { from: start, to: offset - 1, requirePath: requireString } };
 }

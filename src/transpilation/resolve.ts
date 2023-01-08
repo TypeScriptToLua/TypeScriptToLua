@@ -69,7 +69,7 @@ class ResolutionContext {
 
         if (this.noResolvePaths.has(required.requirePath)) {
             if (this.options.tstlVerbose) {
-                console.log(`Skipping module resolution of ${required} as it is in the tsconfig noResolvePaths.`);
+                console.log(`Skipping module resolution of ${required.requirePath} as it is in the tsconfig noResolvePaths.`);
             }
             return;
         }
@@ -78,7 +78,7 @@ class ResolutionContext {
         if (!dependencyPath) return this.couldNotResolveImport(required, file);
 
         if (this.options.tstlVerbose) {
-            console.log(`Resolved ${required} to ${normalizeSlashes(dependencyPath)}`);
+            console.log(`Resolved ${required.requirePath} to ${normalizeSlashes(dependencyPath)}`);
         }
 
         this.processDependency(dependencyPath);

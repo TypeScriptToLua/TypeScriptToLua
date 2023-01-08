@@ -13,7 +13,14 @@ function findRequire(lua: string, offset: number): LuaRequire[] {
 
     while (offset < lua.length) {
         const c = lua[offset];
-        if (c === "r" && (offset === 0 || isWhitespace(lua[offset - 1]) || lua[offset - 1] === "]")) {
+        if (
+            c === "r" &&
+            (offset === 0 ||
+                isWhitespace(lua[offset - 1]) ||
+                lua[offset - 1] === "]" ||
+                lua[offset - 1] === "(" ||
+                lua[offset - 1] === "[")
+        ) {
             const m = matchRequire(lua, offset);
             if (m.matched) {
                 offset = m.match.to + 1;

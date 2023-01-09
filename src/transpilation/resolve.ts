@@ -69,7 +69,9 @@ class ResolutionContext {
 
         if (this.noResolvePaths.has(required.requirePath)) {
             if (this.options.tstlVerbose) {
-                console.log(`Skipping module resolution of ${required.requirePath} as it is in the tsconfig noResolvePaths.`);
+                console.log(
+                    `Skipping module resolution of ${required.requirePath} as it is in the tsconfig noResolvePaths.`
+                );
             }
             return;
         }

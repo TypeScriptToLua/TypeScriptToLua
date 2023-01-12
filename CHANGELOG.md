@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.12.0
+
+- Reworked how tstl detects and rewrites `require` statements during dependency resolution. This should reduce the amount of false-positive matches of require statements: require statements in string literals or comments should no longer be detected by tstl. This means require statements in string literals or comments can survive the transpiler without causing a 'could not resolve lua sources' error or getting rewritten into nonsense.
+- Now using `math.mod` for Lua 5.0 modulo operations.
+
 ## 1.11.0
 
 - **[Breaking]** Upgraded TypeScript to 4.9.

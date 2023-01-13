@@ -12,12 +12,14 @@ export interface TransformerImport {
     after?: boolean;
     afterDeclarations?: boolean;
     type?: "program" | "config" | "checker" | "raw" | "compilerOptions";
+
     [option: string]: any;
 }
 
 export interface LuaPluginImport {
     name: string;
     import?: string;
+
     [option: string]: any;
 }
 
@@ -49,6 +51,7 @@ export enum LuaLibImportKind {
     None = "none",
     Inline = "inline",
     Require = "require",
+    RequireMinimal = "require-minimal",
 }
 
 export enum LuaTarget {

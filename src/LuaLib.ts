@@ -109,6 +109,7 @@ export interface LuaLibFeatureInfo {
     dependencies?: LuaLibFeature[];
     exports: string[];
 }
+
 export type LuaLibModulesInfo = Record<LuaLibFeature, LuaLibFeatureInfo>;
 
 export function resolveLuaLibDir(luaTarget: LuaTarget) {
@@ -118,6 +119,7 @@ export function resolveLuaLibDir(luaTarget: LuaTarget) {
 
 export const luaLibModulesInfoFileName = "lualib_module_info.json";
 const luaLibModulesInfo = new Map<string, LuaLibModulesInfo>();
+
 export function getLuaLibModulesInfo(luaTarget: LuaTarget, emitHost: EmitHost): LuaLibModulesInfo {
     const lualibPath = path.join(resolveLuaLibDir(luaTarget), luaLibModulesInfoFileName);
     if (!luaLibModulesInfo.has(lualibPath)) {
@@ -129,6 +131,28 @@ export function getLuaLibModulesInfo(luaTarget: LuaTarget, emitHost: EmitHost): 
         }
     }
     return luaLibModulesInfo.get(lualibPath) as LuaLibModulesInfo;
+}
+
+const exportToFeature = new Map<string, ReadonlyMap<string, LuaLibFeature>>();
+
+export function getLuaLibFeatureForExportName(
+    luaTarget: LuaTarget,
+    emitHost: EmitHost,
+    exportName: string
+): LuaLibFeature | undefined {
+    const luaLibPath = resolveLuaLibDir(luaTarget);
+    if (!exportToFeature.has(luaLibPath)) {
+        const luaLibModulesInfo = getLuaLibModulesInfo(luaTarget, emitHost);
+        const map = new Map<string, LuaLibFeature>();
+        for (const [feature, info] of Object.entries(luaLibModulesInfo)) {
+            for (const exportName of info.exports) {
+                map.set(exportName, feature as LuaLibFeature);
+            }
+        }
+        exportToFeature.set(luaLibPath, map);
+    }
+
+    return exportToFeature.get(luaLibPath)!.get(exportName);
 }
 
 export function readLuaLibFeature(feature: LuaLibFeature, luaTarget: LuaTarget, emitHost: EmitHost): string {
@@ -173,14 +197,9 @@ export function loadInlineLualibFeatures(
     luaTarget: LuaTarget,
     emitHost: EmitHost
 ): string {
-    let result = "";
-
-    for (const feature of resolveRecursiveLualibFeatures(features, luaTarget, emitHost)) {
-        const luaLibFeature = readLuaLibFeature(feature, luaTarget, emitHost);
-        result += luaLibFeature + "\n";
-    }
-
-    return result;
+    return resolveRecursiveLualibFeatures(features, luaTarget, emitHost)
+        .map(feature => readLuaLibFeature(feature, luaTarget, emitHost))
+        .join("\n");
 }
 
 export function loadImportedLualibFeatures(
@@ -191,13 +210,13 @@ export function loadImportedLualibFeatures(
     const luaLibModuleInfo = getLuaLibModulesInfo(luaTarget, emitHost);
 
     const imports = Array.from(features).flatMap(feature => luaLibModuleInfo[feature].exports);
+    if (imports.length === 0) {
+        return [];
+    }
 
     const requireCall = lua.createCallExpression(lua.createIdentifier("require"), [
         lua.createStringLiteral("lualib_bundle"),
     ]);
-    if (imports.length === 0) {
-        return [];
-    }
 
     const luaLibId = lua.createIdentifier("____lualib");
     const importStatement = lua.createVariableDeclarationStatement(luaLibId, requireCall);
@@ -215,6 +234,7 @@ export function loadImportedLualibFeatures(
 }
 
 const luaLibBundleContent = new Map<string, string>();
+
 export function getLuaLibBundle(luaTarget: LuaTarget, emitHost: EmitHost): string {
     const lualibPath = path.join(resolveLuaLibDir(luaTarget), "lualib_bundle.lua");
     if (!luaLibBundleContent.has(lualibPath)) {
@@ -227,4 +247,42 @@ export function getLuaLibBundle(luaTarget: LuaTarget, emitHost: EmitHost): strin
     }
 
     return luaLibBundleContent.get(lualibPath) as string;
+}
+
+export function getLualibBundleReturn(exportedValues: string[]): string {
+    return `\nreturn {\n${exportedValues.map(exportName => `  ${exportName} = ${exportName}`).join(",\n")}\n}\n`;
+}
+
+export function buildMinimalLualibBundle(
+    features: Iterable<LuaLibFeature>,
+    luaTarget: LuaTarget,
+    emitHost: EmitHost
+): string {
+    const code = loadInlineLualibFeatures(features, luaTarget, emitHost);
+    const moduleInfo = getLuaLibModulesInfo(luaTarget, emitHost);
+    const exports = Array.from(features).flatMap(feature => moduleInfo[feature].exports);
+
+    return code + getLualibBundleReturn(exports);
+}
+
+export function findUsedLualibFeatures(
+    luaTarget: LuaTarget,
+    emitHost: EmitHost,
+    luaContents: string[]
+): Set<LuaLibFeature> {
+    const features = new Set<LuaLibFeature>();
+
+    for (const lua of luaContents) {
+        const regex = /local\s+(\w+)\s*=\s*____lualib\.(\w+)/g;
+        while (true) {
+            const match = regex.exec(lua);
+            if (!match) break;
+            const [, localName, exportName] = match;
+            if (localName !== exportName) continue;
+            const feature = getLuaLibFeatureForExportName(luaTarget, emitHost, exportName);
+            if (feature) features.add(feature);
+        }
+    }
+
+    return features;
 }

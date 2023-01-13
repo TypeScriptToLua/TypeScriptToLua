@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as ts from "typescript";
-import { CompilerOptions, isBundleEnabled, LuaTarget } from "../CompilerOptions";
-import { getLuaLibBundle } from "../LuaLib";
+import { CompilerOptions, isBundleEnabled, LuaLibImportKind, LuaTarget } from "../CompilerOptions";
+import { buildMinimalLualibBundle, findUsedLualibFeatures, getLuaLibBundle } from "../LuaLib";
 import { normalizeSlashes, trimExtension } from "../utils";
 import { getBundleResult } from "./bundle";
 import { getPlugins, Plugin } from "./plugins";
@@ -124,10 +124,21 @@ export class Transpiler {
                 console.log("Including lualib bundle");
             }
 
+            const luaTarget = options.luaTarget ?? LuaTarget.Universal;
+            let code: string;
+            if (options.luaLibImport === LuaLibImportKind.RequireMinimal) {
+                const usedFeatures = findUsedLualibFeatures(
+                    luaTarget,
+                    this.emitHost,
+                    resolutionResult.resolvedFiles.map(f => f.code)
+                );
+                code = buildMinimalLualibBundle(usedFeatures, luaTarget, this.emitHost);
+            } else {
+                code = getLuaLibBundle(luaTarget, this.emitHost);
+            }
             // Add lualib bundle to source dir 'virtually', will be moved to correct output dir in emitPlan
             const fileName = normalizeSlashes(path.resolve(getSourceDir(program), "lualib_bundle.lua"));
-            const luaTarget = options.luaTarget ?? LuaTarget.Universal;
-            resolutionResult.resolvedFiles.unshift({ fileName, code: getLuaLibBundle(luaTarget, this.emitHost) });
+            resolutionResult.resolvedFiles.unshift({ fileName, code });
         }
 
         let emitPlan: EmitFile[];

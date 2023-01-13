@@ -2,7 +2,13 @@ import { SourceNode } from "source-map";
 import * as ts from "typescript";
 import * as tstl from "..";
 import * as path from "path";
-import { LuaLibFeature, LuaLibModulesInfo, luaLibModulesInfoFileName, resolveRecursiveLualibFeatures } from "../LuaLib";
+import {
+    getLualibBundleReturn,
+    LuaLibFeature,
+    LuaLibModulesInfo,
+    luaLibModulesInfoFileName,
+    resolveRecursiveLualibFeatures,
+} from "../LuaLib";
 import { EmitHost, ProcessedFile } from "../transpilation/utils";
 import {
     isExportAlias,
@@ -63,7 +69,7 @@ class LuaLibPlugin implements tstl.Plugin {
         // Concatenate lualib files into bundle with exports table and add lualib_bundle.lua to results
         let lualibBundle = orderedFeatures.map(f => exportedLualibFeatures.get(LuaLibFeature[f])).join("\n");
         const exports = allFeatures.flatMap(feature => luaLibModuleInfo[feature].exports);
-        lualibBundle += `\nreturn {\n${exports.map(exportName => `  ${exportName} = ${exportName}`).join(",\n")}\n}\n`;
+        lualibBundle += getLualibBundleReturn(exports);
         result.push({ fileName: "lualib_bundle.lua", code: lualibBundle });
 
         return diagnostics;

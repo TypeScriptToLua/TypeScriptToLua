@@ -131,6 +131,14 @@ test.each(["undefined", "{ foo(v) { return v} }"])("with preceding statements on
         .expectToMatchJsResult();
 });
 
+test("does not suppress error if left side is false", () => {
+    const result = util.testFunction`
+        const obj: any = false
+        return obj?.foo
+    `.getLuaExecutionResult();
+    expect(result).toBeInstanceOf(util.ExecutionError);
+});
+
 describe("optional access method calls", () => {
     test("element access call", () => {
         util.testFunction`

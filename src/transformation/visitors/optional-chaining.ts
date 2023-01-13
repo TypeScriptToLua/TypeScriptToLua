@@ -5,7 +5,7 @@ import { assert, assertNever } from "../../utils";
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
 import { transformElementAccessExpressionWithCapture, transformPropertyAccessExpressionWithCapture } from "./access";
 import { shouldMoveToTemp } from "./expression-list";
-import { expressionResultIsUsed } from "../utils/typescript";
+import { canBeFalsyWhenNotNull, expressionResultIsUsed } from "../utils/typescript";
 import { wrapInStatement } from "./expression-statement";
 
 type NormalOptionalChain = ts.PropertyAccessChain | ts.ElementAccessChain | ts.CallChain;
@@ -223,7 +223,10 @@ export function transformOptionalChainWithCapture(
             )
         );
         return { expression: lua.createNilLiteral(), thisValue: returnThisValue };
-    } else if (rightPrecedingStatements.length === 0) {
+    } else if (
+        rightPrecedingStatements.length === 0 &&
+        !canBeFalsyWhenNotNull(context, context.checker.getTypeAtLocation(tsLeftExpression))
+    ) {
         // return a && a.b
         return {
             expression: lua.createBinaryExpression(leftIdentifier, rightExpression, lua.SyntaxKind.AndOperator, tsNode),

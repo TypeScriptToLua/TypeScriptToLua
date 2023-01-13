@@ -190,20 +190,20 @@ export function transformOptionalChainWithCapture(
 
     // try use existing variable instead of creating new one, if possible
     let leftIdentifier: lua.Identifier | undefined;
-    let newLeftTempUsed = false;
     const usedLuaIdentifiers = optionalContinuationData?.usedIdentifiers;
-    if (usedLuaIdentifiers && usedLuaIdentifiers.length > 0) {
-        leftIdentifier = lua.isIdentifier(leftExpression) ? leftExpression : undefined;
-    }
-    if (leftIdentifier) {
-        for (const usedIdentifier of usedLuaIdentifiers!) {
+    const reuseLeftIdentifier =
+        usedLuaIdentifiers &&
+        usedLuaIdentifiers.length > 0 &&
+        lua.isIdentifier(leftExpression) &&
+        (rightPrecedingStatements.length === 0 || !shouldMoveToTemp(context, leftExpression, tsLeftExpression));
+    if (reuseLeftIdentifier) {
+        leftIdentifier = leftExpression;
+        for (const usedIdentifier of usedLuaIdentifiers) {
             usedIdentifier.text = leftIdentifier.text;
         }
     } else {
-        // use new temp variable
         leftIdentifier = lua.createIdentifier(luaTempName, undefined, tempSymbolId);
         context.addPrecedingStatements(lua.createVariableDeclarationStatement(leftIdentifier, leftExpression));
-        newLeftTempUsed = true;
     }
 
     if (!expressionResultIsUsed(tsNode) || isDelete) {
@@ -224,26 +224,25 @@ export function transformOptionalChainWithCapture(
         );
         return { expression: lua.createNilLiteral(), thisValue: returnThisValue };
     } else if (rightPrecedingStatements.length === 0) {
-        // a && a.b
+        // return a && a.b
         return {
             expression: lua.createBinaryExpression(leftIdentifier, rightExpression, lua.SyntaxKind.AndOperator, tsNode),
             thisValue: returnThisValue,
         };
     } else {
         let resultIdentifier: lua.Identifier;
-        if (newLeftTempUsed) {
+        if (!reuseLeftIdentifier) {
             // reuse temp variable for output
             resultIdentifier = leftIdentifier;
         } else {
             resultIdentifier = lua.createIdentifier(context.createTempName("opt_result"), undefined, tempSymbolId);
             context.addPrecedingStatements(lua.createVariableDeclarationStatement(resultIdentifier));
         }
-        // local temp = <left expression>
-        // if temp ~= nil then
+        // if left ~= nil then
         //   <right preceding statements>
-        //   temp = <right expression>
+        //   result = <right expression>
         // end
-        // return temp
+        // return result
         context.addPrecedingStatements(
             lua.createIfStatement(
                 lua.createBinaryExpression(leftIdentifier, lua.createNilLiteral(), lua.SyntaxKind.InequalityOperator),

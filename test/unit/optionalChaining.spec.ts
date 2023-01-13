@@ -115,6 +115,22 @@ test.each(["undefined", "{ foo(val) {return val} }"])(
     }
 );
 
+test.each(["undefined", "{ foo(v) { return v} }"])("with preceding statements on right side modifying left", value => {
+    util.testFunction`
+        let i = 0
+        let obj: any = ${value};
+        function bar() {
+            if(obj) obj.foo = undefined
+            obj = undefined
+            return 1
+        }
+
+        return {result: obj?.foo(bar(), i++), obj, i}
+  `
+        .debug()
+        .expectToMatchJsResult();
+});
+
 describe("optional access method calls", () => {
     test("element access call", () => {
         util.testFunction`

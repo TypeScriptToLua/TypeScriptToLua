@@ -33,7 +33,7 @@ describe("luaLibImport", () => {
             .expectToMatchJsResult();
     });
 
-    test("require-minimal from another file", () => {
+    test("require-minimal with lualib in another file", () => {
         util.testModule`
             import "./other";
         `
@@ -41,12 +41,13 @@ describe("luaLibImport", () => {
             .addExtraFile(
                 "other.lua",
                 `
-                local ____lualib = require("lualib_bundle");
-                local __TS__ArrayIndexOf = ____lualib.__TS__ArrayIndexOf;
+local ____lualib = require("lualib_bundle")
+local __TS__ArrayIndexOf = ____lualib.__TS__ArrayIndexOf
+__TS__ArrayIndexOf({}, 1)
             `
             )
             .tap(testLualibOnlyHasArrayIndexOf)
-            .expectToMatchJsResult();
+            .expectNoExecutionError();
     });
 });
 

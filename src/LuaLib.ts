@@ -273,7 +273,7 @@ export function findUsedLualibFeatures(
     const features = new Set<LuaLibFeature>();
 
     for (const lua of luaContents) {
-        const regex = /local\s+(\w+)\s*=\s*____lualib\.(\w+)/g;
+        const regex = /^local (\w+) = ____lualib\.(\w+)$/gm;
         while (true) {
             const match = regex.exec(lua);
             if (!match) break;

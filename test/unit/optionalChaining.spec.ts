@@ -72,6 +72,49 @@ test("optional element function calls", () => {
     `.expectToMatchJsResult();
 });
 
+test("unused expression", () => {
+    util.testFunction`
+        const obj = { foo: "bar" };
+        obj?.foo;
+    `
+        .expectToHaveNoDiagnostics()
+        .expectNoExecutionError();
+});
+
+test("unused call", () => {
+    util.testFunction`
+        let result
+        const obj = {
+            foo() {
+                result = "bar"
+            }
+        };
+        obj?.foo();
+        return result;
+    `.expectToMatchJsResult();
+});
+
+test.each(["undefined", "{ foo: v=>v }"])("with preceding statements on right side", value => {
+    util.testFunction`
+        let i = 0
+        const obj: any = ${value};
+        return {result: obj?.foo(i++), i};
+    `.expectToMatchJsResult();
+});
+
+// unused, with preceding statements on right side
+test.each(["undefined", "{ foo(val) {return val} }"])(
+    "unused result with preceding statements on right side",
+    value => {
+        util.testFunction`
+        let i = 0
+        const obj = ${value};
+        obj?.foo(i++);
+        return i
+    `.expectToHaveNoDiagnostics();
+    }
+);
+
 describe("optional access method calls", () => {
     test("element access call", () => {
         util.testFunction`

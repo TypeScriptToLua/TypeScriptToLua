@@ -32,6 +32,10 @@ export function findFirstNonOuterParent(node: ts.Node): ts.Node {
     return current;
 }
 
+export function expressionResultIsUsed(node: ts.Expression): boolean {
+    return !ts.isExpressionStatement(findFirstNonOuterParent(node));
+}
+
 export function getFirstDeclarationInFile(symbol: ts.Symbol, sourceFile: ts.SourceFile): ts.Declaration | undefined {
     const originalSourceFile = ts.getParseTreeNode(sourceFile) ?? sourceFile;
     const declarations = (symbol.getDeclarations() ?? []).filter(d => d.getSourceFile() === originalSourceFile);

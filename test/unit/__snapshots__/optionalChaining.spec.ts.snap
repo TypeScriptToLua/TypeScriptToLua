@@ -3,18 +3,18 @@
 exports[`Unsupported optional chains Builtin global method: code 1`] = `
 "local ____lualib = require(\\"lualib_bundle\\")
 local __TS__Number = ____lualib.__TS__Number
-local ____Number_result_0 = Number
-if ____Number_result_0 ~= nil then
-    ____Number_result_0 = __TS__Number(\\"3\\")
+local ____opt_0 = Number
+if ____opt_0 ~= nil then
+    __TS__Number(\\"3\\")
 end"
 `;
 
 exports[`Unsupported optional chains Builtin global method: diagnostics 1`] = `"main.ts(2,17): error TSTL: Optional calls are not supported for builtin or language extension functions."`;
 
 exports[`Unsupported optional chains Builtin global property: code 1`] = `
-"local ____console_log_result_0 = console
-if ____console_log_result_0 ~= nil then
-    ____console_log_result_0 = print(\\"3\\")
+"local ____opt_0 = console
+if ____opt_0 ~= nil then
+    print(\\"3\\")
 end"
 `;
 
@@ -23,9 +23,9 @@ exports[`Unsupported optional chains Builtin global property: diagnostics 1`] = 
 exports[`Unsupported optional chains Builtin prototype method: code 1`] = `
 "local ____lualib = require(\\"lualib_bundle\\")
 local __TS__ArrayForEach = ____lualib.__TS__ArrayForEach
-local ____table_forEach_result_0 = ({1, 2, 3, 4}).forEach
-if ____table_forEach_result_0 ~= nil then
-    ____table_forEach_result_0 = __TS__ArrayForEach(
+local ____opt_0 = ({1, 2, 3, 4}).forEach
+if ____opt_0 ~= nil then
+    __TS__ArrayForEach(
         {1, 2, 3, 4},
         function()
         end
@@ -50,9 +50,9 @@ function ____exports.__main(self)
     ---
     -- @compileMembersOnly
     local D = \\"D\\"
-    local ____TestEnum_B_0 = TestEnum
-    if ____TestEnum_B_0 ~= nil then
-        ____TestEnum_B_0 = B
+    local ____opt_0 = TestEnum
+    if ____opt_0 ~= nil then
+        local ____ = B
     end
 end
 return ____exports"
@@ -61,9 +61,9 @@ return ____exports"
 exports[`Unsupported optional chains Compile members only: diagnostics 1`] = `"main.ts(10,17): error TSTL: Optional calls are not supported on enums marked with @compileMembersOnly."`;
 
 exports[`Unsupported optional chains Language extensions: code 1`] = `
-"local ____table_has_result_0 = ({}).has
-if ____table_has_result_0 ~= nil then
-    ____table_has_result_0 = nil[3] ~= nil
+"local ____opt_0 = ({}).has
+if ____opt_0 ~= nil then
+    local ____ = nil[3] ~= nil
 end"
 `;
 

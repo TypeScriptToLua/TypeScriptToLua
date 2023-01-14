@@ -123,21 +123,9 @@ export class Transpiler {
             if (options.tstlVerbose) {
                 console.log("Including lualib bundle");
             }
-
-            const luaTarget = options.luaTarget ?? LuaTarget.Universal;
-            let code: string;
-            if (options.luaLibImport === LuaLibImportKind.RequireMinimal) {
-                const usedFeatures = findUsedLualibFeatures(
-                    luaTarget,
-                    this.emitHost,
-                    resolutionResult.resolvedFiles.map(f => f.code)
-                );
-                code = buildMinimalLualibBundle(usedFeatures, luaTarget, this.emitHost);
-            } else {
-                code = getLuaLibBundle(luaTarget, this.emitHost);
-            }
             // Add lualib bundle to source dir 'virtually', will be moved to correct output dir in emitPlan
             const fileName = normalizeSlashes(path.resolve(getSourceDir(program), "lualib_bundle.lua"));
+            const code = this.getLuaLibBundleContent(options, resolutionResult.resolvedFiles);
             resolutionResult.resolvedFiles.unshift({ fileName, code });
         }
 
@@ -156,6 +144,20 @@ export class Transpiler {
         performance.endSection("getEmitPlan");
 
         return { emitPlan };
+    }
+
+    private getLuaLibBundleContent(options: CompilerOptions, resolvedFiles: ProcessedFile[]) {
+        const luaTarget = options.luaTarget ?? LuaTarget.Universal;
+        if (options.luaLibImport === LuaLibImportKind.RequireMinimal) {
+            const usedFeatures = findUsedLualibFeatures(
+                luaTarget,
+                this.emitHost,
+                resolvedFiles.map(f => f.code)
+            );
+            return buildMinimalLualibBundle(usedFeatures, luaTarget, this.emitHost);
+        } else {
+            return getLuaLibBundle(luaTarget, this.emitHost);
+        }
     }
 }
 

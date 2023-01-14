@@ -46,6 +46,7 @@ local __TS__ArrayIndexOf = ____lualib.__TS__ArrayIndexOf
 __TS__ArrayIndexOf({}, 1)
             `
             )
+            // note: indent matters in above code, because searching for lualib checks for start & end of line
             .tap(testLualibOnlyHasArrayIndexOf)
             .expectNoExecutionError();
     });

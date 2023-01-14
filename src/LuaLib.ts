@@ -133,15 +133,15 @@ export function getLuaLibModulesInfo(luaTarget: LuaTarget, emitHost: EmitHost): 
     return luaLibModulesInfo.get(lualibPath) as LuaLibModulesInfo;
 }
 
-const exportToFeature = new Map<string, ReadonlyMap<string, LuaLibFeature>>();
-
+// This caches the names of lualib exports to their LuaLibFeature, avoiding a linear search for every lookup
+const lualibExportToFeature = new Map<string, ReadonlyMap<string, LuaLibFeature>>();
 export function getLuaLibFeatureForExportName(
     luaTarget: LuaTarget,
     emitHost: EmitHost,
     exportName: string
 ): LuaLibFeature | undefined {
     const luaLibPath = resolveLuaLibDir(luaTarget);
-    if (!exportToFeature.has(luaLibPath)) {
+    if (!lualibExportToFeature.has(luaLibPath)) {
         const luaLibModulesInfo = getLuaLibModulesInfo(luaTarget, emitHost);
         const map = new Map<string, LuaLibFeature>();
         for (const [feature, info] of Object.entries(luaLibModulesInfo)) {
@@ -149,10 +149,10 @@ export function getLuaLibFeatureForExportName(
                 map.set(exportName, feature as LuaLibFeature);
             }
         }
-        exportToFeature.set(luaLibPath, map);
+        lualibExportToFeature.set(luaLibPath, map);
     }
 
-    return exportToFeature.get(luaLibPath)!.get(exportName);
+    return lualibExportToFeature.get(luaLibPath)!.get(exportName);
 }
 
 export function readLuaLibFeature(feature: LuaLibFeature, luaTarget: LuaTarget, emitHost: EmitHost): string {

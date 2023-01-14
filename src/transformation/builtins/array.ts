@@ -63,7 +63,8 @@ function transformSingleElementArrayPush(
         lua.SyntaxKind.AdditionOperator
     );
 
-    if (expressionResultIsUsed(node)) {
+    const expressionIsUsed = expressionResultIsUsed(node);
+    if (expressionIsUsed) {
         // store length in a temp
         lengthExpression = moveToPrecedingTemp(context, lengthExpression);
     }
@@ -74,7 +75,7 @@ function transformSingleElementArrayPush(
         node
     );
     context.addPrecedingStatements(pushStatement);
-    return expressionResultIsUsed(node) ? lengthExpression : lua.createNilLiteral();
+    return expressionIsUsed ? lengthExpression : lua.createNilLiteral();
 }
 
 export function transformArrayPrototypeCall(

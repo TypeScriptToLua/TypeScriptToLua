@@ -126,9 +126,7 @@ test.each(["undefined", "{ foo(v) { return v} }"])("with preceding statements on
         }
 
         return {result: obj?.foo(bar(), i++), obj, i}
-  `
-        .debug()
-        .expectToMatchJsResult();
+  `.expectToMatchJsResult();
 });
 
 test("does not suppress error if left side is false", () => {

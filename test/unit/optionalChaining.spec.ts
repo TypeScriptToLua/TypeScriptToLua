@@ -4,16 +4,22 @@ import { ScriptTarget } from "typescript";
 
 test.each(["null", "undefined", '{ foo: "foo" }'])("optional chaining (%p)", value => {
     util.testFunction`
-        const obj: any = ${value};
+        const obj: {foo: string} | null | undefined = ${value};
         return obj?.foo;
-    `.expectToMatchJsResult();
+    `
+        .expectToMatchJsResult()
+        .expectLuaToMatchSnapshot();
+    // should use "and" expression
 });
 
 test("long optional chain", () => {
     util.testFunction`
         const a = { b: { c: { d: { e: { f: "hello!"}}}}};
         return a.b?.c?.d.e.f;
-    `.expectToMatchJsResult();
+    `
+        .expectToMatchJsResult()
+        .expectLuaToMatchSnapshot();
+    // should use "and" expression
 });
 
 test.each(["undefined", "{}", "{ foo: {} }", "{ foo: {bar: 'baz'}}"])("nested optional chaining (%p)", value => {
@@ -69,7 +75,10 @@ test("optional element function calls", () => {
         const fooKey = "foo";
         const barKey = "bar";
         return obj[barKey]?.(5) ?? obj[fooKey]?.(15);
-    `.expectToMatchJsResult();
+    `
+        .expectToMatchJsResult()
+        .expectLuaToMatchSnapshot();
+    // should still use "and" statement, as functions have no self
 });
 
 test("unused expression", () => {
@@ -78,7 +87,9 @@ test("unused expression", () => {
         obj?.foo;
     `
         .expectToHaveNoDiagnostics()
-        .expectNoExecutionError();
+        .expectNoExecutionError()
+        .expectLuaToMatchSnapshot();
+    // should use if statement, as result is not used
 });
 
 test("unused call", () => {
@@ -91,7 +102,10 @@ test("unused call", () => {
         };
         obj?.foo();
         return result;
-    `.expectToMatchJsResult();
+    `
+        .expectToMatchJsResult()
+        .expectLuaToMatchSnapshot();
+    // should use if statement, as result is not used
 });
 
 test.each(["undefined", "{ foo: v=>v }"])("with preceding statements on right side", value => {
@@ -99,7 +113,10 @@ test.each(["undefined", "{ foo: v=>v }"])("with preceding statements on right si
         let i = 0
         const obj: any = ${value};
         return {result: obj?.foo(i++), i};
-    `.expectToMatchJsResult();
+    `
+        .expectToMatchJsResult()
+        .expectLuaToMatchSnapshot();
+    // should use if statement, as there are preceding statements
 });
 
 // unused, with preceding statements on right side
@@ -111,7 +128,10 @@ test.each(["undefined", "{ foo(val) {return val} }"])(
         const obj = ${value};
         obj?.foo(i++);
         return i
-    `.expectToHaveNoDiagnostics();
+    `
+            .expectToHaveNoDiagnostics()
+            .expectLuaToMatchSnapshot();
+        // should use if statement, as there are preceding statements
     }
 );
 
@@ -126,7 +146,10 @@ test.each(["undefined", "{ foo(v) { return v} }"])("with preceding statements on
         }
 
         return {result: obj?.foo(bar(), i++), obj, i}
-  `.expectToMatchJsResult();
+  `
+        .expectToMatchJsResult()
+        .expectLuaToMatchSnapshot();
+    // should use if statement, as there are preceding statements
 });
 
 test("does not suppress error if left side is false", () => {
@@ -150,7 +173,7 @@ describe("optional access method calls", () => {
     `.expectToMatchJsResult();
     });
 
-    test("optional access call", () => {
+    test("property access call", () => {
         util.testFunction`
         const obj: { value: string; foo?(prefix: string): string; bar?(prefix: string): string; } = {
             value: "foobar",

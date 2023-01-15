@@ -2,7 +2,11 @@ import * as path from "path";
 import * as util from "../../util";
 import * as tstl from "../../../src";
 import { LuaTarget } from "../../../src";
-import { unsupportedForTarget, invalidCallExtensionUse } from "../../../src/transformation/utils/diagnostics";
+import {
+    unsupportedForTarget,
+    invalidCallExtensionUse,
+    invalidSpreadInCallExtension,
+} from "../../../src/transformation/utils/diagnostics";
 
 const operatorsProjectOptions: tstl.CompilerOptions = {
     luaTarget: LuaTarget.Lua54,
@@ -388,4 +392,42 @@ test.each([
     `
         .setOptions(operatorsProjectOptions)
         .expectDiagnosticsToMatchSnapshot([invalidCallExtensionUse.code]);
+});
+
+describe("does not crash on invalid operator use", () => {
+    test("global function", () => {
+        util.testModule`
+            declare const op: LuaAddition<number, number, number>;
+            op(1)
+    `
+            .setOptions(operatorsProjectOptions)
+            .expectDiagnosticsToMatchSnapshot();
+    });
+    test("unary operator", () => {
+        util.testModule`
+            declare const op: LuaUnaryMinus<number, number>;
+            op()
+    `
+            .setOptions(operatorsProjectOptions)
+            .expectDiagnosticsToMatchSnapshot();
+    });
+    test("method", () => {
+        util.testModule`
+            const left = {} as {
+                op: LuaAdditionMethod<number, number>;
+            }
+            left.op()
+    `
+            .setOptions(operatorsProjectOptions)
+            .expectDiagnosticsToMatchSnapshot();
+    });
+});
+
+test("does not allow spread", () => {
+    util.testModule`
+        declare const op: LuaAddition<number, number, number>;
+        op(...[1, 2] as const);
+    `
+        .setOptions(operatorsProjectOptions)
+        .expectToHaveDiagnostics([invalidSpreadInCallExtension.code]);
 });

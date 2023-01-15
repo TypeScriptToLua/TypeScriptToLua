@@ -63,8 +63,11 @@ exports[`Unsupported optional chains Compile members only: diagnostics 1`] = `"m
 exports[`Unsupported optional chains Language extensions: code 1`] = `
 "local ____table_has_result_0 = ({}).has
 if ____table_has_result_0 ~= nil then
-    ____table_has_result_0 = nil[3] ~= nil
+    ____table_has_result_0 = nil
 end"
 `;
 
-exports[`Unsupported optional chains Language extensions: diagnostics 1`] = `"main.ts(2,17): error TSTL: Optional calls are not supported for builtin or language extension functions."`;
+exports[`Unsupported optional chains Language extensions: diagnostics 1`] = `
+"main.ts(2,17): error TSTL: Optional calls are not supported for builtin or language extension functions.
+main.ts(2,17): error TSTL: This language extension must be called as a method."
+`;

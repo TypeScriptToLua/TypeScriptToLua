@@ -1,5 +1,5 @@
 import * as util from "../../util";
-import { invalidCallExtensionUse } from "../../../src/transformation/utils/diagnostics";
+import {invalidCallExtensionUse} from "../../../src/transformation/utils/diagnostics";
 
 describe("LuaTableGet & LuaTableSet extensions", () => {
     test("stand-alone function", () => {
@@ -92,7 +92,7 @@ describe("LuaTableHas extension", () => {
             export const hasBaz = tableHas(table, "baz");
         `
             .withLanguageExtensions()
-            .expectToEqual({ hasFoo: true, hasBaz: false });
+            .expectToEqual({hasFoo: true, hasBaz: false});
     });
 
     test("LuaTableHas nested expression", () => {
@@ -103,7 +103,7 @@ describe("LuaTableHas extension", () => {
             export const result = \`table has foo: \${tableHas(table, "foo")}\`;
         `
             .withLanguageExtensions()
-            .expectToEqual({ result: "table has foo: true" });
+            .expectToEqual({result: "table has foo: true"});
     });
 
     test("LuaTableHas namespace function", () => {
@@ -117,7 +117,7 @@ describe("LuaTableHas extension", () => {
             export const hasBaz = Table.tableHas(table, "baz");
         `
             .withLanguageExtensions()
-            .expectToEqual({ hasFoo: true, hasBaz: false });
+            .expectToEqual({hasFoo: true, hasBaz: false});
     });
 
     test("LuaTableHasMethod method", () => {
@@ -133,7 +133,7 @@ describe("LuaTableHas extension", () => {
             export const hasBaz = table.has("baz");
         `
             .withLanguageExtensions()
-            .expectToEqual({ hasFoo: true, hasBaz: false });
+            .expectToEqual({hasFoo: true, hasBaz: false});
     });
 
     test("LuaTableHas as statement", () => {
@@ -153,7 +153,7 @@ describe("LuaTableHas extension", () => {
             export const numCalls = count;
         `
             .withLanguageExtensions()
-            .expectToEqual({ numCalls: 1 });
+            .expectToEqual({numCalls: 1});
     });
 
     test.each([
@@ -205,7 +205,7 @@ describe("LuaTableDelete extension", () => {
             tableDelete(table, "foo");
         `
             .withLanguageExtensions()
-            .expectToEqual({ table: { baz: "baz" } });
+            .expectToEqual({table: {baz: "baz"}});
     });
 
     test("LuaTableDelete namespace function", () => {
@@ -218,7 +218,7 @@ describe("LuaTableDelete extension", () => {
             Table.tableDelete(table, "foo");
         `
             .withLanguageExtensions()
-            .expectToEqual({ table: { baz: "baz" } });
+            .expectToEqual({table: {baz: "baz"}});
     });
 
     test("LuaTableHasMethod method", () => {
@@ -233,7 +233,7 @@ describe("LuaTableDelete extension", () => {
             table.delete("foo");
         `
             .withLanguageExtensions()
-            .expectToEqual({ table: { bar: 12 } });
+            .expectToEqual({table: {bar: 12}});
     });
 
     test.each([
@@ -272,7 +272,7 @@ describe("LuaTableAddKey extension", () => {
             tableAddKey(table, "baz");
         `
             .withLanguageExtensions()
-            .expectToEqual({ table: { foo: "bar", baz: true } });
+            .expectToEqual({table: {foo: "bar", baz: true}});
     });
 
     test("LuaTableAddKey namespace function", () => {
@@ -284,7 +284,7 @@ describe("LuaTableAddKey extension", () => {
             Table.tableAddKey(table, "baz");
         `
             .withLanguageExtensions()
-            .expectToEqual({ table: { foo: "bar", baz: true } });
+            .expectToEqual({table: {foo: "bar", baz: true}});
     });
 
     test("LuaTableAddKey method", () => {
@@ -296,7 +296,7 @@ describe("LuaTableAddKey extension", () => {
             table.addKey("bar");
         `
             .withLanguageExtensions()
-            .expectToEqual({ table: { bar: true } });
+            .expectToEqual({table: {bar: true}});
     });
 
     test.each([
@@ -362,7 +362,7 @@ describe("LuaTable extension interface", () => {
         keyType => {
             util.testExpression`new LuaTable<${keyType}, unknown>()`
                 .withLanguageExtensions()
-                .setOptions({ strict: true })
+                .setOptions({strict: true})
                 .expectToHaveDiagnostics()
                 .expectDiagnosticsToMatchSnapshot();
         }
@@ -412,7 +412,7 @@ describe("LuaTable extension interface", () => {
             return tbl;
         `
             .withLanguageExtensions()
-            .expectToEqual({ baz: 5 });
+            .expectToEqual({baz: 5});
     });
 
     test("table add", () => {
@@ -422,7 +422,7 @@ describe("LuaTable extension interface", () => {
             return tbl
         `
             .withLanguageExtensions()
-            .expectToEqual({ foo: true });
+            .expectToEqual({foo: true});
     });
 
     test.each(['new LuaTable().get("foo");', 'new LuaTable().set("foo", "bar");'])(
@@ -445,7 +445,7 @@ describe("LuaTable extension interface", () => {
             return results;
         `
             .withLanguageExtensions()
-            .expectToEqual({ foo: 1, bar: 3, baz: 5 });
+            .expectToEqual({foo: 1, bar: 3, baz: 5});
     });
 });
 
@@ -467,3 +467,25 @@ test.each([
         .withLanguageExtensions()
         .expectToEqual(expected);
 });
+
+describe("does not crash on invalid extension use", () => {
+    test("global function", () => {
+        util.testModule`
+        declare const op: LuaTableGet<{}, string, any>
+        op({})
+        `
+            .withLanguageExtensions()
+            .expectDiagnosticsToMatchSnapshot()
+    })
+
+    test("method", () => {
+        util.testModule`
+        const left = {} as {
+            op: LuaTableGet<{}, string, any>
+        }
+        left.op()
+        `
+            .withLanguageExtensions()
+            .expectDiagnosticsToMatchSnapshot()
+    })
+})

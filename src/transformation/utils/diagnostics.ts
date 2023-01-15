@@ -155,3 +155,11 @@ export const unsupportedOptionalCompileMembersOnly = createErrorDiagnosticFactor
 export const undefinedInArrayLiteral = createErrorDiagnosticFactory(
     "Array literals may not contain undefined or null."
 );
+
+export const invalidMethodCallExtensionUse = createErrorDiagnosticFactory(
+    "This language extension must be called as a method."
+);
+
+export const invalidSpreadInCallExtension = createErrorDiagnosticFactory(
+    "Spread elements are not supported in call extensions."
+);

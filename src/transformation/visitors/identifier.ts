@@ -7,7 +7,7 @@ import { invalidCallExtensionUse } from "../utils/diagnostics";
 import { createExportedIdentifier, getSymbolExportScope } from "../utils/export";
 import { createSafeName, hasUnsafeIdentifierName } from "../utils/safe-names";
 import { getIdentifierSymbolId } from "../utils/symbols";
-import { isOptionalContinuation } from "./optional-chaining";
+import { getOptionalContinuationData, isOptionalContinuation } from "./optional-chaining";
 import { isStandardLibraryType } from "../utils/typescript";
 import { getExtensionKindForNode, getExtensionKindForSymbol } from "../utils/language-extensions";
 import { callExtensions } from "./language-extensions/call-extension";
@@ -16,13 +16,16 @@ import { isIdentifierExtensionValue, reportInvalidExtensionValue } from "./langu
 export function transformIdentifier(context: TransformationContext, identifier: ts.Identifier): lua.Identifier {
     return transformNonValueIdentifier(context, identifier, context.checker.getSymbolAtLocation(identifier));
 }
+
 function transformNonValueIdentifier(
     context: TransformationContext,
     identifier: ts.Identifier,
     symbol: ts.Symbol | undefined
 ) {
     if (isOptionalContinuation(identifier)) {
-        return lua.createIdentifier(identifier.text, undefined, tempSymbolId);
+        const result = lua.createIdentifier(identifier.text, undefined, tempSymbolId);
+        getOptionalContinuationData(identifier)!.usedIdentifiers.push(result);
+        return result;
     }
 
     const extensionKind = symbol

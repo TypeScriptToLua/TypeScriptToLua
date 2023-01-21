@@ -5,7 +5,7 @@ import { TransformationContext } from "../context";
 import { unsupportedProperty } from "../utils/diagnostics";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { transformArguments, transformCallAndArguments } from "../visitors/call";
-import { findFirstNonOuterParent, typeAlwaysHasSomeOfFlags } from "../utils/typescript";
+import { expressionResultIsUsed, typeAlwaysHasSomeOfFlags } from "../utils/typescript";
 import { moveToPrecedingTemp } from "../visitors/expression-list";
 import { isUnpackCall, wrapInTable } from "../utils/lua-ast";
 
@@ -54,8 +54,6 @@ function transformSingleElementArrayPush(
     caller: lua.Expression,
     param: lua.Expression
 ): lua.Expression {
-    const expressionIsUsed = !ts.isExpressionStatement(findFirstNonOuterParent(node));
-
     const arrayIdentifier = lua.isIdentifier(caller) ? caller : moveToPrecedingTemp(context, caller);
 
     // #array + 1
@@ -65,6 +63,7 @@ function transformSingleElementArrayPush(
         lua.SyntaxKind.AdditionOperator
     );
 
+    const expressionIsUsed = expressionResultIsUsed(node);
     if (expressionIsUsed) {
         // store length in a temp
         lengthExpression = moveToPrecedingTemp(context, lengthExpression);

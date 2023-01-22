@@ -4,8 +4,9 @@ import { TransformationContext } from "../../context";
 import { assert } from "../../../utils";
 import { LuaTarget } from "../../../CompilerOptions";
 import { unsupportedForTarget } from "../../utils/diagnostics";
-import { ExtensionKind } from "../../utils/language-extensions";
+import { ExtensionKind, getBinaryCallExtensionArgs, getUnaryCallExtensionArg } from "../../utils/language-extensions";
 import { LanguageExtensionCallTransformerMap } from "./call-extension";
+import { transformOrderedExpressions } from "../expression-list";
 
 const binaryOperatorMappings = new Map<ExtensionKind, lua.BinaryOperator>([
     [ExtensionKind.AdditionOperatorType, lua.SyntaxKind.AdditionOperator],
@@ -81,35 +82,21 @@ for (const kind of unaryOperatorMappings.keys()) {
 function transformBinaryOperator(context: TransformationContext, node: ts.CallExpression, kind: ExtensionKind) {
     if (requiresLua53.has(kind)) checkHasLua53(context, node, kind);
 
-    let args: readonly ts.Expression[] = node.arguments;
-    if (
-        args.length === 1 &&
-        (ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression))
-    ) {
-        args = [node.expression.expression, ...args];
-    }
+    const args = getBinaryCallExtensionArgs(context, node, kind);
+    if (!args) return lua.createNilLiteral();
+
+    const [left, right] = transformOrderedExpressions(context, args);
 
     const luaOperator = binaryOperatorMappings.get(kind);
     assert(luaOperator);
-    return lua.createBinaryExpression(
-        context.transformExpression(args[0]),
-        context.transformExpression(args[1]),
-        luaOperator
-    );
+    return lua.createBinaryExpression(left, right, luaOperator);
 }
 
 function transformUnaryOperator(context: TransformationContext, node: ts.CallExpression, kind: ExtensionKind) {
     if (requiresLua53.has(kind)) checkHasLua53(context, node, kind);
 
-    let arg: ts.Expression;
-    if (
-        node.arguments.length === 0 &&
-        (ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression))
-    ) {
-        arg = node.expression.expression;
-    } else {
-        arg = node.arguments[0];
-    }
+    const arg = getUnaryCallExtensionArg(context, node, kind);
+    if (!arg) return lua.createNilLiteral();
 
     const luaOperator = unaryOperatorMappings.get(kind);
     assert(luaOperator);

@@ -467,3 +467,25 @@ test.each([
         .withLanguageExtensions()
         .expectToEqual(expected);
 });
+
+describe("does not crash on invalid extension use", () => {
+    test("global function", () => {
+        util.testModule`
+        declare const op: LuaTableGet<{}, string, any>
+        op({})
+        `
+            .withLanguageExtensions()
+            .expectDiagnosticsToMatchSnapshot();
+    });
+
+    test("method", () => {
+        util.testModule`
+        const left = {} as {
+            op: LuaTableGet<{}, string, any>
+        }
+        left.op()
+        `
+            .withLanguageExtensions()
+            .expectDiagnosticsToMatchSnapshot();
+    });
+});

@@ -1,16 +1,22 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { TransformationContext } from "../../context";
-import { ExtensionKind, getExtensionKindForNode } from "../../utils/language-extensions";
-import { transformExpressionList } from "../expression-list";
-import { LanguageExtensionCallTransformer } from "./call-extension";
+import {
+    ExtensionKind,
+    getBinaryCallExtensionArgs,
+    getExtensionKindForNode,
+    getNaryCallExtensionArgs,
+} from "../../utils/language-extensions";
+import { transformOrderedExpressions } from "../expression-list";
+import { LanguageExtensionCallTransformerMap } from "./call-extension";
 
 export function isTableNewCall(context: TransformationContext, node: ts.NewExpression) {
     return getExtensionKindForNode(context, node.expression) === ExtensionKind.TableNewType;
 }
+
 export const tableNewExtensions = [ExtensionKind.TableNewType];
 
-export const tableExtensionTransformers: { [P in ExtensionKind]?: LanguageExtensionCallTransformer } = {
+export const tableExtensionTransformers: LanguageExtensionCallTransformerMap = {
     [ExtensionKind.TableDeleteType]: transformTableDeleteExpression,
     [ExtensionKind.TableDeleteMethodType]: transformTableDeleteExpression,
     [ExtensionKind.TableGetType]: transformTableGetExpression,
@@ -19,8 +25,8 @@ export const tableExtensionTransformers: { [P in ExtensionKind]?: LanguageExtens
     [ExtensionKind.TableHasMethodType]: transformTableHasExpression,
     [ExtensionKind.TableSetType]: transformTableSetExpression,
     [ExtensionKind.TableSetMethodType]: transformTableSetExpression,
-    [ExtensionKind.TableAddKeyType]: transformTableAddExpression,
-    [ExtensionKind.TableAddKeyMethodType]: transformTableAddExpression,
+    [ExtensionKind.TableAddKeyType]: transformTableAddKeyExpression,
+    [ExtensionKind.TableAddKeyMethodType]: transformTableAddKeyExpression,
 };
 
 function transformTableDeleteExpression(
@@ -28,33 +34,17 @@ function transformTableDeleteExpression(
     node: ts.CallExpression,
     extensionKind: ExtensionKind
 ): lua.Expression {
-    const args = node.arguments.slice();
-    if (
-        extensionKind === ExtensionKind.TableDeleteMethodType &&
-        (ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression))
-    ) {
-        // In case of method (no table argument), push method owner to front of args list
-        args.unshift(node.expression.expression);
+    const args = getBinaryCallExtensionArgs(context, node, extensionKind);
+    if (!args) {
+        return lua.createNilLiteral();
     }
 
-    const [table, accessExpression] = transformExpressionList(context, args);
+    const [table, key] = transformOrderedExpressions(context, args);
     // arg0[arg1] = nil
     context.addPrecedingStatements(
-        lua.createAssignmentStatement(
-            lua.createTableIndexExpression(table, accessExpression),
-            lua.createNilLiteral(),
-            node
-        )
+        lua.createAssignmentStatement(lua.createTableIndexExpression(table, key), lua.createNilLiteral(), node)
     );
     return lua.createBooleanLiteral(true);
-}
-
-function transformWithTableArgument(context: TransformationContext, node: ts.CallExpression): lua.Expression[] {
-    if (ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression)) {
-        return transformExpressionList(context, [node.expression.expression, ...node.arguments]);
-    }
-    // todo: report diagnostic?
-    return [lua.createNilLiteral(), ...transformExpressionList(context, node.arguments)];
 }
 
 function transformTableGetExpression(
@@ -62,14 +52,14 @@ function transformTableGetExpression(
     node: ts.CallExpression,
     extensionKind: ExtensionKind
 ): lua.Expression {
-    const args =
-        extensionKind === ExtensionKind.TableGetMethodType
-            ? transformWithTableArgument(context, node)
-            : transformExpressionList(context, node.arguments);
+    const args = getBinaryCallExtensionArgs(context, node, extensionKind);
+    if (!args) {
+        return lua.createNilLiteral();
+    }
 
-    const [table, accessExpression] = args;
+    const [table, key] = transformOrderedExpressions(context, args);
     // arg0[arg1]
-    return lua.createTableIndexExpression(table, accessExpression, node);
+    return lua.createTableIndexExpression(table, key, node);
 }
 
 function transformTableHasExpression(
@@ -77,14 +67,14 @@ function transformTableHasExpression(
     node: ts.CallExpression,
     extensionKind: ExtensionKind
 ): lua.Expression {
-    const args =
-        extensionKind === ExtensionKind.TableHasMethodType
-            ? transformWithTableArgument(context, node)
-            : transformExpressionList(context, node.arguments);
+    const args = getBinaryCallExtensionArgs(context, node, extensionKind);
+    if (!args) {
+        return lua.createNilLiteral();
+    }
 
-    const [table, accessExpression] = args;
+    const [table, key] = transformOrderedExpressions(context, args);
     // arg0[arg1]
-    const tableIndexExpression = lua.createTableIndexExpression(table, accessExpression);
+    const tableIndexExpression = lua.createTableIndexExpression(table, key);
 
     // arg0[arg1] ~= nil
     return lua.createBinaryExpression(
@@ -100,37 +90,33 @@ function transformTableSetExpression(
     node: ts.CallExpression,
     extensionKind: ExtensionKind
 ): lua.Expression {
-    const args =
-        extensionKind === ExtensionKind.TableSetMethodType
-            ? transformWithTableArgument(context, node)
-            : transformExpressionList(context, node.arguments);
+    const args = getNaryCallExtensionArgs(context, node, extensionKind, 3);
+    if (!args) {
+        return lua.createNilLiteral();
+    }
 
-    const [table, accessExpression, value] = args;
+    const [table, key, value] = transformOrderedExpressions(context, args);
     // arg0[arg1] = arg2
     context.addPrecedingStatements(
-        lua.createAssignmentStatement(lua.createTableIndexExpression(table, accessExpression), value, node)
+        lua.createAssignmentStatement(lua.createTableIndexExpression(table, key), value, node)
     );
     return lua.createNilLiteral();
 }
 
-function transformTableAddExpression(
+function transformTableAddKeyExpression(
     context: TransformationContext,
     node: ts.CallExpression,
     extensionKind: ExtensionKind
 ): lua.Expression {
-    const args =
-        extensionKind === ExtensionKind.TableAddKeyMethodType
-            ? transformWithTableArgument(context, node)
-            : transformExpressionList(context, node.arguments);
+    const args = getNaryCallExtensionArgs(context, node, extensionKind, 2);
+    if (!args) {
+        return lua.createNilLiteral();
+    }
 
-    const [table, value] = args;
+    const [table, key] = transformOrderedExpressions(context, args);
     // arg0[arg1] = true
     context.addPrecedingStatements(
-        lua.createAssignmentStatement(
-            lua.createTableIndexExpression(table, value),
-            lua.createBooleanLiteral(true),
-            node
-        )
+        lua.createAssignmentStatement(lua.createTableIndexExpression(table, key), lua.createBooleanLiteral(true), node)
     );
     return lua.createNilLiteral();
 }

@@ -115,8 +115,6 @@ export function canBeFalsy(context: TransformationContext, type: ts.Type): boole
 }
 
 export function canBeFalsyWhenNotNull(context: TransformationContext, type: ts.Type): boolean {
-    const strictNullChecks = context.options.strict === true || context.options.strictNullChecks === true;
-    if (!strictNullChecks && !type.isLiteral()) return true;
     const falsyFlags =
         ts.TypeFlags.Boolean |
         ts.TypeFlags.BooleanLiteral |

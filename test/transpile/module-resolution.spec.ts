@@ -2,10 +2,10 @@ import * as path from "path";
 import * as tstl from "../../src";
 import * as util from "../util";
 import * as ts from "typescript";
+import * as fs from "fs-extra";
 import { BuildMode } from "../../src";
 import { normalizeSlashes } from "../../src/utils";
 import { pathsWithoutBaseUrl } from "../../src/transpilation/diagnostics";
-import { execSync } from "child_process";
 
 describe("basic module resolution", () => {
     const projectPath = path.resolve(__dirname, "module-resolution", "project-with-node-modules");
@@ -278,10 +278,13 @@ describe("module resolution project with dependencies built by tstl library mode
     const appPath = path.join(projectPath, "app");
 
     // First compile dependencies into node_modules. NOTE: Actually writing to disk, very slow
-    tstl.transpileProject(path.join(projectPath, "dependency1-ts", "tsconfig.json"));
+    const dependency1Path = path.join(projectPath, "dependency1-ts");
+    tstl.transpileProject(path.join(dependency1Path, "tsconfig.json"));
 
     // Install dependencies. This will create node_modules folder with dependency1-ts in it.
-    execSync("npm i", { cwd: appPath });
+    const nodeModulesPath = path.join(appPath, "node_modules");
+    fs.ensureDirSync(nodeModulesPath);
+    fs.ensureSymlinkSync(dependency1Path, path.join(nodeModulesPath, "dependency1"), "dir");
 
     const expectedResult = {
         dependency1IndexResult: "function in dependency 1 index: dependency1OtherFileFunc in dependency1/d1otherfile",

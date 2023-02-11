@@ -90,7 +90,7 @@ export function isFunctionTypeWithProperties(context: TransformationContext, fun
 
 export function transformFunctionBodyContent(context: TransformationContext, body: ts.ConciseBody): lua.Statement[] {
     if (!ts.isBlock(body)) {
-        const [precedingStatements, returnStatement] = transformInPrecedingStatementScope(context, () =>
+        const { precedingStatements, result: returnStatement } = transformInPrecedingStatementScope(context, () =>
             transformExpressionBodyToReturnStatement(context, body)
         );
         return [...precedingStatements, returnStatement];
@@ -123,7 +123,7 @@ export function transformFunctionBodyHeader(
 
             // Binding pattern
             const name = declaration.name;
-            const [precedingStatements, bindings] = transformInPrecedingStatementScope(context, () =>
+            const { precedingStatements, result: bindings } = transformInPrecedingStatementScope(context, () =>
                 transformBindingPattern(context, name, identifier)
             );
             bindingPatternDeclarations.push(...precedingStatements, ...bindings);

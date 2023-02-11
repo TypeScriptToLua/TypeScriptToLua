@@ -128,19 +128,20 @@ export function transformOptionalChainWithCapture(
     // transform right expression first to check if thisValue capture is needed
     // capture and return thisValue if requested from outside
     let returnThisValue: lua.Expression | undefined;
-    const [rightPrecedingStatements, rightExpression] = transformInPrecedingStatementScope(context, () => {
-        if (!thisValueCapture) {
-            return context.transformExpression(tsRightExpression);
-        }
+    const { precedingStatements: rightPrecedingStatements, result: rightExpression } =
+        transformInPrecedingStatementScope(context, () => {
+            if (!thisValueCapture) {
+                return context.transformExpression(tsRightExpression);
+            }
 
-        const { expression: result, thisValue } = transformExpressionWithThisValueCapture(
-            context,
-            tsRightExpression,
-            thisValueCapture
-        );
-        returnThisValue = thisValue;
-        return result;
-    });
+            const { expression: result, thisValue } = transformExpressionWithThisValueCapture(
+                context,
+                tsRightExpression,
+                thisValueCapture
+            );
+            returnThisValue = thisValue;
+            return result;
+        });
 
     // transform left expression, handle thisValue if needed by rightExpression
     const thisValueCaptureName = context.createTempName("this");
@@ -149,19 +150,22 @@ export function transformOptionalChainWithCapture(
 
     const optionalContinuationData = getOptionalContinuationData(tsTemp);
     const rightContextualCall = optionalContinuationData?.contextualCall;
-    const [leftPrecedingStatements, leftExpression] = transformInPrecedingStatementScope(context, () => {
-        let result: lua.Expression;
-        if (rightContextualCall) {
-            ({ expression: result, thisValue: capturedThisValue } = transformExpressionWithThisValueCapture(
-                context,
-                tsLeftExpression,
-                leftThisValueTemp
-            ));
-        } else {
-            result = context.transformExpression(tsLeftExpression);
+    const { precedingStatements: leftPrecedingStatements, result: leftExpression } = transformInPrecedingStatementScope(
+        context,
+        () => {
+            let result: lua.Expression;
+            if (rightContextualCall) {
+                ({ expression: result, thisValue: capturedThisValue } = transformExpressionWithThisValueCapture(
+                    context,
+                    tsLeftExpression,
+                    leftThisValueTemp
+                ));
+            } else {
+                result = context.transformExpression(tsLeftExpression);
+            }
+            return result;
         }
-        return result;
-    });
+    );
     // handle context
     if (rightContextualCall) {
         if (capturedThisValue) {

@@ -33,7 +33,7 @@ export function transformClassInstanceFields(
     const statements: lua.Statement[] = [];
 
     for (const f of instanceFields) {
-        const [precedingStatements, statement] = transformInPrecedingStatementScope(context, () => {
+        const { precedingStatements, result: statement } = transformInPrecedingStatementScope(context, () => {
             // Get identifier
             const fieldName = transformPropertyName(context, f.name);
 

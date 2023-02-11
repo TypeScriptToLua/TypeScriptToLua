@@ -107,8 +107,9 @@ function transformDestructuredAssignmentExpression(
     context: TransformationContext,
     expression: ts.DestructuringAssignment
 ) {
-    let [rightPrecedingStatements, right] = transformInPrecedingStatementScope(context, () =>
-        context.transformExpression(expression.right)
+    let { precedingStatements: rightPrecedingStatements, result: right } = transformInPrecedingStatementScope(
+        context,
+        () => context.transformExpression(expression.right)
     );
     context.addPrecedingStatements(rightPrecedingStatements);
     if (isMultiReturnCall(context, expression.right)) {
@@ -153,7 +154,7 @@ export function transformAssignmentExpression(
     }
 
     if (ts.isPropertyAccessExpression(expression.left) || ts.isElementAccessExpression(expression.left)) {
-        const [precedingStatements, right] = transformInPrecedingStatementScope(context, () =>
+        const { precedingStatements, result: right } = transformInPrecedingStatementScope(context, () =>
             context.transformExpression(expression.right)
         );
 
@@ -233,7 +234,7 @@ export function transformAssignmentStatement(
         const { statements } = transformDestructuredAssignmentExpression(context, expression);
         return statements;
     } else {
-        const [precedingStatements, right] = transformInPrecedingStatementScope(context, () =>
+        const { precedingStatements, result: right } = transformInPrecedingStatementScope(context, () =>
             context.transformExpression(expression.right)
         );
         return transformAssignmentWithRightPrecedingStatements(context, expression.left, right, precedingStatements);

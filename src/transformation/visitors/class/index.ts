@@ -29,7 +29,7 @@ export const transformClassDeclaration: FunctionVisitor<ts.ClassLikeDeclaration>
     // If declaration is a default export, transform to export variable assignment instead
     if (hasDefaultExportModifier(declaration)) {
         // Class declaration including assignment to ____exports.default are in preceding statements
-        const [precedingStatements] = transformInPrecedingStatementScope(context, () => {
+        const { precedingStatements } = transformInPrecedingStatementScope(context, () => {
             transformClassAsExpression(declaration, context);
             return [];
         });

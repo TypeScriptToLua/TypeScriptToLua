@@ -13,7 +13,7 @@ export const transformSourceFileNode: FunctionVisitor<ts.SourceFile> = (node, co
         const [statement] = node.statements;
         if (statement) {
             assert(ts.isExpressionStatement(statement));
-            const [precedingStatements, expression] = transformInPrecedingStatementScope(context, () =>
+            const { precedingStatements, result: expression } = transformInPrecedingStatementScope(context, () =>
                 context.transformExpression(statement.expression)
             );
             statements.push(...precedingStatements);

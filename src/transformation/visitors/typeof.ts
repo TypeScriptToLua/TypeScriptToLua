@@ -47,7 +47,7 @@ export function transformTypeOfBinaryExpression(
 
     const innerExpression = context.transformExpression(typeOfExpression.expression);
     const typeCall = lua.createCallExpression(lua.createIdentifier("type"), [innerExpression], typeOfExpression);
-    const [precedingStatements, result] = transformBinaryOperation(
+    const { precedingStatements, result } = transformBinaryOperation(
         context,
         typeCall,
         comparedExpression,

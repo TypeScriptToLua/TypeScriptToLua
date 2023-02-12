@@ -71,7 +71,7 @@ export function transformBindingPattern(
         const variableName = transformIdentifier(context, element.name);
         // The field to extract
         const elementName = element.propertyName ?? element.name;
-        const [precedingStatements, propertyName] = transformInPrecedingStatementScope(context, () =>
+        const { precedingStatements, result: propertyName } = transformInPrecedingStatementScope(context, () =>
             transformPropertyName(context, elementName)
         );
         result.push(...precedingStatements); // Keep property's preceding statements in order
@@ -135,9 +135,8 @@ export function transformBindingPattern(
         if (element.initializer) {
             const identifier = addExportToIdentifier(context, variableName);
             const tsInitializer = element.initializer;
-            const [initializerPrecedingStatements, initializer] = transformInPrecedingStatementScope(context, () =>
-                context.transformExpression(tsInitializer)
-            );
+            const { precedingStatements: initializerPrecedingStatements, result: initializer } =
+                transformInPrecedingStatementScope(context, () => context.transformExpression(tsInitializer));
             result.push(
                 lua.createIfStatement(
                     lua.createBinaryExpression(identifier, lua.createNilLiteral(), lua.SyntaxKind.EqualityOperator),
@@ -173,8 +172,9 @@ export function transformBindingVariableDeclaration(
             if (isMultiReturnCall(context, initializer)) {
                 expression = wrapInTable(expression);
             }
-            const [moveStatements, movedExpr] = transformInPrecedingStatementScope(context, () =>
-                moveToPrecedingTemp(context, expression, initializer)
+            const { precedingStatements: moveStatements, result: movedExpr } = transformInPrecedingStatementScope(
+                context,
+                () => moveToPrecedingTemp(context, expression, initializer)
             );
             statements.push(...moveStatements);
             table = movedExpr;

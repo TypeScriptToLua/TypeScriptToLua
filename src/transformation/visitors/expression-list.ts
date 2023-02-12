@@ -47,9 +47,8 @@ function transformExpressions(
     const transformedExpressions: lua.Expression[] = [];
     let lastPrecedingStatementsIndex = -1;
     for (let i = 0; i < expressions.length; ++i) {
-        const [expressionPrecedingStatements, expression] = transformInPrecedingStatementScope(context, () =>
-            context.transformExpression(expressions[i])
-        );
+        const { precedingStatements: expressionPrecedingStatements, result: expression } =
+            transformInPrecedingStatementScope(context, () => context.transformExpression(expressions[i]));
         transformedExpressions.push(expression);
         if (expressionPrecedingStatements.length > 0) {
             lastPrecedingStatementsIndex = i;

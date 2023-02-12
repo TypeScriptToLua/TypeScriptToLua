@@ -80,9 +80,8 @@ export function transformCallAndArguments(
     signature?: ts.Signature,
     callContext?: ts.Expression
 ): [lua.Expression, lua.Expression[]] {
-    const [argPrecedingStatements, transformedArguments] = transformInPrecedingStatementScope(context, () =>
-        transformArguments(context, params, signature, callContext)
-    );
+    const { precedingStatements: argPrecedingStatements, result: transformedArguments } =
+        transformInPrecedingStatementScope(context, () => transformArguments(context, params, signature, callContext));
     return transformCallWithArguments(context, callExpression, transformedArguments, argPrecedingStatements);
 }
 
@@ -125,9 +124,8 @@ export function transformContextualCallExpression(
     }
     const left = ts.isCallExpression(node) ? getCalledExpression(node) : node.tag;
 
-    let [argPrecedingStatements, transformedArguments] = transformInPrecedingStatementScope(context, () =>
-        transformArguments(context, args, signature)
-    );
+    let { precedingStatements: argPrecedingStatements, result: transformedArguments } =
+        transformInPrecedingStatementScope(context, () => transformArguments(context, args, signature));
 
     if (
         ts.isPropertyAccessExpression(left) &&

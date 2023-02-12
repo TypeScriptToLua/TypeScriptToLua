@@ -57,7 +57,7 @@ export function transformForInitializer(
 
         const binding = getVariableDeclarationBinding(context, initializer);
         if (ts.isArrayBindingPattern(binding) || ts.isObjectBindingPattern(binding)) {
-            const [precedingStatements, bindings] = transformInPrecedingStatementScope(context, () =>
+            const { precedingStatements, result: bindings } = transformInPrecedingStatementScope(context, () =>
                 transformBindingPattern(context, binding, valueVariable)
             );
             block.statements.unshift(...precedingStatements, ...bindings);

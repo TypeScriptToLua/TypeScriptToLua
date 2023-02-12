@@ -469,7 +469,7 @@ end)());`;
 
     private injectLuaFile(state: LuaState, lua: Lua, lauxlib: LauxLib, fileName: string, fileContent: string) {
         const extension = this.options.extension ?? ".lua";
-        const modName = fileName.includes(".")
+        const modName = fileName.endsWith(extension)
             ? formatPathToLuaPath(fileName.substring(0, fileName.length - extension.length))
             : fileName;
         if (this.options.luaTarget === tstl.LuaTarget.Lua50) {

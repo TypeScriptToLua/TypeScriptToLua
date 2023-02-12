@@ -314,9 +314,9 @@ function replaceRequireInCode(
     file: ProcessedFile,
     originalRequire: LuaRequire,
     newRequire: string,
-    extension = ".lua"
+    extension: string | undefined
 ): void {
-    const requirePath = formatPathToLuaPath(newRequire.substring(0, newRequire.length - extension.length));
+    const requirePath = requirePathForFile(newRequire, extension);
     file.code = file.code =
         file.code.substring(0, originalRequire.from) +
         `require("${requirePath}")` +
@@ -327,9 +327,9 @@ function replaceRequireInSourceMap(
     file: ProcessedFile,
     originalRequire: LuaRequire,
     newRequire: string,
-    extension = ".lua"
+    extension?: string | undefined
 ): void {
-    const requirePath = formatPathToLuaPath(newRequire.substring(0, newRequire.length - extension.length));
+    const requirePath = requirePathForFile(newRequire, extension);
     if (file.sourceMapNode) {
         replaceInSourceMap(
             file.sourceMapNode,
@@ -337,6 +337,14 @@ function replaceRequireInSourceMap(
             `"${originalRequire.requirePath}"`,
             `"${requirePath}"`
         );
+    }
+}
+
+function requirePathForFile(filePath: string, extension = ".lua"): string {
+    if (filePath.endsWith(extension)) {
+        return formatPathToLuaPath(filePath.substring(0, filePath.length - extension.length));
+    } else {
+        return formatPathToLuaPath(filePath);
     }
 }
 

@@ -2,7 +2,6 @@ import * as path from "path";
 import * as tstl from "../../src";
 import * as util from "../util";
 import * as ts from "typescript";
-import * as fs from "fs-extra";
 import { BuildMode } from "../../src";
 import { normalizeSlashes } from "../../src/utils";
 import { pathsWithoutBaseUrl } from "../../src/transpilation/diagnostics";
@@ -275,16 +274,10 @@ describe("module resolution project with dependencies built by tstl library mode
 
 describe("module resolution project with dependencies built by tstl library mode and has exports field", () => {
     const projectPath = path.resolve(__dirname, "module-resolution", "project-with-tstl-library-has-exports-field");
-    const appPath = path.join(projectPath, "app");
 
     // First compile dependencies into node_modules. NOTE: Actually writing to disk, very slow
-    const dependency1Path = path.join(projectPath, "dependency1-ts");
+    const dependency1Path = path.join(projectPath, "node_modules", "dependency1");
     tstl.transpileProject(path.join(dependency1Path, "tsconfig.json"));
-
-    // Install dependencies. This will create node_modules folder with dependency1-ts in it.
-    const nodeModulesPath = path.join(appPath, "node_modules");
-    fs.ensureDirSync(nodeModulesPath);
-    fs.ensureSymlinkSync(dependency1Path, path.join(nodeModulesPath, "dependency1"), "dir");
 
     const expectedResult = {
         dependency1IndexResult: "function in dependency 1 index: dependency1OtherFileFunc in dependency1/d1otherfile",
@@ -293,8 +286,8 @@ describe("module resolution project with dependencies built by tstl library mode
 
     test("can resolve lua dependencies", () => {
         const transpileResult = util
-            .testProject(path.join(appPath, "tsconfig.json"))
-            .setMainFileName(path.join(appPath, "main.ts"))
+            .testProject(path.join(projectPath, "tsconfig.json"))
+            .setMainFileName(path.join(projectPath, "main.ts"))
             .setOptions({ outDir: "tstl-out", moduleResolution: ts.ModuleResolutionKind.Node16 })
             .expectToEqual(expectedResult)
             .getLuaResult();
@@ -307,8 +300,8 @@ describe("module resolution project with dependencies built by tstl library mode
     });
 
     test("can resolve dependencies and bundle", () => {
-        const mainFile = path.join(appPath, "main.ts");
-        util.testProject(path.join(appPath, "tsconfig.json"))
+        const mainFile = path.join(projectPath, "main.ts");
+        util.testProject(path.join(projectPath, "tsconfig.json"))
             .setMainFileName(mainFile)
             .setOptions({
                 luaBundle: "bundle.lua",

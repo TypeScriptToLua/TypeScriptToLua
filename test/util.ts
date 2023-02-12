@@ -236,7 +236,7 @@ export abstract class TestBuilder {
     public getLuaResult(): tstl.TranspileVirtualProjectResult {
         const program = this.getProgram();
         const preEmitDiagnostics = ts.getPreEmitDiagnostics(program);
-        const collector = createEmitOutputCollector();
+        const collector = createEmitOutputCollector(this.options.extension);
         const { diagnostics: transpileDiagnostics } = new tstl.Transpiler({ emitHost: this.getEmitHost() }).emit({
             program,
             customTransformers: this.customTransformers,
@@ -277,7 +277,7 @@ export abstract class TestBuilder {
         const program = this.getProgram();
         program.getCompilerOptions().module = ts.ModuleKind.CommonJS;
 
-        const collector = createEmitOutputCollector();
+        const collector = createEmitOutputCollector(this.options.extension);
         const { diagnostics } = program.emit(undefined, collector.writeFile);
         return { transpiledFiles: collector.files, diagnostics: [...diagnostics] };
     }
@@ -468,7 +468,10 @@ end)());`;
     }
 
     private injectLuaFile(state: LuaState, lua: Lua, lauxlib: LauxLib, fileName: string, fileContent: string) {
-        const modName = formatPathToLuaPath(fileName.replace(".lua", ""));
+        const extension = this.options.extension ?? ".lua";
+        const modName = fileName.includes(".")
+            ? formatPathToLuaPath(fileName.substring(0, fileName.length - extension.length))
+            : fileName;
         if (this.options.luaTarget === tstl.LuaTarget.Lua50) {
             // Adding source Lua to the _LOADED cache will allow require to find it
             lua.lua_getglobal(state, "_LOADED");
@@ -610,7 +613,7 @@ class ProjectTestBuilder extends ModuleTestBuilder {
     @memoize
     public getLuaResult(): tstl.TranspileVirtualProjectResult {
         // Override getLuaResult to use transpileProject with tsconfig.json instead
-        const collector = createEmitOutputCollector();
+        const collector = createEmitOutputCollector(this.options.extension);
         const { diagnostics } = transpileProject(this.tsConfig, this.options, collector.writeFile);
 
         return { diagnostics: [...diagnostics], transpiledFiles: collector.files };

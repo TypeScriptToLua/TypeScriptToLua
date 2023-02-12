@@ -14,7 +14,7 @@ export interface TranspiledFile {
     jsSourceMap?: string;
 }
 
-export function createEmitOutputCollector() {
+export function createEmitOutputCollector(luaExtension = ".lua") {
     const files: TranspiledFile[] = [];
     const writeFile: ts.WriteFileCallback = (fileName, data, _bom, _onError, sourceFiles = []) => {
         let file = files.find(f => intersection(f.sourceFiles, sourceFiles).length > 0);
@@ -25,9 +25,9 @@ export function createEmitOutputCollector() {
             file.sourceFiles = union(file.sourceFiles, sourceFiles);
         }
 
-        if (fileName.endsWith(".lua")) {
+        if (fileName.endsWith(luaExtension)) {
             file.lua = data;
-        } else if (fileName.endsWith(".lua.map")) {
+        } else if (fileName.endsWith(`${luaExtension}.map`)) {
             file.luaSourceMap = data;
         } else if (fileName.endsWith(".js")) {
             file.js = data;

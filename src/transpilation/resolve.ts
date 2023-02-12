@@ -49,8 +49,8 @@ class ResolutionContext {
                 // Remove @NoResolution prefix if not building in library mode
                 if (!isBuildModeLibrary(this.program)) {
                     const path = required.requirePath.replace("@NoResolution:", "");
-                    replaceRequireInCode(file, required, path);
-                    replaceRequireInSourceMap(file, required, path);
+                    replaceRequireInCode(file, required, path, this.options.extension);
+                    replaceRequireInSourceMap(file, required, path, this.options.extension);
                 }
 
                 // Skip
@@ -88,8 +88,8 @@ class ResolutionContext {
         // Figure out resolved require path and dependency output path
         if (shouldRewriteRequires(dependencyPath, this.program)) {
             const resolvedRequire = getEmitPathRelativeToOutDir(dependencyPath, this.program);
-            replaceRequireInCode(file, required, resolvedRequire);
-            replaceRequireInSourceMap(file, required, resolvedRequire);
+            replaceRequireInCode(file, required, resolvedRequire, this.options.extension);
+            replaceRequireInSourceMap(file, required, resolvedRequire, this.options.extension);
         }
     }
 
@@ -117,8 +117,8 @@ class ResolutionContext {
 
     private couldNotResolveImport(required: LuaRequire, file: ProcessedFile): void {
         const fallbackRequire = fallbackResolve(required, getSourceDir(this.program), path.dirname(file.fileName));
-        replaceRequireInCode(file, required, fallbackRequire);
-        replaceRequireInSourceMap(file, required, fallbackRequire);
+        replaceRequireInCode(file, required, fallbackRequire, this.options.extension);
+        replaceRequireInSourceMap(file, required, fallbackRequire, this.options.extension);
 
         this.diagnostics.push(
             couldNotResolveRequire(required.requirePath, path.relative(getProjectRoot(this.program), file.fileName))
@@ -310,16 +310,26 @@ function isBuildModeLibrary(program: ts.Program) {
     return program.getCompilerOptions().buildMode === BuildMode.Library;
 }
 
-function replaceRequireInCode(file: ProcessedFile, originalRequire: LuaRequire, newRequire: string): void {
-    const requirePath = formatPathToLuaPath(newRequire.replace(".lua", ""));
+function replaceRequireInCode(
+    file: ProcessedFile,
+    originalRequire: LuaRequire,
+    newRequire: string,
+    extension: string | undefined
+): void {
+    const requirePath = requirePathForFile(newRequire, extension);
     file.code = file.code =
         file.code.substring(0, originalRequire.from) +
         `require("${requirePath}")` +
         file.code.substring(originalRequire.to + 1);
 }
 
-function replaceRequireInSourceMap(file: ProcessedFile, originalRequire: LuaRequire, newRequire: string): void {
-    const requirePath = formatPathToLuaPath(newRequire.replace(".lua", ""));
+function replaceRequireInSourceMap(
+    file: ProcessedFile,
+    originalRequire: LuaRequire,
+    newRequire: string,
+    extension?: string | undefined
+): void {
+    const requirePath = requirePathForFile(newRequire, extension);
     if (file.sourceMapNode) {
         replaceInSourceMap(
             file.sourceMapNode,
@@ -327,6 +337,14 @@ function replaceRequireInSourceMap(file: ProcessedFile, originalRequire: LuaRequ
             `"${originalRequire.requirePath}"`,
             `"${requirePath}"`
         );
+    }
+}
+
+function requirePathForFile(filePath: string, extension = ".lua"): string {
+    if (filePath.endsWith(extension)) {
+        return formatPathToLuaPath(filePath.substring(0, filePath.length - extension.length));
+    } else {
+        return formatPathToLuaPath(filePath);
     }
 }
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.13.0
+
+- Fixed alternate file extensions (other than .lua, if configured) breaking module resolution and emitted require statements.
+- Added experimental support for `"luaLibImport": "require-minimal"` configuration option. This will output a lualib bundle containing only the lualib functions used by your code. This might not work if you are including external tstl-generated Lua, for example from a npm package.
+- Added support for the "exports" field in package.json.
+- Fixed some exceptions resulting from invalid language-extensions use.
+- Fixed an exception when using compound assignment (like `+=`) with array length.
+
 ## 1.12.0
 
 - Reworked how tstl detects and rewrites `require` statements during dependency resolution. This should reduce the amount of false-positive matches of require statements: require statements in string literals or comments should no longer be detected by tstl. This means require statements in string literals or comments can survive the transpiler without causing a 'could not resolve lua sources' error or getting rewritten into nonsense.

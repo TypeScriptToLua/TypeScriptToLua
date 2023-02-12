@@ -176,6 +176,23 @@ describe("array.length", () => {
             `.expectToEqual(new util.ExecutionError(`invalid array length: ${luaSpecialValueString}`));
         });
 
+        // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1395
+        test("in compound assignment (#1395)", () => {
+            util.testFunction`
+                const arr = [1,2,3,4];
+                const returnVal = arr.length -= 2;
+                return { arr, returnVal };
+            `.expectToMatchJsResult();
+        });
+
+        test("as standalone compound assignment (#1395)", () => {
+            util.testFunction`
+                const arr = [1,2,3,4];
+                arr.length -= 2;
+                return arr;
+            `.expectToMatchJsResult();
+        });
+
         test("in array destructuring", () => {
             util.testFunction`
                 const array = [0, 1, 2];

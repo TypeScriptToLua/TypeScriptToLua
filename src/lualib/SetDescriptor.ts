@@ -16,7 +16,7 @@ function descriptorIndex(this: any, key: string): void {
         const descriptors = rawget(metatable, "_descriptors");
         if (descriptors) {
             const descriptor: PropertyDescriptor = descriptors[key];
-            if (descriptor) {
+            if (descriptor !== undefined) {
                 if (descriptor.get) {
                     return descriptor.get.call(this);
                 }
@@ -35,7 +35,7 @@ function descriptorNewIndex(this: any, key: string, value: any): void {
         const descriptors = rawget(metatable, "_descriptors");
         if (descriptors) {
             const descriptor: PropertyDescriptor = descriptors[key];
-            if (descriptor) {
+            if (descriptor !== undefined) {
                 if (descriptor.set) {
                     descriptor.set.call(this, value);
                 } else {

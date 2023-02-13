@@ -16,14 +16,14 @@ export function __TS__Decorate<TTarget extends AnyTable, TKey extends keyof TTar
 
     for (let i = decorators.length; i >= 0; i--) {
         const decorator = decorators[i];
-        if (decorator) {
+        if (decorator !== undefined) {
             const oldResult = result;
 
             if (key === undefined) {
                 result = decorator(result);
             } else if (desc === true) {
                 const value = rawget(target, key);
-                const descriptor = __TS__ObjectGetOwnPropertyDescriptor(target, key) || {
+                const descriptor = __TS__ObjectGetOwnPropertyDescriptor(target, key) ?? {
                     configurable: true,
                     writable: true,
                     value,

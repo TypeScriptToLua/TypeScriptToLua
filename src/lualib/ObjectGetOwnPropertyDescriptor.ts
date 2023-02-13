@@ -6,5 +6,5 @@ export function __TS__ObjectGetOwnPropertyDescriptor(
     const metatable = getmetatable(object);
     if (!metatable) return;
     if (!rawget(metatable, "_descriptors")) return;
-    return rawget(metatable, "_descriptors")[key];
+    return rawget(metatable, "_descriptors")![key];
 }

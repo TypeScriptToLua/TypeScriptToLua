@@ -1,6 +1,6 @@
 const symbolMetatable = {
     __tostring(this: symbol): string {
-        return `Symbol(${this.description || ""})`;
+        return `Symbol(${this.description ?? ""})`;
     },
 };
 

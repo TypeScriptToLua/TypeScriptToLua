@@ -1,4 +1,4 @@
-export class Set<T> {
+export class Set<T extends AnyNotNil> {
     public static [Symbol.species] = Set;
     public [Symbol.toStringTag] = "Set";
 
@@ -42,8 +42,8 @@ export class Set<T> {
             this.firstKey = value;
             this.lastKey = value;
         } else if (isNewValue) {
-            this.nextKey.set(this.lastKey, value);
-            this.previousKey.set(value, this.lastKey);
+            this.nextKey.set(this.lastKey!, value);
+            this.previousKey.set(value, this.lastKey!);
             this.lastKey = value;
         }
 
@@ -66,22 +66,22 @@ export class Set<T> {
             // Do order bookkeeping
             const next = this.nextKey.get(value);
             const previous = this.previousKey.get(value);
-            if (next && previous) {
+            if (next !== undefined && previous !== undefined) {
                 this.nextKey.set(previous, next);
                 this.previousKey.set(next, previous);
-            } else if (next) {
+            } else if (next !== undefined) {
                 this.firstKey = next;
-                this.previousKey.set(next, undefined);
-            } else if (previous) {
+                this.previousKey.set(next, undefined!);
+            } else if (previous !== undefined) {
                 this.lastKey = previous;
-                this.nextKey.set(previous, undefined);
+                this.nextKey.set(previous, undefined!);
             } else {
                 this.firstKey = undefined;
                 this.lastKey = undefined;
             }
 
-            this.nextKey.set(value, undefined);
-            this.previousKey.set(value, undefined);
+            this.nextKey.set(value, undefined!);
+            this.previousKey.set(value, undefined!);
         }
 
         return contains;
@@ -103,7 +103,7 @@ export class Set<T> {
 
     public entries(): IterableIterator<[T, T]> {
         const nextKey = this.nextKey;
-        let key: T = this.firstKey;
+        let key: T = this.firstKey!;
         return {
             [Symbol.iterator](): IterableIterator<[T, T]> {
                 return this;
@@ -118,7 +118,7 @@ export class Set<T> {
 
     public keys(): IterableIterator<T> {
         const nextKey = this.nextKey;
-        let key: T = this.firstKey;
+        let key: T = this.firstKey!;
         return {
             [Symbol.iterator](): IterableIterator<T> {
                 return this;
@@ -133,7 +133,7 @@ export class Set<T> {
 
     public values(): IterableIterator<T> {
         const nextKey = this.nextKey;
-        let key: T = this.firstKey;
+        let key: T = this.firstKey!;
         return {
             [Symbol.iterator](): IterableIterator<T> {
                 return this;

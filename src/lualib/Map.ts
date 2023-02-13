@@ -1,4 +1,4 @@
-export class Map<K, V> {
+export class Map<K extends AnyNotNil, V> {
     public static [Symbol.species] = Map;
     public [Symbol.toStringTag] = "Map";
 
@@ -52,24 +52,24 @@ export class Map<K, V> {
             // Do order bookkeeping
             const next = this.nextKey.get(key);
             const previous = this.previousKey.get(key);
-            if (next && previous) {
+            if (next !== undefined && previous !== undefined) {
                 this.nextKey.set(previous, next);
                 this.previousKey.set(next, previous);
-            } else if (next) {
+            } else if (next !== undefined) {
                 this.firstKey = next;
-                this.previousKey.set(next, undefined);
-            } else if (previous) {
+                this.previousKey.set(next, undefined!);
+            } else if (previous !== undefined) {
                 this.lastKey = previous;
-                this.nextKey.set(previous, undefined);
+                this.nextKey.set(previous, undefined!);
             } else {
                 this.firstKey = undefined;
                 this.lastKey = undefined;
             }
 
-            this.nextKey.set(key, undefined);
-            this.previousKey.set(key, undefined);
+            this.nextKey.set(key, undefined!);
+            this.previousKey.set(key, undefined!);
         }
-        this.items.set(key, undefined);
+        this.items.set(key, undefined!);
 
         return contains;
     }
@@ -100,8 +100,8 @@ export class Map<K, V> {
             this.firstKey = key;
             this.lastKey = key;
         } else if (isNewValue) {
-            this.nextKey.set(this.lastKey, key);
-            this.previousKey.set(key, this.lastKey);
+            this.nextKey.set(this.lastKey!, key);
+            this.previousKey.set(key, this.lastKey!);
             this.lastKey = key;
         }
 
@@ -120,8 +120,8 @@ export class Map<K, V> {
                 return this;
             },
             next(): IteratorResult<[K, V]> {
-                const result = { done: !key, value: [key, items.get(key)] as [K, V] };
-                key = nextKey.get(key);
+                const result = { done: !key, value: [key, items.get(key!)] as [K, V] };
+                key = nextKey.get(key!);
                 return result;
             },
         };
@@ -136,8 +136,8 @@ export class Map<K, V> {
             },
             next(): IteratorResult<K> {
                 const result = { done: !key, value: key };
-                key = nextKey.get(key);
-                return result;
+                key = nextKey.get(key!);
+                return result as IteratorResult<K>;
             },
         };
     }
@@ -150,8 +150,8 @@ export class Map<K, V> {
                 return this;
             },
             next(): IteratorResult<V> {
-                const result = { done: !key, value: items.get(key) };
-                key = nextKey.get(key);
+                const result = { done: !key, value: items.get(key!) };
+                key = nextKey.get(key!);
                 return result;
             },
         };

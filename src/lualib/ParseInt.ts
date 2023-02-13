@@ -7,7 +7,7 @@ export function __TS__ParseInt(this: void, numberString: string, base?: number):
     if (base === undefined) {
         base = 10;
         const [hexMatch] = __TS__Match(numberString, "^%s*-?0[xX]");
-        if (hexMatch) {
+        if (hexMatch !== undefined) {
             base = 16;
             numberString = __TS__Match(hexMatch, "-")[0]
                 ? "-" + numberString.substring(hexMatch.length)

@@ -7,13 +7,12 @@
         "skipLibCheck": true,
         "rootDirs": [".", "universal"],
 
-        "noUnusedLocals": true,
-        "noUnusedParameters": true
+        "strict": true
     },
     "tstl": {
         "luaLibImport": "none",
         "noHeader": true,
         "luaPlugins": [{ "name": "../../dist/lualib-build/plugin.js" }]
     },
-    "include": ["*.ts", "universal/*.ts", "declarations", "../../language-extensions/index.d.ts"]
+    "include": ["*.ts", "universal/**/*.ts", "declarations/**/*.ts", "../../language-extensions/index.d.ts"]
 }

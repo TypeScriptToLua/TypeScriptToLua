@@ -9,7 +9,7 @@ export function __TS__ArrayReduceRight<TElement, TAccumulator>(
     const len = this.length;
 
     let k = len - 1;
-    let accumulator: TAccumulator = undefined;
+    let accumulator: TAccumulator = undefined!;
 
     // Check if initial value is present in function call
     if (__TS__CountVarargs(...initial) !== 0) {

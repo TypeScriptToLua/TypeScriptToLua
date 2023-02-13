@@ -7,8 +7,7 @@
         "skipLibCheck": true,
         "rootDirs": [".", "5.0"],
 
-        "noUnusedLocals": true,
-        "noUnusedParameters": true
+        "strict": true
     },
     "tstl": {
         "luaLibImport": "none",
@@ -16,5 +15,5 @@
         "luaTarget": "5.0",
         "luaPlugins": [{ "name": "../../dist/lualib-build/plugin.js" }]
     },
-    "include": ["*.ts", "5.0/*.ts", "declarations", "../../language-extensions/index.d.ts"]
+    "include": ["*.ts", "5.0/**/*.ts", "declarations/**/*.ts", "../../language-extensions/index.d.ts"]
 }

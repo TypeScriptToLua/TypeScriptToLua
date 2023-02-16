@@ -11,7 +11,7 @@ function arrayLikeStep(this: ArrayLike<unknown>, index: number): LuaMultiReturn<
 const arrayLikeIterator: (
     this: void,
     arr: ArrayLike<unknown> | Iterable<unknown>
-) => LuaIterable<LuaMultiReturn<[number, unknown]>> = (arr => {
+) => LuaIterable<LuaMultiReturn<[number, unknown]>> = ((arr: any) => {
     if (typeof arr.length === "number") return $multi(arrayLikeStep, arr, 0);
     return __TS__Iterator(arr);
 }) as any;

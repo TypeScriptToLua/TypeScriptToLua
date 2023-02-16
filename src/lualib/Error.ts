@@ -27,7 +27,7 @@ function getErrorStack(constructor: () => any): string {
 
 function wrapErrorToString<T extends Error>(getDescription: (this: T) => string): (this: T) => string {
     return function (this: Error): string {
-        const description = getDescription.call(this);
+        const description = getDescription.call(this as T);
         const caller = debug.getinfo(3, "f");
         // @ts-ignore Fails when compiled with Lua 5.0 types
         const isClassicLua = _VERSION.includes("Lua 5.0") || _VERSION === "Lua 5.1";
@@ -54,7 +54,7 @@ export const Error: ErrorConstructor = initErrorClass(
         constructor(public message = "") {
             this.stack = getErrorStack((this.constructor as any).new);
             const metatable = getmetatable(this);
-            if (!metatable.__errorToStringPatched) {
+            if (metatable && !metatable.__errorToStringPatched) {
                 metatable.__errorToStringPatched = true;
                 metatable.__tostring = wrapErrorToString(metatable.__tostring);
             }

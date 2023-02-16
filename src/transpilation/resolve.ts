@@ -341,6 +341,9 @@ function replaceRequireInSourceMap(
 }
 
 function requirePathForFile(filePath: string, extension = ".lua"): string {
+    if (!extension.startsWith(".")) {
+        extension = `.${extension}`;
+    }
     if (filePath.endsWith(extension)) {
         return formatPathToLuaPath(filePath.substring(0, filePath.length - extension.length));
     } else {

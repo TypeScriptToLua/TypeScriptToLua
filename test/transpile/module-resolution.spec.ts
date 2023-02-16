@@ -182,6 +182,14 @@ describe("module resolution with sourceDir", () => {
             .setOptions({ outDir: "tstl-out", extension: ".script" })
             .expectToEqual(expectedResult);
     });
+
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1394
+    test("can resolve files with non-standard extension without separator (#1394)", () => {
+        util.testProject(path.join(projectPath, "tsconfig.json"))
+            .setMainFileName(path.join(projectPath, "src", "main.ts"))
+            .setOptions({ outDir: "tstl-out", extension: "script" })
+            .expectToEqual(expectedResult);
+    });
 });
 
 describe("module resolution project with lua sources", () => {

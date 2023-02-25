@@ -305,15 +305,17 @@ function getJSDocCommentFromTSNode(
     // https://stevedonovan.github.io/ldoc/manual/doc.md.html
     // LDoc comments require that the first line starts with three hyphens.
     // Thus, need to add a hyphen to the first line.
-    const firstLine = lines[0];
-    if (firstLine.startsWith(" @")) {
-        lines.unshift("-");
-    } else {
-        lines.shift();
-        lines.unshift("-" + firstLine);
-    }
+    if (lines.length > 0) {
+        const firstLine = lines[0];
+        if (firstLine.startsWith(" @")) {
+            lines.unshift("-");
+        } else {
+            lines.shift();
+            lines.unshift("-" + firstLine);
+        }
 
-    return lines;
+        return lines;
+    }
 }
 
 export const createNaN = (tsOriginal?: ts.Node) =>

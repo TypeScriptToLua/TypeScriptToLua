@@ -94,14 +94,14 @@ export function transformArrayPrototypeCall(
             return transformLuaLibFunction(context, LuaLibFeature.ArrayEntries, node, caller);
         case "push":
             if (node.arguments.length === 1) {
-                const param = params[0];
+                const param = params[0] ?? lua.createNilLiteral();
                 if (isUnpackCall(param)) {
                     return transformLuaLibFunction(
                         context,
                         LuaLibFeature.ArrayPushArray,
                         node,
                         caller,
-                        (param as lua.CallExpression).params[0]
+                        (param as lua.CallExpression).params[0] ?? lua.createNilLiteral()
                     );
                 }
                 if (!lua.isDotsLiteral(param)) {
@@ -162,7 +162,7 @@ export function transformArrayPrototypeCall(
                 typeAlwaysHasSomeOfFlags(context, elementType, ts.TypeFlags.StringLike | ts.TypeFlags.NumberLike)
             ) {
                 const defaultSeparatorLiteral = lua.createStringLiteral(",");
-                const param = params[0];
+                const param = params[0] ?? lua.createNilLiteral();
                 const parameters = [
                     caller,
                     node.arguments.length === 0

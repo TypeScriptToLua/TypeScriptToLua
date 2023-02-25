@@ -110,7 +110,7 @@ export function transformStringPrototypeCall(
             const literalValue = getNumberLiteralValue(params[0]);
             // Inline string.sub call if we know that parameter is pure and isn't negative
             if (literalValue !== undefined && literalValue >= 0) {
-                const firstParamPlusOne = addToNumericExpression(params[0], 1);
+                const firstParamPlusOne = addToNumericExpression(params[0] ?? lua.createNilLiteral(), 1);
                 return createStringCall("sub", node, caller, firstParamPlusOne, firstParamPlusOne);
             }
 
@@ -122,7 +122,12 @@ export function transformStringPrototypeCall(
             // Inline string.sub call if we know that parameter is pure and isn't negative
             if (literalValue !== undefined && literalValue >= 0) {
                 return lua.createBinaryExpression(
-                    createStringCall("byte", node, caller, addToNumericExpression(params[0], 1)),
+                    createStringCall(
+                        "byte",
+                        node,
+                        caller,
+                        addToNumericExpression(params[0] ?? lua.createNilLiteral(), 1)
+                    ),
                     createNaN(),
                     lua.SyntaxKind.OrOperator
                 );

@@ -42,7 +42,7 @@ export function transformStringPrototypeCall(
                 "find",
                 node,
                 caller,
-                params[0],
+                params[0] ?? lua.createNilLiteral(),
                 params[1]
                     ? // string.find handles negative indexes by making it relative to string end, but for indexOf it's the same as 0
                       lua.createCallExpression(
@@ -140,7 +140,9 @@ export function transformStringPrototypeCall(
         case "repeat":
             const math = lua.createIdentifier("math");
             const floor = lua.createStringLiteral("floor");
-            const parameter = lua.createCallExpression(lua.createTableIndexExpression(math, floor), [params[0]]);
+            const parameter = lua.createCallExpression(lua.createTableIndexExpression(math, floor), [
+                params[0] ?? lua.createNilLiteral(),
+            ]);
             return createStringCall("rep", node, caller, parameter);
         case "padStart":
             return transformLuaLibFunction(context, LuaLibFeature.StringPadStart, node, caller, ...params);

@@ -398,3 +398,15 @@ test.each(["string | undefined", "string | null", "null | string", "null | undef
             .expectToMatchJsResult();
     }
 );
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1406
+test("string.indexOf without arguments (#1406)", () => {
+    // Just test we do not throw here
+    util.testExpression`"".indexOf()`.expectToHaveDiagnostics();
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1406
+test("string.repeat without arguments (#1406)", () => {
+    // Just test we do not throw here
+    util.testExpression`"".repeat()`.expectToHaveDiagnostics();
+});

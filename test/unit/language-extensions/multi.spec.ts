@@ -327,3 +327,14 @@ test("return LuaMultiReturn from catch", () => {
         .withLanguageExtensions()
         .expectToEqual(2);
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1404
+test("LuaMultiReturn applies after casting a functtion (#1404)", () => {
+    util.testFunction`
+        let swap: any = (a: number, b: number) => $multi(b, a);
+        let [a, b] = (swap as (...args: any) => LuaMultiReturn<[number, number]>)(4, 3);
+        return [a, b];
+    `
+        .withLanguageExtensions()
+        .expectToEqual([3, 4]);
+});

@@ -329,7 +329,7 @@ test("return LuaMultiReturn from catch", () => {
 });
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1404
-test("LuaMultiReturn applies after casting a functtion (#1404)", () => {
+test("LuaMultiReturn applies after casting a function (#1404)", () => {
     util.testFunction`
         let swap: any = (a: number, b: number) => $multi(b, a);
         let [a, b] = (swap as (...args: any) => LuaMultiReturn<[number, number]>)(4, 3);

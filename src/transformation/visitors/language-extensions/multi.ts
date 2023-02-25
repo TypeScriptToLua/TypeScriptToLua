@@ -58,8 +58,9 @@ export function shouldMultiReturnCallBeWrapped(context: TransformationContext, n
         return false;
     }
 
-    // Variable declaration with destructuring
     const parent = findFirstNonOuterParent(node);
+
+    // Variable declaration with destructuring
     if (ts.isVariableDeclaration(parent) && ts.isArrayBindingPattern(parent.name)) {
         return false;
     }

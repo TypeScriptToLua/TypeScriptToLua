@@ -227,7 +227,7 @@ describe("array destructuring optimization", () => {
     });
 });
 
-test("no exception from invalid TS syntax", () => {
+test("no exception from semantically invalid TS", () => {
     util.testModule`
         declare function testFunc(value: number): LuaMultiReturn<[number, number]>;
         let [a, b] = testFunc(5) // Missing ;

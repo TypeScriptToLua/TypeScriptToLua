@@ -1,6 +1,5 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import { cast } from "../../../utils";
 import { TransformationContext } from "../../context";
 import { validateAssignment } from "../../utils/assignment-validation";
 import { createExportedIdentifier, getDependenciesOfSymbol, isSymbolExported } from "../../utils/export";
@@ -9,7 +8,7 @@ import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isDestructuringAssignment } from "../../utils/typescript";
 import { isArrayLength, transformDestructuringAssignment } from "./destructuring-assignments";
 import { isMultiReturnCall } from "../language-extensions/multi";
-import { notAllowedOptionalAssignment } from "../../utils/diagnostics";
+import { cannotAssignToNodeOfKind, notAllowedOptionalAssignment } from "../../utils/diagnostics";
 import { transformElementAccessArgument } from "../access";
 import { moveToPrecedingTemp, transformExpressionList } from "../expression-list";
 import { transformInPrecedingStatementScope } from "../../utils/preceding-statements";
@@ -37,9 +36,16 @@ export function transformAssignmentLeftHandSideExpression(
     const symbol = context.checker.getSymbolAtLocation(node);
     const left = context.transformExpression(node);
 
-    return lua.isIdentifier(left) && symbol && isSymbolExported(context, symbol)
-        ? createExportedIdentifier(context, left)
-        : cast(left, lua.isAssignmentLeftHandSideExpression);
+    if (lua.isIdentifier(left) && symbol && isSymbolExported(context, symbol)) {
+        return createExportedIdentifier(context, left);
+    }
+
+    if (lua.isAssignmentLeftHandSideExpression(left)) {
+        return left;
+    } else {
+        context.diagnostics.push(cannotAssignToNodeOfKind(node, left.kind));
+        return lua.createAnonymousIdentifier();
+    }
 }
 
 export function transformAssignment(

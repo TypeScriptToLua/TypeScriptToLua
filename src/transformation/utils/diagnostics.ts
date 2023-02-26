@@ -1,4 +1,5 @@
 import * as ts from "typescript";
+import * as lua from "../../LuaAST";
 import { LuaTarget, TypeScriptToLuaOptions } from "../../CompilerOptions";
 import { createSerialDiagnosticFactory } from "../../utils";
 import { AnnotationKind } from "./annotations";
@@ -162,4 +163,8 @@ export const invalidMethodCallExtensionUse = createErrorDiagnosticFactory(
 
 export const invalidSpreadInCallExtension = createErrorDiagnosticFactory(
     "Spread elements are not supported in call extensions."
+);
+
+export const cannotAssignToNodeOfKind = createErrorDiagnosticFactory(
+    (kind: lua.SyntaxKind) => `Cannot create assignment assigning to a node of type ${lua.SyntaxKind[kind]}.`
 );

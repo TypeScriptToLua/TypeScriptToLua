@@ -524,8 +524,8 @@ test.each(["LuaTable", "LuaMap"])("can spread %s with pairs (#1244)", type => {
 
     // We don't know the order so match like this
     expect(result).toHaveLength(2);
-    expect(result.some(([k, v]) => k === "foo" && v === "bar")).toBe(true);
-    expect(result.some(([k, v]) => k === "fizz" && v === "buzz")).toBe(true);
+    expect(result).toContainEqual(["foo", "bar"]);
+    expect(result).toContainEqual(["fizz", "buzz"]);
 });
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1384
@@ -541,8 +541,8 @@ test.each(["LuaTable", "LuaMap"])("can spread %s (#1384)", type => {
 
     // We don't know the order so match like this
     expect(result).toHaveLength(2);
-    expect(result.some(([k, v]) => k === "foo" && v === "bar")).toBe(true);
-    expect(result.some(([k, v]) => k === "fizz" && v === "buzz")).toBe(true);
+    expect(result).toContainEqual(["foo", "bar"]);
+    expect(result).toContainEqual(["fizz", "buzz"]);
 });
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1384

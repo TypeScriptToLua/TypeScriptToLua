@@ -509,7 +509,7 @@ test.each(["pairs", "ipairs"])("can spread %s (#1244)", func => {
 });
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1244
-test.each(["LuaTable", "LuaMap"])("can spread %s (#1244)", type => {
+test.each(["LuaTable", "LuaMap"])("can spread %s with pairs (#1244)", type => {
     const result: Array<[string, string]> = util.testFunction`
         const tbl = new ${type}();
         tbl.set("foo", "bar");
@@ -524,6 +524,40 @@ test.each(["LuaTable", "LuaMap"])("can spread %s (#1244)", type => {
 
     // We don't know the order so match like this
     expect(result).toHaveLength(2);
-    expect(result.some(([k, v]) => k === "foo" && v === "bar")).toBe(true);
-    expect(result.some(([k, v]) => k === "fizz" && v === "buzz")).toBe(true);
+    expect(result).toContainEqual(["foo", "bar"]);
+    expect(result).toContainEqual(["fizz", "buzz"]);
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1384
+test.each(["LuaTable", "LuaMap"])("can spread %s (#1384)", type => {
+    const result: Array<[string, string]> = util.testFunction`
+        const tbl = new ${type}();
+        tbl.set("foo", "bar");
+        tbl.set("fizz", "buzz");
+        return [...tbl];
+    `
+        .withLanguageExtensions()
+        .getLuaExecutionResult();
+
+    // We don't know the order so match like this
+    expect(result).toHaveLength(2);
+    expect(result).toContainEqual(["foo", "bar"]);
+    expect(result).toContainEqual(["fizz", "buzz"]);
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1384
+test("can spread LuaSet (#1384)", () => {
+    const result: Array<[string, string]> = util.testFunction`
+        const tbl = new LuaSet();
+        tbl.add("foo");
+        tbl.add("bar");
+        return [...tbl];
+    `
+        .withLanguageExtensions()
+        .getLuaExecutionResult();
+
+    // We don't know the order so match like this
+    expect(result).toHaveLength(2);
+    expect(result).toContain("foo");
+    expect(result).toContain("bar");
 });

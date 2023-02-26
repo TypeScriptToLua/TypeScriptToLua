@@ -1,8 +1,9 @@
 import * as ts from "typescript";
 import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
+import { assertNever } from "../../utils";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { isLuaIterable } from "../utils/language-extensions";
+import { getIterableExtensionKindForNode, IterableExtensionKind } from "../utils/language-extensions";
 import { createUnpackCall } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import {
@@ -76,11 +77,22 @@ export const transformSpreadElement: FunctionVisitor<ts.SpreadElement> = (node, 
     const innerExpression = context.transformExpression(node.expression);
     if (isMultiReturnCall(context, tsInnerExpression)) return innerExpression;
 
-    const type = context.checker.getTypeAtLocation(node.expression); // not ts-inner expression, in case of casts
-    if (isLuaIterable(context, type)) {
-        return transformLuaLibFunction(context, LuaLibFeature.LuaIteratorSpread, node, innerExpression);
+    const iterableExtensionType = getIterableExtensionKindForNode(context, node.expression);
+    if (iterableExtensionType) {
+        if (iterableExtensionType === IterableExtensionKind.Iterable) {
+            return transformLuaLibFunction(context, LuaLibFeature.LuaIteratorSpread, node, innerExpression);
+        } else if (iterableExtensionType === IterableExtensionKind.Pairs) {
+            const objectEntries = transformLuaLibFunction(context, LuaLibFeature.ObjectEntries, node, innerExpression);
+            return createUnpackCall(context, objectEntries, node);
+        } else if (iterableExtensionType === IterableExtensionKind.PairsKey) {
+            const objectKeys = transformLuaLibFunction(context, LuaLibFeature.ObjectKeys, node, innerExpression);
+            return createUnpackCall(context, objectKeys, node);
+        } else {
+            assertNever(iterableExtensionType);
+        }
     }
 
+    const type = context.checker.getTypeAtLocation(node.expression); // not ts-inner expression, in case of casts
     if (isArrayType(context, type)) {
         return createUnpackCall(context, innerExpression, node);
     }

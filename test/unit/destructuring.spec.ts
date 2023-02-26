@@ -1,3 +1,4 @@
+import { cannotAssignToNodeOfKind, invalidMultiReturnAccess } from "../../src/transformation/utils/diagnostics";
 import * as util from "../util";
 
 const allBindings = "x, y, z, rest";
@@ -224,4 +225,15 @@ describe("array destructuring optimization", () => {
             .tap(builder => expect(builder.getMainLuaCodeChunk()).toContain("unpack"))
             .expectToMatchJsResult();
     });
+});
+
+test("no exception from semantically invalid TS", () => {
+    util.testModule`
+        declare function testFunc(value: number): LuaMultiReturn<[number, number]>;
+        let [a, b] = testFunc(5) // Missing ;
+        [a, b] = testFunc(b)     // Interpreted as testFunc(5)[a, b]
+    `
+        .withLanguageExtensions()
+        .disableSemanticCheck()
+        .expectToHaveDiagnostics([invalidMultiReturnAccess.code, cannotAssignToNodeOfKind.code]);
 });

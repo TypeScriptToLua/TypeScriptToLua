@@ -346,6 +346,11 @@ export abstract class TestBuilder {
         return this;
     }
 
+    public expectNoTranspileException(): this {
+        expect(() => this.getLuaResult()).not.toThrow();
+        return this;
+    }
+
     public expectNoExecutionError(): this {
         const luaResult = this.getLuaExecutionResult();
         if (luaResult instanceof ExecutionError) {

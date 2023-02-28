@@ -20,6 +20,8 @@ export function transformNumberPrototypeCall(
             return params.length === 0
                 ? lua.createCallExpression(lua.createIdentifier("tostring"), [caller], node)
                 : transformLuaLibFunction(context, LuaLibFeature.NumberToString, node, caller, ...params);
+        case "toFixed":
+            return transformLuaLibFunction(context, LuaLibFeature.NumberToFixed, node, caller, ...params);
         default:
             context.diagnostics.push(unsupportedProperty(calledMethod.name, "number", expressionName));
     }

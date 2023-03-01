@@ -69,6 +69,26 @@ test.each([
     util.testExpressionTemplate`(${value}).toString(2)`.expectToEqual(luaNativeSpecialNumString);
 });
 
+const toFixedFractions = [undefined, 0, 1, 2, Math.PI, 5, 99];
+// 1.5, 1.25 and 1.125 fails as rounding differ
+const toFixedValues = [-1, 0, 1, Math.PI, -1.1234, -9.99e19, 1e22];
+const toFixedPairs = toFixedValues.flatMap(value => toFixedFractions.map(frac => [value, frac] as const));
+test.each(toFixedPairs)("(%p).toFixed(%p)", (value, frac) => {
+    util.testExpressionTemplate`(${value}).toFixed(${frac})`.expectToMatchJsResult();
+});
+
+test.each([
+    [NaN, "(0/0)"],
+    [Infinity, "(1/0)"],
+    [-Infinity, "(-(1/0))"],
+])("%p.toFixed(2)", (value, luaNativeSpecialNum) => {
+    // Need to get the actual lua tostring version of inf/nan
+    // this is platform dependent so we can/should not hardcode it
+    const luaNativeSpecialNumString = util.testExpression`${luaNativeSpecialNum}.toString()`.getLuaExecutionResult();
+    // Cannot use expectToMatchJsResult because this actually wont be the same in JS in Lua
+    util.testExpressionTemplate`(${value}).toFixed(2)`.expectToEqual(luaNativeSpecialNumString);
+});
+
 test.each(cases)("isNaN(%p)", value => {
     util.testExpressionTemplate`isNaN(${value} as any)`.expectToMatchJsResult();
 });

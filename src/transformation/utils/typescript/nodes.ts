@@ -33,7 +33,11 @@ export function isInAsyncFunction(node: ts.Node): boolean {
         return false;
     }
 
-    return declaration.modifiers?.some(m => m.kind === ts.SyntaxKind.AsyncKeyword) ?? false;
+    if (ts.canHaveModifiers(declaration)) {
+        return ts.getModifiers(declaration)?.some(m => m.kind === ts.SyntaxKind.AsyncKeyword) ?? false;
+    } else {
+        return false;
+    }
 }
 
 export function isInGeneratorFunction(node: ts.Node): boolean {

@@ -39,7 +39,10 @@ export function isOptimizedVarArgSpread(context: TransformationContext, symbol: 
     }
 
     // Scope cannot be an async function
-    if (scope.node.modifiers?.some(m => m.kind === ts.SyntaxKind.AsyncKeyword)) {
+    if (
+        ts.canHaveModifiers(scope.node) &&
+        ts.getModifiers(scope.node)?.some(m => m.kind === ts.SyntaxKind.AsyncKeyword)
+    ) {
         return false;
     }
 

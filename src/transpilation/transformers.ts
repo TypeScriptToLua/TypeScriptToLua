@@ -79,7 +79,7 @@ export const stripParenthesisExpressionsTransformer: ts.TransformerFactory<ts.So
 
         return ts.visitEachChild(node, visit, context);
     }
-    return ts.visitNode(sourceFile, visit);
+    return ts.visitEachChild(sourceFile, visit, context);
 };
 
 function loadTransformersFromOptions(program: ts.Program, diagnostics: ts.Diagnostic[]): ts.CustomTransformers {

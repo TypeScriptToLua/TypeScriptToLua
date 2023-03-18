@@ -35,6 +35,10 @@ declare module "typescript" {
         parent?: Symbol;
     }
 
+    interface Signature {
+        compositeSignatures?: Signature[];
+    }
+
     function transformJsx(context: TransformationContext): (x: SourceFile) => SourceFile;
 
     export type OuterExpression =

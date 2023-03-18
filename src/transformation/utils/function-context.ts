@@ -116,7 +116,15 @@ function reduceContextTypes(contexts: ContextType[]): ContextType {
 }
 
 function getSignatureDeclarations(context: TransformationContext, signature: ts.Signature): ts.SignatureDeclaration[] {
+    if (signature.compositeSignatures) {
+        return signature.compositeSignatures.flatMap(s => getSignatureDeclarations(context, s));
+    }
+
     const signatureDeclaration = signature.getDeclaration();
+    if (signatureDeclaration === undefined) {
+        return [];
+    }
+
     let inferredType: ts.Type | undefined;
     if (
         ts.isMethodDeclaration(signatureDeclaration) &&

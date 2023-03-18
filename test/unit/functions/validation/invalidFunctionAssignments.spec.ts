@@ -226,3 +226,18 @@ test.each([
         let f: ${assignType} = o;
     `.expectDiagnosticsToMatchSnapshot([unsupportedOverloadAssignment.code], true);
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/896
+test("Does not fail on union type signatures (#896)", () => {
+    util.testExpression`foo<'a'>(() => {});`
+        .setTsHeader(
+            `
+        declare interface Events {
+            a(): void;
+            [key: string]: (this: void) => void;
+        }      
+        declare function foo<T extends 'a' | 'b'>(callback: Events[T]): void;
+    `
+        )
+        .expectToHaveDiagnostics([unsupportedOverloadAssignment.code]);
+});

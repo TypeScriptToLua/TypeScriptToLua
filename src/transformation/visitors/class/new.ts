@@ -16,7 +16,7 @@ export const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, 
     const [name, params] = transformCallAndArguments(
         context,
         node.expression,
-        node.arguments ?? [ts.factory.createTrue()],
+        node.arguments ?? [],
         signature
     );
 

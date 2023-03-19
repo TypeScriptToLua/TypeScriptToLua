@@ -1,12 +1,13 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import { cast, assertNever } from "../../../utils";
+import { assertNever } from "../../../utils";
 import { TransformationContext } from "../../context";
 import { transformInPrecedingStatementScope, WithPrecedingStatements } from "../../utils/preceding-statements";
 import { transformBinaryOperation } from "./index";
 import { transformAssignmentWithRightPrecedingStatements } from "./assignments";
 import { isArrayLength } from "./destructuring-assignments";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
+import { cannotAssignToNodeOfKind } from "../../utils/diagnostics";
 
 function isLuaExpressionWithSideEffect(expression: lua.Expression) {
     return !(lua.isLiteral(expression) || lua.isIdentifier(expression));
@@ -85,7 +86,12 @@ function transformCompoundAssignment(
         return { precedingStatements, result: lengthSetterStatement.expression };
     }
 
-    const left = cast(context.transformExpression(lhs), lua.isAssignmentLeftHandSideExpression);
+    const left = context.transformExpression(lhs);
+    if (!lua.isAssignmentLeftHandSideExpression(left)) {
+        context.diagnostics.push(cannotAssignToNodeOfKind(expression, left.kind));
+        return { precedingStatements: [], result: left };
+    }
+
     const { precedingStatements: rightPrecedingStatements, result: right } = transformInPrecedingStatementScope(
         context,
         () => context.transformExpression(rhs)
@@ -250,7 +256,12 @@ export function transformCompoundAssignmentStatement(
         return [...precedingStatements, lengthSetterStatement];
     }
 
-    const left = cast(context.transformExpression(lhs), lua.isAssignmentLeftHandSideExpression);
+    const left = context.transformExpression(lhs);
+    if (!lua.isAssignmentLeftHandSideExpression(left)) {
+        context.diagnostics.push(cannotAssignToNodeOfKind(node, left.kind));
+        return [];
+    }
+
     const { precedingStatements: rightPrecedingStatements, result: right } = transformInPrecedingStatementScope(
         context,
         () => context.transformExpression(rhs)

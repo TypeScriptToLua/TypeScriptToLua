@@ -506,3 +506,13 @@ test.each([
         return [obj, objGot];
     `.expectToMatchJsResult();
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1412
+test("invalid assignment to call expression (#1412)", () => {
+    util.testFunction`
+        function foo(): number {
+            return 3;
+        }
+        foo() += 4;
+    `.expectNoTranspileException();
+});

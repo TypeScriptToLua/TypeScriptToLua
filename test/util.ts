@@ -313,12 +313,23 @@ export abstract class TestBuilder {
     // Actions
 
     public debug(includeLualib = false): this {
-        const transpiledFiles = this.getLuaResult().transpiledFiles;
+        const { transpiledFiles, diagnostics } = this.getLuaResult();
         const luaCode = transpiledFiles
             .filter(f => includeLualib || f.outPath !== "lualib_bundle.lua")
             .map(f => `[${f.outPath}]:\n${f.lua?.replace(/^/gm, "  ")}`);
         const value = prettyFormat.format(this.getLuaExecutionResult()).replace(/^/gm, "  ");
         console.log(`Lua Code:\n${luaCode.join("\n")}\n\nValue:\n${value}`);
+
+        if (diagnostics.length > 0) {
+            console.log(
+                ts.formatDiagnostics(diagnostics.map(tstl.prepareDiagnosticForFormatting), {
+                    getCurrentDirectory: () => "",
+                    getCanonicalFileName: fileName => fileName,
+                    getNewLine: () => "\n",
+                })
+            );
+        }
+
         return this;
     }
 

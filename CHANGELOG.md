@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.14.0
+
+- **[Breaking]** Upgraded TypeScript to 5.0.
+- Added support for `Number.toFixed`.
+- Added support for spread expressions with `LuaPairsIterable` and `LuaPairsKeysIterable`.
+- Fixed a bug breaking module resolution when using a custom file extension.
+- Fixed various exceptions that could happen when trying to translate invalid TS.
+
 ## 1.13.0
 
 - Fixed alternate file extensions (other than .lua, if configured) breaking module resolution and emitted require statements.

@@ -107,6 +107,21 @@ test("Function default binding parameter maintains order", () => {
     `.expectToMatchJsResult();
 });
 
+test.each(["undefined", "null"])("Function default parameter with %p", defaultValue => {
+    util.testFunction`
+        function foo(x = ${defaultValue}) {
+            return x;
+        }
+        return foo();
+    `
+        .expectToMatchJsResult()
+        .tap(builder => {
+            const lua = builder.getMainLuaCodeChunk();
+            expect(lua).not.toMatch("if x == nil then");
+        })
+        .expectLuaToMatchSnapshot();
+});
+
 test("Class method call", () => {
     util.testFunction`
         class TestClass {

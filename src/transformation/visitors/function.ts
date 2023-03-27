@@ -27,11 +27,15 @@ function transformParameterDefaultValueDeclaration(
     value: ts.Expression,
     tsOriginal?: ts.Node
 ): lua.Statement | undefined {
-    const parameterValue = context.transformExpression(value);
-    if (lua.isNilLiteral(parameterValue)) {
-        return undefined;
+    // const parameterValue = context.transformExpression(value);
+    const { precedingStatements, result: parameterValue } = transformInPrecedingStatementScope(context, () =>
+        context.transformExpression(value)
+    );
+    const statements = [...precedingStatements];
+    if (!lua.isNilLiteral(parameterValue)) {
+        statements.push(lua.createAssignmentStatement(parameterName, parameterValue));
     }
-    const assignment = lua.createAssignmentStatement(parameterName, parameterValue);
+    if (statements.length === 0) return undefined;
 
     const nilCondition = lua.createBinaryExpression(
         parameterName,
@@ -39,7 +43,7 @@ function transformParameterDefaultValueDeclaration(
         lua.SyntaxKind.EqualityOperator
     );
 
-    const ifBlock = lua.createBlock([assignment]);
+    const ifBlock = lua.createBlock(statements, tsOriginal);
 
     return lua.createIfStatement(nilCondition, ifBlock, undefined, tsOriginal);
 }

@@ -1,27 +1,5 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Function default parameter with "null" 1`] = `
-"local ____exports = {}
-function ____exports.__main(self)
-    local function foo(self, x)
-        return x
-    end
-    return foo(nil)
-end
-return ____exports"
-`;
-
-exports[`Function default parameter with "undefined" 1`] = `
-"local ____exports = {}
-function ____exports.__main(self)
-    local function foo(self, x)
-        return x
-    end
-    return foo(nil)
-end
-return ____exports"
-`;
-
 exports[`Function default parameter with value "null" 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)

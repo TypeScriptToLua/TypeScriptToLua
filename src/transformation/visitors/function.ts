@@ -27,11 +27,10 @@ function transformParameterDefaultValueDeclaration(
     value: ts.Expression,
     tsOriginal?: ts.Node
 ): lua.Statement | undefined {
-    // const parameterValue = context.transformExpression(value);
-    const { precedingStatements, result: parameterValue } = transformInPrecedingStatementScope(context, () =>
-        context.transformExpression(value)
+    const { precedingStatements: statements, result: parameterValue } = transformInPrecedingStatementScope(
+        context,
+        () => context.transformExpression(value)
     );
-    const statements = [...precedingStatements];
     if (!lua.isNilLiteral(parameterValue)) {
         statements.push(lua.createAssignmentStatement(parameterName, parameterValue));
     }

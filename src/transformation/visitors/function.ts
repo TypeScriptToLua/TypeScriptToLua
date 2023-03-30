@@ -24,11 +24,17 @@ import { transformBindingPattern } from "./variable-declaration";
 function transformParameterDefaultValueDeclaration(
     context: TransformationContext,
     parameterName: lua.Identifier,
-    value?: ts.Expression,
+    value: ts.Expression,
     tsOriginal?: ts.Node
-): lua.Statement {
-    const parameterValue = value ? context.transformExpression(value) : undefined;
-    const assignment = lua.createAssignmentStatement(parameterName, parameterValue);
+): lua.Statement | undefined {
+    const { precedingStatements: statements, result: parameterValue } = transformInPrecedingStatementScope(
+        context,
+        () => context.transformExpression(value)
+    );
+    if (!lua.isNilLiteral(parameterValue)) {
+        statements.push(lua.createAssignmentStatement(parameterName, parameterValue));
+    }
+    if (statements.length === 0) return undefined;
 
     const nilCondition = lua.createBinaryExpression(
         parameterName,
@@ -36,7 +42,7 @@ function transformParameterDefaultValueDeclaration(
         lua.SyntaxKind.EqualityOperator
     );
 
-    const ifBlock = lua.createBlock([assignment]);
+    const ifBlock = lua.createBlock(statements, tsOriginal);
 
     return lua.createIfStatement(nilCondition, ifBlock, undefined, tsOriginal);
 }
@@ -106,7 +112,7 @@ export function transformFunctionBodyHeader(
     parameters: ts.NodeArray<ts.ParameterDeclaration>,
     spreadIdentifier?: lua.Identifier
 ): lua.Statement[] {
-    const headerStatements = [];
+    const headerStatements: lua.Statement[] = [];
 
     // Add default parameters and object binding patterns
     const bindingPatternDeclarations: lua.Statement[] = [];
@@ -116,9 +122,12 @@ export function transformFunctionBodyHeader(
             const identifier = lua.createIdentifier(`____bindingPattern${bindPatternIndex++}`);
             if (declaration.initializer !== undefined) {
                 // Default binding parameter
-                headerStatements.push(
-                    transformParameterDefaultValueDeclaration(context, identifier, declaration.initializer)
+                const initializer = transformParameterDefaultValueDeclaration(
+                    context,
+                    identifier,
+                    declaration.initializer
                 );
+                if (initializer) headerStatements.push(initializer);
             }
 
             // Binding pattern
@@ -129,13 +138,12 @@ export function transformFunctionBodyHeader(
             bindingPatternDeclarations.push(...precedingStatements, ...bindings);
         } else if (declaration.initializer !== undefined) {
             // Default parameter
-            headerStatements.push(
-                transformParameterDefaultValueDeclaration(
-                    context,
-                    transformIdentifier(context, declaration.name),
-                    declaration.initializer
-                )
+            const initializer = transformParameterDefaultValueDeclaration(
+                context,
+                transformIdentifier(context, declaration.name),
+                declaration.initializer
             );
+            if (initializer) headerStatements.push(initializer);
         }
     }
 

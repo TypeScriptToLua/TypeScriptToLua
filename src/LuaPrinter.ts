@@ -612,6 +612,8 @@ export class LuaPrinter {
                 return this.printIdentifier(expression as lua.Identifier);
             case lua.SyntaxKind.TableIndexExpression:
                 return this.printTableIndexExpression(expression as lua.TableIndexExpression);
+            case lua.SyntaxKind.ParenthesizedExpression:
+                return this.printParenthesizedExpression(expression as lua.ParenthesizedExpression);
             default:
                 throw new Error(`Tried to print unknown statement kind: ${lua.SyntaxKind[expression.kind]}`);
         }
@@ -820,6 +822,10 @@ export class LuaPrinter {
             chunks.push("[", this.printExpression(expression.index), "]");
         }
         return this.createSourceNode(expression, chunks);
+    }
+
+    public printParenthesizedExpression(expression: lua.ParenthesizedExpression) {
+        return this.createSourceNode(expression, ["(", this.printExpression(expression.expression), ")"]);
     }
 
     public printOperator(kind: lua.Operator): SourceNode {

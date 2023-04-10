@@ -79,13 +79,15 @@ export function transformElementAccessExpressionWithCapture(
             context.diagnostics.push(invalidMultiReturnAccess(node));
         }
 
-        // When selecting the first element, we can shortcut
-        if (ts.isNumericLiteral(node.argumentExpression) && node.argumentExpression.text === "0") {
-            return { expression: table };
-        } else {
-            const selectIdentifier = lua.createIdentifier("select");
-            return { expression: lua.createCallExpression(selectIdentifier, [updatedAccessExpression, table]) };
+        const canOmitSelect = ts.isNumericLiteral(node.argumentExpression) && node.argumentExpression.text === "0";
+        if (canOmitSelect) {
+            // wrapping in parenthesis ensures only the first return value is used
+            // https://www.lua.org/manual/5.1/manual.html#2.5
+            return { expression: lua.createParenthesizedExpression(table) };
         }
+
+        const selectIdentifier = lua.createIdentifier("select");
+        return { expression: lua.createCallExpression(selectIdentifier, [updatedAccessExpression, table]) };
     }
 
     if (thisValueCapture) {

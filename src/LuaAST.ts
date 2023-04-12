@@ -44,6 +44,7 @@ export enum SyntaxKind {
     MethodCallExpression,
     Identifier,
     TableIndexExpression,
+    ParenthesizedExpression,
 
     // Operators
 
@@ -842,4 +843,21 @@ export function isInlineFunctionExpression(expression: FunctionExpression): expr
         expression.body.statements[0].expressions !== undefined &&
         (expression.flags & NodeFlags.Inline) !== 0
     );
+}
+
+export type ParenthesizedExpression = Expression & {
+    expression: Expression;
+};
+
+export function isParenthesizedExpression(node: Node): node is ParenthesizedExpression {
+    return node.kind === SyntaxKind.ParenthesizedExpression;
+}
+
+export function createParenthesizedExpression(expression: Expression, tsOriginal?: ts.Node): ParenthesizedExpression {
+    const parenthesizedExpression = createNode(
+        SyntaxKind.ParenthesizedExpression,
+        tsOriginal
+    ) as ParenthesizedExpression;
+    parenthesizedExpression.expression = expression;
+    return parenthesizedExpression;
 }

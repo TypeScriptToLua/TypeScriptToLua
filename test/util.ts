@@ -161,7 +161,7 @@ export abstract class TestBuilder {
         skipLibCheck: true,
         target: ts.ScriptTarget.ES2017,
         lib: ["lib.esnext.d.ts"],
-        moduleResolution: ts.ModuleResolutionKind.NodeJs,
+        moduleResolution: ts.ModuleResolutionKind.Node10,
         resolveJsonModule: true,
         experimentalDecorators: true,
         sourceMap: true,
@@ -173,7 +173,8 @@ export abstract class TestBuilder {
     }
 
     public withLanguageExtensions(): this {
-        this.setOptions({ types: [path.resolve(__dirname, "..", "language-extensions")] });
+        const langExtTypes = path.resolve(__dirname, "..", "language-extensions");
+        this.options.types = this.options.types ? [...this.options.types, langExtTypes] : [langExtTypes];
         // Polyfill lualib for JS
         this.setJsHeader(`
             function $multi(...args) { return args; }

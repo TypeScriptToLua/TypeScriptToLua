@@ -1,11 +1,11 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Unsupported optional chains Builtin global method: code 1`] = `
-"local ____lualib = require(\\"lualib_bundle\\")
+"local ____lualib = require("lualib_bundle")
 local __TS__Number = ____lualib.__TS__Number
 local ____opt_0 = Number
 if ____opt_0 ~= nil then
-    __TS__Number(\\"3\\")
+    __TS__Number("3")
 end"
 `;
 
@@ -14,14 +14,14 @@ exports[`Unsupported optional chains Builtin global method: diagnostics 1`] = `"
 exports[`Unsupported optional chains Builtin global property: code 1`] = `
 "local ____opt_0 = console
 if ____opt_0 ~= nil then
-    print(\\"3\\")
+    print("3")
 end"
 `;
 
 exports[`Unsupported optional chains Builtin global property: diagnostics 1`] = `"main.ts(2,17): error TSTL: Optional calls are not supported for builtin or language extension functions."`;
 
 exports[`Unsupported optional chains Builtin prototype method: code 1`] = `
-"local ____lualib = require(\\"lualib_bundle\\")
+"local ____lualib = require("lualib_bundle")
 local __TS__ArrayForEach = ____lualib.__TS__ArrayForEach
 local ____opt_0 = ({1, 2, 3, 4}).forEach
 if ____opt_0 ~= nil then
@@ -49,7 +49,7 @@ function ____exports.__main(self)
     local C = 3
     ---
     -- @compileMembersOnly
-    local D = \\"D\\"
+    local D = "D"
     local ____opt_0 = TestEnum
     if ____opt_0 ~= nil then
         local ____ = B
@@ -74,7 +74,7 @@ main.ts(2,17): error TSTL: This language extension must be called as a method."
 exports[`long optional chain 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local a = {b = {c = {d = {e = {f = \\"hello!\\"}}}}}
+    local a = {b = {c = {d = {e = {f = "hello!"}}}}}
     local ____opt_2 = a.b
     local ____opt_0 = ____opt_2 and ____opt_2.c
     return ____opt_0 and ____opt_0.d.e.f
@@ -85,7 +85,7 @@ return ____exports"
 exports[`optional chaining ("{ foo: \\"foo\\" }") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local obj = {foo = \\"foo\\"}
+    local obj = {foo = "foo"}
     return obj and obj.foo
 end
 return ____exports"
@@ -113,11 +113,11 @@ exports[`optional element function calls 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
     local obj = {
-        value = \\"foobar\\",
+        value = "foobar",
         foo = function(v) return v + 10 end
     }
-    local fooKey = \\"foo\\"
-    local barKey = \\"bar\\"
+    local fooKey = "foo"
+    local barKey = "bar"
     local ____opt_0 = obj[barKey]
     local ____temp_4 = ____opt_0 and ____opt_0(5)
     if ____temp_4 == nil then
@@ -134,7 +134,7 @@ exports[`unused call 1`] = `
 function ____exports.__main(self)
     local result
     local obj = {foo = function(self)
-        result = \\"bar\\"
+        result = "bar"
     end}
     if obj ~= nil then
         obj:foo()
@@ -147,7 +147,7 @@ return ____exports"
 exports[`unused expression 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local obj = {foo = \\"bar\\"}
+    local obj = {foo = "bar"}
     if obj ~= nil then
         local ____ = obj.foo
     end

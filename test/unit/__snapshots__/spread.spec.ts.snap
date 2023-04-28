@@ -12,7 +12,7 @@ function ____exports.__main(self)
             multi(nil, ...)
         )
     end
-    return test(nil, \\"a\\", \\"b\\", \\"c\\")
+    return test(nil, "a", "b", "c")
 end
 return ____exports"
 `;

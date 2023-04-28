@@ -8,7 +8,7 @@ exports[`JSDoc is copied on a function with tags: code 1`] = `
 -- @param arg2 This is the second argument.
 -- @returns A very powerful string.
 function foo(self, arg1, arg2)
-    return \\"bar\\"
+    return "bar"
 end"
 `;
 

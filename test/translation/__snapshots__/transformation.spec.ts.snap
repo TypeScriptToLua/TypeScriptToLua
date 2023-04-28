@@ -10,18 +10,18 @@ end"
 `;
 
 exports[`Transformation (characterEscapeSequence) 1`] = `
-"quoteInDoubleQuotes = \\"' ' '\\"
-quoteInTemplateString = \\"' ' '\\"
-doubleQuoteInQuotes = \\"\\\\\\" \\\\\\" \\\\\\"\\"
-doubleQuoteInDoubleQuotes = \\"\\\\\\" \\\\\\" \\\\\\"\\"
-doubleQuoteInTemplateString = \\"\\\\\\" \\\\\\" \\\\\\"\\"
-backQuoteInQuotes = \\"\` \` \`\\"
-backQuoteInDoubleQuotes = \\"\` \` \`\\"
-backQuoteInTemplateString = \\"\` \` \`\\"
-escapedCharsInQuotes = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" ' \`\\"
-escapedCharsInDoubleQuotes = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" ' \`\\"
-escapedCharsInTemplateString = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" ' \`\\"
-nonEmptyTemplateString = (\\"Level 0: \\\\n\\\\t \\" .. (\\"Level 1: \\\\n\\\\t\\\\t \\" .. (\\"Level 3: \\\\n\\\\t\\\\t\\\\t \\" .. \\"Last level \\\\n --\\") .. \\" \\\\n --\\") .. \\" \\\\n --\\") .. \\" \\\\n --\\""
+"quoteInDoubleQuotes = "' ' '"
+quoteInTemplateString = "' ' '"
+doubleQuoteInQuotes = "\\" \\" \\""
+doubleQuoteInDoubleQuotes = "\\" \\" \\""
+doubleQuoteInTemplateString = "\\" \\" \\""
+backQuoteInQuotes = "\` \` \`"
+backQuoteInDoubleQuotes = "\` \` \`"
+backQuoteInTemplateString = "\` \` \`"
+escapedCharsInQuotes = "\\\\ \\0 \\b \\t \\n \\v \\f \\" ' \`"
+escapedCharsInDoubleQuotes = "\\\\ \\0 \\b \\t \\n \\v \\f \\" ' \`"
+escapedCharsInTemplateString = "\\\\ \\0 \\b \\t \\n \\v \\f \\" ' \`"
+nonEmptyTemplateString = ("Level 0: \\n\\t " .. ("Level 1: \\n\\t\\t " .. ("Level 3: \\n\\t\\t\\t " .. "Last level \\n --") .. " \\n --") .. " \\n --") .. " \\n --""
 `;
 
 exports[`Transformation (exportStatement) 1`] = `
@@ -30,22 +30,22 @@ local xyz = 4
 ____exports.xyz = xyz
 ____exports.uwv = xyz
 do
-    local ____export = require(\\"xyz\\")
+    local ____export = require("xyz")
     for ____exportKey, ____exportValue in pairs(____export) do
-        if ____exportKey ~= \\"default\\" then
+        if ____exportKey ~= "default" then
             ____exports[____exportKey] = ____exportValue
         end
     end
 end
 do
-    local ____xyz = require(\\"xyz\\")
+    local ____xyz = require("xyz")
     local abc = ____xyz.abc
     local def = ____xyz.def
     ____exports.abc = abc
     ____exports.def = def
 end
 do
-    local ____xyz = require(\\"xyz\\")
+    local ____xyz = require("xyz")
     local def = ____xyz.abc
     ____exports.def = def
 end
@@ -58,10 +58,10 @@ return ____exports"
 `;
 
 exports[`Transformation (methodRestArguments) 1`] = `
-"local ____lualib = require(\\"lualib_bundle\\")
+"local ____lualib = require("lualib_bundle")
 local __TS__Class = ____lualib.__TS__Class
 MyClass = __TS__Class()
-MyClass.name = \\"MyClass\\"
+MyClass.name = "MyClass"
 function MyClass.prototype.____constructor(self)
 end
 function MyClass.prototype.varargsFunction(self, a, ...)
@@ -75,24 +75,24 @@ return ____exports"
 `;
 
 exports[`Transformation (modulesClassExport) 1`] = `
-"local ____lualib = require(\\"lualib_bundle\\")
+"local ____lualib = require("lualib_bundle")
 local __TS__Class = ____lualib.__TS__Class
 local ____exports = {}
 ____exports.TestClass = __TS__Class()
 local TestClass = ____exports.TestClass
-TestClass.name = \\"TestClass\\"
+TestClass.name = "TestClass"
 function TestClass.prototype.____constructor(self)
 end
 return ____exports"
 `;
 
 exports[`Transformation (modulesClassWithMemberExport) 1`] = `
-"local ____lualib = require(\\"lualib_bundle\\")
+"local ____lualib = require("lualib_bundle")
 local __TS__Class = ____lualib.__TS__Class
 local ____exports = {}
 ____exports.TestClass = __TS__Class()
 local TestClass = ____exports.TestClass
-TestClass.name = \\"TestClass\\"
+TestClass.name = "TestClass"
 function TestClass.prototype.____constructor(self)
 end
 function TestClass.prototype.memberFunc(self)
@@ -114,14 +114,14 @@ end"
 
 exports[`Transformation (modulesImportAll) 1`] = `
 "local ____exports = {}
-local Test = require(\\"test\\")
+local Test = require("test")
 local ____ = Test
 return ____exports"
 `;
 
 exports[`Transformation (modulesImportNamed) 1`] = `
 "local ____exports = {}
-local ____test = require(\\"test\\")
+local ____test = require("test")
 local TestClass = ____test.TestClass
 local ____ = TestClass
 return ____exports"
@@ -129,15 +129,15 @@ return ____exports"
 
 exports[`Transformation (modulesImportNamedSpecialChars) 1`] = `
 "local ____exports = {}
-local ____kebab_2Dmodule = require(\\"kebab-module\\")
+local ____kebab_2Dmodule = require("kebab-module")
 local TestClass1 = ____kebab_2Dmodule.TestClass1
-local ____dollar_24module = require(\\"dollar$module\\")
+local ____dollar_24module = require("dollar$module")
 local TestClass2 = ____dollar_24module.TestClass2
-local ____singlequote_27module = require(\\"singlequote'module\\")
+local ____singlequote_27module = require("singlequote'module")
 local TestClass3 = ____singlequote_27module.TestClass3
-local ____hash_23module = require(\\"hash#module\\")
+local ____hash_23module = require("hash#module")
 local TestClass4 = ____hash_23module.TestClass4
-local ____space_20module = require(\\"space module\\")
+local ____space_20module = require("space module")
 local TestClass5 = ____space_20module.TestClass5
 local ____ = TestClass1
 local ____ = TestClass2
@@ -149,7 +149,7 @@ return ____exports"
 
 exports[`Transformation (modulesImportRenamed) 1`] = `
 "local ____exports = {}
-local ____test = require(\\"test\\")
+local ____test = require("test")
 local RenamedClass = ____test.TestClass
 local ____ = RenamedClass
 return ____exports"
@@ -157,15 +157,15 @@ return ____exports"
 
 exports[`Transformation (modulesImportRenamedSpecialChars) 1`] = `
 "local ____exports = {}
-local ____kebab_2Dmodule = require(\\"kebab-module\\")
+local ____kebab_2Dmodule = require("kebab-module")
 local RenamedClass1 = ____kebab_2Dmodule.TestClass
-local ____dollar_24module = require(\\"dollar$module\\")
+local ____dollar_24module = require("dollar$module")
 local RenamedClass2 = ____dollar_24module.TestClass
-local ____singlequote_27module = require(\\"singlequote'module\\")
+local ____singlequote_27module = require("singlequote'module")
 local RenamedClass3 = ____singlequote_27module.TestClass
-local ____hash_23module = require(\\"hash#module\\")
+local ____hash_23module = require("hash#module")
 local RenamedClass4 = ____hash_23module.TestClass
-local ____space_20module = require(\\"space module\\")
+local ____space_20module = require("space module")
 local RenamedClass5 = ____space_20module.TestClass
 local ____ = RenamedClass1
 local ____ = RenamedClass2
@@ -177,7 +177,7 @@ return ____exports"
 
 exports[`Transformation (modulesImportWithoutFromClause) 1`] = `
 "local ____exports = {}
-require(\\"test\\")
+require("test")
 return ____exports"
 `;
 
@@ -227,19 +227,19 @@ return ____exports"
 
 exports[`Transformation (modulesVariableExport) 1`] = `
 "local ____exports = {}
-____exports.foo = \\"bar\\"
+____exports.foo = "bar"
 return ____exports"
 `;
 
-exports[`Transformation (modulesVariableNoExport) 1`] = `"foo = \\"bar\\""`;
+exports[`Transformation (modulesVariableNoExport) 1`] = `"foo = "bar""`;
 
 exports[`Transformation (printFormat) 1`] = `
-"stringConcat = ((\\"a\\" .. \\"b\\" .. \\"c\\") .. \\"d\\") .. \\"e\\"
+"stringConcat = (("a" .. "b" .. "c") .. "d") .. "e"
 numbers = 2 * 2 + 3 + 4 * (5 + 6) ~= 7
 function func(...)
 end
 func(function()
-    local b = \\"A function\\"
+    local b = "A function"
 end)
 func(func())
 array = {func()}
@@ -252,8 +252,8 @@ bigObject = {
     a = 1,
     b = 2,
     c = 3,
-    d = \\"value1\\",
-    e = \\"value2\\"
+    d = "value1",
+    e = "value2"
 }"
 `;
 
@@ -279,7 +279,7 @@ end"
 
 exports[`Transformation (unusedDefaultWithNamespaceImport) 1`] = `
 "local ____exports = {}
-local x = require(\\"module\\")
+local x = require("module")
 local ____ = x
 return ____exports"
 `;

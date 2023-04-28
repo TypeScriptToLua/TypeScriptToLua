@@ -1,7 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`should give verbose output 1`] = `
-Array [
+[
   "Loaded 0 plugins",
   "Parsing project settings",
   "Transforming <cwd>/test/transpile/project/otherFile.ts",
@@ -11,7 +11,7 @@ Array [
   "Constructing emit plan",
   "Resolving dependencies for <cwd>/test/transpile/project/otherFile.ts",
   "Resolving dependencies for <cwd>/test/transpile/project/index.ts",
-  "Resolving \\"./otherFile\\" from <cwd>/test/transpile/project/index.ts",
+  "Resolving "./otherFile" from <cwd>/test/transpile/project/index.ts",
   "Resolved ./otherFile to <cwd>/test/transpile/project/otherFile.ts",
   "Emitting output",
   "Emitting <cwd>/test/transpile/project/otherFile.lua",
@@ -21,8 +21,8 @@ Array [
 `;
 
 exports[`should transpile 1`] = `
-Array [
-  Object {
+[
+  {
     "filePath": "otherFile.lua",
     "lua": "local ____exports = {}
 function ____exports.getNumber(self)
@@ -31,10 +31,10 @@ end
 return ____exports
 ",
   },
-  Object {
+  {
     "filePath": "index.lua",
     "lua": "local ____exports = {}
-local ____otherFile = require(\\"otherFile\\")
+local ____otherFile = require("otherFile")
 local getNumber = ____otherFile.getNumber
 local myNumber = getNumber(nil)
 setAPIValue(myNumber * 5)

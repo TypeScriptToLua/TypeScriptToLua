@@ -1,10 +1,10 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`missing declaration name: code 1`] = `
-"local ____lualib = require(\\"lualib_bundle\\")
+"local ____lualib = require("lualib_bundle")
 local __TS__Class = ____lualib.__TS__Class
 ____class_0 = __TS__Class()
-____class_0.name = \\"\\"
+____class_0.name = ""
 function ____class_0.prototype.____constructor(self)
 end"
 `;

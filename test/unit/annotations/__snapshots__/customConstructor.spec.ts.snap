@@ -1,7 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`IncorrectUsage: code 1`] = `
-"local ____lualib = require(\\"lualib_bundle\\")
+"local ____lualib = require("lualib_bundle")
 local __TS__Class = ____lualib.__TS__Class
 local __TS__New = ____lualib.__TS__New
 local ____exports = {}
@@ -9,7 +9,7 @@ function ____exports.__main(self)
     ---
     -- @customConstructor
     local Point2D = __TS__Class()
-    Point2D.name = \\"Point2D\\"
+    Point2D.name = "Point2D"
     function Point2D.prototype.____constructor(self)
     end
     __TS__New(Point2D)

@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
-import { createModuleLocalNameIdentifier } from "../visitors/namespace";
+import { createModuleLocalName } from "../visitors/namespace";
 import { createExportsIdentifier } from "./lua-ast";
 import { getSymbolInfo } from "./symbols";
 import { findFirstNodeAbove } from "./typescript";
@@ -144,7 +144,7 @@ export function createExportedIdentifier(
 
     const exportTable =
         exportScope && ts.isModuleDeclaration(exportScope)
-            ? createModuleLocalNameIdentifier(context, exportScope)
+            ? createModuleLocalName(context, exportScope)
             : createExportsIdentifier();
 
     return lua.createTableIndexExpression(exportTable, lua.createStringLiteral(identifier.text));

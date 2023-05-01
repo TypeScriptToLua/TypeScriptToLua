@@ -72,59 +72,59 @@ exports[`ambient identifier must be a valid lua identifier ("var $$: any;"): cod
 
 exports[`ambient identifier must be a valid lua identifier ("var $$: any;"): diagnostics 1`] = `"main.ts(3,9): error TSTL: Invalid ambient identifier name '$$$'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("$$"): code 1`] = `"foo = {[\\"$$$\\"] = _____24_24_24}"`;
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("$$"): code 1`] = `"foo = {["$$$"] = _____24_24_24}"`;
 
 exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("$$"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name '$$$'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("_̀ः٠‿"): code 1`] = `"foo = {[\\"_̀ः٠‿\\"] = ______300_903_660_203F}"`;
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("_̀ः٠‿"): code 1`] = `"foo = {["_̀ः٠‿"] = ______300_903_660_203F}"`;
 
 exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("_̀ः٠‿"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name '_̀ः٠‿'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("and"): code 1`] = `"foo = {[\\"and\\"] = ____and}"`;
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("and"): code 1`] = `"foo = {["and"] = ____and}"`;
 
 exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("and"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name 'and'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("elseif"): code 1`] = `"foo = {[\\"elseif\\"] = ____elseif}"`;
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("elseif"): code 1`] = `"foo = {["elseif"] = ____elseif}"`;
 
 exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("elseif"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name 'elseif'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("end"): code 1`] = `"foo = {[\\"end\\"] = ____end}"`;
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("end"): code 1`] = `"foo = {["end"] = ____end}"`;
 
 exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("end"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name 'end'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("goto"): code 1`] = `"foo = {[\\"goto\\"] = ____goto}"`;
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("goto"): code 1`] = `"foo = {["goto"] = ____goto}"`;
 
 exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("goto"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name 'goto'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("local"): code 1`] = `"foo = {[\\"local\\"] = ____local}"`;
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("local"): code 1`] = `"foo = {["local"] = ____local}"`;
 
 exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("local"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name 'local'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("nil"): code 1`] = `"foo = {[\\"nil\\"] = ____nil}"`;
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("nil"): code 1`] = `"foo = {["nil"] = ____nil}"`;
 
 exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("nil"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name 'nil'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("not"): code 1`] = `"foo = {[\\"not\\"] = ____not}"`;
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("not"): code 1`] = `"foo = {["not"] = ____not}"`;
 
 exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("not"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name 'not'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("or"): code 1`] = `"foo = {[\\"or\\"] = ____or}"`;
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("or"): code 1`] = `"foo = {["or"] = ____or}"`;
 
 exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("or"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name 'or'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("repeat"): code 1`] = `"foo = {[\\"repeat\\"] = ____repeat}"`;
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("repeat"): code 1`] = `"foo = {["repeat"] = ____repeat}"`;
 
 exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("repeat"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name 'repeat'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("then"): code 1`] = `"foo = {[\\"then\\"] = ____then}"`;
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("then"): code 1`] = `"foo = {["then"] = ____then}"`;
 
 exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("then"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name 'then'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("until"): code 1`] = `"foo = {[\\"until\\"] = ____until}"`;
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("until"): code 1`] = `"foo = {["until"] = ____until}"`;
 
 exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("until"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name 'until'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("ɥɣɎɌͼƛಠ"): code 1`] = `"foo = {[\\"ɥɣɎɌͼƛಠ\\"] = _____265_263_24E_24C_37C_19B_CA0}"`;
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("ɥɣɎɌͼƛಠ"): code 1`] = `"foo = {["ɥɣɎɌͼƛಠ"] = _____265_263_24E_24C_37C_19B_CA0}"`;
 
 exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("ɥɣɎɌͼƛಠ"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name 'ɥɣɎɌͼƛಠ'. Ambient identifiers must be valid lua identifiers."`;
 
@@ -192,66 +192,66 @@ exports[`undeclared identifier must be a valid lua identifier ("ɥɣɎɌͼƛಠ"
 
 exports[`undeclared identifier must be a valid lua identifier ("ɥɣɎɌͼƛಠ"): diagnostics 1`] = `"main.ts(2,21): error TSTL: Invalid ambient identifier name 'ɥɣɎɌͼƛಠ'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("$$"): code 1`] = `"foo = {[\\"$$$\\"] = _____24_24_24}"`;
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("$$"): code 1`] = `"foo = {["$$$"] = _____24_24_24}"`;
 
 exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("$$"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name '$$$'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("_̀ः٠‿"): code 1`] = `"foo = {[\\"_̀ः٠‿\\"] = ______300_903_660_203F}"`;
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("_̀ः٠‿"): code 1`] = `"foo = {["_̀ः٠‿"] = ______300_903_660_203F}"`;
 
 exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("_̀ः٠‿"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name '_̀ः٠‿'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("and"): code 1`] = `"foo = {[\\"and\\"] = ____and}"`;
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("and"): code 1`] = `"foo = {["and"] = ____and}"`;
 
 exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("and"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'and'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("elseif"): code 1`] = `"foo = {[\\"elseif\\"] = ____elseif}"`;
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("elseif"): code 1`] = `"foo = {["elseif"] = ____elseif}"`;
 
 exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("elseif"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'elseif'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("end"): code 1`] = `"foo = {[\\"end\\"] = ____end}"`;
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("end"): code 1`] = `"foo = {["end"] = ____end}"`;
 
 exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("end"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'end'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("goto"): code 1`] = `"foo = {[\\"goto\\"] = ____goto}"`;
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("goto"): code 1`] = `"foo = {["goto"] = ____goto}"`;
 
 exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("goto"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'goto'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("local"): code 1`] = `"foo = {[\\"local\\"] = ____local}"`;
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("local"): code 1`] = `"foo = {["local"] = ____local}"`;
 
 exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("local"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'local'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("nil"): code 1`] = `"foo = {[\\"nil\\"] = ____nil}"`;
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("nil"): code 1`] = `"foo = {["nil"] = ____nil}"`;
 
 exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("nil"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'nil'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("not"): code 1`] = `"foo = {[\\"not\\"] = ____not}"`;
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("not"): code 1`] = `"foo = {["not"] = ____not}"`;
 
 exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("not"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'not'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("or"): code 1`] = `"foo = {[\\"or\\"] = ____or}"`;
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("or"): code 1`] = `"foo = {["or"] = ____or}"`;
 
 exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("or"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'or'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("repeat"): code 1`] = `"foo = {[\\"repeat\\"] = ____repeat}"`;
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("repeat"): code 1`] = `"foo = {["repeat"] = ____repeat}"`;
 
 exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("repeat"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'repeat'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("then"): code 1`] = `"foo = {[\\"then\\"] = ____then}"`;
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("then"): code 1`] = `"foo = {["then"] = ____then}"`;
 
 exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("then"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'then'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("until"): code 1`] = `"foo = {[\\"until\\"] = ____until}"`;
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("until"): code 1`] = `"foo = {["until"] = ____until}"`;
 
 exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("until"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'until'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("ɥɣɎɌͼƛಠ"): code 1`] = `"foo = {[\\"ɥɣɎɌͼƛಠ\\"] = _____265_263_24E_24C_37C_19B_CA0}"`;
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("ɥɣɎɌͼƛಠ"): code 1`] = `"foo = {["ɥɣɎɌͼƛಠ"] = _____265_263_24E_24C_37C_19B_CA0}"`;
 
 exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("ɥɣɎɌͼƛಠ"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'ɥɣɎɌͼƛಠ'. Ambient identifiers must be valid lua identifiers."`;
 
 exports[`unicode identifiers in supporting environments (luajit) destructuring property name ("_̀ः٠‿") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local ____temp_0 = {foo = \\"foobar\\"}
+    local ____temp_0 = {foo = "foobar"}
     local _̀ः٠‿ = ____temp_0.foo
     return _̀ः٠‿
 end
@@ -261,7 +261,7 @@ return ____exports"
 exports[`unicode identifiers in supporting environments (luajit) destructuring property name ("ɥɣɎɌͼƛಠ") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local ____temp_0 = {foo = \\"foobar\\"}
+    local ____temp_0 = {foo = "foobar"}
     local ɥɣɎɌͼƛಠ = ____temp_0.foo
     return ɥɣɎɌͼƛಠ
 end
@@ -271,7 +271,7 @@ return ____exports"
 exports[`unicode identifiers in supporting environments (luajit) destructuring property name ("𝛼𝛽𝚫") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local ____temp_0 = {foo = \\"foobar\\"}
+    local ____temp_0 = {foo = "foobar"}
     local 𝛼𝛽𝚫 = ____temp_0.foo
     return 𝛼𝛽𝚫
 end
@@ -281,7 +281,7 @@ return ____exports"
 exports[`unicode identifiers in supporting environments (luajit) destructuring shorthand ("_̀ः٠‿") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local ____temp_0 = {_̀ः٠‿ = \\"foobar\\"}
+    local ____temp_0 = {_̀ः٠‿ = "foobar"}
     local _̀ः٠‿ = ____temp_0._̀ः٠‿
     return _̀ः٠‿
 end
@@ -291,7 +291,7 @@ return ____exports"
 exports[`unicode identifiers in supporting environments (luajit) destructuring shorthand ("ɥɣɎɌͼƛಠ") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local ____temp_0 = {ɥɣɎɌͼƛಠ = \\"foobar\\"}
+    local ____temp_0 = {ɥɣɎɌͼƛಠ = "foobar"}
     local ɥɣɎɌͼƛಠ = ____temp_0.ɥɣɎɌͼƛಠ
     return ɥɣɎɌͼƛಠ
 end
@@ -301,7 +301,7 @@ return ____exports"
 exports[`unicode identifiers in supporting environments (luajit) destructuring shorthand ("𝛼𝛽𝚫") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local ____temp_0 = {𝛼𝛽𝚫 = \\"foobar\\"}
+    local ____temp_0 = {𝛼𝛽𝚫 = "foobar"}
     local 𝛼𝛽𝚫 = ____temp_0.𝛼𝛽𝚫
     return 𝛼𝛽𝚫
 end
@@ -312,9 +312,9 @@ exports[`unicode identifiers in supporting environments (luajit) function ("_̀�
 "local ____exports = {}
 function ____exports.__main(self)
     local function _̀ः٠‿(self, arg)
-        return \\"foo\\" .. arg
+        return "foo" .. arg
     end
-    return _̀ः٠‿(nil, \\"bar\\")
+    return _̀ः٠‿(nil, "bar")
 end
 return ____exports"
 `;
@@ -323,9 +323,9 @@ exports[`unicode identifiers in supporting environments (luajit) function ("ɥɣ
 "local ____exports = {}
 function ____exports.__main(self)
     local function ɥɣɎɌͼƛಠ(self, arg)
-        return \\"foo\\" .. arg
+        return "foo" .. arg
     end
-    return ɥɣɎɌͼƛಠ(nil, \\"bar\\")
+    return ɥɣɎɌͼƛಠ(nil, "bar")
 end
 return ____exports"
 `;
@@ -334,9 +334,9 @@ exports[`unicode identifiers in supporting environments (luajit) function ("𝛼
 "local ____exports = {}
 function ____exports.__main(self)
     local function 𝛼𝛽𝚫(self, arg)
-        return \\"foo\\" .. arg
+        return "foo" .. arg
     end
-    return 𝛼𝛽𝚫(nil, \\"bar\\")
+    return 𝛼𝛽𝚫(nil, "bar")
 end
 return ____exports"
 `;
@@ -344,7 +344,7 @@ return ____exports"
 exports[`unicode identifiers in supporting environments (luajit) identifier name ("_̀ः٠‿") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local _̀ः٠‿ = \\"foobar\\"
+    local _̀ः٠‿ = "foobar"
     return _̀ः٠‿
 end
 return ____exports"
@@ -353,7 +353,7 @@ return ____exports"
 exports[`unicode identifiers in supporting environments (luajit) identifier name ("ɥɣɎɌͼƛಠ") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local ɥɣɎɌͼƛಠ = \\"foobar\\"
+    local ɥɣɎɌͼƛಠ = "foobar"
     return ɥɣɎɌͼƛಠ
 end
 return ____exports"
@@ -362,7 +362,7 @@ return ____exports"
 exports[`unicode identifiers in supporting environments (luajit) identifier name ("𝛼𝛽𝚫") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local 𝛼𝛽𝚫 = \\"foobar\\"
+    local 𝛼𝛽𝚫 = "foobar"
     return 𝛼𝛽𝚫
 end
 return ____exports"
@@ -372,9 +372,9 @@ exports[`unicode identifiers in supporting environments (luajit) method ("_̀ः
 "local ____exports = {}
 function ____exports.__main(self)
     local foo = {_̀ः٠‿ = function(self, arg)
-        return \\"foo\\" .. arg
+        return "foo" .. arg
     end}
-    return foo:_̀ः٠‿(\\"bar\\")
+    return foo:_̀ः٠‿("bar")
 end
 return ____exports"
 `;
@@ -383,9 +383,9 @@ exports[`unicode identifiers in supporting environments (luajit) method ("ɥɣɎ
 "local ____exports = {}
 function ____exports.__main(self)
     local foo = {ɥɣɎɌͼƛಠ = function(self, arg)
-        return \\"foo\\" .. arg
+        return "foo" .. arg
     end}
-    return foo:ɥɣɎɌͼƛಠ(\\"bar\\")
+    return foo:ɥɣɎɌͼƛಠ("bar")
 end
 return ____exports"
 `;
@@ -394,9 +394,9 @@ exports[`unicode identifiers in supporting environments (luajit) method ("𝛼�
 "local ____exports = {}
 function ____exports.__main(self)
     local foo = {𝛼𝛽𝚫 = function(self, arg)
-        return \\"foo\\" .. arg
+        return "foo" .. arg
     end}
-    return foo:𝛼𝛽𝚫(\\"bar\\")
+    return foo:𝛼𝛽𝚫("bar")
 end
 return ____exports"
 `;
@@ -404,7 +404,7 @@ return ____exports"
 exports[`unicode identifiers in supporting environments (luajit) property name ("_̀ः٠‿") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local x = {_̀ः٠‿ = \\"foobar\\"}
+    local x = {_̀ः٠‿ = "foobar"}
     return x._̀ः٠‿
 end
 return ____exports"
@@ -413,7 +413,7 @@ return ____exports"
 exports[`unicode identifiers in supporting environments (luajit) property name ("ɥɣɎɌͼƛಠ") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local x = {ɥɣɎɌͼƛಠ = \\"foobar\\"}
+    local x = {ɥɣɎɌͼƛಠ = "foobar"}
     return x.ɥɣɎɌͼƛಠ
 end
 return ____exports"
@@ -422,7 +422,7 @@ return ____exports"
 exports[`unicode identifiers in supporting environments (luajit) property name ("𝛼𝛽𝚫") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local x = {𝛼𝛽𝚫 = \\"foobar\\"}
+    local x = {𝛼𝛽𝚫 = "foobar"}
     return x.𝛼𝛽𝚫
 end
 return ____exports"

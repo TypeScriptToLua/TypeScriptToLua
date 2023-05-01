@@ -144,3 +144,15 @@ test("enum in a namespace", () => {
         export const result = Test.TestEnum.A;
     `.expectToMatchJsResult();
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1431
+test("nested namespaces (#1431)", () => {
+    util.testModule`
+        namespace Foo.Bar {}
+        namespace Foo.Bar {
+            export const baz = 32;
+        }
+
+        export { Foo }
+    `.expectToMatchJsResult();
+});

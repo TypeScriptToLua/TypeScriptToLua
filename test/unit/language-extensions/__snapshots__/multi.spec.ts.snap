@@ -7,7 +7,7 @@ function ____exports.__main(self)
         return ...
     end
     return select(
-        \\"forEach\\",
+        "forEach",
         multi(nil)
     )
 end
@@ -48,7 +48,7 @@ end"
 
 exports[`invalid $multi call (([a] = $multi(1)) => {}): diagnostics 1`] = `"main.ts(2,16): error TSTL: The $multi function must be called in a return statement."`;
 
-exports[`invalid $multi call (({ $multi });): code 1`] = `"local ____ = {[\\"$multi\\"] = ____}"`;
+exports[`invalid $multi call (({ $multi });): code 1`] = `"local ____ = {["$multi"] = ____}"`;
 
 exports[`invalid $multi call (({ $multi });): diagnostics 1`] = `"main.ts(2,12): error TSTL: The $multi function must be called in a return statement."`;
 
@@ -71,7 +71,7 @@ exports[`invalid $multi call (const a = $multi();): diagnostics 1`] = `"main.ts(
 
 exports[`invalid $multi implicit cast: code 1`] = `
 "function badMulti(self)
-    return \\"foo\\", 42
+    return "foo", 42
 end"
 `;
 

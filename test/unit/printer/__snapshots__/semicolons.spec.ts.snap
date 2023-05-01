@@ -3,9 +3,9 @@
 exports[`semicolon insertion ("{}") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local result = \\"\\"
+    local result = ""
     local function foo(self)
-        result = \\"foo\\"
+        result = "foo"
     end
     do
     end
@@ -18,9 +18,9 @@ return ____exports"
 exports[`semicolon insertion ("const a = 1; const b = a;") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local result = \\"\\"
+    local result = ""
     local function foo(self)
-        result = \\"foo\\"
+        result = "foo"
     end
     local a = 1
     local b = a;
@@ -33,9 +33,9 @@ return ____exports"
 exports[`semicolon insertion ("const a = 1; let b: number; b = a;") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local result = \\"\\"
+    local result = ""
     local function foo(self)
-        result = \\"foo\\"
+        result = "foo"
     end
     local a = 1
     local b
@@ -49,9 +49,9 @@ return ____exports"
 exports[`semicolon insertion ("function bar() {} bar();") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local result = \\"\\"
+    local result = ""
     local function foo(self)
-        result = \\"foo\\"
+        result = "foo"
     end
     local function bar(self)
     end

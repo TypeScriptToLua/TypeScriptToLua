@@ -5,11 +5,11 @@ exports[`statement comments 1`] = `
 function ____exports.__main(self)
     --This comment on variable declaration was added by a plugin!
     --- This one too!
-    local foo = \\"bar\\"
+    local foo = "bar"
     -- This trailing comment was also added by a plugin!
     --- Example luadoc comment
     ---@param paramName ParamClass
-    foo = \\"baz\\"
+    foo = "baz"
     --[[ This plugin can also (kinda) create multiline comments.
     -- Line 2
     --]]

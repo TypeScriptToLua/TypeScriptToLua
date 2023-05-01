@@ -107,4 +107,9 @@ describe("tsconfig extends", () => {
         const parsedConfig = parseConfigFileWithSystem(path.join(__dirname, "tsconfig", "tsconfig-cycle1.json"));
         expect(parsedConfig.options).toMatchObject({ luaTarget: "5.4" });
     });
+
+    test("can handle tsconfig files with comments", () => {
+        const parsedConfig = parseConfigFileWithSystem(path.join(__dirname, "tsconfig", "tsconfig.with-comments.json"));
+        expect(parsedConfig.options).toMatchObject({ luaTarget: "5.3" });
+    });
 });

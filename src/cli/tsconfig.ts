@@ -76,10 +76,16 @@ function getExtendedTstlOptions(
     const options = {};
 
     if (fileContent) {
-        const parsedConfig = JSON.parse(fileContent) as {
-            extends?: string | string[];
-            tstl?: TypeScriptToLuaOptions;
+        const { config: parsedConfig } = ts.parseConfigFileTextToJson(configFilePath, fileContent) as {
+            config?: {
+                extends?: string | string[];
+                tstl?: TypeScriptToLuaOptions;
+            };
         };
+
+        if (!parsedConfig) {
+            return {};
+        }
 
         if (parsedConfig.extends) {
             if (Array.isArray(parsedConfig.extends)) {

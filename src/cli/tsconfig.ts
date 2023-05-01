@@ -92,8 +92,6 @@ function getExtendedTstlOptions(
             } else {
                 Object.assign(options, getExtendedTstlOptions(parsedConfig.extends, newConfigRoot, cycleCache, system));
             }
-        } else {
-            return parsedConfig.tstl ?? {};
         }
 
         if (parsedConfig.tstl) {

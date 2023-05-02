@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.15.0
+
+- Using `extends` in tsconfig.json now also correctly merges settings in the `tstl` block (shallow merge).
+- Now avoiding assigning default parameter values if the default value is `nil` (`null` or `undefined`).
+- Fixed a bug where indexing a `LuaMultiReturn` value with [0] would still return everything.
+- Fixed a bug with nested namespaces causing unexpected nil indexing errors.
+
 ## 1.14.0
 
 - **[Breaking]** Upgraded TypeScript to 5.0.

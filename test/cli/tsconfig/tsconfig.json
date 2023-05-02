@@ -1,0 +1,6 @@
+{
+    "extends": "./tsconfig.base.json",
+    "tstl": {
+        "luaTarget": "5.3"
+    }
+}

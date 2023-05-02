@@ -1,0 +1,6 @@
+{
+    "extends": "./tsconfig-cycle2.json",
+    "tstl": {
+        "luaTarget": "5.4"
+    }
+}

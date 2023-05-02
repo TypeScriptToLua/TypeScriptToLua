@@ -142,6 +142,7 @@ test.each([
     ["@decorator static ['evaluated property'];"],
     ["method(@decorator a) {}"],
     ["static method(@decorator a) {}"],
+    ["constructor(@decorator a) {}"],
 ])("Decorate class member (%p)", classMember => {
     util.testFunction`
         let decoratorParameters: any;

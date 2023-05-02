@@ -43,15 +43,11 @@ export function transformMethodDeclaration(
     );
 }
 
-export function createMethodDecoratingExpression(
+export function getParameterDecorators(
     context: TransformationContext,
-    node: ts.MethodDeclaration,
-    className: lua.Identifier
-): lua.Statement | undefined {
-    const methodTable = transformMemberExpressionOwnerName(node, className);
-    const methodName = transformMethodName(context, node);
-
-    const parameterDecorators = node.parameters
+    node: ts.FunctionLikeDeclarationBase
+): lua.CallExpression[] {
+    return node.parameters
         .flatMap((parameter, index) =>
             ts
                 .getDecorators(parameter)
@@ -66,7 +62,30 @@ export function createMethodDecoratingExpression(
                 )
         )
         .filter(isNonNull);
+}
 
+export function createConstructorDecoratingExpression(
+    context: TransformationContext,
+    node: ts.ConstructorDeclaration,
+    className: lua.Identifier
+): lua.Statement | undefined {
+    const parameterDecorators = getParameterDecorators(context, node);
+
+    if (parameterDecorators.length > 0) {
+        const decorateMethod = createDecoratingExpression(context, node.kind, parameterDecorators, className);
+        return lua.createExpressionStatement(decorateMethod);
+    }
+}
+
+export function createMethodDecoratingExpression(
+    context: TransformationContext,
+    node: ts.MethodDeclaration,
+    className: lua.Identifier
+): lua.Statement | undefined {
+    const methodTable = transformMemberExpressionOwnerName(node, className);
+    const methodName = transformMethodName(context, node);
+
+    const parameterDecorators = getParameterDecorators(context, node);
     const methodDecorators = ts.getDecorators(node)?.map(d => transformDecoratorExpression(context, d)) ?? [];
 
     if (methodDecorators.length > 0 || parameterDecorators.length > 0) {

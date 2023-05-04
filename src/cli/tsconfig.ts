@@ -58,13 +58,29 @@ export function parseConfigFileWithSystem(
     return updateParsedConfigFile(parsedConfigFile);
 }
 
+function resolveJsonConfig(
+    moduleName: string,
+    configRootDir: string,
+    host: ts.ModuleResolutionHost
+): string | undefined {
+    const resolved = ts.nodeNextJsonConfigResolver(moduleName, path.join(configRootDir, "tsconfig.json"), host);
+    if (resolved.resolvedModule) {
+        return resolved.resolvedModule.resolvedFileName;
+    }
+}
+
 function getExtendedTstlOptions(
     configFilePath: string,
     configRootDir: string,
     cycleCache: Set<string>,
     system: ts.System
 ): TypeScriptToLuaOptions {
-    const absolutePath = path.isAbsolute(configFilePath) ? configFilePath : path.resolve(configRootDir, configFilePath);
+    const absolutePath = resolveJsonConfig(configFilePath, configRootDir, system);
+
+    if (!absolutePath) {
+        return {};
+    }
+
     const newConfigRoot = path.dirname(absolutePath);
 
     if (cycleCache.has(absolutePath)) {

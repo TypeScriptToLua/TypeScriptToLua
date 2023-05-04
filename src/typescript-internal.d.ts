@@ -50,4 +50,10 @@ declare module "typescript" {
 
     function skipOuterExpressions(node: Expression, kinds?: OuterExpressionKinds): Expression;
     export function isOuterExpression(node: Node, kinds?: OuterExpressionKinds): node is OuterExpression;
+
+    export function nodeNextJsonConfigResolver(
+        moduleName: string,
+        containingFile: string,
+        host: ModuleResolutionHost
+    ): ResolvedModuleWithFailedLookupLocations;
 }

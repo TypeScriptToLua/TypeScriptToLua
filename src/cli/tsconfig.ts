@@ -58,7 +58,11 @@ export function parseConfigFileWithSystem(
     return updateParsedConfigFile(parsedConfigFile);
 }
 
-function resolveJsonConfig(
+function pathIsRelative(path: string): boolean {
+    return /^\.\.?($|[\\/])/.test(path);
+}
+
+function resolveModuleConfig(
     moduleName: string,
     configRootDir: string,
     host: ts.ModuleResolutionHost
@@ -75,7 +79,11 @@ function getExtendedTstlOptions(
     cycleCache: Set<string>,
     system: ts.System
 ): TypeScriptToLuaOptions {
-    const absolutePath = resolveJsonConfig(configFilePath, configRootDir, system);
+    const absolutePath = path.isAbsolute(configFilePath)
+        ? configFilePath
+        : pathIsRelative(configFilePath)
+        ? path.resolve(configRootDir, configFilePath)
+        : resolveModuleConfig(configFilePath, configRootDir, system);
 
     if (!absolutePath) {
         return {};

@@ -56,4 +56,7 @@ declare module "typescript" {
         containingFile: string,
         host: ModuleResolutionHost
     ): ResolvedModuleWithFailedLookupLocations;
+
+    export function pathIsAbsolute(path: string): boolean;
+    export function pathIsRelative(path: string): boolean;
 }

@@ -58,7 +58,7 @@ export function parseConfigFileWithSystem(
     return updateParsedConfigFile(parsedConfigFile);
 }
 
-function resolveModuleConfig(
+function resolveNpmModuleConfig(
     moduleName: string,
     configRootDir: string,
     host: ts.ModuleResolutionHost
@@ -79,7 +79,7 @@ function getExtendedTstlOptions(
         ? configFilePath
         : ts.pathIsRelative(configFilePath)
         ? path.resolve(configRootDir, configFilePath)
-        : resolveModuleConfig(configFilePath, configRootDir, system);
+        : resolveNpmModuleConfig(configFilePath, configRootDir, system); // if a path is neither relative nor absolute, it is probably a npm module
 
     if (!absolutePath) {
         return {};

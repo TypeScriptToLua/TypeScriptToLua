@@ -19,7 +19,11 @@ import {
     transformClassInstanceFields,
     transformStaticPropertyDeclaration,
 } from "./members/fields";
-import { createMethodDecoratingExpression, transformMethodDeclaration } from "./members/method";
+import {
+    createConstructorDecoratingExpression,
+    createMethodDecoratingExpression,
+    transformMethodDeclaration,
+} from "./members/method";
 import { getExtendedNode, getExtendedType, isStaticNode } from "./utils";
 import { createClassSetup } from "./setup";
 import { LuaTarget } from "../../../CompilerOptions";
@@ -116,6 +120,9 @@ function transformClassLikeDeclaration(
         );
 
         if (constructorResult) result.push(constructorResult);
+
+        const decoratingExpression = createConstructorDecoratingExpression(context, constructor, localClassName);
+        if (decoratingExpression) result.push(decoratingExpression);
     } else if (!extendedType) {
         // Generate a constructor if none was defined in a base class
         const constructorResult = transformConstructorDeclaration(

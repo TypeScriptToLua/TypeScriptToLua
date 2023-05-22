@@ -44,7 +44,7 @@
                     "description": "Specifies how js standard features missing in lua are imported.",
                     "type": "string",
                     "default": "require",
-                    "enum": ["none", "inline", "require"]
+                    "enum": ["none", "inline", "require", "require-minimal"]
                 },
                 "luaTarget": {
                     "description": "Specifies the Lua version you want to generate code for.",

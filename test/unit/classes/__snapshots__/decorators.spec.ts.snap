@@ -6,7 +6,7 @@ local __TS__Class = ____lualib.__TS__Class
 local __TS__Decorate = ____lualib.__TS__Decorate
 local ____exports = {}
 function ____exports.__main(self)
-    local function decorator(constructor)
+    local function decorator(constructor, context)
     end
     local TestClass = __TS__Class()
     TestClass.name = "TestClass"
@@ -18,3 +18,22 @@ return ____exports"
 `;
 
 exports[`Throws error if decorator function has void context: diagnostics 1`] = `"main.ts(4,9): error TSTL: Decorator function cannot have 'this: void'."`;
+
+exports[`legacy experimentalDecorators Throws error if decorator function has void context: code 1`] = `
+"local ____lualib = require("lualib_bundle")
+local __TS__Class = ____lualib.__TS__Class
+local __TS__Decorate = ____lualib.__TS__Decorate
+local ____exports = {}
+function ____exports.__main(self)
+    local function decorator(constructor)
+    end
+    local TestClass = __TS__Class()
+    TestClass.name = "TestClass"
+    function TestClass.prototype.____constructor(self)
+    end
+    TestClass = __TS__Decorate({decorator}, TestClass)
+end
+return ____exports"
+`;
+
+exports[`legacy experimentalDecorators Throws error if decorator function has void context: diagnostics 1`] = `"main.ts(4,13): error TSTL: Decorator function cannot have 'this: void'."`;

@@ -163,7 +163,6 @@ export abstract class TestBuilder {
         lib: ["lib.esnext.d.ts"],
         moduleResolution: ts.ModuleResolutionKind.Node10,
         resolveJsonModule: true,
-        experimentalDecorators: true,
         sourceMap: true,
     };
     public setOptions(options: tstl.CompilerOptions = {}): this {

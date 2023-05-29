@@ -5,7 +5,7 @@ import { __TS__ObjectGetOwnPropertyDescriptor } from "./ObjectGetOwnPropertyDesc
 import { __TS__SetDescriptor } from "./SetDescriptor";
 import { Decorator } from "./Decorator";
 
-export function __TS__Decorate<TTarget extends AnyTable, TKey extends keyof TTarget>(
+export function __TS__DecorateLegacy<TTarget extends AnyTable, TKey extends keyof TTarget>(
     this: void,
     decorators: Array<Decorator<TTarget, TKey>>,
     target: TTarget,

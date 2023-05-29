@@ -35,5 +35,5 @@ export function createDecoratingExpression(
         trailingExpressions.push(isMethodOrAccessor ? lua.createBooleanLiteral(true) : lua.createNilLiteral());
     }
 
-    return transformLuaLibFunction(context, LuaLibFeature.Decorate, undefined, ...trailingExpressions);
+    return transformLuaLibFunction(context, LuaLibFeature.DecorateLegacy, undefined, ...trailingExpressions);
 }

@@ -3,7 +3,7 @@
 exports[`Throws error if decorator function has void context: code 1`] = `
 "local ____lualib = require("lualib_bundle")
 local __TS__Class = ____lualib.__TS__Class
-local __TS__Decorate = ____lualib.__TS__Decorate
+local __TS__DecorateLegacy = ____lualib.__TS__DecorateLegacy
 local ____exports = {}
 function ____exports.__main(self)
     local function decorator(constructor, context)
@@ -12,7 +12,7 @@ function ____exports.__main(self)
     TestClass.name = "TestClass"
     function TestClass.prototype.____constructor(self)
     end
-    TestClass = __TS__Decorate({decorator}, TestClass)
+    TestClass = __TS__DecorateLegacy({decorator}, TestClass)
 end
 return ____exports"
 `;
@@ -22,7 +22,7 @@ exports[`Throws error if decorator function has void context: diagnostics 1`] = 
 exports[`legacy experimentalDecorators Throws error if decorator function has void context: code 1`] = `
 "local ____lualib = require("lualib_bundle")
 local __TS__Class = ____lualib.__TS__Class
-local __TS__Decorate = ____lualib.__TS__Decorate
+local __TS__DecorateLegacy = ____lualib.__TS__DecorateLegacy
 local ____exports = {}
 function ____exports.__main(self)
     local function decorator(constructor)
@@ -31,7 +31,7 @@ function ____exports.__main(self)
     TestClass.name = "TestClass"
     function TestClass.prototype.____constructor(self)
     end
-    TestClass = __TS__Decorate({decorator}, TestClass)
+    TestClass = __TS__DecorateLegacy({decorator}, TestClass)
 end
 return ____exports"
 `;

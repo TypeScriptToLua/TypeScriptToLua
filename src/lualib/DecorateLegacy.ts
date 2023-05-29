@@ -1,13 +1,18 @@
 /**
- * SEE: https://github.com/Microsoft/TypeScript/blob/master/src/compiler/transformers/ts.ts#L3598
+ * Old-style decorators, activated by enabling the experimentalDecorators flag
  */
 import { __TS__ObjectGetOwnPropertyDescriptor } from "./ObjectGetOwnPropertyDescriptor";
 import { __TS__SetDescriptor } from "./SetDescriptor";
-import { Decorator } from "./Decorator";
+
+export type LegacyDecorator<TTarget extends AnyTable, TKey extends keyof TTarget> = (
+    target: TTarget,
+    key?: TKey,
+    descriptor?: PropertyDescriptor
+) => TTarget;
 
 export function __TS__DecorateLegacy<TTarget extends AnyTable, TKey extends keyof TTarget>(
     this: void,
-    decorators: Array<Decorator<TTarget, TKey>>,
+    decorators: Array<LegacyDecorator<TTarget, TKey>>,
     target: TTarget,
     key?: TKey,
     desc?: any

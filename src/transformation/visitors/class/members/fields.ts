@@ -4,27 +4,6 @@ import { TransformationContext } from "../../../context";
 import { createSelfIdentifier } from "../../../utils/lua-ast";
 import { transformInPrecedingStatementScope } from "../../../utils/preceding-statements";
 import { transformPropertyName } from "../../literal";
-import { createDecoratingExpression, transformDecoratorExpression } from "../decorators";
-import { transformMemberExpressionOwnerName } from "./method";
-
-export function createPropertyDecoratingExpression(
-    context: TransformationContext,
-    node: ts.PropertyDeclaration | ts.AccessorDeclaration,
-    className: lua.Identifier
-): lua.Expression | undefined {
-    if (!ts.canHaveDecorators(node)) return;
-    const decorators = ts.getDecorators(node);
-    if (!decorators) return;
-    const propertyName = transformPropertyName(context, node.name);
-    const propertyOwnerTable = transformMemberExpressionOwnerName(node, className);
-    return createDecoratingExpression(
-        context,
-        node.kind,
-        decorators.map(d => transformDecoratorExpression(context, d)),
-        propertyOwnerTable,
-        propertyName
-    );
-}
 
 export function transformClassInstanceFields(
     context: TransformationContext,

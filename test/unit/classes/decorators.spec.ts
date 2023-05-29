@@ -184,7 +184,7 @@ test("default exported class with decorator", () => {
         .expectToEqual({ result: "overridden" });
 });
 
-test("Class method decorator", () => {
+test("class method decorator", () => {
     util.testFunction`
         let methodDecoratorContext;
 
@@ -203,7 +203,34 @@ test("Class method decorator", () => {
             }
         }
 
-        return { result: new TestClass().myMethod(3), methodDecoratorContext };
+        return { result: new TestClass().myMethod(4), context: {
+            kind: methodDecoratorContext.kind,
+            name: methodDecoratorContext.name,
+            private: methodDecoratorContext.private,
+            static: methodDecoratorContext.static
+        } };
+    `.expectToMatchJsResult();
+});
+
+test("this in decorator points to class being decorated", () => {
+    util.testFunction`
+        function methodDecorator(method: (v: number) => number, context: ClassMethodDecoratorContext) {
+            return function() {
+                const thisCallTime = this.myInstanceVariable;
+                return thisCallTime;
+            };
+        }
+
+        class TestClass {
+            constructor(protected myInstanceVariable: number) { }
+
+            @methodDecorator
+            public myMethod() {
+                return 0;
+            }
+        }
+
+        return new TestClass(5).myMethod();
     `.expectToMatchJsResult();
 });
 
@@ -224,7 +251,12 @@ test("class getter decorator", () => {
             get getterValue() { return 10; }
         }
 
-        return { result: new TestClass().getterValue, getterDecoratorContext };
+        return { result: new TestClass().getterValue, context: {
+            kind: getterDecoratorContext.kind,
+            name: getterDecoratorContext.name,
+            private: getterDecoratorContext.private,
+            static: getterDecoratorContext.static
+        } };
     `.expectToMatchJsResult();
 });
 
@@ -235,8 +267,8 @@ test("class setter decorator", () => {
         function setterDecorator(setter: (v: number) => void, context: ClassSetterDecoratorContext) {
             setterDecoratorContext = context;
 
-            return (v: number) => {
-                setter(v + 15);
+            return function(v: number) {
+                setter.call(this, v + 15);
             };
         }
 
@@ -249,7 +281,12 @@ test("class setter decorator", () => {
 
         const instance = new TestClass();
         instance.valueSetter = 23;
-        return { result: instance.value, setterDecoratorContext };
+        return { result: instance.value, context: {
+            kind: setterDecoratorContext.kind,
+            name: setterDecoratorContext.name,
+            private: setterDecoratorContext.private,
+            static: setterDecoratorContext.static
+        } };
     `.expectToMatchJsResult();
 });
 

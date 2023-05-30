@@ -7,7 +7,7 @@ import { transformFunctionBody, transformParameters } from "../../function";
 import { transformPropertyName } from "../../literal";
 import { isStaticNode } from "../utils";
 import { createPrototypeName } from "./constructor";
-import { createClassAccessorDecoratingStatements } from "../decorators";
+import { createClassAccessorDecoratingExpression } from "../decorators";
 
 function transformAccessor(
     context: TransformationContext,
@@ -24,7 +24,7 @@ function transformAccessor(
     );
 
     if (ts.getDecorators(node)?.length) {
-        return createClassAccessorDecoratingStatements(context, node, accessorFunction, className);
+        return createClassAccessorDecoratingExpression(context, node, accessorFunction, className);
     } else {
         return accessorFunction;
     }

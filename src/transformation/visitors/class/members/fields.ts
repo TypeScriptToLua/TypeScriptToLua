@@ -4,6 +4,7 @@ import { TransformationContext } from "../../../context";
 import { createSelfIdentifier } from "../../../utils/lua-ast";
 import { transformInPrecedingStatementScope } from "../../../utils/preceding-statements";
 import { transformPropertyName } from "../../literal";
+import { createClassPropertyDecoratingExpression } from "../decorators";
 
 export function transformClassInstanceFields(
     context: TransformationContext,
@@ -42,5 +43,13 @@ export function transformStaticPropertyDeclaration(
     const fieldName = transformPropertyName(context, field.name);
     const value = context.transformExpression(field.initializer);
     const classField = lua.createTableIndexExpression(lua.cloneIdentifier(className), fieldName);
-    return lua.createAssignmentStatement(classField, value);
+
+    if (ts.getDecorators(field)?.length) {
+        return lua.createAssignmentStatement(
+            classField,
+            createClassPropertyDecoratingExpression(context, field, value, className)
+        );
+    } else {
+        return lua.createAssignmentStatement(classField, value);
+    }
 }

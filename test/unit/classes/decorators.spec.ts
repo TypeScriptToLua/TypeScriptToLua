@@ -18,7 +18,10 @@ test("Class decorator with no parameters", () => {
             public decoratorBool = false;
         }
 
-        return { decoratedClass: new TestClass(), classDecoratorContext };
+        return { decoratedClass: new TestClass(), context: {
+            kind: classDecoratorContext.kind,
+            name: classDecoratorContext.name,
+        } };
     `.expectToMatchJsResult();
 });
 
@@ -292,21 +295,26 @@ test("class setter decorator", () => {
 
 test("class field decorator", () => {
     util.testFunction`
-    let fieldDecoratorContext;
+        let fieldDecoratorContext;
 
-    function fieldDecorator(initialValue: number, context: ClassFieldDecoratorContext) {
-        fieldDecoratorContext = context;
+        function fieldDecorator(_: undefined, context: ClassFieldDecoratorContext) {
+            fieldDecoratorContext = context;
 
-        return initialValue => initialValue * 12;
-    }
+            return (initialValue: number) => initialValue * 12;
+        }
 
-    class TestClass {
-        @fieldDecorator
-        public value: number = 22;
-    }
+        class TestClass {
+            @fieldDecorator
+            public value: number = 22;
+        }
 
-    return { result: new TestClass(), fieldDecoratorContext };
-`.expectToMatchJsResult();
+        return { result: new TestClass(), context: { 
+            kind: fieldDecoratorContext.kind,
+            name: fieldDecoratorContext.name,
+            private: fieldDecoratorContext.private,
+            static: fieldDecoratorContext.static,
+        } };
+    `.expectToMatchJsResult();
 });
 
 describe("legacy experimentalDecorators", () => {

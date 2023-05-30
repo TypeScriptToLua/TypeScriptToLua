@@ -11,11 +11,7 @@ import {
 import { createSelfIdentifier } from "../../utils/lua-ast";
 import { createSafeName, isUnsafeName } from "../../utils/safe-names";
 import { transformIdentifier } from "../identifier";
-import {
-    createClassDecoratingExpression,
-    createClassPropertyDecoratingStatements,
-    createConstructorDecoratingExpression,
-} from "./decorators";
+import { createClassDecoratingExpression, createConstructorDecoratingExpression } from "./decorators";
 import { transformAccessorDeclarations } from "./members/accessors";
 import { createConstructorName, transformConstructorDeclaration } from "./members/constructor";
 import { transformClassInstanceFields, transformStaticPropertyDeclaration } from "./members/fields";
@@ -183,9 +179,6 @@ function transformClassLikeDeclaration(
                 const statement = transformStaticPropertyDeclaration(context, member, localClassName);
                 if (statement) result.push(statement);
             }
-
-            // Add decorating statements
-            result.push(...createClassPropertyDecoratingStatements(context, member, className));
         }
     }
 

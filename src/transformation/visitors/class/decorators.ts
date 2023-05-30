@@ -25,18 +25,19 @@ export function createClassDecoratingExpression(
     classDeclaration: ts.ClassDeclaration | ts.ClassExpression,
     className: lua.Expression
 ): lua.Expression {
+    const classDecorators =
+        ts.getDecorators(classDeclaration)?.map(d => transformDecoratorExpression(context, d)) ?? [];
+
     // If experimentalDecorators flag is set, decorate with legacy decorator logic
     if (context.options.experimentalDecorators) {
-        return createLegacyDecoratingExpression(
-            context,
-            classDeclaration.kind,
-            ts.getDecorators(classDeclaration)?.map(d => transformDecoratorExpression(context, d)) ?? [],
-            className
-        );
+        return createLegacyDecoratingExpression(context, classDeclaration.kind, classDecorators, className);
     }
 
     // Else: TypeScript 5.0 decorator
-    return lua.createNilLiteral();
+    return createDecoratingExpression(context, className, className, classDecorators, {
+        kind: lua.createStringLiteral("class"),
+        name: lua.createStringLiteral(classDeclaration.name?.getText() ?? ""),
+    });
 }
 
 export function createClassMethodDecoratingExpression(
@@ -72,7 +73,7 @@ export function createClassMethodDecoratingExpression(
     });
 }
 
-export function createClassAccessorDecoratingStatements(
+export function createClassAccessorDecoratingExpression(
     context: TransformationContext,
     accessor: ts.AccessorDeclaration,
     originalAccessor: lua.Expression,
@@ -96,54 +97,42 @@ export function createClassAccessorDecoratingStatements(
 
     // Else: TypeScript 5.0 decorator
     return createDecoratingExpression(context, className, originalAccessor, accessorDecorators, {
-        kind: lua.createStringLiteral("accessor"),
+        kind: lua.createStringLiteral(accessor.kind === ts.SyntaxKind.SetAccessor ? "setter" : "getter"),
         name: propertyName,
         private: lua.createBooleanLiteral(isPrivateNode(accessor)),
         static: lua.createBooleanLiteral(isStaticNode(accessor)),
     });
 }
 
-export function createClassPropertyDecoratingStatements(
+export function createClassPropertyDecoratingExpression(
     context: TransformationContext,
     property: ts.PropertyDeclaration,
+    originalValue: lua.Expression,
     className: lua.Identifier
-): lua.Statement[] {
+): lua.Expression {
     const propertyDecorators = ts.getDecorators(property)?.map(d => transformDecoratorExpression(context, d)) ?? [];
-    if (propertyDecorators.length === 0) return [];
 
     // If experimentalDecorators flag is set, decorate with legacy decorator logic
     if (context.options.experimentalDecorators) {
         const propertyName = transformPropertyName(context, property.name);
         const propertyOwnerTable = transformMemberExpressionOwnerName(property, className);
 
-        return [
-            lua.createExpressionStatement(
-                createLegacyDecoratingExpression(
-                    context,
-                    property.kind,
-                    propertyDecorators,
-                    propertyOwnerTable,
-                    propertyName
-                )
-            ),
-        ];
+        return createLegacyDecoratingExpression(
+            context,
+            property.kind,
+            propertyDecorators,
+            propertyOwnerTable,
+            propertyName
+        );
     }
 
     // Else: TypeScript 5.0 decorator
-    const decoratorTable = lua.createTableExpression(propertyDecorators.map(d => lua.createTableFieldExpression(d)));
-    const decoratorContext = lua.createTableExpression([
-        lua.createTableFieldExpression(lua.createStringLiteral("field"), lua.createStringLiteral("kind")),
-    ]);
-    const decorateCall = transformLuaLibFunction(
-        context,
-        LuaLibFeature.Decorate,
-        undefined,
-        className,
-        decoratorTable,
-        decoratorContext
-    );
-
-    return [lua.createExpressionStatement(decorateCall)];
+    return createDecoratingExpression(context, className, originalValue, propertyDecorators, {
+        kind: lua.createStringLiteral("field"),
+        name: lua.createStringLiteral(property.name.getText()),
+        private: lua.createBooleanLiteral(isPrivateNode(property)),
+        static: lua.createBooleanLiteral(isStaticNode(property)),
+    });
 }
 
 function createDecoratingExpression<TValue extends lua.Expression>(

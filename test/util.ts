@@ -122,35 +122,35 @@ export abstract class TestBuilder {
     // TODO: Use testModule in these cases?
     protected tsHeader = "";
     public setTsHeader(tsHeader: string): this {
-        expect(this.hasProgram).toBe(false);
+        this.throwIfProgramExists("setTsHeader");
         this.tsHeader = tsHeader;
         return this;
     }
 
     private luaHeader = "";
     public setLuaHeader(luaHeader: string): this {
-        expect(this.hasProgram).toBe(false);
+        this.throwIfProgramExists("setLuaHeader");
         this.luaHeader += luaHeader;
         return this;
     }
 
     protected jsHeader = "";
     public setJsHeader(jsHeader: string): this {
-        expect(this.hasProgram).toBe(false);
+        this.throwIfProgramExists("setJsHeader");
         this.jsHeader += jsHeader;
         return this;
     }
 
     protected abstract getLuaCodeWithWrapper(code: string): string;
     public setLuaFactory(luaFactory: (code: string) => string): this {
-        expect(this.hasProgram).toBe(false);
+        this.throwIfProgramExists("setLuaFactory");
         this.getLuaCodeWithWrapper = luaFactory;
         return this;
     }
 
     private semanticCheck = true;
     public disableSemanticCheck(): this {
-        expect(this.hasProgram).toBe(false);
+        this.throwIfProgramExists("disableSemanticCheck");
         this.semanticCheck = false;
         return this;
     }
@@ -166,7 +166,7 @@ export abstract class TestBuilder {
         sourceMap: true,
     };
     public setOptions(options: tstl.CompilerOptions = {}): this {
-        expect(this.hasProgram).toBe(false);
+        this.throwIfProgramExists("setOptions");
         Object.assign(this.options, options);
         return this;
     }
@@ -183,23 +183,29 @@ export abstract class TestBuilder {
 
     protected mainFileName = "main.ts";
     public setMainFileName(mainFileName: string): this {
-        expect(this.hasProgram).toBe(false);
+        this.throwIfProgramExists("setMainFileName");
         this.mainFileName = mainFileName;
         return this;
     }
 
     protected extraFiles: Record<string, string> = {};
     public addExtraFile(fileName: string, code: string): this {
-        expect(this.hasProgram).toBe(false);
+        this.throwIfProgramExists("addExtraFile");
         this.extraFiles[fileName] = normalizeSlashes(code);
         return this;
     }
 
     private customTransformers?: ts.CustomTransformers;
     public setCustomTransformers(customTransformers?: ts.CustomTransformers): this {
-        expect(this.hasProgram).toBe(false);
+        this.throwIfProgramExists("setCustomTransformers");
         this.customTransformers = customTransformers;
         return this;
+    }
+
+    private throwIfProgramExists(name: string) {
+        if (this.hasProgram) {
+            throw new Error(`${name}() should not be called after an .expect() or .debug()`);
+        }
     }
 
     // Transpilation and execution

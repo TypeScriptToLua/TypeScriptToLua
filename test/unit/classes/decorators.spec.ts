@@ -509,7 +509,7 @@ describe("legacy experimentalDecorators", () => {
         });
 
         test.each(["return { value: true }", "desc.value = true"])(
-            "Use decorator to override method value",
+            "Use decorator to override method value %s",
             overrideStatement => {
                 util.testFunction`
                     const decorator = (target, key, desc): any => { ${overrideStatement} };

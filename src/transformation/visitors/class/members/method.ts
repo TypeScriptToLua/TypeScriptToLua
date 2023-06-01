@@ -34,12 +34,22 @@ export function transformMethodDeclaration(
     const methodName = transformMethodName(context, node);
     const [functionExpression] = transformFunctionToExpression(context, node);
 
-    if (ts.getDecorators(node)?.length) {
-        return lua.createAssignmentStatement(
-            lua.createTableIndexExpression(methodTable, methodName),
-            createClassMethodDecoratingExpression(context, node, functionExpression, className),
-            node
-        );
+    const methodHasDecorators = (ts.getDecorators(node)?.length ?? 0) > 0;
+    const methodHasParameterDecorators = node.parameters.some(p => (ts.getDecorators(p)?.length ?? 0) > 0); // Legacy decorators
+
+    if (methodHasDecorators || methodHasParameterDecorators) {
+        if (context.options.experimentalDecorators) {
+            // Legacy decorator statement
+            return lua.createExpressionStatement(
+                createClassMethodDecoratingExpression(context, node, functionExpression, className)
+            );
+        } else {
+            return lua.createAssignmentStatement(
+                lua.createTableIndexExpression(methodTable, methodName),
+                createClassMethodDecoratingExpression(context, node, functionExpression, className),
+                node
+            );
+        }
     } else {
         return lua.createAssignmentStatement(
             lua.createTableIndexExpression(methodTable, methodName),

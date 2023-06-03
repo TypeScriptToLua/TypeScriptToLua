@@ -168,3 +168,7 @@ export const invalidSpreadInCallExtension = createErrorDiagnosticFactory(
 export const cannotAssignToNodeOfKind = createErrorDiagnosticFactory(
     (kind: lua.SyntaxKind) => `Cannot create assignment assigning to a node of type ${lua.SyntaxKind[kind]}.`
 );
+
+export const incompleteFieldDecoratorWarning = createWarningDiagnosticFactory(
+    "You are using a class field decorator, note that tstl ignores returned value initializers!"
+);

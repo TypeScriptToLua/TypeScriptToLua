@@ -1,4 +1,7 @@
-import { decoratorInvalidContext } from "../../../src/transformation/utils/diagnostics";
+import {
+    decoratorInvalidContext,
+    incompleteFieldDecoratorWarning,
+} from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
 test("Class decorator with no parameters", () => {
@@ -299,8 +302,6 @@ test("class field decorator", () => {
 
         function fieldDecorator(_: undefined, context: ClassFieldDecoratorContext) {
             fieldDecoratorContext = context;
-
-            return (initialValue: number) => initialValue * 12;
         }
 
         class TestClass {
@@ -314,7 +315,34 @@ test("class field decorator", () => {
             private: fieldDecoratorContext.private,
             static: fieldDecoratorContext.static,
         } };
-    `.expectToMatchJsResult();
+    `.expectToEqual({
+        result: {
+            value: 22, // Different from JS because we ignore the value initializer
+        },
+        context: {
+            kind: "field",
+            name: "value",
+            private: false,
+            static: false,
+        },
+    });
+});
+
+test("class field decorator warns the return value is ignored", () => {
+    util.testFunction`
+        let fieldDecoratorContext;
+
+        function fieldDecorator(_: undefined, context: ClassFieldDecoratorContext) {
+            fieldDecoratorContext = context;
+
+            return (initialValue: number) => initialValue * 12;
+        }
+
+        class TestClass {
+            @fieldDecorator
+            public value: number = 22;
+        }
+    `.expectDiagnosticsToMatchSnapshot([incompleteFieldDecoratorWarning.code]);
 });
 
 describe("legacy experimentalDecorators", () => {

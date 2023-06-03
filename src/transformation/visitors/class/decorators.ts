@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { TransformationContext } from "../../context";
-import { decoratorInvalidContext } from "../../utils/diagnostics";
+import { decoratorInvalidContext, incompleteFieldDecoratorWarning } from "../../utils/diagnostics";
 import { ContextType, getFunctionContextType } from "../../utils/function-context";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isNonNull } from "../../../utils";
@@ -107,10 +107,10 @@ export function createClassAccessorDecoratingExpression(
 export function createClassPropertyDecoratingExpression(
     context: TransformationContext,
     property: ts.PropertyDeclaration,
-    originalValue: lua.Expression,
     className: lua.Identifier
 ): lua.Expression {
-    const propertyDecorators = ts.getDecorators(property)?.map(d => transformDecoratorExpression(context, d)) ?? [];
+    const decorators = ts.getDecorators(property) ?? [];
+    const propertyDecorators = decorators.map(d => transformDecoratorExpression(context, d));
 
     // If experimentalDecorators flag is set, decorate with legacy decorator logic
     if (context.options.experimentalDecorators) {
@@ -127,7 +127,18 @@ export function createClassPropertyDecoratingExpression(
     }
 
     // Else: TypeScript 5.0 decorator
-    return createDecoratingExpression(context, className, originalValue, propertyDecorators, {
+
+    // Add a diagnostic when something is returned from a field decorator
+    for (const decorator of decorators) {
+        const signature = context.checker.getResolvedSignature(decorator);
+        const decoratorReturnType = signature?.getReturnType();
+        // If return type of decorator is NOT void
+        if (decoratorReturnType && (decoratorReturnType.flags & ts.TypeFlags.Void) === 0) {
+            context.diagnostics.push(incompleteFieldDecoratorWarning(property));
+        }
+    }
+
+    return createDecoratingExpression(context, className, lua.createNilLiteral(), propertyDecorators, {
         kind: lua.createStringLiteral("field"),
         name: lua.createStringLiteral(property.name.getText()),
         private: lua.createBooleanLiteral(isPrivateNode(property)),

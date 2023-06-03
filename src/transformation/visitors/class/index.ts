@@ -20,6 +20,7 @@ import { getExtendedNode, getExtendedType, isStaticNode } from "./utils";
 import { createClassSetup } from "./setup";
 import { LuaTarget } from "../../../CompilerOptions";
 import { transformInPrecedingStatementScope } from "../../utils/preceding-statements";
+import { createClassPropertyDecoratingExpression } from "./decorators";
 
 export const transformClassDeclaration: FunctionVisitor<ts.ClassLikeDeclaration> = (declaration, context) => {
     // If declaration is a default export, transform to export variable assignment instead
@@ -178,6 +179,12 @@ function transformClassLikeDeclaration(
             if (isStaticNode(member)) {
                 const statement = transformStaticPropertyDeclaration(context, member, localClassName);
                 if (statement) result.push(statement);
+            }
+
+            if (ts.getDecorators(member)?.length) {
+                result.push(
+                    lua.createExpressionStatement(createClassPropertyDecoratingExpression(context, member, className))
+                );
             }
         }
     }

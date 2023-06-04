@@ -85,7 +85,7 @@ export function transformIdentifierWithSymbol(
 }
 
 export const transformIdentifierExpression: FunctionVisitor<ts.Identifier> = (node, context) => {
-    if (node.originalKeywordKind === ts.SyntaxKind.UndefinedKeyword) {
+    if (ts.identifierToKeywordKind(node) === ts.SyntaxKind.UndefinedKeyword) {
         return lua.createNilLiteral(node);
     }
 

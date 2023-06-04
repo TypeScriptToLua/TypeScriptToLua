@@ -105,8 +105,8 @@ function transformExportAll(context: TransformationContext, node: ts.ExportDecla
 }
 
 const isDefaultExportSpecifier = (node: ts.ExportSpecifier) =>
-    (node.name && node.name.originalKeywordKind === ts.SyntaxKind.DefaultKeyword) ||
-    (node.propertyName && node.propertyName.originalKeywordKind === ts.SyntaxKind.DefaultKeyword);
+    (node.name && ts.identifierToKeywordKind(node.name) === ts.SyntaxKind.DefaultKeyword) ||
+    (node.propertyName && ts.identifierToKeywordKind(node.propertyName) === ts.SyntaxKind.DefaultKeyword);
 
 function transformExportSpecifier(context: TransformationContext, node: ts.ExportSpecifier): lua.AssignmentStatement {
     const exportedSymbol = context.checker.getExportSpecifierLocalTargetSymbol(node);

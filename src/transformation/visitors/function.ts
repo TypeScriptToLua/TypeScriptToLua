@@ -195,7 +195,7 @@ export function transformParameters(
 
     // Only push parameter name to paramName array if it isn't a spread parameter
     for (const param of parameters) {
-        if (ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword) {
+        if (ts.isIdentifier(param.name) && ts.identifierToKeywordKind(param.name) === ts.SyntaxKind.ThisKeyword) {
             continue;
         }
 

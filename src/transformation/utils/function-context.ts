@@ -30,7 +30,7 @@ function hasNoSelfAncestor(declaration: ts.Declaration): boolean {
 
 function getExplicitThisParameter(signatureDeclaration: ts.SignatureDeclaration): ts.ParameterDeclaration | undefined {
     const param = signatureDeclaration.parameters[0];
-    if (param && ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword) {
+    if (param && ts.isIdentifier(param.name) && ts.identifierToKeywordKind(param.name) === ts.SyntaxKind.ThisKeyword) {
         return param;
     }
 }

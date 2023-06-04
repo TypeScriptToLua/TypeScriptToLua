@@ -38,6 +38,7 @@ export enum LuaLibFeature {
     CloneDescriptor = "CloneDescriptor",
     CountVarargs = "CountVarargs",
     Decorate = "Decorate",
+    DecorateLegacy = "DecorateLegacy",
     DecorateParam = "DecorateParam",
     Delete = "Delete",
     DelegatedYield = "DelegatedYield",

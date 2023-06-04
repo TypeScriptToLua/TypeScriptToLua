@@ -196,7 +196,7 @@ test.each(validTsInvalidLuaNames)("class with invalid lua name has correct name 
 
 test.each(validTsInvalidLuaNames)("decorated class with invalid lua name", name => {
     util.testFunction`
-        function decorator<T extends new (...args: any[]) => any>(Class: T): T {
+        function decorator<T extends new (...args: any[]) => any>(Class: T, context: ClassDecoratorContext): T {
             return class extends Class {
                 public bar = "foobar";
             };
@@ -210,7 +210,7 @@ test.each(validTsInvalidLuaNames)("decorated class with invalid lua name", name 
 
 test.each(validTsInvalidLuaNames)("exported decorated class with invalid lua name", name => {
     util.testModule`
-        function decorator<T extends new (...args: any[]) => any>(Class: T): T {
+        function decorator<T extends new (...args: any[]) => any>(Class: T, context: ClassDecoratorContext): T {
             return class extends Class {
                 public bar = "foobar";
             };

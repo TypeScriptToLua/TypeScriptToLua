@@ -1,6 +1,10 @@
 import * as ts from "typescript";
 import { TransformationContext } from "../../context";
 
+export function isPrivateNode(node: ts.HasModifiers): boolean {
+    return node.modifiers?.some(m => m.kind === ts.SyntaxKind.PrivateKeyword) === true;
+}
+
 export function isStaticNode(node: ts.HasModifiers): boolean {
     return node.modifiers?.some(m => m.kind === ts.SyntaxKind.StaticKeyword) === true;
 }

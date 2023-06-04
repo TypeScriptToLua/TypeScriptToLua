@@ -749,9 +749,9 @@ test("default exported anonymous class has 'default' name property", () => {
 });
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/584
-test("constructor class name available with constructor", () => {
+test("constructor class name available with decorator", () => {
     util.testModule`
-        const decorator = <T extends new (...args: any[]) => any>(constructor: T) => class extends constructor {};
+        const decorator = <T extends new (...args: any[]) => any>(constructor: T, context: ClassDecoratorContext) => class extends constructor {};
 
         @decorator
         class MyClass {}

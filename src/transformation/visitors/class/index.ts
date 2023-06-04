@@ -186,6 +186,15 @@ function transformClassLikeDeclaration(
                     lua.createExpressionStatement(createClassPropertyDecoratingExpression(context, member, className))
                 );
             }
+        } else if (ts.isClassStaticBlockDeclaration(member)) {
+            if (member.body.statements.length > 0) {
+                const bodyStatements = context.transformStatements(member.body.statements);
+                const iif = lua.createFunctionExpression(lua.createBlock(bodyStatements), [
+                    lua.createIdentifier("self"),
+                ]);
+                const iife = lua.createCallExpression(iif, [className]);
+                result.push(lua.createExpressionStatement(iife, member));
+            }
         }
     }
 

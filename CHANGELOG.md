@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.16.0
+
+- Upgraded TypeScript to 5.1.3.
+- Added support for [TypeScript 5.0 decorators](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-0.html#decorators).
+  - Old-style decorators will still work as long as you have `experimentalDecorators` configured, otherwise the new standard is used.
+- Added support for [class static initialization blocks](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/Static_initialization_blocks).
+- Fixed a bug causing the `tstl` object in tsconfig.json not to be properly extended when extending a tsconfig from node_modules.
+
 ## 1.15.0
 
 - Using `extends` in tsconfig.json now also correctly merges settings in the `tstl` block (shallow merge).

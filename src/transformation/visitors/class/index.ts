@@ -172,8 +172,8 @@ function transformClassLikeDeclaration(
             }
         } else if (ts.isMethodDeclaration(member)) {
             // Methods
-            const statement = transformMethodDeclaration(context, member, localClassName);
-            if (statement) result.push(statement);
+            const statements = transformMethodDeclaration(context, member, localClassName);
+            result.push(...statements);
         } else if (ts.isPropertyDeclaration(member)) {
             // Properties
             if (isStaticNode(member)) {

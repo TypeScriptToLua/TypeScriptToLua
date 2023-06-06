@@ -604,4 +604,23 @@ describe("legacy experimentalDecorators", () => {
             .setOptions({ experimentalDecorators: true })
             .expectToEqual({ result: "overridden" });
     });
+
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1453
+    test("Class methods with legacy decorators can still be called ($1453)", () => {
+        util.testFunction`
+            function decorator<Class>(
+            target: Class,
+            propertyKey: keyof Class,
+            ): void {}
+
+            class Foo {
+                @decorator
+                public method2() { return 4; }
+            }
+
+            return new Foo().method2();
+        `
+            .setOptions({ experimentalDecorators: true })
+            .expectToMatchJsResult();
+    });
 });

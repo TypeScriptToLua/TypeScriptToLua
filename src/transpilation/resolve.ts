@@ -9,6 +9,7 @@ import { formatPathToLuaPath, normalizeSlashes, trimExtension } from "../utils";
 import { couldNotReadDependency, couldNotResolveRequire } from "./diagnostics";
 import { BuildMode, CompilerOptions } from "../CompilerOptions";
 import { findLuaRequires, LuaRequire } from "./find-lua-requires";
+import { getPlugins } from "./plugins";
 
 const resolver = resolve.ResolverFactory.createResolver({
     extensions: [".lua"],
@@ -167,6 +168,17 @@ class ResolutionContext {
             const resolveResult = resolver.resolveSync({}, fileDirectory, dependencyPath);
             if (resolveResult) return resolveResult;
         } catch (e: any) {
+
+            const plugins = getPlugins(this.program).plugins;
+            for (let p of plugins) {
+                if (p.onImportResolutionFailure != null) {
+                    const pluginResolvedPath = p.onImportResolutionFailure(fileDirectory, dependencyPath)
+                    if (pluginResolvedPath !== undefined) {
+                        return pluginResolvedPath;
+                    }
+                }
+            }
+
             // resolveSync errors if it fails to resolve
             if (this.options.tstlVerbose && e.details) {
                 // Output resolver log

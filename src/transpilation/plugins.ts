@@ -45,6 +45,8 @@ export interface Plugin {
         emitHost: EmitHost,
         result: EmitFile[]
     ) => ts.Diagnostic[] | void;
+
+    onImportResolutionFailure?: (fileDirectory : string, dependencyPath : string) => string | undefined
 }
 
 export function getPlugins(program: ts.Program): { diagnostics: ts.Diagnostic[]; plugins: Plugin[] } {

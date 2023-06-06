@@ -26,9 +26,9 @@ export function transformMethodDeclaration(
     context: TransformationContext,
     node: ts.MethodDeclaration,
     className: lua.Identifier
-): lua.Statement | undefined {
+): lua.Statement[] {
     // Don't transform methods without body (overload declarations)
-    if (!node.body) return;
+    if (!node.body) return [];
 
     const methodTable = transformMemberExpressionOwnerName(node, className);
     const methodName = transformMethodName(context, node);
@@ -40,21 +40,31 @@ export function transformMethodDeclaration(
     if (methodHasDecorators || methodHasParameterDecorators) {
         if (context.options.experimentalDecorators) {
             // Legacy decorator statement
-            return lua.createExpressionStatement(
-                createClassMethodDecoratingExpression(context, node, functionExpression, className)
-            );
+            return [
+                lua.createAssignmentStatement(
+                    lua.createTableIndexExpression(methodTable, methodName),
+                    functionExpression
+                ),
+                lua.createExpressionStatement(
+                    createClassMethodDecoratingExpression(context, node, functionExpression, className)
+                ),
+            ];
         } else {
-            return lua.createAssignmentStatement(
-                lua.createTableIndexExpression(methodTable, methodName),
-                createClassMethodDecoratingExpression(context, node, functionExpression, className),
-                node
-            );
+            return [
+                lua.createAssignmentStatement(
+                    lua.createTableIndexExpression(methodTable, methodName),
+                    createClassMethodDecoratingExpression(context, node, functionExpression, className),
+                    node
+                ),
+            ];
         }
     } else {
-        return lua.createAssignmentStatement(
-            lua.createTableIndexExpression(methodTable, methodName),
-            functionExpression,
-            node
-        );
+        return [
+            lua.createAssignmentStatement(
+                lua.createTableIndexExpression(methodTable, methodName),
+                functionExpression,
+                node
+            ),
+        ];
     }
 }

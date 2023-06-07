@@ -9,7 +9,7 @@ import { formatPathToLuaPath, normalizeSlashes, trimExtension } from "../utils";
 import { couldNotReadDependency, couldNotResolveRequire } from "./diagnostics";
 import { BuildMode, CompilerOptions } from "../CompilerOptions";
 import { findLuaRequires, LuaRequire } from "./find-lua-requires";
-import { getPlugins } from "./plugins";
+import { Plugin } from "./plugins";
 
 const resolver = resolve.ResolverFactory.createResolver({
     extensions: [".lua"],
@@ -34,7 +34,8 @@ class ResolutionContext {
     constructor(
         public readonly program: ts.Program,
         public readonly options: CompilerOptions,
-        private readonly emitHost: EmitHost
+        private readonly emitHost: EmitHost,
+        private readonly plugins: Plugin[]
     ) {
         this.noResolvePaths = new Set(options.noResolvePaths);
     }
@@ -200,17 +201,18 @@ class ResolutionContext {
             }
         }
 
-        const plugins = getPlugins(this.program).plugins;
-        for (let p of plugins) {
-            if (p.onImportResolutionFailure != null) {
-                const pluginResolvedPath = p.onImportResolutionFailure(packageRoot, dependency)
-                if (pluginResolvedPath !== undefined) {
-                    const fileFromPath = this.getFileFromPath(pluginResolvedPath);
-                    if(fileFromPath){
-                        if(this.options.tstlVerbose){
-                            console.log(`Resolved file path for ${dependency} to path ${fileFromPath} using plugin.`)
+        if (this.plugins != null) {
+            for (let p of this.plugins) {
+                if (p.onImportResolutionFailure != null) {
+                    const pluginResolvedPath = p.onImportResolutionFailure(packageRoot, dependency)
+                    if (pluginResolvedPath !== undefined) {
+                        const fileFromPath = this.getFileFromPath(pluginResolvedPath);
+                        if (fileFromPath) {
+                            if (this.options.tstlVerbose) {
+                                console.log(`Resolved file path for ${dependency} to path ${fileFromPath} using plugin.`)
+                            }
+                            return fileFromPath
                         }
-                        return fileFromPath
                     }
                 }
             }
@@ -254,7 +256,7 @@ class ResolutionContext {
             path.join(resolvedPath, "init.lua"), // lua looks for <require>/init.lua if it cannot find <require>.lua
         ];
 
-        if(resolvedPath.endsWith(".lua")){
+        if (resolvedPath.endsWith(".lua")) {
             possibleLuaProjectFiles.push(resolvedPath)
         }
 
@@ -300,10 +302,10 @@ class ResolutionContext {
     }
 }
 
-export function resolveDependencies(program: ts.Program, files: ProcessedFile[], emitHost: EmitHost): ResolutionResult {
+export function resolveDependencies(program: ts.Program, files: ProcessedFile[], emitHost: EmitHost, plugins: Plugin[]): ResolutionResult {
     const options = program.getCompilerOptions() as CompilerOptions;
 
-    const resolutionContext = new ResolutionContext(program, options, emitHost);
+    const resolutionContext = new ResolutionContext(program, options, emitHost, plugins);
 
     // Resolve dependencies for all processed files
     for (const file of files) {

@@ -196,7 +196,7 @@ class ResolutionContext {
                 return fileFromPath;
             } else {
                 // Did not find file at current root, try again one directory deeper
-                currentPackage = path.join(packageRoot, splitPath[packageRootIndex++]);
+                currentPackage = path.join(currentPackage, splitPath[packageRootIndex++]);
             }
         }
 

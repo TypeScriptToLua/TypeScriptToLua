@@ -105,7 +105,8 @@ class ResolutionContext {
                     if (p.moduleResolution != null) {
                         const pluginResolvedPath = p.moduleResolution(dependency, dependencyPath)
                         if (pluginResolvedPath !== undefined) {
-                            // If node module
+                            
+                            // If lua file is in node_module
                             if (requiredFromLuaFile && isNodeModulesFile(required.fileName)) {
                                 // If requiring file is in lua module, try to resolve sibling in that file first
                                 const resolvedNodeModulesFile = this.resolveLuaDependencyPathFromNodeModules(required, pluginResolvedPath);
@@ -115,16 +116,17 @@ class ResolutionContext {
                                     }
                                     return resolvedNodeModulesFile
                                 }
-                            } else if (this.getFileFromPath(pluginResolvedPath)) {
+                            } 
+                            
+                            if (this.getFileFromPath(pluginResolvedPath)) {
                                 console.log(`Resolved file path for module ${dependency} to path ${dependencyPath} using plugin.`)
                                 return pluginResolvedPath;
                             }
                         }
                     }
                 } catch (e: any) {
-                    // resolveSync errors if it fails to resolve
+                    // if plugin throws an error
                     if (this.options.tstlVerbose) {
-                        // Output resolver log
                         console.log(e.details ?? e);
                     }
                 }

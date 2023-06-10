@@ -220,22 +220,20 @@ class ResolutionContext {
         requiringFile: ProcessedFile,
         dependency: string
     ): string | undefined {
-
         // We don't know for sure where the lua root is, so guess it is at package root
         const splitPath = path.normalize(requiringFile.fileName).split(path.sep);
         let packageRootIndex = splitPath.lastIndexOf("node_modules") + 2;
-        const packageRoot = splitPath.slice(0, packageRootIndex).join(path.sep);
-        let currentPackage = packageRoot;
+        let packageRoot = splitPath.slice(0, packageRootIndex).join(path.sep);
 
         while (packageRootIndex < splitPath.length) {
             // Try to find lua file relative to currently guessed Lua root
-            const resolvedPath = path.join(currentPackage, dependency);
+            const resolvedPath = path.join(packageRoot, dependency);
             const fileFromPath = this.getFileFromPath(resolvedPath);
             if (fileFromPath) {
                 return fileFromPath;
             } else {
                 // Did not find file at current root, try again one directory deeper
-                currentPackage = path.join(currentPackage, splitPath[packageRootIndex++]);
+                packageRoot = path.join(packageRoot, splitPath[packageRootIndex++]);
             }
         }
 

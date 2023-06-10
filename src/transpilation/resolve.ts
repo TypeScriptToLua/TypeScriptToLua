@@ -79,7 +79,7 @@ class ResolutionContext {
             return;
         }
 
-        const dependencyPath = this.resolveDependencyPath(file, required.requirePath);
+        const dependencyPath = this.resolveDependencyPathsWithPlugins(file, required.requirePath) ?? this.resolveDependencyPath(file, required.requirePath);
         if (!dependencyPath) return this.couldNotResolveImport(required, file);
 
         if (this.options.tstlVerbose) {
@@ -92,6 +92,43 @@ class ResolutionContext {
             const resolvedRequire = getEmitPathRelativeToOutDir(dependencyPath, this.program);
             replaceRequireInCode(file, required, resolvedRequire, this.options.extension);
             replaceRequireInSourceMap(file, required, resolvedRequire, this.options.extension);
+        }
+    }
+
+    private resolveDependencyPathsWithPlugins(required: ProcessedFile, dependency: string) {
+        if (this.plugins != null) {
+            const requiredFromLuaFile = required.fileName.endsWith(".lua");
+            const dependencyPath = requiredFromLuaFile ? luaRequireToPath(dependency) : dependency;
+
+            for (const p of this.plugins) {
+                try {
+                    if (p.moduleResolution != null) {
+                        const pluginResolvedPath = p.moduleResolution(dependency, dependencyPath)
+                        if (pluginResolvedPath !== undefined) {
+                            // If node module
+                            if (requiredFromLuaFile && isNodeModulesFile(required.fileName)) {
+                                // If requiring file is in lua module, try to resolve sibling in that file first
+                                const resolvedNodeModulesFile = this.resolveLuaDependencyPathFromNodeModules(required, pluginResolvedPath);
+                                if (resolvedNodeModulesFile) {
+                                    if (this.options.tstlVerbose) {
+                                        console.log(`Resolved file path for module ${dependency} to path ${dependencyPath} using plugin.`)
+                                    }
+                                    return resolvedNodeModulesFile
+                                }
+                            } else if (this.getFileFromPath(pluginResolvedPath)) {
+                                console.log(`Resolved file path for module ${dependency} to path ${dependencyPath} using plugin.`)
+                                return pluginResolvedPath;
+                            }
+                        }
+                    }
+                } catch (e: any) {
+                    // resolveSync errors if it fails to resolve
+                    if (this.options.tstlVerbose) {
+                        // Output resolver log
+                        console.log(e.details ?? e);
+                    }
+                }
+            }
         }
     }
 
@@ -183,6 +220,7 @@ class ResolutionContext {
         requiringFile: ProcessedFile,
         dependency: string
     ): string | undefined {
+
         // We don't know for sure where the lua root is, so guess it is at package root
         const splitPath = path.normalize(requiringFile.fileName).split(path.sep);
         let packageRootIndex = splitPath.lastIndexOf("node_modules") + 2;
@@ -198,23 +236,6 @@ class ResolutionContext {
             } else {
                 // Did not find file at current root, try again one directory deeper
                 currentPackage = path.join(currentPackage, splitPath[packageRootIndex++]);
-            }
-        }
-
-        if (this.plugins != null) {
-            for (let p of this.plugins) {
-                if (p.onImportResolutionFailure != null) {
-                    const pluginResolvedPath = p.onImportResolutionFailure(packageRoot, dependency)
-                    if (pluginResolvedPath !== undefined) {
-                        const fileFromPath = this.getFileFromPath(pluginResolvedPath);
-                        if (fileFromPath) {
-                            if (this.options.tstlVerbose) {
-                                console.log(`Resolved file path for ${dependency} to path ${fileFromPath} using plugin.`)
-                            }
-                            return fileFromPath
-                        }
-                    }
-                }
             }
         }
 
@@ -255,10 +276,6 @@ class ResolutionContext {
             path.join(resolvedPath, "index.lua"), // lua index file in sources
             path.join(resolvedPath, "init.lua"), // lua looks for <require>/init.lua if it cannot find <require>.lua
         ];
-
-        if (resolvedPath.endsWith(".lua")) {
-            possibleLuaProjectFiles.push(resolvedPath)
-        }
 
         for (const possibleFile of possibleLuaProjectFiles) {
             if (this.emitHost.fileExists(possibleFile)) {

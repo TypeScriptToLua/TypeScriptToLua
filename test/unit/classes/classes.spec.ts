@@ -818,3 +818,18 @@ test("static initialization block (#1447)", () => {
         export const result2 = A.staticProperty3;
     `.expectToMatchJsResult();
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1457
+test("static member definition order (#1457)", () => {
+    util.testFunction`
+        class A {
+            static a = A.foo()
+        
+            static foo(): number {
+                return 5
+            }
+        }
+        
+        return A.a;
+    `.expectToMatchJsResult();
+});

@@ -561,3 +561,15 @@ test("can spread LuaSet (#1384)", () => {
     expect(result).toContain("foo");
     expect(result).toContain("bar");
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1426
+test.each([true, false])("spread a decorator or array union type (#1426)", choice => {
+    util.testFunction`
+        function* things() {
+            yield "a";
+            yield "b"
+        }
+        const c: boolean = ${util.formatCode(choice)};
+        return [...(c ? things() : ["c", "d"])];
+    `.expectToMatchJsResult();
+});

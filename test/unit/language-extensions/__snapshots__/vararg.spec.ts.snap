@@ -24,12 +24,14 @@ f(_G, ____)"
 exports[`$vararg invalid use ("function f(s: string[]) {} f($vararg);"): diagnostics 1`] = `"main.ts(2,38): error TSTL: $vararg can only be used in a spread element ('...$vararg') in global scope."`;
 
 exports[`$vararg invalid use ("function foo(...args: string[]) {} function bar() { foo(...$vararg); }"): code 1`] = `
-"function foo(self, ...)
+"local ____lualib = require("lualib_bundle")
+local __TS__Spread = ____lualib.__TS__Spread
+function foo(self, ...)
 end
 function bar(self)
     foo(
         _G,
-        table.unpack(____)
+        __TS__Spread(____)
     )
 end"
 `;

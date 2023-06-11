@@ -46,7 +46,12 @@ export interface Plugin {
         result: EmitFile[]
     ) => ts.Diagnostic[] | void;
 
-    moduleResolution?: (moduleIdentifier : string, requiringFile : string) => string | undefined
+    moduleResolution?: (
+        moduleIdentifier: string,
+        requiringFile: string,
+        options: CompilerOptions,
+        emitHost: EmitHost
+    ) => string | undefined
 }
 
 export function getPlugins(program: ts.Program): { diagnostics: ts.Diagnostic[]; plugins: Plugin[] } {

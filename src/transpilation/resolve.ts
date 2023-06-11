@@ -96,38 +96,31 @@ class ResolutionContext {
     }
 
     private resolveDependencyPathsWithPlugins(required: ProcessedFile, dependency: string) {
-        if (this.plugins != null) {
-            const requiredFromLuaFile = required.fileName.endsWith(".lua");
-            const dependencyPath = requiredFromLuaFile ? luaRequireToPath(dependency) : dependency;
+        const requiredFromLuaFile = required.fileName.endsWith(".lua");
+        const dependencyPath = requiredFromLuaFile ? luaRequireToPath(dependency) : dependency;
 
-            for (const p of this.plugins) {
-                try {
-                    if (p.moduleResolution != null) {
-                        const pluginResolvedPath = p.moduleResolution(dependency, dependencyPath)
-                        if (pluginResolvedPath !== undefined) {
-                            
-                            // If lua file is in node_module
-                            if (requiredFromLuaFile && isNodeModulesFile(required.fileName)) {
-                                // If requiring file is in lua module, try to resolve sibling in that file first
-                                const resolvedNodeModulesFile = this.resolveLuaDependencyPathFromNodeModules(required, pluginResolvedPath);
-                                if (resolvedNodeModulesFile) {
-                                    if (this.options.tstlVerbose) {
-                                        console.log(`Resolved file path for module ${dependency} to path ${dependencyPath} using plugin.`)
-                                    }
-                                    return resolvedNodeModulesFile
-                                }
-                            } 
-                            
-                            if (this.getFileFromPath(pluginResolvedPath)) {
+        for (const p of this.plugins) {
+            if (p.moduleResolution != null) {
+                const pluginResolvedPath = p.moduleResolution(dependency, dependencyPath, this.options, this.emitHost)
+                if (pluginResolvedPath !== undefined) {
+
+                    // If lua file is in node_module
+                    if (requiredFromLuaFile && isNodeModulesFile(required.fileName)) {
+                        // If requiring file is in lua module, try to resolve sibling in that file first
+                        const resolvedNodeModulesFile = this.resolveLuaDependencyPathFromNodeModules(required, pluginResolvedPath);
+                        if (resolvedNodeModulesFile) {
+                            if (this.options.tstlVerbose) {
                                 console.log(`Resolved file path for module ${dependency} to path ${dependencyPath} using plugin.`)
-                                return pluginResolvedPath;
                             }
+                            return resolvedNodeModulesFile
                         }
                     }
-                } catch (e: any) {
-                    // if plugin throws an error
-                    if (this.options.tstlVerbose) {
-                        console.log(e.details ?? e);
+
+                    if (this.getFileFromPath(pluginResolvedPath)) {
+                        if (this.options.tstlVerbose) {
+                            console.log(`Resolved file path for module ${dependency} to path ${dependencyPath} using plugin.`)
+                        }
+                        return pluginResolvedPath;
                     }
                 }
             }

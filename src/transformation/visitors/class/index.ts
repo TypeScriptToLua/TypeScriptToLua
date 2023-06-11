@@ -160,6 +160,17 @@ function transformClassLikeDeclaration(
     }
 
     // Transform class members
+
+    // First transform the methods, in case the static properties call them
+    for (const member of classDeclaration.members) {
+        if (ts.isMethodDeclaration(member)) {
+            // Methods
+            const statements = transformMethodDeclaration(context, member, localClassName);
+            result.push(...statements);
+        }
+    }
+
+    // Then transform the rest
     for (const member of classDeclaration.members) {
         if (ts.isAccessor(member)) {
             // Accessors
@@ -170,10 +181,6 @@ function transformClassLikeDeclaration(
             if (accessorsResult) {
                 result.push(accessorsResult);
             }
-        } else if (ts.isMethodDeclaration(member)) {
-            // Methods
-            const statements = transformMethodDeclaration(context, member, localClassName);
-            result.push(...statements);
         } else if (ts.isPropertyDeclaration(member)) {
             // Properties
             if (isStaticNode(member)) {

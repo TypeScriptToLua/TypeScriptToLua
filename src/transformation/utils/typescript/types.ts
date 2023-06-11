@@ -70,6 +70,22 @@ function isExplicitArrayType(context: TransformationContext, type: ts.Type): boo
     return false;
 }
 
+function isAlwaysExplicitArrayType(context: TransformationContext, type: ts.Type): boolean {
+    if (context.checker.isArrayType(type) || context.checker.isTupleType(type)) return true;
+    if (type.symbol) {
+        const baseConstraint = context.checker.getBaseConstraintOfType(type);
+        if (baseConstraint && baseConstraint !== type) {
+            return isAlwaysExplicitArrayType(context, baseConstraint);
+        }
+    }
+
+    if (type.isUnionOrIntersection()) {
+        return type.types.every(t => isAlwaysExplicitArrayType(context, t));
+    }
+
+    return false;
+}
+
 /**
  * Iterate over a type and its bases until the callback returns true.
  */
@@ -93,6 +109,10 @@ export function forTypeOrAnySupertype(
 
 export function isArrayType(context: TransformationContext, type: ts.Type): boolean {
     return forTypeOrAnySupertype(context, type, t => isExplicitArrayType(context, t));
+}
+
+export function isAlwaysArrayType(context: TransformationContext, type: ts.Type): boolean {
+    return forTypeOrAnySupertype(context, type, t => isAlwaysExplicitArrayType(context, t));
 }
 
 export function isFunctionType(type: ts.Type): boolean {

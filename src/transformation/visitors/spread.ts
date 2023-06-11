@@ -13,7 +13,7 @@ import {
     isFunctionScopeWithDefinition,
     ScopeType,
 } from "../utils/scope";
-import { isArrayType, findFirstNonOuterParent } from "../utils/typescript";
+import { findFirstNonOuterParent, isAlwaysArrayType } from "../utils/typescript";
 import { isMultiReturnCall } from "./language-extensions/multi";
 import { isGlobalVarargConstant } from "./language-extensions/vararg";
 
@@ -96,7 +96,8 @@ export const transformSpreadElement: FunctionVisitor<ts.SpreadElement> = (node, 
     }
 
     const type = context.checker.getTypeAtLocation(node.expression); // not ts-inner expression, in case of casts
-    if (isArrayType(context, type)) {
+    if (isAlwaysArrayType(context, type)) {
+        // All union members must be arrays to be able to shortcut to unpack call
         return createUnpackCall(context, innerExpression, node);
     }
 

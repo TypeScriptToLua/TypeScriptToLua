@@ -51,7 +51,7 @@ export interface Plugin {
         requiringFile: string,
         options: CompilerOptions,
         emitHost: EmitHost
-    ) => string | undefined
+    ) => string | undefined;
 }
 
 export function getPlugins(program: ts.Program): { diagnostics: ts.Diagnostic[]; plugins: Plugin[] } {

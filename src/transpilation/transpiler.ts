@@ -103,7 +103,7 @@ export class Transpiler {
         program: ts.Program,
         diagnostics: ts.Diagnostic[],
         files: ProcessedFile[],
-        plugins : Plugin[]
+        plugins: Plugin[]
     ): { emitPlan: EmitFile[] } {
         performance.startSection("getEmitPlan");
         const options = program.getCompilerOptions() as CompilerOptions;

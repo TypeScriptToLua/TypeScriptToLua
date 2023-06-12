@@ -647,6 +647,36 @@ test("paths without baseUrl is error", () => {
     util.testFunction``.setOptions({ paths: {} }).expectToHaveDiagnostics([pathsWithoutBaseUrl.code]);
 });
 
+test("module resolution using plugin", () => {
+    const baseProjectPath = path.resolve(__dirname, "module-resolution", "project-with-module-resolution-plugin");
+    const projectTsConfig = path.join(baseProjectPath, "tsconfig.json");
+    const mainFile = path.join(baseProjectPath, "src", "main.ts");
+
+    const luaResult = util
+        .testProject(projectTsConfig)
+        .setMainFileName(mainFile)
+        .setOptions({
+            luaPlugins: [
+                {
+                    name: path.join(__dirname, "./plugins/moduleResolution.ts"),
+                },
+            ],
+        })
+        .expectToHaveNoDiagnostics()
+        .getLuaResult();
+
+    expect(luaResult.transpiledFiles).toHaveLength(2);
+    let hasResolvedFile = false;
+    for (const f of luaResult.transpiledFiles) {
+        hasResolvedFile = f.outPath.endsWith("bar.lua");
+        if (hasResolvedFile) {
+            break;
+        }
+    }
+
+    expect(hasResolvedFile).toBe(true);
+});
+
 function snapshotPaths(files: tstl.TranspiledFile[]) {
     return files.map(f => normalizeSlashes(f.outPath).split("module-resolution")[1]).sort();
 }

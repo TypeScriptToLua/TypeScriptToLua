@@ -79,7 +79,10 @@ class ResolutionContext {
             return;
         }
 
-        const dependencyPath = this.resolveDependencyPathsWithPlugins(file, required.requirePath) ?? this.resolveDependencyPath(file, required.requirePath);
+        const dependencyPath =
+            this.resolveDependencyPathsWithPlugins(file, required.requirePath) ??
+            this.resolveDependencyPath(file, required.requirePath);
+
         if (!dependencyPath) return this.couldNotResolveImport(required, file);
 
         if (this.options.tstlVerbose) {
@@ -99,28 +102,50 @@ class ResolutionContext {
         const requiredFromLuaFile = required.fileName.endsWith(".lua");
         const dependencyPath = requiredFromLuaFile ? luaRequireToPath(dependency) : dependency;
 
-        for (const p of this.plugins) {
-            if (p.moduleResolution != null) {
-                const pluginResolvedPath = p.moduleResolution(dependency, dependencyPath, this.options, this.emitHost)
+        for (const plugin of this.plugins) {
+            if (plugin.moduleResolution != null) {
+                const pluginResolvedPath = plugin.moduleResolution(
+                    dependency,
+                    dependencyPath,
+                    this.options,
+                    this.emitHost
+                );
                 if (pluginResolvedPath !== undefined) {
-
                     // If lua file is in node_module
                     if (requiredFromLuaFile && isNodeModulesFile(required.fileName)) {
                         // If requiring file is in lua module, try to resolve sibling in that file first
-                        const resolvedNodeModulesFile = this.resolveLuaDependencyPathFromNodeModules(required, pluginResolvedPath);
+                        const resolvedNodeModulesFile = this.resolveLuaDependencyPathFromNodeModules(
+                            required,
+                            pluginResolvedPath
+                        );
                         if (resolvedNodeModulesFile) {
                             if (this.options.tstlVerbose) {
-                                console.log(`Resolved file path for module ${dependency} to path ${dependencyPath} using plugin.`)
+                                console.log(
+                                    `Resolved file path for module ${dependency} to path ${dependencyPath} using plugin.`
+                                );
                             }
-                            return resolvedNodeModulesFile
+                            return resolvedNodeModulesFile;
                         }
                     }
 
-                    if (this.getFileFromPath(pluginResolvedPath)) {
+                    const isRelative = ["/", "./", "../"].some(p => pluginResolvedPath.startsWith(p));
+
+                    // // If the import is relative, always resolve it relative to the requiring file
+                    // // If the import is not relative, resolve it relative to options.baseUrl if it is set
+                    const fileDirectory = path.dirname(required.fileName);
+                    const relativeTo = isRelative ? fileDirectory : this.options.baseUrl ?? fileDirectory;
+
+                    // // Check if file is a file in the project
+                    const resolvedPath = path.join(relativeTo, pluginResolvedPath);
+                    const fileFromPath = this.getFileFromPath(resolvedPath);
+
+                    if (fileFromPath) {
                         if (this.options.tstlVerbose) {
-                            console.log(`Resolved file path for module ${dependency} to path ${dependencyPath} using plugin.`)
+                            console.log(
+                                `Resolved file path for module ${dependency} to path ${resolvedPath} using plugin.`
+                            );
                         }
-                        return pluginResolvedPath;
+                        return fileFromPath;
                     }
                 }
             }
@@ -312,7 +337,12 @@ class ResolutionContext {
     }
 }
 
-export function resolveDependencies(program: ts.Program, files: ProcessedFile[], emitHost: EmitHost, plugins: Plugin[]): ResolutionResult {
+export function resolveDependencies(
+    program: ts.Program,
+    files: ProcessedFile[],
+    emitHost: EmitHost,
+    plugins: Plugin[]
+): ResolutionResult {
     const options = program.getCompilerOptions() as CompilerOptions;
 
     const resolutionContext = new ResolutionContext(program, options, emitHost, plugins);

@@ -1,9 +1,9 @@
 import type * as tstl from "../../../src";
 
 const plugin: tstl.Plugin = {
-    moduleResolution(moduleIdentifier, requiringFile) {
+    moduleResolution(moduleIdentifier) {
         if (moduleIdentifier.includes("foo")) {
-            return requiringFile.replace("foo", "bar");
+            return moduleIdentifier.replace("foo", "bar");
         }
     },
 };

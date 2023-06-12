@@ -98,51 +98,43 @@ class ResolutionContext {
         }
     }
 
-    private resolveDependencyPathsWithPlugins(required: ProcessedFile, dependency: string) {
-        const requiredFromLuaFile = required.fileName.endsWith(".lua");
-        const dependencyPath = requiredFromLuaFile ? luaRequireToPath(dependency) : dependency;
+    private resolveDependencyPathsWithPlugins(requiringFile: ProcessedFile, dependency: string) {
+        const requiredFromLuaFile = requiringFile.fileName.endsWith(".lua");
+        const moduleIdentifier = requiredFromLuaFile ? luaRequireToPath(dependency) : dependency;
 
         for (const plugin of this.plugins) {
             if (plugin.moduleResolution != null) {
                 const pluginResolvedPath = plugin.moduleResolution(
-                    dependency,
-                    dependencyPath,
+                    moduleIdentifier,
+                    requiringFile.fileName,
                     this.options,
                     this.emitHost
                 );
                 if (pluginResolvedPath !== undefined) {
                     // If lua file is in node_module
-                    if (requiredFromLuaFile && isNodeModulesFile(required.fileName)) {
+                    if (requiredFromLuaFile && isNodeModulesFile(requiringFile.fileName)) {
                         // If requiring file is in lua module, try to resolve sibling in that file first
                         const resolvedNodeModulesFile = this.resolveLuaDependencyPathFromNodeModules(
-                            required,
+                            requiringFile,
                             pluginResolvedPath
                         );
                         if (resolvedNodeModulesFile) {
                             if (this.options.tstlVerbose) {
                                 console.log(
-                                    `Resolved file path for module ${dependency} to path ${dependencyPath} using plugin.`
+                                    `Resolved file path for module ${moduleIdentifier} to path ${pluginResolvedPath} using plugin.`
                                 );
                             }
                             return resolvedNodeModulesFile;
                         }
                     }
 
-                    const isRelative = ["/", "./", "../"].some(p => pluginResolvedPath.startsWith(p));
-
-                    // // If the import is relative, always resolve it relative to the requiring file
-                    // // If the import is not relative, resolve it relative to options.baseUrl if it is set
-                    const fileDirectory = path.dirname(required.fileName);
-                    const relativeTo = isRelative ? fileDirectory : this.options.baseUrl ?? fileDirectory;
-
-                    // // Check if file is a file in the project
-                    const resolvedPath = path.join(relativeTo, pluginResolvedPath);
+                    const resolvedPath = this.formatPathToFile(pluginResolvedPath, requiringFile);
                     const fileFromPath = this.getFileFromPath(resolvedPath);
 
                     if (fileFromPath) {
                         if (this.options.tstlVerbose) {
                             console.log(
-                                `Resolved file path for module ${dependency} to path ${resolvedPath} using plugin.`
+                                `Resolved file path for module ${moduleIdentifier} to path ${pluginResolvedPath} using plugin.`
                             );
                         }
                         return fileFromPath;
@@ -153,6 +145,19 @@ class ResolutionContext {
     }
 
     public processedDependencies = new Set<string>();
+
+    private formatPathToFile(pluginResolvedPath: string, required: ProcessedFile) {
+        const isRelative = ["/", "./", "../"].some(p => pluginResolvedPath.startsWith(p));
+
+        // // If the import is relative, always resolve it relative to the requiring file
+        // // If the import is not relative, resolve it relative to options.baseUrl if it is set
+        const fileDirectory = path.dirname(required.fileName);
+        const relativeTo = isRelative ? fileDirectory : this.options.baseUrl ?? fileDirectory;
+
+        // // Check if file is a file in the project
+        const resolvedPath = path.join(relativeTo, pluginResolvedPath);
+        return resolvedPath;
+    }
 
     private processDependency(dependencyPath: string): void {
         if (this.processedDependencies.has(dependencyPath)) return;
@@ -199,15 +204,8 @@ class ResolutionContext {
             if (resolvedNodeModulesFile) return resolvedNodeModulesFile;
         }
 
-        // Check if the import is relative
-        const isRelative = ["/", "./", "../"].some(p => dependency.startsWith(p));
-
-        // If the import is relative, always resolve it relative to the requiring file
-        // If the import is not relative, resolve it relative to options.baseUrl if it is set
-        const relativeTo = isRelative ? fileDirectory : this.options.baseUrl ?? fileDirectory;
-
         // Check if file is a file in the project
-        const resolvedPath = path.join(relativeTo, dependencyPath);
+        const resolvedPath = this.formatPathToFile(dependencyPath, requiringFile);
         const fileFromPath = this.getFileFromPath(resolvedPath);
         if (fileFromPath) return fileFromPath;
 

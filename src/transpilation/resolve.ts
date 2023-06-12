@@ -100,12 +100,10 @@ class ResolutionContext {
 
     private resolveDependencyPathsWithPlugins(requiringFile: ProcessedFile, dependency: string) {
         const requiredFromLuaFile = requiringFile.fileName.endsWith(".lua");
-        const moduleIdentifier = requiredFromLuaFile ? luaRequireToPath(dependency) : dependency;
-
         for (const plugin of this.plugins) {
             if (plugin.moduleResolution != null) {
                 const pluginResolvedPath = plugin.moduleResolution(
-                    moduleIdentifier,
+                    dependency,
                     requiringFile.fileName,
                     this.options,
                     this.emitHost
@@ -121,7 +119,7 @@ class ResolutionContext {
                         if (resolvedNodeModulesFile) {
                             if (this.options.tstlVerbose) {
                                 console.log(
-                                    `Resolved file path for module ${moduleIdentifier} to path ${pluginResolvedPath} using plugin.`
+                                    `Resolved file path for module ${dependency} to path ${pluginResolvedPath} using plugin.`
                                 );
                             }
                             return resolvedNodeModulesFile;
@@ -134,7 +132,7 @@ class ResolutionContext {
                     if (fileFromPath) {
                         if (this.options.tstlVerbose) {
                             console.log(
-                                `Resolved file path for module ${moduleIdentifier} to path ${pluginResolvedPath} using plugin.`
+                                `Resolved file path for module ${dependency} to path ${pluginResolvedPath} using plugin.`
                             );
                         }
                         return fileFromPath;

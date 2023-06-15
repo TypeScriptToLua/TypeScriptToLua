@@ -9,6 +9,7 @@ import { formatPathToLuaPath, normalizeSlashes, trimExtension } from "../utils";
 import { couldNotReadDependency, couldNotResolveRequire } from "./diagnostics";
 import { BuildMode, CompilerOptions } from "../CompilerOptions";
 import { findLuaRequires, LuaRequire } from "./find-lua-requires";
+import { Plugin } from "./plugins";
 
 const resolver = resolve.ResolverFactory.createResolver({
     extensions: [".lua"],
@@ -33,7 +34,8 @@ class ResolutionContext {
     constructor(
         public readonly program: ts.Program,
         public readonly options: CompilerOptions,
-        private readonly emitHost: EmitHost
+        private readonly emitHost: EmitHost,
+        private readonly plugins: Plugin[]
     ) {
         this.noResolvePaths = new Set(options.noResolvePaths);
     }
@@ -77,7 +79,10 @@ class ResolutionContext {
             return;
         }
 
-        const dependencyPath = this.resolveDependencyPath(file, required.requirePath);
+        const dependencyPath =
+            this.resolveDependencyPathsWithPlugins(file, required.requirePath) ??
+            this.resolveDependencyPath(file, required.requirePath);
+
         if (!dependencyPath) return this.couldNotResolveImport(required, file);
 
         if (this.options.tstlVerbose) {
@@ -93,7 +98,64 @@ class ResolutionContext {
         }
     }
 
+    private resolveDependencyPathsWithPlugins(requiringFile: ProcessedFile, dependency: string) {
+        const requiredFromLuaFile = requiringFile.fileName.endsWith(".lua");
+        for (const plugin of this.plugins) {
+            if (plugin.moduleResolution != null) {
+                const pluginResolvedPath = plugin.moduleResolution(
+                    dependency,
+                    requiringFile.fileName,
+                    this.options,
+                    this.emitHost
+                );
+                if (pluginResolvedPath !== undefined) {
+                    // If lua file is in node_module
+                    if (requiredFromLuaFile && isNodeModulesFile(requiringFile.fileName)) {
+                        // If requiring file is in lua module, try to resolve sibling in that file first
+                        const resolvedNodeModulesFile = this.resolveLuaDependencyPathFromNodeModules(
+                            requiringFile,
+                            pluginResolvedPath
+                        );
+                        if (resolvedNodeModulesFile) {
+                            if (this.options.tstlVerbose) {
+                                console.log(
+                                    `Resolved file path for module ${dependency} to path ${pluginResolvedPath} using plugin.`
+                                );
+                            }
+                            return resolvedNodeModulesFile;
+                        }
+                    }
+
+                    const resolvedPath = this.formatPathToFile(pluginResolvedPath, requiringFile);
+                    const fileFromPath = this.getFileFromPath(resolvedPath);
+
+                    if (fileFromPath) {
+                        if (this.options.tstlVerbose) {
+                            console.log(
+                                `Resolved file path for module ${dependency} to path ${pluginResolvedPath} using plugin.`
+                            );
+                        }
+                        return fileFromPath;
+                    }
+                }
+            }
+        }
+    }
+
     public processedDependencies = new Set<string>();
+
+    private formatPathToFile(targetPath: string, required: ProcessedFile) {
+        const isRelative = ["/", "./", "../"].some(p => targetPath.startsWith(p));
+
+        // // If the import is relative, always resolve it relative to the requiring file
+        // // If the import is not relative, resolve it relative to options.baseUrl if it is set
+        const fileDirectory = path.dirname(required.fileName);
+        const relativeTo = isRelative ? fileDirectory : this.options.baseUrl ?? fileDirectory;
+
+        // // Check if file is a file in the project
+        const resolvedPath = path.join(relativeTo, targetPath);
+        return resolvedPath;
+    }
 
     private processDependency(dependencyPath: string): void {
         if (this.processedDependencies.has(dependencyPath)) return;
@@ -140,15 +202,8 @@ class ResolutionContext {
             if (resolvedNodeModulesFile) return resolvedNodeModulesFile;
         }
 
-        // Check if the import is relative
-        const isRelative = ["/", "./", "../"].some(p => dependency.startsWith(p));
-
-        // If the import is relative, always resolve it relative to the requiring file
-        // If the import is not relative, resolve it relative to options.baseUrl if it is set
-        const relativeTo = isRelative ? fileDirectory : this.options.baseUrl ?? fileDirectory;
-
         // Check if file is a file in the project
-        const resolvedPath = path.join(relativeTo, dependencyPath);
+        const resolvedPath = this.formatPathToFile(dependencyPath, requiringFile);
         const fileFromPath = this.getFileFromPath(resolvedPath);
         if (fileFromPath) return fileFromPath;
 
@@ -235,6 +290,7 @@ class ResolutionContext {
             path.join(resolvedPath, "index.lua"), // lua index file in sources
             path.join(resolvedPath, "init.lua"), // lua looks for <require>/init.lua if it cannot find <require>.lua
         ];
+
         for (const possibleFile of possibleLuaProjectFiles) {
             if (this.emitHost.fileExists(possibleFile)) {
                 return possibleFile;
@@ -277,10 +333,15 @@ class ResolutionContext {
     }
 }
 
-export function resolveDependencies(program: ts.Program, files: ProcessedFile[], emitHost: EmitHost): ResolutionResult {
+export function resolveDependencies(
+    program: ts.Program,
+    files: ProcessedFile[],
+    emitHost: EmitHost,
+    plugins: Plugin[]
+): ResolutionResult {
     const options = program.getCompilerOptions() as CompilerOptions;
 
-    const resolutionContext = new ResolutionContext(program, options, emitHost);
+    const resolutionContext = new ResolutionContext(program, options, emitHost, plugins);
 
     // Resolve dependencies for all processed files
     for (const file of files) {

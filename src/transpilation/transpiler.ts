@@ -45,7 +45,7 @@ export class Transpiler {
             }
         );
 
-        const { emitPlan } = this.getEmitPlan(program, transpileDiagnostics, freshFiles);
+        const { emitPlan } = this.getEmitPlan(program, transpileDiagnostics, freshFiles, plugins);
 
         const emitDiagnostics = this.emitFiles(program, plugins, emitPlan, writeFile);
 
@@ -102,7 +102,8 @@ export class Transpiler {
     protected getEmitPlan(
         program: ts.Program,
         diagnostics: ts.Diagnostic[],
-        files: ProcessedFile[]
+        files: ProcessedFile[],
+        plugins: Plugin[]
     ): { emitPlan: EmitFile[] } {
         performance.startSection("getEmitPlan");
         const options = program.getCompilerOptions() as CompilerOptions;
@@ -112,7 +113,7 @@ export class Transpiler {
         }
 
         // Resolve imported modules and modify output Lua requires
-        const resolutionResult = resolveDependencies(program, files, this.emitHost);
+        const resolutionResult = resolveDependencies(program, files, this.emitHost, plugins);
         diagnostics.push(...resolutionResult.diagnostics);
 
         const lualibRequired = resolutionResult.resolvedFiles.some(f => f.fileName === "lualib_bundle");

@@ -35,3 +35,22 @@ describe("factory types", () => {
             .expectToEqual(true);
     });
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1464
+test("transformer with switch does not break (#1464)", () => {
+    util.testFunction`
+        const foo: number = 3;
+        switch (foo) {
+            case 2: {
+                return 10;
+            }
+            case 3: {
+                return false;
+            }
+        }
+    `
+        .setOptions({
+            plugins: [{ transform: path.join(__dirname, "fixtures.ts"), import: "program", value: true }],
+        })
+        .expectToEqual(true);
+});

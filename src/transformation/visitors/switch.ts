@@ -9,10 +9,16 @@ const containsBreakOrReturn = (nodes: Iterable<ts.Node>): boolean => {
     for (const s of nodes) {
         if (ts.isBreakStatement(s) || ts.isReturnStatement(s)) {
             return true;
-        } else if (ts.isBlock(s) && containsBreakOrReturn(s.getChildren())) {
+        } else if (ts.isBlock(s) && containsBreakOrReturn(s.statements)) {
             return true;
-        } else if (s.kind === ts.SyntaxKind.SyntaxList && containsBreakOrReturn(s.getChildren())) {
-            return true;
+        } else if (s.kind === ts.SyntaxKind.SyntaxList) {
+            // We cannot use getChildren() because that breaks when using synthetic nodes from transformers
+            // So get children the long way
+            const children: ts.Node[] = [];
+            ts.forEachChild(s, c => children.push(c));
+            if (containsBreakOrReturn(children)) {
+                return true;
+            }
         }
     }
 

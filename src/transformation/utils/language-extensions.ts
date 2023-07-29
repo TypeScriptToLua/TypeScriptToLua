@@ -53,6 +53,8 @@ export enum ExtensionKind {
     TableSetMethodType = "TableSetMethod",
     TableAddKeyType = "TableAddKey",
     TableAddKeyMethodType = "TableAddKeyMethod",
+    TableIsEmptyType = "TableIsEmpty",
+    TableIsEmptyMethodType = "TableIsEmptyMethod",
 }
 
 const extensionValues: Set<string> = new Set(Object.values(ExtensionKind));

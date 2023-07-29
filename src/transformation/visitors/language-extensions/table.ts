@@ -6,6 +6,7 @@ import {
     getBinaryCallExtensionArgs,
     getExtensionKindForNode,
     getNaryCallExtensionArgs,
+    getUnaryCallExtensionArg,
 } from "../../utils/language-extensions";
 import { transformOrderedExpressions } from "../expression-list";
 import { LanguageExtensionCallTransformerMap } from "./call-extension";
@@ -27,6 +28,8 @@ export const tableExtensionTransformers: LanguageExtensionCallTransformerMap = {
     [ExtensionKind.TableSetMethodType]: transformTableSetExpression,
     [ExtensionKind.TableAddKeyType]: transformTableAddKeyExpression,
     [ExtensionKind.TableAddKeyMethodType]: transformTableAddKeyExpression,
+    [ExtensionKind.TableIsEmptyType]: transformTableIsEmptyExpression,
+    [ExtensionKind.TableIsEmptyMethodType]: transformTableIsEmptyExpression,
 };
 
 function transformTableDeleteExpression(
@@ -119,4 +122,24 @@ function transformTableAddKeyExpression(
         lua.createAssignmentStatement(lua.createTableIndexExpression(table, key), lua.createBooleanLiteral(true), node)
     );
     return lua.createNilLiteral();
+}
+
+function transformTableIsEmptyExpression(
+    context: TransformationContext,
+    node: ts.CallExpression,
+    extensionKind: ExtensionKind
+): lua.Expression {
+    const args = getUnaryCallExtensionArg(context, node, extensionKind);
+    if (!args) {
+        return lua.createNilLiteral();
+    }
+
+    const table = context.transformExpression(args);
+    // next(arg0) == nil
+    return lua.createBinaryExpression(
+        lua.createCallExpression(lua.createIdentifier("next"), [table], node),
+        lua.createNilLiteral(),
+        lua.SyntaxKind.EqualityOperator,
+        node
+    );
 }

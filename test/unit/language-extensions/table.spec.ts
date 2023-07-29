@@ -221,7 +221,7 @@ describe("LuaTableDelete extension", () => {
             .expectToEqual({ table: { baz: "baz" } });
     });
 
-    test("LuaTableHasMethod method", () => {
+    test("LuaTableDeleteMethod method", () => {
         util.testModule`
             interface TableWithDelete {
                 delete: LuaTableDeleteMethod<string>;
@@ -234,33 +234,6 @@ describe("LuaTableDelete extension", () => {
         `
             .withLanguageExtensions()
             .expectToEqual({ table: { bar: 12 } });
-    });
-
-    test.each([
-        ["LuaTableDelete<{}, string>", 'func({}, "foo")', true],
-        ["LuaTableDelete<{}, string>", '"truthy" && func({}, "foo")', true],
-        ["LuaTableSet<{}, string, number>", 'func({}, "foo", 3)', undefined],
-    ])("Table functions used as expression", (funcType, expression, value) => {
-        util.testModule`
-            declare const func: ${funcType}
-            export const result = ${expression}
-        `
-            .withLanguageExtensions()
-            .setReturnExport("result")
-            .expectToEqual(value);
-    });
-
-    test.each([
-        ["LuaTableDeleteMethod<string>", 'tbl.func("foo")', true],
-        ["LuaTableSetMethod<string, number>", 'tbl.func("foo", 3)', undefined],
-    ])("Table methods used as expression", (funcType, expression, value) => {
-        util.testModule`
-            const tbl = {} as { func: ${funcType} }
-            export const result = ${expression}
-        `
-            .withLanguageExtensions()
-            .setReturnExport("result")
-            .expectToEqual(value);
     });
 });
 
@@ -298,11 +271,67 @@ describe("LuaTableAddKey extension", () => {
             .withLanguageExtensions()
             .expectToEqual({ table: { bar: true } });
     });
+});
 
+describe("LuaIsEmpty extension", () => {
+    test("LuaIsEmpty standalone function", () => {
+        util.testModule`
+            declare const isTableEmpty: LuaTableIsEmpty<{}>;
+
+            const table = { foo: "bar", baz: "baz" };
+            const emptyTable = {};
+
+            export const result = [isTableEmpty(table), isTableEmpty(emptyTable)];
+        `
+            .withLanguageExtensions()
+            .expectToEqual({ result: [false, true] });
+    });
+
+    test("LuaIsEmpty namespace function", () => {
+        util.testModule`
+            declare namespace Table {
+                export const isTableEmpty: LuaTableIsEmpty<{}>;
+            }
+
+            const table = { foo: "bar", baz: "baz" };
+            const emptyTable = {};
+
+            export const result = [Table.isTableEmpty(table), Table.isTableEmpty(emptyTable)];
+        `
+            .withLanguageExtensions()
+            .expectToEqual({ result: [false, true] });
+    });
+
+    test("LuaTableIsEmptyMethod method", () => {
+        util.testModule`
+            interface TableWithIsEmpty {
+                isEmpty: LuaTableIsEmptyMethod;
+                set: LuaTableSetMethod<string, number>;
+            }
+            const table = {} as TableWithIsEmpty;
+            table.set("foo", 42);
+            table.set("bar", 12);
+
+            const emptyTable = {} as TableWithIsEmpty;
+
+            export const result = [table.isEmpty(), emptyTable.isEmpty()];
+        `
+            .withLanguageExtensions()
+            .expectToEqual({ result: [false, true] });
+    });
+});
+
+describe("Table extensions use as expression", () => {
     test.each([
         ["LuaTableAddKey<{}, string>", 'func({}, "foo")', undefined],
         ["LuaTableAddKey<{}, string>", '"truthy" && func({}, "foo")', undefined],
-    ])("Table functions used as expression", (funcType, expression, value) => {
+        ["LuaTableDelete<{}, string>", 'func({}, "foo")', true],
+        ["LuaTableDelete<{}, string>", '"truthy" && func({}, "foo")', true],
+        ["LuaTableSet<{}, string, number>", 'func({}, "foo", 3)', undefined],
+        ["LuaTableIsEmpty<{}>", "func({})", true],
+        ["LuaTableIsEmpty<{}>", 'func({ foo: "bar", baz: "baz" })', false],
+        ["LuaTableIsEmpty<{}>", '"truthy" && func({})', true],
+    ])("functions used as expression", (funcType, expression, value) => {
         util.testModule`
             declare const func: ${funcType}
             export const result = ${expression}
@@ -312,14 +341,19 @@ describe("LuaTableAddKey extension", () => {
             .expectToEqual(value);
     });
 
-    test("Method used as expression", () => {
+    test.each([
+        ["LuaTableDeleteMethod<string>", 'tbl.func("foo")', true],
+        ["LuaTableSetMethod<string, number>", 'tbl.func("foo", 3)', undefined],
+        ["LuaTableAddKeyMethod<string>", 'tbl.func("foo")', undefined],
+        ["LuaTableIsEmpty<{}>", "tbl.func({})", true],
+    ])("methods used as expression", (funcType, expression, value) => {
         util.testModule`
-            const tbl = {} as { func: LuaTableAddKeyMethod<string> }
-            export const result = tbl.func("foo")
+            const tbl = {} as { func: ${funcType} }
+            export const result = ${expression}
         `
             .withLanguageExtensions()
             .setReturnExport("result")
-            .expectToEqual(undefined);
+            .expectToEqual(value);
     });
 });
 
@@ -415,9 +449,22 @@ describe("LuaTable extension interface", () => {
             .expectToEqual({ baz: 5 });
     });
 
+    test("table isEmpty", () => {
+        util.testFunction`
+            const tbl = new LuaTable<string, number>();
+            tbl.set("foo", 1);
+
+            const emptyTbl = new LuaTable<string, number>();
+
+            return [tbl.isEmpty(), emptyTbl.isEmpty()];
+        `
+            .withLanguageExtensions()
+            .expectToEqual([false, true]);
+    });
+
     test("table add", () => {
         util.testFunction`
-            const tbl = new LuaSet<string>()
+            const tbl = new LuaSet<string>();
             tbl.add("foo");
             return tbl
         `

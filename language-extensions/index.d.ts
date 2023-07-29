@@ -563,6 +563,20 @@ declare type LuaTableDeleteMethod<TKey extends AnyNotNil> = ((key: TKey) => bool
     LuaExtension<"TableDeleteMethod">;
 
 /**
+ * Calls to functions with this type are translated to `next(myTable) == nil`.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TTable The type to access as a Lua table.
+ */
+declare type LuaTableIsEmpty<TTable extends AnyTable> = ((table: TTable) => boolean) & LuaExtension<"TableIsEmpty">;
+
+/**
+ * Calls to methods with this type are translated to `next(myTable) == nil`, where `table` is the object with the method.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ */
+declare type LuaTableIsEmptyMethod = (() => boolean) & LuaExtension<"TableIsEmptyMethod">;
+
+/**
  * A convenience type for working directly with a Lua table.
  * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
  *
@@ -575,6 +589,7 @@ declare interface LuaTable<TKey extends AnyNotNil = AnyNotNil, TValue = any> ext
     set: LuaTableSetMethod<TKey, TValue>;
     has: LuaTableHasMethod<TKey>;
     delete: LuaTableDeleteMethod<TKey>;
+    isEmpty: LuaTableIsEmptyMethod;
 }
 
 /**
@@ -612,6 +627,7 @@ declare interface LuaMap<K extends AnyNotNil = AnyNotNil, V = any> extends LuaPa
     set: LuaTableSetMethod<K, V>;
     has: LuaTableHasMethod<K>;
     delete: LuaTableDeleteMethod<K>;
+    isEmpty: LuaTableIsEmptyMethod;
 }
 
 /**
@@ -633,6 +649,7 @@ declare const LuaMap: (new <K extends AnyNotNil = AnyNotNil, V = any>() => LuaMa
 declare interface ReadonlyLuaMap<K extends AnyNotNil = AnyNotNil, V = any> extends LuaPairsIterable<K, V> {
     get: LuaTableGetMethod<K, V | undefined>;
     has: LuaTableHasMethod<K>;
+    isEmpty: LuaTableIsEmptyMethod;
 }
 
 /**
@@ -645,6 +662,7 @@ declare interface LuaSet<T extends AnyNotNil = AnyNotNil> extends LuaPairsKeyIte
     add: LuaTableAddKeyMethod<T>;
     has: LuaTableHasMethod<T>;
     delete: LuaTableDeleteMethod<T>;
+    isEmpty: LuaTableIsEmptyMethod;
 }
 
 /**
@@ -662,6 +680,7 @@ declare const LuaSet: (new <T extends AnyNotNil = AnyNotNil>() => LuaSet<T>) & L
  */
 declare interface ReadonlyLuaSet<T extends AnyNotNil = AnyNotNil> extends LuaPairsKeyIterable<T> {
     has: LuaTableHasMethod<T>;
+    isEmpty: LuaTableIsEmptyMethod;
 }
 
 interface ObjectConstructor {

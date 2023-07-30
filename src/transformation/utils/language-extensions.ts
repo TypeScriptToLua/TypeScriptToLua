@@ -53,6 +53,8 @@ export enum ExtensionKind {
     TableSetMethodType = "TableSetMethod",
     TableAddKeyType = "TableAddKey",
     TableAddKeyMethodType = "TableAddKeyMethod",
+    TableIsEmptyType = "TableIsEmpty",
+    TableIsEmptyMethodType = "TableIsEmptyMethod",
 }
 
 const extensionValues: Set<string> = new Set(Object.values(ExtensionKind));
@@ -122,31 +124,9 @@ export function getIterableExtensionKindForNode(
     return getIterableExtensionTypeForType(context, type);
 }
 
-export const methodExtensionKinds: ReadonlySet<ExtensionKind> = new Set<ExtensionKind>([
-    ExtensionKind.AdditionOperatorMethodType,
-    ExtensionKind.SubtractionOperatorMethodType,
-    ExtensionKind.MultiplicationOperatorMethodType,
-    ExtensionKind.DivisionOperatorMethodType,
-    ExtensionKind.ModuloOperatorMethodType,
-    ExtensionKind.PowerOperatorMethodType,
-    ExtensionKind.FloorDivisionOperatorMethodType,
-    ExtensionKind.BitwiseAndOperatorMethodType,
-    ExtensionKind.BitwiseOrOperatorMethodType,
-    ExtensionKind.BitwiseExclusiveOrOperatorMethodType,
-    ExtensionKind.BitwiseLeftShiftOperatorMethodType,
-    ExtensionKind.BitwiseRightShiftOperatorMethodType,
-    ExtensionKind.ConcatOperatorMethodType,
-    ExtensionKind.LessThanOperatorMethodType,
-    ExtensionKind.GreaterThanOperatorMethodType,
-    ExtensionKind.NegationOperatorMethodType,
-    ExtensionKind.BitwiseNotOperatorMethodType,
-    ExtensionKind.LengthOperatorMethodType,
-    ExtensionKind.TableDeleteMethodType,
-    ExtensionKind.TableGetMethodType,
-    ExtensionKind.TableHasMethodType,
-    ExtensionKind.TableSetMethodType,
-    ExtensionKind.TableAddKeyMethodType,
-]);
+export const methodExtensionKinds: ReadonlySet<ExtensionKind> = new Set<ExtensionKind>(
+    Object.values(ExtensionKind).filter(key => key.endsWith("Method"))
+);
 
 export function getNaryCallExtensionArgs(
     context: TransformationContext,

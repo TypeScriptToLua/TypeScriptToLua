@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.17.0
+
+- Added the `moduleResolution` plugin, allowing you to provide custom module resolution logic. See [the docs](https://typescripttolua.github.io/docs/api/plugins#moduleresolution) for more info.
+- Added `isEmpty` to `LuaTable`, `LuaMap` and `LuaSet` (and their read-only counterparts). This simply to `next(tbl) == nil`, allowing for a simple check to see if a table is empty or not.
+- Fixed a bug with synthetic nodes (e.g. created by custom TypeScript transformers) throwing an exception.
+- Fixed unnecessary extra unpacking of tables
+- Fixed some bugs with new decorators
+
 ## 1.16.0
 
 - Upgraded TypeScript to 5.1.3.

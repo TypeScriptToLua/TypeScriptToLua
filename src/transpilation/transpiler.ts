@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as ts from "typescript";
 import { CompilerOptions, isBundleEnabled, LuaLibImportKind, LuaTarget } from "../CompilerOptions";
-import { buildMinimalLualibBundle, findUsedLualibFeatures, getLuaLibBundle } from "../LuaLib";
+import { buildMinimalLualibBundle, findUsedLualibFeatures, getLuaLibBundle, LuaLibFeature } from "../LuaLib";
 import { normalizeSlashes, trimExtension } from "../utils";
 import { getBundleResult } from "./bundle";
 import { getPlugins, Plugin } from "./plugins";
@@ -155,6 +155,10 @@ export class Transpiler {
                 this.emitHost,
                 resolvedFiles.map(f => f.code)
             );
+            // Will be required later by bundle result when sourcemap traceback option is enabled
+            if (options.sourceMapTraceback) {
+                usedFeatures.add(LuaLibFeature.SourceMapTraceBack);
+            }
             return buildMinimalLualibBundle(usedFeatures, luaTarget, this.emitHost);
         } else {
             return getLuaLibBundle(luaTarget, this.emitHost);

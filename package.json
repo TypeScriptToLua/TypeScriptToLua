@@ -47,10 +47,12 @@
     "dependencies": {
         "@typescript-to-lua/language-extensions": "1.0.0",
         "enhanced-resolve": "^5.8.2",
+        "picomatch": "^2.3.1",
         "resolve": "^1.15.1",
         "source-map": "^0.7.3"
     },
     "devDependencies": {
+        "@types/picomatch": "^2.3.0",
         "@types/fs-extra": "^8.1.0",
         "@types/glob": "^7.1.1",
         "@types/jest": "^27.5.2",

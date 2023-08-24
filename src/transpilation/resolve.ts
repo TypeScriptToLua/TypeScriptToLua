@@ -10,11 +10,12 @@ import { couldNotReadDependency, couldNotResolveRequire } from "./diagnostics";
 import { BuildMode, CompilerOptions } from "../CompilerOptions";
 import { findLuaRequires, LuaRequire } from "./find-lua-requires";
 import { Plugin } from "./plugins";
+import * as picomatch from "picomatch";
 
 const resolver = resolve.ResolverFactory.createResolver({
     extensions: [".lua"],
     enforceExtension: true, // Resolved file must be a lua file
-    fileSystem: { ...new resolve.CachedInputFileSystem(fs) },
+    fileSystem: { ...new resolve.CachedInputFileSystem(fs, 0) },
     useSyncFileSystemCalls: true,
     conditionNames: ["require", "node", "tstl", "default"],
     symlinks: false, // Do not resolve symlinks to their original paths (that breaks node_modules detection)
@@ -26,7 +27,7 @@ interface ResolutionResult {
 }
 
 class ResolutionContext {
-    private noResolvePaths: Set<string>;
+    private noResolvePaths: picomatch.Matcher[];
 
     public diagnostics: ts.Diagnostic[] = [];
     public resolvedFiles = new Map<string, ProcessedFile>();
@@ -37,7 +38,9 @@ class ResolutionContext {
         private readonly emitHost: EmitHost,
         private readonly plugins: Plugin[]
     ) {
-        this.noResolvePaths = new Set(options.noResolvePaths);
+        const unique = [...new Set(options.noResolvePaths)];
+        const matchers = unique.map(x => picomatch(x));
+        this.noResolvePaths = matchers;
     }
 
     public addAndResolveDependencies(file: ProcessedFile): void {
@@ -70,7 +73,7 @@ class ResolutionContext {
             return;
         }
 
-        if (this.noResolvePaths.has(required.requirePath)) {
+        if (this.noResolvePaths.find(isMatch => isMatch(required.requirePath))) {
             if (this.options.tstlVerbose) {
                 console.log(
                     `Skipping module resolution of ${required.requirePath} as it is in the tsconfig noResolvePaths.`

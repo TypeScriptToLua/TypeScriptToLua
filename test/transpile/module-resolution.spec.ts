@@ -441,6 +441,65 @@ describe("module resolution should not try to resolve modules in noResolvePaths"
             .setOptions({ noResolvePaths: ["a.b.c.foo", "somethingExtra", "dontResolveThis"] })
             .expectToHaveNoDiagnostics();
     });
+
+    test("can ignore specific files with glob pattern", () => {
+        util.testModule`
+            // Pre-Load as to not error out at runtime
+            import "preload";
+
+            import "ignoreme";
+            import * as b from "./actualfile";
+
+            export const result = b.foo();
+        `
+            .addExtraFile("preload.lua", 'package.preload["ignoreme"] = function() return nil end')
+            .addExtraFile(
+                "actualfile.ts",
+                `export function foo()
+                {
+                    return 'foo';
+                }`
+            )
+            .addExtraFile(
+                "ignoreme.d.ts",
+                `declare module "ignoreme" {
+                    export function foo(): void;
+                }`
+            )
+            .setOptions({ noResolvePaths: ["ignore*"] })
+            .expectToHaveNoDiagnostics()
+            .expectToEqual({ result: "foo" });
+    });
+
+    test("can ignore all files with glob pattern in require", () => {
+        util.testModule`
+            declare function require(this: void, module: string): any;
+            
+            const a = require("a")
+            const b = require("b/b")
+            const c = require("c/c/c")
+            const d = require("!:?somefile")
+        `
+            .setOptions({ noResolvePaths: ["**"] })
+            .expectToHaveNoDiagnostics();
+    });
+
+    test("can ignore all files with glob pattern as used in imported lua sources", () => {
+        util.testModule`
+            import * as lua from "./luasource";
+            lua.foo();
+        `
+            .addExtraFile("luasource.d.ts", "export function foo(): void;")
+            .addExtraFile(
+                "luasource.lua",
+                `
+                require("ignoreme!")
+                require("i.g.n.o.r.e")
+            `
+            )
+            .setOptions({ noResolvePaths: ["**"] })
+            .expectToHaveNoDiagnostics();
+    });
 });
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1062

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.18.0
+
+- Upgraded TypeScript to 5.2.2
+- The `noResolvePaths` option now accepts glob paths (for example, 'mydir/hello\*' to not resolve any files in mydir starting with hello).
+  - This also allows disabling module resolution completely by providing a '\*\*' pattern in your tsconfig.json `noResolvePaths`.
+
 ## 1.17.0
 
 - Added the `moduleResolution` plugin, allowing you to provide custom module resolution logic. See [the docs](https://typescripttolua.github.io/docs/api/plugins#moduleresolution) for more info.

@@ -304,7 +304,11 @@ describe("module resolution project with dependencies built by tstl library mode
         const transpileResult = util
             .testProject(path.join(projectPath, "tsconfig.json"))
             .setMainFileName(path.join(projectPath, "main.ts"))
-            .setOptions({ outDir: "tstl-out", moduleResolution: ts.ModuleResolutionKind.Node16 })
+            .setOptions({
+                outDir: "tstl-out",
+                moduleResolution: ts.ModuleResolutionKind.Node16,
+                module: ts.ModuleKind.Node16,
+            })
             .expectToEqual(expectedResult)
             .getLuaResult();
 
@@ -323,6 +327,7 @@ describe("module resolution project with dependencies built by tstl library mode
                 luaBundle: "bundle.lua",
                 luaBundleEntry: mainFile,
                 moduleResolution: ts.ModuleResolutionKind.Node16,
+                module: ts.ModuleKind.Node16,
             })
             .expectToEqual(expectedResult);
     });

@@ -1,0 +1,102 @@
+import * as ts from "typescript";
+import { TransformationContext } from "../context";
+import { LuaLibFeature, importLuaLibFeature } from "../utils/lualib";
+
+export function usingTransformer(context: TransformationContext): ts.TransformerFactory<ts.SourceFile> {
+    return ctx => sourceFile => {
+        function visit(node: ts.Node): ts.Node {
+            if (ts.isBlock(node)) {
+                const [hasUsings, newStatements] = transformBlockWithUsing(node.statements, node, context.checker);
+                if (hasUsings) {
+                    // Make sure the corresponding lualib function is imported
+                    importLuaLibFeature(context, LuaLibFeature.Using);
+                    // Recurse visitor into updated block to find further usings
+                    return ts.visitEachChild(ts.factory.updateBlock(node, newStatements), visit, ctx);
+                }
+            }
+            return ts.visitEachChild(node, visit, ctx);
+        }
+        return ts.visitEachChild(sourceFile, visit, ctx);
+    };
+}
+
+function isUsingDeclarationList(node: ts.Node): node is ts.VariableStatement {
+    return ts.isVariableStatement(node) && (node.declarationList.flags & ts.NodeFlags.Using) !== 0;
+}
+
+function transformBlockWithUsing(
+    statements: ts.NodeArray<ts.Statement> | ts.Statement[],
+    block: ts.Block,
+    checker: ts.TypeChecker
+): [true, ts.Statement[]] | [false] {
+    const newStatements: ts.Statement[] = [];
+
+    for (let i = 0; i < statements.length; i++) {
+        const statement = statements[i];
+        if (isUsingDeclarationList(statement)) {
+            // Make declared using variables callback function parameters
+            const variableNames = statement.declarationList.declarations.map(d =>
+                ts.factory.createParameterDeclaration(undefined, undefined, d.name)
+            );
+            // Add this: void as first parameter
+            variableNames.unshift(createThisVoidParameter(checker));
+
+            // Put all following statements in the callback body
+            const followingStatements = statements.slice(i + 1);
+            const [followingHasUsings, replacedFollowingStatements] = transformBlockWithUsing(
+                followingStatements,
+                block,
+                checker
+            );
+            const callbackBody = ts.factory.createBlock(
+                followingHasUsings ? replacedFollowingStatements : followingStatements
+            );
+
+            const callback = ts.factory.createFunctionExpression(
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                variableNames,
+                undefined,
+                callbackBody
+            );
+
+            // Replace using variable list with call to lualib function with callback and followed by all variable initializers
+            const functionIdentifier = ts.factory.createIdentifier("__TS__Using");
+            const call = ts.factory.createCallExpression(
+                functionIdentifier,
+                [],
+                [
+                    callback,
+                    ...statement.declarationList.declarations.map(
+                        d => d.initializer ?? ts.factory.createIdentifier("unidentified")
+                    ),
+                ]
+            );
+
+            if (ts.isBlock(block.parent) && block.parent.statements[block.parent.statements.length - 1] !== block) {
+                // If this is a free-standing block in a function (not the last statement), dont return the value
+                newStatements.push(ts.factory.createExpressionStatement(call));
+            } else {
+                newStatements.push(ts.factory.createReturnStatement(call));
+            }
+
+            return [true, newStatements];
+        } else {
+            newStatements.push(statement);
+        }
+    }
+    return [false];
+}
+
+function createThisVoidParameter(checker: ts.TypeChecker) {
+    const voidType = checker.typeToTypeNode(checker.getVoidType(), undefined, undefined);
+    return ts.factory.createParameterDeclaration(
+        undefined,
+        undefined,
+        ts.factory.createIdentifier("this"),
+        undefined,
+        voidType
+    );
+}

@@ -3,6 +3,7 @@ import * as lua from "../LuaAST";
 import { getOrUpdate } from "../utils";
 import { ObjectVisitor, TransformationContext, VisitorMap, Visitors } from "./context";
 import { standardVisitors } from "./visitors";
+import { usingTransformer } from "./pre-transformers/using-transformer";
 
 export function createVisitorMap(customVisitors: Visitors[]): VisitorMap {
     const objectVisitorMap: Map<ts.SyntaxKind, Array<ObjectVisitor<ts.Node>>> = new Map();
@@ -32,7 +33,10 @@ export function createVisitorMap(customVisitors: Visitors[]): VisitorMap {
 
 export function transformSourceFile(program: ts.Program, sourceFile: ts.SourceFile, visitorMap: VisitorMap) {
     const context = new TransformationContext(program, sourceFile, visitorMap);
-    const [file] = context.transformNode(sourceFile) as [lua.File];
+
+    const result = ts.transform(sourceFile, [usingTransformer(context)]);
+
+    const [file] = context.transformNode(result.transformed[0]) as [lua.File];
 
     return { file, diagnostics: context.diagnostics };
 }

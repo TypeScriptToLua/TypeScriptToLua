@@ -282,8 +282,8 @@ export function transformVariableDeclaration(
 }
 
 export function checkVariableDeclarationList(context: TransformationContext, node: ts.VariableDeclarationList): void {
-    if ((node.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const)) === 0) {
-        const token = node.getFirstToken();
+    if ((node.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const | ts.NodeFlags.Using | ts.NodeFlags.AwaitUsing)) === 0) {
+        const token = ts.getOriginalNode(node).getFirstToken();
         assert(token);
         context.diagnostics.push(unsupportedVarDeclaration(token));
     }

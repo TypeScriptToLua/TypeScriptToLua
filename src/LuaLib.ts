@@ -107,6 +107,7 @@ export enum LuaLibFeature {
     TypeOf = "TypeOf",
     Unpack = "Unpack",
     Using = "Using",
+    UsingAsync = "UsingAsync",
 }
 
 export interface LuaLibFeatureInfo {

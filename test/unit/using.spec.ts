@@ -1,3 +1,4 @@
+import { LuaLibImportKind } from "../../src";
 import * as util from "../util";
 
 const usingTestLib = `
@@ -111,4 +112,66 @@ test("using disposes even when error happens", () => {
                 "caught exception: test-induced exception",
             ],
         });
+});
+
+test("await using disposes object with await at end of function", () => {
+    util.testModule`
+        let disposeAsync;
+
+        function loggedAsyncDisposable(id: string): AsyncDisposable {
+            logs.push(\`Creating \${id}\`);
+
+            return {
+                [Symbol.asyncDispose]() {
+                    logs.push(\`Disposing async \${id}\`);
+                    return new Promise(resolve => {
+                        disposeAsync = () => {
+                            logs.push(\`Disposed \${id}\`);
+                            resolve();
+                        };
+                    });
+                }
+            }
+        }
+
+        async function func() {
+            await using a = loggedAsyncDisposable("a");
+
+            logs.push("function content");
+            return "function result";
+        }
+        
+        const p = func().then(r => logs.push("promise resolved", r));
+
+        logs.push("function returned");
+
+        disposeAsync();
+    `
+        .setTsHeader(usingTestLib)
+        .setOptions({ luaLibImport: LuaLibImportKind.Inline })
+        .expectToEqual({
+            logs: [
+                "Creating a",
+                "function content",
+                "Disposing async a",
+                "function returned",
+                "Disposed a",
+                "promise resolved",
+                "function result",
+            ],
+        });
+});
+
+test("await using can handle non-async disposables", () => {
+    util.testModule`        
+        async function func() {
+            await using a = loggedDisposable("a");
+
+            logs.push("function content");
+        }
+        
+        func();
+    `
+        .setTsHeader(usingTestLib)
+        .expectToEqual({ logs: ["Creating a", "function content", "Disposing a"] });
 });

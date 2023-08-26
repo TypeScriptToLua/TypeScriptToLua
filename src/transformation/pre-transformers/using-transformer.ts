@@ -6,12 +6,25 @@ export function usingTransformer(context: TransformationContext): ts.Transformer
     return ctx => sourceFile => {
         function visit(node: ts.Node): ts.Node {
             if (ts.isBlock(node)) {
-                const [hasUsings, newStatements] = transformBlockWithUsing(node.statements, node, context.checker);
+                const [hasUsings, newStatements] = transformBlockWithUsing(context, node.statements, node);
                 if (hasUsings) {
-                    // Make sure the corresponding lualib function is imported
-                    importLuaLibFeature(context, LuaLibFeature.Using);
                     // Recurse visitor into updated block to find further usings
-                    return ts.visitEachChild(ts.factory.updateBlock(node, newStatements), visit, ctx);
+                    const updatedBlock = ts.factory.updateBlock(node, newStatements);
+                    const result = ts.visitEachChild(updatedBlock, visit, ctx);
+
+                    // Set all the synthetic node parents to something that makes sense
+                    const parent: ts.Node[] = [updatedBlock];
+                    function setParent(node2: ts.Node): ts.Node {
+                        ts.setParent(node2, parent[parent.length - 1]);
+                        parent.push(node2);
+                        ts.visitEachChild(node2, setParent, ctx);
+                        parent.push();
+                        return node2;
+                    }
+                    ts.visitEachChild(updatedBlock, setParent, ctx);
+                    ts.setParent(updatedBlock, node.parent);
+
+                    return result;
                 }
             }
             return ts.visitEachChild(node, visit, ctx);
@@ -25,28 +38,36 @@ function isUsingDeclarationList(node: ts.Node): node is ts.VariableStatement {
 }
 
 function transformBlockWithUsing(
+    context: TransformationContext,
     statements: ts.NodeArray<ts.Statement> | ts.Statement[],
-    block: ts.Block,
-    checker: ts.TypeChecker
+    block: ts.Block
 ): [true, ts.Statement[]] | [false] {
     const newStatements: ts.Statement[] = [];
 
     for (let i = 0; i < statements.length; i++) {
         const statement = statements[i];
         if (isUsingDeclarationList(statement)) {
+            const isAwaitUsing = (statement.declarationList.flags & ts.NodeFlags.AwaitContext) !== 0;
+
+            if (isAwaitUsing) {
+                importLuaLibFeature(context, LuaLibFeature.UsingAsync);
+            } else {
+                importLuaLibFeature(context, LuaLibFeature.Using);
+            }
+
             // Make declared using variables callback function parameters
             const variableNames = statement.declarationList.declarations.map(d =>
                 ts.factory.createParameterDeclaration(undefined, undefined, d.name)
             );
             // Add this: void as first parameter
-            variableNames.unshift(createThisVoidParameter(checker));
+            variableNames.unshift(createThisVoidParameter(context.checker));
 
             // Put all following statements in the callback body
             const followingStatements = statements.slice(i + 1);
             const [followingHasUsings, replacedFollowingStatements] = transformBlockWithUsing(
+                context,
                 followingStatements,
-                block,
-                checker
+                block
             );
             const callbackBody = ts.factory.createBlock(
                 followingHasUsings ? replacedFollowingStatements : followingStatements
@@ -63,8 +84,8 @@ function transformBlockWithUsing(
             );
 
             // Replace using variable list with call to lualib function with callback and followed by all variable initializers
-            const functionIdentifier = ts.factory.createIdentifier("__TS__Using");
-            const call = ts.factory.createCallExpression(
+            const functionIdentifier = ts.factory.createIdentifier(isAwaitUsing ? "__TS__UsingAsync" : "__TS__Using");
+            let call: ts.Expression = ts.factory.createCallExpression(
                 functionIdentifier,
                 [],
                 [
@@ -74,6 +95,11 @@ function transformBlockWithUsing(
                     ),
                 ]
             );
+
+            // If this is an 'await using ...', add an await statement here
+            if (isAwaitUsing) {
+                call = ts.factory.createAwaitExpression(call);
+            }
 
             if (ts.isBlock(block.parent) && block.parent.statements[block.parent.statements.length - 1] !== block) {
                 // If this is a free-standing block in a function (not the last statement), dont return the value

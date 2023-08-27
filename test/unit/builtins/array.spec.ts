@@ -778,8 +778,8 @@ describe("copying array methods", () => {
 
             return {original, reversed};
         `.expectToEqual({
-            original: [1,2,3,4,5],
-            reversed: [5,4,3,2,1],
+            original: [1, 2, 3, 4, 5],
+            reversed: [5, 4, 3, 2, 1],
         });
     });
 
@@ -790,8 +790,8 @@ describe("copying array methods", () => {
 
             return {original, sorted};
         `.expectToEqual({
-            original: [5,2,1,4,3],
-            sorted: [1,2,3,4,5],
+            original: [5, 2, 1, 4, 3],
+            sorted: [1, 2, 3, 4, 5],
         });
     });
 
@@ -802,8 +802,8 @@ describe("copying array methods", () => {
 
             return {original, spliced};
         `.expectToEqual({
-            original: [1,2,3,4,5],
-            spliced: [1,2,10,11,5],
+            original: [1, 2, 3, 4, 5],
+            spliced: [1, 2, 10, 11, 5],
         });
     });
 
@@ -814,8 +814,8 @@ describe("copying array methods", () => {
 
             return {original, updated};
         `.expectToEqual({
-            original: [1,2,3,4,5],
-            updated: [1,2,10,4,5],
+            original: [1, 2, 3, 4, 5],
+            updated: [1, 2, 10, 4, 5],
         });
     });
 });

@@ -34,8 +34,11 @@ export function createVisitorMap(customVisitors: Visitors[]): VisitorMap {
 export function transformSourceFile(program: ts.Program, sourceFile: ts.SourceFile, visitorMap: VisitorMap) {
     const context = new TransformationContext(program, sourceFile, visitorMap);
 
-    const result = ts.transform(sourceFile, [usingTransformer(context)]);
+    // TS -> TS pre-transformation
+    const preTransformers = [usingTransformer(context)];
+    const result = ts.transform(sourceFile, preTransformers);
 
+    // TS -> Lua transformation
     const [file] = context.transformNode(result.transformed[0]) as [lua.File];
 
     return { file, diagnostics: context.diagnostics };

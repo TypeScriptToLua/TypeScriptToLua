@@ -769,3 +769,53 @@ test.each(["[1, 2, 3]", "undefined"])("prototype call on nullable array (%p)", v
         .setOptions({ strictNullChecks: true })
         .expectToMatchJsResult();
 });
+
+describe("copying array methods", () => {
+    test("toReversed", () => {
+        util.testFunction`
+            const original = [1,2,3,4,5];
+            const reversed = original.toReversed();
+
+            return {original, reversed};
+        `.expectToEqual({
+            original: [1, 2, 3, 4, 5],
+            reversed: [5, 4, 3, 2, 1],
+        });
+    });
+
+    test("toSorted", () => {
+        util.testFunction`
+            const original = [5,2,1,4,3];
+            const sorted = original.toSorted();
+
+            return {original, sorted};
+        `.expectToEqual({
+            original: [5, 2, 1, 4, 3],
+            sorted: [1, 2, 3, 4, 5],
+        });
+    });
+
+    test("toSpliced", () => {
+        util.testFunction`
+            const original = [1,2,3,4,5];
+            const spliced = original.toSpliced(2, 2, 10, 11);
+
+            return {original, spliced};
+        `.expectToEqual({
+            original: [1, 2, 3, 4, 5],
+            spliced: [1, 2, 10, 11, 5],
+        });
+    });
+
+    test("with", () => {
+        util.testFunction`
+            const original = [1,2,3,4,5];
+            const updated = original.with(2, 10);
+
+            return {original, updated};
+        `.expectToEqual({
+            original: [1, 2, 3, 4, 5],
+            updated: [1, 2, 10, 4, 5],
+        });
+    });
+});

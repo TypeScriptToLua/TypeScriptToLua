@@ -184,6 +184,14 @@ export function transformArrayPrototypeCall(
             return transformLuaLibFunction(context, LuaLibFeature.ArrayFlat, node, caller, ...params);
         case "flatMap":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayFlatMap, node, caller, ...params);
+        case "toReversed":
+            return transformLuaLibFunction(context, LuaLibFeature.ArrayToReversed, node, caller, ...params);
+        case "toSorted":
+            return transformLuaLibFunction(context, LuaLibFeature.ArrayToSorted, node, caller, ...params);
+        case "toSpliced":
+            return transformLuaLibFunction(context, LuaLibFeature.ArrayToSpliced, node, caller, ...params);
+        case "with":
+            return transformLuaLibFunction(context, LuaLibFeature.ArrayWith, node, caller, ...params);
         default:
             context.diagnostics.push(unsupportedProperty(calledMethod.name, "array", expressionName));
     }

@@ -227,7 +227,15 @@ export function transformFunctionToExpression(
 
     const type = context.checker.getTypeAtLocation(node);
     let functionContext: lua.Identifier | undefined;
-    if (getFunctionContextType(context, type) !== ContextType.Void) {
+
+    const firstParam = node.parameters[0];
+    const hasThisVoidParameter =
+        firstParam &&
+        ts.isIdentifier(firstParam.name) &&
+        ts.identifierToKeywordKind(firstParam.name) === ts.SyntaxKind.ThisKeyword &&
+        firstParam.type?.kind === ts.SyntaxKind.VoidKeyword;
+
+    if (!hasThisVoidParameter && getFunctionContextType(context, type) !== ContextType.Void) {
         if (ts.isArrowFunction(node)) {
             // dummy context for arrow functions with parameters
             if (node.parameters.length > 0) {

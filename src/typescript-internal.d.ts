@@ -59,4 +59,6 @@ declare module "typescript" {
 
     export function pathIsAbsolute(path: string): boolean;
     export function pathIsRelative(path: string): boolean;
+
+    export function setParent<T extends Node>(child: T, parent: T["parent"] | undefined): T;
 }

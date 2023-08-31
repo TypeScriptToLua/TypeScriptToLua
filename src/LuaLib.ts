@@ -110,6 +110,8 @@ export enum LuaLibFeature {
     SymbolRegistry = "SymbolRegistry",
     TypeOf = "TypeOf",
     Unpack = "Unpack",
+    Using = "Using",
+    UsingAsync = "UsingAsync",
 }
 
 export interface LuaLibFeatureInfo {

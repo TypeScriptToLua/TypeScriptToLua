@@ -9,6 +9,8 @@ export function __TS__Symbol(this: void, description?: string | number): symbol 
 }
 
 export const Symbol = {
+    asyncDispose: __TS__Symbol("Symbol.asyncDispose"),
+    dispose: __TS__Symbol("Symbol.dispose"),
     iterator: __TS__Symbol("Symbol.iterator"),
     hasInstance: __TS__Symbol("Symbol.hasInstance"),
 

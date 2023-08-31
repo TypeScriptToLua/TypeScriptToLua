@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.19.0
+
+- Added support for the new TypeScript 5.2 `using` keyword for explicit resource management. See the [TypeScript release notes](https://devblogs.microsoft.com/typescript/announcing-typescript-5-2/#using-declarations-and-explicit-resource-management) for more information.
+- Added support for the newly introduced 'copying array methods' `toReversed`, `toSorted`, `toSpliced` and `with`. These were also introduced in TypeScript 5.2, see [their release notes](https://devblogs.microsoft.com/typescript/announcing-typescript-5-2/#copying-array-methods) for more information.
+
 ## 1.18.0
 
 - Upgraded TypeScript to 5.2.2

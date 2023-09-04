@@ -33,7 +33,7 @@
         "fix:prettier": "prettier --write .",
         "check:language-extensions": "tsc --strict language-extensions/index.d.ts",
         "preversion": "npm run build && npm test",
-        "postversion": "git push && git push --tags && NEW_VERSION=$(npm pkg get version --workspaces=false | tr -d \") && cd language-extensions && npm version $NEW_VERSION" 
+        "postversion": "git push && git push --tags && NEW_VERSION=$(npm pkg get version --workspaces=false | tr -d \") && cd language-extensions && npm version $NEW_VERSION && cd .."
     },
     "bin": {
         "tstl": "dist/tstl.js"

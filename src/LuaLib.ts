@@ -5,6 +5,7 @@ import { LuaTarget } from "./CompilerOptions";
 import { getOrUpdate } from "./utils";
 
 export enum LuaLibFeature {
+    ArrayAt = "ArrayAt",
     ArrayConcat = "ArrayConcat",
     ArrayEntries = "ArrayEntries",
     ArrayEvery = "ArrayEvery",

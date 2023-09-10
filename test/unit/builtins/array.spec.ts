@@ -272,6 +272,36 @@ test("tuple.forEach", () => {
     `.expectToMatchJsResult();
 });
 
+describe("at", () => {
+    test("valid index", () => {
+        util.testFunction`
+            const array = [1, 2, 3, 4];
+            return array.at(2);
+        `.expectToMatchJsResult();
+    });
+
+    test("invalid index", () => {
+        util.testFunction`
+            const array = [1, 2, 3, 4];
+            return array.at(10);
+        `.expectToMatchJsResult();
+    });
+
+    test("valid negative index", () => {
+        util.testFunction`
+            const array = [1, 2, 3, 4];
+            return array.at(-2);
+        `.expectToMatchJsResult();
+    });
+
+    test("invalid negative index", () => {
+        util.testFunction`
+            const array = [1, 2, 3, 4];
+            return array.at(-10);
+        `.expectToMatchJsResult();
+    });
+});
+
 test("array.forEach (%p)", () => {
     util.testFunction`
         const array = [0, 1, 2, 3];

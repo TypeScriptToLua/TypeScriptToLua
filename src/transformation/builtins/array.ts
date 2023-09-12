@@ -88,6 +88,8 @@ export function transformArrayPrototypeCall(
 
     const expressionName = calledMethod.name.text;
     switch (expressionName) {
+        case "at":
+            return transformLuaLibFunction(context, LuaLibFeature.ArrayAt, node, caller, ...params);
         case "concat":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayConcat, node, caller, ...params);
         case "entries":

@@ -3,7 +3,10 @@ interface ErrorType {
     new (...args: any[]): Error;
 }
 
-function getErrorStack(constructor: () => any): string {
+function getErrorStack(constructor: () => any): string | undefined {
+    // If debug module is not available in this environment, don't bother trying to get stack trace
+    if (debug === undefined) return undefined;
+
     let level = 1;
     while (true) {
         const info = debug.getinfo(level, "f");
@@ -49,7 +52,7 @@ function initErrorClass(Type: ErrorType, name: string): any {
 export const Error: ErrorConstructor = initErrorClass(
     class implements Error {
         public name = "Error";
-        public stack: string;
+        public stack?: string;
 
         constructor(public message = "") {
             this.stack = getErrorStack((this.constructor as any).new);

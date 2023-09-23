@@ -324,3 +324,22 @@ test.each([...builtinErrors, "CustomError"])("get stack from %s", errorType => {
     expect(stack).toMatch("innerFunction");
     expect(stack).toMatch("outerFunction");
 });
+
+test("still works without debug module", () => {
+    util.testFunction`
+        try
+        {
+            throw new Error("hello, world");
+        }
+        catch (e)
+        {
+            return e;
+        }
+    `
+        .setLuaHeader("debug = nil")
+        .expectToEqual({
+            message: "hello, world",
+            name: "Error",
+            stack: undefined,
+        });
+});

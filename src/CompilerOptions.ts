@@ -32,6 +32,7 @@ export interface TypeScriptToLuaOptions {
     luaLibImport?: LuaLibImportKind;
     luaPlugins?: LuaPluginImport[];
     noImplicitGlobalVariables?: boolean;
+    forceNoSelf?: string[];
     noImplicitSelf?: boolean;
     noHeader?: boolean;
     noResolvePaths?: string[];

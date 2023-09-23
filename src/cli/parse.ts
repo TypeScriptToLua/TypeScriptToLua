@@ -65,6 +65,12 @@ export const optionDeclarations: CommandLineOption[] = [
         type: "boolean",
     },
     {
+        name: "forceNoSelf",
+        description:
+            "List of file names to match, and if they are matched, they will be counted as having the noSelfInFile option.",
+        type: "array",
+    },
+    {
         name: "noImplicitSelf",
         description: 'If "this" is implicitly considered an any type, do not generate a self parameter.',
         type: "boolean",

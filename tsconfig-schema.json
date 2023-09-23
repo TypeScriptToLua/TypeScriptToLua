@@ -57,6 +57,11 @@
                     "type": "boolean",
                     "default": false
                 },
+                "forceNoSelf": {
+                    "description": "List of file names to match, and if they are matched, they will be counted as having the noSelfInFile option.",
+                    "type": "array",
+                    "default": []
+                },
                 "noImplicitSelf": {
                     "description": "If true, treats all project files as if they were prefixed with\n/** @noSelfInFile **/.",
                     "type": "boolean",

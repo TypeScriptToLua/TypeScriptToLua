@@ -11,7 +11,7 @@ export enum ContextType {
     Mixed = Void | NonVoid,
 }
 
-function hasNoSelfAncestor(declaration: ts.Declaration): boolean {
+function hasNoSelfAncestor(options: CompilerOptions, declaration: ts.Declaration): boolean {
     const scopeDeclaration = findFirstNodeAbove(
         declaration,
         (node): node is ts.SourceFile | ts.ModuleDeclaration => ts.isSourceFile(node) || ts.isModuleDeclaration(node)
@@ -20,11 +20,19 @@ function hasNoSelfAncestor(declaration: ts.Declaration): boolean {
     if (!scopeDeclaration) {
         return false;
     } else if (ts.isSourceFile(scopeDeclaration)) {
+        if (options.forceNoSelf !== undefined && typeof options.forceNoSelf === "object") {
+            for (const name of options.forceNoSelf) {
+                if (scopeDeclaration.fileName.includes(name)) {
+                    return true;
+                }
+            }
+        }
+
         return getFileAnnotations(scopeDeclaration).has(AnnotationKind.NoSelfInFile);
     } else if (getNodeAnnotations(scopeDeclaration).has(AnnotationKind.NoSelf)) {
         return true;
     } else {
-        return hasNoSelfAncestor(scopeDeclaration);
+        return hasNoSelfAncestor(options, scopeDeclaration);
     }
 }
 
@@ -99,7 +107,7 @@ function computeDeclarationContextType(context: TransformationContext, signature
     }
 
     // Walk up to find @noSelf or @noSelfInFile
-    if (hasNoSelfAncestor(signatureDeclaration)) {
+    if (hasNoSelfAncestor(options, signatureDeclaration)) {
         return ContextType.Void;
     }
 

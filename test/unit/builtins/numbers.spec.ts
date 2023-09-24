@@ -108,29 +108,32 @@ test("numbers overflowing the float limit become math.huge", () => {
     util.testExpression`1e309`.expectToMatchJsResult();
 });
 
-describe.each(["parseInt", "parseFloat"])("parse numbers with %s", parseFunction => {
-    const numberStrings = ["3", "3.0", "9", "42", "239810241", "-20391", "3.1415", "2.7182", "-34910.3"];
+describe.each(["parseInt", "parseFloat", "Number.parseInt", "Number.parseFloat"])(
+    "parse numbers with %s",
+    parseFunction => {
+        const numberStrings = ["3", "3.0", "9", "42", "239810241", "-20391", "3.1415", "2.7182", "-34910.3"];
 
-    test.each(numberStrings)("parses (%s)", numberString => {
-        util.testExpression`${parseFunction}("${numberString}")`.expectToMatchJsResult();
-    });
+        test.each(numberStrings)("parses (%s)", numberString => {
+            util.testExpression`${parseFunction}("${numberString}")`.expectToMatchJsResult();
+        });
 
-    test("empty string", () => {
-        util.testExpression`${parseFunction}("")`.expectToMatchJsResult();
-    });
+        test("empty string", () => {
+            util.testExpression`${parseFunction}("")`.expectToMatchJsResult();
+        });
 
-    test("invalid string", () => {
-        util.testExpression`${parseFunction}("bla")`.expectToMatchJsResult();
-    });
+        test("invalid string", () => {
+            util.testExpression`${parseFunction}("bla")`.expectToMatchJsResult();
+        });
 
-    test.each(["1px", "2300m", "3,4", "452adkfl"])("trailing text (%s)", numberString => {
-        util.testExpression`${parseFunction}("${numberString}")`.expectToMatchJsResult();
-    });
+        test.each(["1px", "2300m", "3,4", "452adkfl"])("trailing text (%s)", numberString => {
+            util.testExpression`${parseFunction}("${numberString}")`.expectToMatchJsResult();
+        });
 
-    test.each([" 3", "          4", "   -231", "    1px"])("leading whitespace (%s)", numberString => {
-        util.testExpression`${parseFunction}("${numberString}")`.expectToMatchJsResult();
-    });
-});
+        test.each([" 3", "          4", "   -231", "    1px"])("leading whitespace (%s)", numberString => {
+            util.testExpression`${parseFunction}("${numberString}")`.expectToMatchJsResult();
+        });
+    }
+);
 
 test.each(["Infinity", "-Infinity", "   -Infinity"])("parseFloat handles Infinity", numberString => {
     util.testExpression`parseFloat("${numberString}")`.expectToMatchJsResult();
@@ -160,6 +163,36 @@ test.each([
     { numberString: "3Fcolor", base: 16 },
 ])("parseInt with base and trailing text (%p)", ({ numberString, base }) => {
     util.testExpression`parseInt("${numberString}", ${base})`.expectToMatchJsResult();
+});
+
+test.each(["Infinity", "-Infinity", "   -Infinity"])("Number.parseFloat handles Infinity", numberString => {
+    util.testExpression`Number.parseFloat("${numberString}")`.expectToMatchJsResult();
+});
+
+test.each([
+    { numberString: "36", base: 8 },
+    { numberString: "-36", base: 8 },
+    { numberString: "100010101101", base: 2 },
+    { numberString: "-100010101101", base: 2 },
+    { numberString: "3F", base: 16 },
+])("Number.parseInt with base (%p)", ({ numberString, base }) => {
+    util.testExpression`Number.parseInt("${numberString}", ${base})`.expectToMatchJsResult();
+});
+
+test.each(["0x4A", "-0x42", "0X42", "    0x391", "  -0x8F"])("Number.parseInt detects hexadecimal", numberString => {
+    util.testExpression`Number.parseInt("${numberString}")`.expectToMatchJsResult();
+});
+
+test.each([1, 37, -100])("Number.parseInt with invalid base (%p)", base => {
+    util.testExpression`Number.parseInt("11111", ${base})`.expectToMatchJsResult();
+});
+
+test.each([
+    { numberString: "36px", base: 8 },
+    { numberString: "10001010110231", base: 2 },
+    { numberString: "3Fcolor", base: 16 },
+])("Number.parseInt with base and trailing text (%p)", ({ numberString, base }) => {
+    util.testExpression`Number.parseInt("${numberString}", ${base})`.expectToMatchJsResult();
 });
 
 // Issue #1218: https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1218

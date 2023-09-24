@@ -162,7 +162,23 @@ export function transformBuiltinIdentifierExpression(
                 const huge = lua.createStringLiteral("huge");
                 return lua.createTableIndexExpression(math, huge, node);
             }
+        case "Number":
+            if ("identifiers" in context.sourceFile && context.sourceFile.identifiers instanceof Map) {
+                const keys = context.sourceFile.identifiers.keys();
+                keys.next();
 
+                const identifier = keys.next().value;
+
+                console.log(identifier);
+                if (identifier) {
+                    switch (identifier) {
+                        default:
+                            console.log(identifier);
+                            break;
+                    }
+                }
+            }
+            break;
         case "globalThis":
             return lua.createIdentifier("_G", node, getIdentifierSymbolId(context, node, symbol), "globalThis");
     }

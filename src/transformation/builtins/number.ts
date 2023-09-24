@@ -39,6 +39,10 @@ export function transformNumberConstructorCall(
             return transformLuaLibFunction(context, LuaLibFeature.NumberIsNaN, node, ...parameters);
         case "isFinite":
             return transformLuaLibFunction(context, LuaLibFeature.NumberIsFinite, node, ...parameters);
+        case "parseInt":
+            return transformLuaLibFunction(context, LuaLibFeature.NumberParseInt, node, ...parameters);
+        case "parseFloat":
+            return transformLuaLibFunction(context, LuaLibFeature.NumberParseFloat, node, ...parameters);
         default:
             context.diagnostics.push(unsupportedProperty(calledMethod.name, "Number", methodName));
     }

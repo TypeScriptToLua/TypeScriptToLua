@@ -20,11 +20,7 @@ function hasNoSelfAncestor(options: CompilerOptions, declaration: ts.Declaration
     if (!scopeDeclaration) {
         return false;
     } else if (ts.isSourceFile(scopeDeclaration)) {
-        if (
-            options.forceNoSelf !== undefined &&
-            typeof options.forceNoSelf === "object" &&
-            Array.isArray(options.forceNoSelf)
-        ) {
+        if (Array.isArray(options.forceNoSelf)) {
             for (const name of options.forceNoSelf) {
                 if (scopeDeclaration.fileName.includes(name)) {
                     return true;

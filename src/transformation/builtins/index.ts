@@ -169,11 +169,18 @@ export function transformBuiltinIdentifierExpression(
 
                 const identifier = keys.next().value;
 
-                console.log(identifier);
                 if (identifier) {
                     switch (identifier) {
-                        default:
-                            console.log(identifier);
+                        case "POSITIVE_INFINITY":
+                            if (context.luaTarget === LuaTarget.Lua50) {
+                                const one = lua.createNumericLiteral(1);
+                                const zero = lua.createNumericLiteral(0);
+                                return lua.createBinaryExpression(one, zero, lua.SyntaxKind.DivisionOperator);
+                            } else {
+                                const math = lua.createIdentifier("math");
+                                const huge = lua.createStringLiteral("huge");
+                                return lua.createTableIndexExpression(math, huge);
+                            }
                             break;
                     }
                 }

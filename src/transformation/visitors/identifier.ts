@@ -73,17 +73,14 @@ export function transformIdentifierWithSymbol(
             const text = hasUnsafeIdentifierName(context, node, symbol) ? createSafeName(name) : name;
             const symbolId = getIdentifierSymbolId(context, node, symbol);
             const identifier = lua.createIdentifier(text, node, symbolId, name);
-            console.log("1");
             return createExportedIdentifier(context, identifier, exportScope);
         }
     }
     const builtinResult = transformBuiltinIdentifierExpression(context, node, symbol);
     if (builtinResult) {
-        console.log("2");
         return builtinResult;
     }
 
-    console.log("3");
     return transformNonValueIdentifier(context, node, symbol);
 }
 

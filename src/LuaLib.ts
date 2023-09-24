@@ -63,6 +63,8 @@ export enum LuaLibFeature {
     Number = "Number",
     NumberIsFinite = "NumberIsFinite",
     NumberIsNaN = "NumberIsNaN",
+    NumberParseInt = "ParseInt",
+    NumberParseFloat = "ParseFloat",
     NumberToString = "NumberToString",
     NumberToFixed = "NumberToFixed",
     ObjectAssign = "ObjectAssign",

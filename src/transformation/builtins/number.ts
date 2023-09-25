@@ -44,6 +44,24 @@ export function transformNumberProperty(
                 const huge = lua.createStringLiteral("huge");
                 return lua.createTableIndexExpression(math, huge, node);
             }
+        case "NEGATIVE_INFINITY":
+            if (context.luaTarget === LuaTarget.Lua50) {
+                const one = lua.createNumericLiteral(1);
+                const zero = lua.createNumericLiteral(0);
+                return lua.createBinaryExpression(
+                    lua.createNumericLiteral(0),
+                    lua.createBinaryExpression(one, zero, lua.SyntaxKind.DivisionOperator),
+                    lua.SyntaxKind.SubtractionOperator
+                );
+            } else {
+                const math = lua.createIdentifier("math");
+                const huge = lua.createStringLiteral("huge");
+                return lua.createBinaryExpression(
+                    lua.createNumericLiteral(0),
+                    lua.createTableIndexExpression(math, huge, node),
+                    lua.SyntaxKind.SubtractionOperator
+                );
+            }
 
         default:
             context.diagnostics.push(unsupportedProperty(node.name, "Number", name));

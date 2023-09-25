@@ -54,6 +54,13 @@ export function transformNumberProperty(
                 lua.SyntaxKind.PowerOperator,
                 node
             );
+        case "MIN_VALUE":
+            return lua.createBinaryExpression(
+                lua.createNumericLiteral(2),
+                lua.createNumericLiteral(-1074),
+                lua.SyntaxKind.PowerOperator,
+                node
+            );
         case "NEGATIVE_INFINITY":
             if (context.luaTarget === LuaTarget.Lua50) {
                 const one = lua.createNumericLiteral(1);

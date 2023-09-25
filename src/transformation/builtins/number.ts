@@ -68,6 +68,13 @@ export function transformNumberProperty(
                 lua.SyntaxKind.PowerOperator,
                 node
             );
+        case "MIN_SAFE_INTEGER":
+            return lua.createBinaryExpression(
+                lua.createNumericLiteral(-2),
+                lua.createNumericLiteral(53),
+                lua.SyntaxKind.PowerOperator,
+                node
+            );
         case "MAX_VALUE":
             return lua.createBinaryExpression(
                 lua.createNumericLiteral(2),

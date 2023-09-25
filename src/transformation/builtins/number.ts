@@ -1,5 +1,6 @@
 import ts = require("typescript");
 import * as lua from "../../LuaAST";
+import { createNaN } from "../utils/lua-ast";
 import { TransformationContext } from "../context";
 import { unsupportedProperty } from "../utils/diagnostics";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
@@ -44,6 +45,8 @@ export function transformNumberProperty(
                 const huge = lua.createStringLiteral("huge");
                 return lua.createTableIndexExpression(math, huge, node);
             }
+        case "NaN":
+            return createNaN(node);
         case "NEGATIVE_INFINITY":
             if (context.luaTarget === LuaTarget.Lua50) {
                 const one = lua.createNumericLiteral(1);

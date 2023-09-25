@@ -4,6 +4,7 @@ import { TransformationContext } from "../context";
 import { unsupportedProperty } from "../utils/diagnostics";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { transformArguments } from "../visitors/call";
+import { LuaTarget } from "../../CompilerOptions";
 
 export function transformNumberPrototypeCall(
     context: TransformationContext,
@@ -24,6 +25,28 @@ export function transformNumberPrototypeCall(
             return transformLuaLibFunction(context, LuaLibFeature.NumberToFixed, node, caller, ...params);
         default:
             context.diagnostics.push(unsupportedProperty(calledMethod.name, "number", expressionName));
+    }
+}
+
+export function transformNumberProperty(
+    context: TransformationContext,
+    node: ts.PropertyAccessExpression
+): lua.Expression | undefined {
+    const name = node.name.text;
+    switch (name) {
+        case "POSITIVE_INFINITY":
+            if (context.luaTarget === LuaTarget.Lua50) {
+                const one = lua.createNumericLiteral(1);
+                const zero = lua.createNumericLiteral(0);
+                return lua.createBinaryExpression(one, zero, lua.SyntaxKind.DivisionOperator);
+            } else {
+                const math = lua.createIdentifier("math");
+                const huge = lua.createStringLiteral("huge");
+                return lua.createTableIndexExpression(math, huge, node);
+            }
+
+        default:
+            context.diagnostics.push(unsupportedProperty(node.name, "Number", name));
     }
 }
 

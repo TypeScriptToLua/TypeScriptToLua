@@ -11,7 +11,7 @@ import { transformConsoleCall } from "./console";
 import { transformFunctionPrototypeCall, transformFunctionProperty } from "./function";
 import { tryTransformBuiltinGlobalCall } from "./global";
 import { transformMathCall, transformMathProperty } from "./math";
-import { transformNumberConstructorCall, transformNumberPrototypeCall } from "./number";
+import { transformNumberConstructorCall, transformNumberPrototypeCall, transformNumberProperty } from "./number";
 import { transformObjectConstructorCall, tryTransformObjectPrototypeCall } from "./object";
 import { transformPromiseConstructorCall } from "./promise";
 import { transformStringConstructorCall, transformStringProperty, transformStringPrototypeCall } from "./string";
@@ -27,6 +27,8 @@ export function transformBuiltinPropertyAccessExpression(
 
     if (ts.isIdentifier(node.expression) && isStandardLibraryType(context, ownerType, undefined)) {
         switch (ownerType.symbol.name) {
+            case "NumberConstructor":
+                return transformNumberProperty(context, node);
             case "Math":
                 return transformMathProperty(context, node);
             case "SymbolConstructor":
@@ -162,30 +164,6 @@ export function transformBuiltinIdentifierExpression(
                 const huge = lua.createStringLiteral("huge");
                 return lua.createTableIndexExpression(math, huge, node);
             }
-        case "Number":
-            if ("identifiers" in context.sourceFile && context.sourceFile.identifiers instanceof Map) {
-                const keys = context.sourceFile.identifiers.keys();
-                keys.next();
-
-                const identifier = keys.next().value;
-
-                if (identifier) {
-                    switch (identifier) {
-                        case "POSITIVE_INFINITY":
-                            if (context.luaTarget === LuaTarget.Lua50) {
-                                const one = lua.createNumericLiteral(1);
-                                const zero = lua.createNumericLiteral(0);
-                                return lua.createBinaryExpression(one, zero, lua.SyntaxKind.DivisionOperator);
-                            } else {
-                                const math = lua.createIdentifier("math");
-                                const huge = lua.createStringLiteral("huge");
-                                return lua.createTableIndexExpression(math, huge);
-                            }
-                            break;
-                    }
-                }
-            }
-            break;
         case "globalThis":
             return lua.createIdentifier("_G", node, getIdentifierSymbolId(context, node, symbol), "globalThis");
     }

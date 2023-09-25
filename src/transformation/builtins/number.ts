@@ -47,6 +47,13 @@ export function transformNumberProperty(
             }
         case "NaN":
             return createNaN(node);
+        case "EPSILON":
+            return lua.createBinaryExpression(
+                lua.createNumericLiteral(2),
+                lua.createNumericLiteral(-52),
+                lua.SyntaxKind.PowerOperator,
+                node
+            );
         case "NEGATIVE_INFINITY":
             if (context.luaTarget === LuaTarget.Lua50) {
                 const one = lua.createNumericLiteral(1);

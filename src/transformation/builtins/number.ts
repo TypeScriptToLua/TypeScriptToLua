@@ -34,6 +34,12 @@ export function transformNumberProperty(
     node: ts.PropertyAccessExpression
 ): lua.Expression | undefined {
     const name = node.name.text;
+
+    /*
+        Read the docs on https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number for further info about what these numbers entail.
+        Most of them should be fairly straight forward base on their name(s) though.
+    */
+
     switch (name) {
         case "POSITIVE_INFINITY":
             if (context.luaTarget === LuaTarget.Lua50) {

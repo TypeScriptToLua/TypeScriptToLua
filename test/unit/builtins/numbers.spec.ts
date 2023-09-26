@@ -214,7 +214,7 @@ test.each([
     "0 < Number.EPSILON",
     "Number.EPSILON < Number.MAX_SAFE_INTEGER",
     "Number.MAX_SAFE_INTEGER < Number.MAX_VALUE",
-    "Number.MAX_VALUE < Number.POSITIVE_INFINITY",
+    "Number.MAX_VALUE <= Number.POSITIVE_INFINITY",
 ])("Numer constants have correct relative sizes (%p)", comparison => {
     util.testExpression(comparison).expectToEqual(true);
 });

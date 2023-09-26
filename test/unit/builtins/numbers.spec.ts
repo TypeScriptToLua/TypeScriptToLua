@@ -206,3 +206,15 @@ test.each(["42", "undefined"])("prototype call on nullable number (%p)", value =
         .setOptions({ strictNullChecks: true })
         .expectToMatchJsResult();
 });
+
+test.each([
+    "Number.NEGATIVE_INFINITY < Number.MIN_VALUE",
+    "Number.MIN_VALUE < Number.MIN_SAFE_INTEGER",
+    "Number.MIN_SAFE_INTEGER < 0",
+    "0 < Number.EPSILON",
+    "Number.EPSILON < Number.MAX_SAFE_INTEGER",
+    "Number.MAX_SAFE_INTEGER < Number.MAX_VALUE",
+    "Number.MAX_VALUE < Number.POSITIVE_INFINITY",
+])("Numer constants have correct relative sizes (%p)", comparison => {
+    util.testExpression(comparison).expectToEqual(true);
+});

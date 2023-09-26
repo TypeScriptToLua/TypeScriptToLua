@@ -92,18 +92,16 @@ export function transformNumberProperty(
             if (context.luaTarget === LuaTarget.Lua50) {
                 const one = lua.createNumericLiteral(1);
                 const zero = lua.createNumericLiteral(0);
-                return lua.createBinaryExpression(
-                    lua.createNumericLiteral(0),
+                return lua.createUnaryExpression(
                     lua.createBinaryExpression(one, zero, lua.SyntaxKind.DivisionOperator),
-                    lua.SyntaxKind.SubtractionOperator
+                    lua.SyntaxKind.NegationOperator
                 );
             } else {
                 const math = lua.createIdentifier("math");
                 const huge = lua.createStringLiteral("huge");
-                return lua.createBinaryExpression(
-                    lua.createNumericLiteral(0),
+                return lua.createUnaryExpression(
                     lua.createTableIndexExpression(math, huge, node),
-                    lua.SyntaxKind.SubtractionOperator
+                    lua.SyntaxKind.NegationOperator
                 );
             }
 

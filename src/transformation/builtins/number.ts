@@ -78,15 +78,15 @@ export function transformNumberProperty(
             );
         case "MIN_VALUE":
             return lua.createBinaryExpression(
-                lua.createNumericLiteral(2),
-                lua.createNumericLiteral(-1074),
+                lua.createNumericLiteral(-2),
+                lua.createNumericLiteral(1074),
                 lua.SyntaxKind.PowerOperator,
                 node
             );
         case "MIN_SAFE_INTEGER":
             return lua.createBinaryExpression(
-                lua.createNumericLiteral(2),
-                lua.createNumericLiteral(-1074),
+                lua.createNumericLiteral(-2),
+                lua.createNumericLiteral(1074),
                 lua.SyntaxKind.PowerOperator,
                 node
             );

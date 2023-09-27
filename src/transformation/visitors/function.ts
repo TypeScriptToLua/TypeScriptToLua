@@ -236,15 +236,8 @@ export function transformFunctionToExpression(
         firstParam.type?.kind === ts.SyntaxKind.VoidKeyword;
 
     if (!hasThisVoidParameter && getFunctionContextType(context, type) !== ContextType.Void) {
-        if (ts.isArrowFunction(node)) {
-            // dummy context for arrow functions with parameters
-            if (node.parameters.length > 0) {
-                functionContext = lua.createAnonymousIdentifier();
-            }
-        } else {
-            // self context
-            functionContext = createSelfIdentifier();
-        }
+        // self context
+        functionContext = createSelfIdentifier();
     }
 
     let flags = lua.NodeFlags.None;

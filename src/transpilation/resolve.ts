@@ -112,6 +112,11 @@ class ResolutionContext {
                     this.emitHost
                 );
                 if (pluginResolvedPath !== undefined) {
+                    // If resolved path is absolute no need to further resolve it
+                    if (path.isAbsolute(pluginResolvedPath)) {
+                        return pluginResolvedPath;
+                    }
+
                     // If lua file is in node_module
                     if (requiredFromLuaFile && isNodeModulesFile(requiringFile.fileName)) {
                         // If requiring file is in lua module, try to resolve sibling in that file first

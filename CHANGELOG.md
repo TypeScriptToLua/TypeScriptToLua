@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.20.0
+
+- Added support for `Number.parseInt` and `Number.parseFloat` (mapped to same implementation as global `parseInt` and `parseFloat`)
+- Added implementation for multiple `Number` constants like `Number.EPSILON`
+- Added support for `Array.at`
+- Fixed a bug when throwing an error object in a Lua environment without `debug` module
+- Fixed a bug causing files not to be found when returning an absolute path from a `moduleResolution` plugin
+
 ## 1.19.0
 
 - Added support for the new TypeScript 5.2 `using` keyword for explicit resource management. See the [TypeScript release notes](https://devblogs.microsoft.com/typescript/announcing-typescript-5-2/#using-declarations-and-explicit-resource-management) for more information.

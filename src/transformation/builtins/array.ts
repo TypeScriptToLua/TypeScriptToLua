@@ -94,6 +94,8 @@ export function transformArrayPrototypeCall(
             return transformLuaLibFunction(context, LuaLibFeature.ArrayConcat, node, caller, ...params);
         case "entries":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayEntries, node, caller);
+        case "fill":
+            return transformLuaLibFunction(context, LuaLibFeature.ArrayFill, node, caller, ...params);
         case "push":
             if (node.arguments.length === 1) {
                 const param = params[0] ?? lua.createNilLiteral();

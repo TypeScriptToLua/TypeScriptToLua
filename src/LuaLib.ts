@@ -9,6 +9,7 @@ export enum LuaLibFeature {
     ArrayConcat = "ArrayConcat",
     ArrayEntries = "ArrayEntries",
     ArrayEvery = "ArrayEvery",
+    ArrayFill = "ArrayFill",
     ArrayFilter = "ArrayFilter",
     ArrayForEach = "ArrayForEach",
     ArrayFind = "ArrayFind",

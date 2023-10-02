@@ -788,6 +788,33 @@ test.each([
     util.testExpression(literal).expectToHaveNoDiagnostics();
 });
 
+describe("array.fill", () => {
+    test.each(["[]", "[1]", "[1,2,3,4]"])("Fills full length of array without other parameters (%p)", arr => {
+        util.testExpression`${arr}.fill(5)`.expectToMatchJsResult();
+    });
+
+    test.each(["[1,2,3]", "[1,2,3,4,5,6]"])("Fills starting from start parameter (%p)", arr => {
+        util.testExpression`${arr}.fill(5, 3)`.expectToMatchJsResult();
+    });
+
+    test("handles negative start parameter", () => {
+        util.testExpression`[1,2,3,4,5,6,7].fill(8, -3)`.expectToMatchJsResult();
+    });
+
+    test("handles negative end parameter", () => {
+        util.testExpression`[1,2,3,4,5,6,7].fill(8, -5, -2)`.expectToMatchJsResult();
+    });
+
+    test("Fills starting from start parameter, up to ending parameter", () => {
+        util.testExpression`[1,2,3,4,5,6,7,8].fill(5, 2, 6)`.expectToMatchJsResult();
+    });
+
+    // NOTE: This is different from the default ECMAScript specification for the behavior, but for Lua this is much more useful
+    test("Extends size of the array if ending size is larger than array", () => {
+        util.testExpression`[1,2,3].fill(5, 0, 6)`.expectToEqual([5, 5, 5, 5, 5, 5]);
+    });
+});
+
 // Issue #1218: https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1218
 test.each(["[1, 2, 3]", "undefined"])("prototype call on nullable array (%p)", value => {
     util.testFunction`

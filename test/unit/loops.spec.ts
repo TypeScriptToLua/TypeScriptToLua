@@ -1,5 +1,5 @@
 import * as tstl from "../../src";
-import { forbiddenForIn, unsupportedForTarget } from "../../src/transformation/utils/diagnostics";
+import { forbiddenForIn } from "../../src/transformation/utils/diagnostics";
 import * as util from "../util";
 
 test("while", () => {
@@ -515,13 +515,16 @@ for (const testCase of [
     "for (const a in {}) { continue; }",
     "for (const a of []) { continue; }",
 ]) {
+    const expectContinueVariable: util.TapCallback = builder =>
+        expect(builder.getMainLuaCodeChunk()).toMatch("local __continue2");
+
     const expectContinueGotoLabel: util.TapCallback = builder =>
         expect(builder.getMainLuaCodeChunk()).toMatch("::__continue2::");
 
     util.testEachVersion(`loop continue (${testCase})`, () => util.testModule(testCase), {
-        [tstl.LuaTarget.Universal]: builder => builder.expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]),
-        [tstl.LuaTarget.Lua50]: builder => builder.expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]),
-        [tstl.LuaTarget.Lua51]: builder => builder.expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]),
+        [tstl.LuaTarget.Universal]: expectContinueVariable,
+        [tstl.LuaTarget.Lua50]: expectContinueVariable,
+        [tstl.LuaTarget.Lua51]: expectContinueVariable,
         [tstl.LuaTarget.Lua52]: expectContinueGotoLabel,
         [tstl.LuaTarget.Lua53]: expectContinueGotoLabel,
         [tstl.LuaTarget.Lua54]: expectContinueGotoLabel,

@@ -5,6 +5,7 @@ export enum AnnotationKind {
     CompileMembersOnly = "compileMembersOnly",
     NoResolution = "noResolution",
     NoSelf = "noSelf",
+    CustomName = "customName",
     NoSelfInFile = "noSelfInFile",
 }
 

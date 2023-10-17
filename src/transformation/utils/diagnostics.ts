@@ -113,7 +113,7 @@ export const unsupportedVarDeclaration = createErrorDiagnosticFactory(
 );
 
 export const invalidMultiFunctionUse = createErrorDiagnosticFactory(
-    "The $multi function must be called in a return statement."
+    "The $multi function must be called in a return or export default statement."
 );
 
 export const invalidMultiFunctionReturnType = createErrorDiagnosticFactory(

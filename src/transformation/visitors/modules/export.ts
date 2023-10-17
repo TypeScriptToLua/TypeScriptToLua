@@ -2,6 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { assert } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
+import { AnnotationKind, getFileAnnotations } from "../../utils/annotations";
 import {
     createDefaultExportExpression,
     createDefaultExportStringLiteral,
@@ -9,32 +10,58 @@ import {
 } from "../../utils/export";
 import { createExportsIdentifier } from "../../utils/lua-ast";
 import { ScopeType } from "../../utils/scope";
+import { findFirstNodeAbove } from "../../utils/typescript";
 import { transformScopeBlock } from "../block";
 import { transformIdentifier } from "../identifier";
 import { createShorthandIdentifier } from "../literal";
 import { createModuleRequire } from "./import";
+import { isMultiFunctionCall } from "../language-extensions/multi";
+import { transformArguments } from "../call";
 
 export const transformExportAssignment: FunctionVisitor<ts.ExportAssignment> = (node, context) => {
     if (!context.resolver.isValueAliasDeclaration(node)) {
         return undefined;
     }
 
-    const exportedValue = context.transformExpression(node.expression);
+    if (isReturningDefaultExport(node) && !node.isExportEquals) {
+        // export default $multi(...);
+        const innerNode = node.expression;
+        const exportedValues: lua.Expression[] =
+            ts.isCallExpression(innerNode) && isMultiFunctionCall(context, innerNode)
+                ? transformArguments(context, innerNode.arguments)
+                : [context.transformExpression(innerNode)];
 
-    // export = [expression];
-    // ____exports = [expression];
-    if (node.isExportEquals) {
-        return lua.createVariableDeclarationStatement(createExportsIdentifier(), exportedValue, node);
-    } else {
         // export default [expression];
-        // ____exports.default = [expression];
+        // ____exports.default = { [expression] };
         return lua.createAssignmentStatement(
             lua.createTableIndexExpression(createExportsIdentifier(), createDefaultExportStringLiteral(node)),
-            exportedValue,
+            lua.createTableExpression(exportedValues.map(e => lua.createTableFieldExpression(e))),
             node
         );
+    } else {
+        const exportedValue = context.transformExpression(node.expression);
+
+        if (node.isExportEquals) {
+            // export = [expression];
+            // ____exports = [expression];
+            return lua.createVariableDeclarationStatement(createExportsIdentifier(), exportedValue, node);
+        } else {
+            // export default [expression];
+            // ____exports.default = [expression];
+            return lua.createAssignmentStatement(
+                lua.createTableIndexExpression(createExportsIdentifier(), createDefaultExportStringLiteral(node)),
+                exportedValue,
+                node
+            );
+        }
     }
 };
+
+function isReturningDefaultExport(node: ts.ExportAssignment): boolean {
+    const sourceFile = findFirstNodeAbove(node, (node): node is ts.SourceFile => ts.isSourceFile(node));
+
+    return sourceFile !== undefined && getFileAnnotations(sourceFile).has(AnnotationKind.ReturnDefaultExport);
+}
 
 function transformExportAll(context: TransformationContext, node: ts.ExportDeclaration): lua.Statement | undefined {
     assert(node.moduleSpecifier);

@@ -2,7 +2,9 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { assert } from "../../utils";
 import { FunctionVisitor } from "../context";
-import { createExportsIdentifier } from "../utils/lua-ast";
+import { AnnotationKind, getFileAnnotations } from "../utils/annotations";
+import { createDefaultExportStringLiteral } from "../utils/export";
+import { createExportsIdentifier, createUnpackCall } from "../utils/lua-ast";
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
 import { performHoisting, ScopeType } from "../utils/scope";
 import { hasExportEquals } from "../utils/typescript";
@@ -40,8 +42,14 @@ export const transformSourceFileNode: FunctionVisitor<ts.SourceFile> = (node, co
                 );
             }
 
-            // return ____exports
-            statements.push(lua.createReturnStatement([createExportsIdentifier()]));
+            // return ____exports (or unpack(____exports.default))
+            const toReturn: lua.Expression = getFileAnnotations(node).has(AnnotationKind.ReturnDefaultExport)
+                ? createUnpackCall(
+                      context,
+                      lua.createTableIndexExpression(createExportsIdentifier(), createDefaultExportStringLiteral())
+                  )
+                : createExportsIdentifier();
+            statements.push(lua.createReturnStatement([toReturn]));
         }
     }
 

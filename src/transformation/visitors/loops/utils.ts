@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { TransformationContext } from "../../context";
 import { transformInPrecedingStatementScope } from "../../utils/preceding-statements";
-import { performHoisting, ScopeType } from "../../utils/scope";
+import { LoopContinued, performHoisting, ScopeType } from "../../utils/scope";
 import { isAssignmentPattern } from "../../utils/typescript";
 import { transformAssignment } from "../binary-expression/assignments";
 import { transformAssignmentPattern } from "../binary-expression/destructuring-assignments";
@@ -19,15 +19,31 @@ export function transformLoopBody(
     const scope = context.popScope();
     const scopeId = scope.id;
 
-    if (!scope.loopContinued) {
-        return body;
+    switch (scope.loopContinued) {
+        case undefined:
+            return body;
+
+        case LoopContinued.WithGoto:
+            return [lua.createDoStatement(body), lua.createLabelStatement(`__continue${scopeId}`)];
+
+        case LoopContinued.WithRepeatBreak:
+            const identifier = lua.createIdentifier(`__continue${scopeId}`);
+            const literalTrue = lua.createBooleanLiteral(true);
+
+            return [
+                lua.createDoStatement([
+                    lua.createVariableDeclarationStatement(identifier),
+                    lua.createRepeatStatement(
+                        lua.createBlock([...body, lua.createAssignmentStatement(identifier, literalTrue)]),
+                        literalTrue
+                    ),
+                    lua.createIfStatement(
+                        lua.createUnaryExpression(identifier, lua.SyntaxKind.NotOperator),
+                        lua.createBlock([lua.createBreakStatement()])
+                    ),
+                ]),
+            ];
     }
-
-    const baseResult: lua.Statement[] = [lua.createDoStatement(body)];
-    const continueLabel = lua.createLabelStatement(`__continue${scopeId}`);
-    baseResult.push(continueLabel);
-
-    return baseResult;
 }
 
 export function getVariableDeclarationBinding(

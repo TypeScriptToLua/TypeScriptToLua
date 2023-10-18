@@ -22,6 +22,11 @@ interface FunctionDefinitionInfo {
     definition?: lua.VariableDeclarationStatement | lua.AssignmentStatement;
 }
 
+export enum LoopContinued {
+    WithGoto,
+    WithRepeatBreak,
+}
+
 export interface Scope {
     type: ScopeType;
     id: number;
@@ -30,7 +35,7 @@ export interface Scope {
     variableDeclarations?: lua.VariableDeclarationStatement[];
     functionDefinitions?: Map<lua.SymbolId, FunctionDefinitionInfo>;
     importStatements?: lua.Statement[];
-    loopContinued?: boolean;
+    loopContinued?: LoopContinued;
     functionReturned?: boolean;
 }
 

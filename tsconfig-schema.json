@@ -96,7 +96,7 @@
                             "value": {
                                 "description": "The name to replace the identifier with",
                                 "type": "string"
-                            },
+                            }
                         }
                     }
                 },

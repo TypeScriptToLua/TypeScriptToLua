@@ -12,6 +12,7 @@ import { isStandardLibraryType } from "../utils/typescript";
 import { getExtensionKindForNode, getExtensionKindForSymbol } from "../utils/language-extensions";
 import { callExtensions } from "./language-extensions/call-extension";
 import { isIdentifierExtensionValue, reportInvalidExtensionValue } from "./language-extensions/identifier";
+import { Annotation, AnnotationKind, getNodeAnnotations } from "../utils/annotations";
 
 export function transformIdentifier(context: TransformationContext, identifier: ts.Identifier): lua.Identifier {
     return transformNonValueIdentifier(context, identifier, context.checker.getSymbolAtLocation(identifier));
@@ -53,9 +54,27 @@ function transformNonValueIdentifier(
         }
     }
 
-    const text = hasUnsafeIdentifierName(context, identifier, symbol)
-        ? createSafeName(identifier.text)
-        : identifier.text;
+    let text = hasUnsafeIdentifierName(context, identifier, symbol) ? createSafeName(identifier.text) : identifier.text;
+
+    if (symbol) {
+        const declarations = symbol.getDeclarations();
+        if (declarations) {
+            let customNameAnnotation: undefined | Annotation = undefined;
+            for (const declaration of declarations) {
+                const nodeAnnotations = getNodeAnnotations(declaration);
+                const foundAnnotation = nodeAnnotations.get(AnnotationKind.CustomName);
+
+                if (foundAnnotation) {
+                    customNameAnnotation = foundAnnotation;
+                    break;
+                }
+            }
+
+            if (customNameAnnotation) {
+                text = customNameAnnotation.args[0];
+            }
+        }
+    }
 
     const symbolId = getIdentifierSymbolId(context, identifier, symbol);
     return lua.createIdentifier(text, identifier, symbolId, identifier.text);

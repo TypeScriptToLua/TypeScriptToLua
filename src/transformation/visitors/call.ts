@@ -209,19 +209,8 @@ function transformElementCall(context: TransformationContext, node: ts.CallExpre
     }
 }
 
-export function transformCustomName(node: ts.CallExpression): ts.CallExpression {
-    if ("escapedText" in node.expression) {
-        node.expression.escapedText = "hello";
-        console.log("yes");
-    }
-
-    return node;
-}
-
 export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node, context) => {
     const calledExpression = getCalledExpression(node);
-
-    node = transformCustomName(node);
 
     if (calledExpression.kind === ts.SyntaxKind.ImportKeyword) {
         return transformImportExpression(node, context);

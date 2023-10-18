@@ -81,6 +81,11 @@
                     "type": "boolean",
                     "default": false
                 },
+                "customNames": {
+                    "description": "Overwrite identifiers with custom names",
+                    "type": "object",
+                    "default": {}
+                },
                 "luaPlugins": {
                     "description": "List of TypeScriptToLua plugins.",
                     "type": "array",

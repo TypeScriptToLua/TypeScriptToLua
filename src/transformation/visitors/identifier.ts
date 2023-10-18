@@ -56,6 +56,16 @@ function transformNonValueIdentifier(
 
     let text = hasUnsafeIdentifierName(context, identifier, symbol) ? createSafeName(identifier.text) : identifier.text;
 
+    const customNames = context.options.customNames as Array<{ name: string; value: string }>;
+
+    if (customNames) {
+        const customName = customNames.find(cN => cN.name === text);
+
+        if (customName) {
+            text = customName.value;
+        }
+    }
+
     if (symbol) {
         const declarations = symbol.getDeclarations();
         if (declarations) {

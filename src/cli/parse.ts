@@ -52,6 +52,11 @@ export const optionDeclarations: CommandLineOption[] = [
         choices: Object.values(LuaLibImportKind),
     },
     {
+        name: "customNames",
+        description: "Overwrite identifiers with custom names",
+        type: "json-array-of-objects",
+    },
+    {
         name: "luaTarget",
         aliases: ["lt"],
         description: "Specify Lua target version.",

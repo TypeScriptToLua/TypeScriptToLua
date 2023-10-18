@@ -2,8 +2,7 @@ import * as ts from "typescript";
 import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor } from "../context";
-import { unsupportedForTarget } from "../utils/diagnostics";
-import { findScope, ScopeType } from "../utils/scope";
+import { findScope, LoopContinued, ScopeType } from "../utils/scope";
 
 export const transformBreakStatement: FunctionVisitor<ts.BreakStatement> = (breakStatement, context) => {
     void context;
@@ -11,19 +10,28 @@ export const transformBreakStatement: FunctionVisitor<ts.BreakStatement> = (brea
 };
 
 export const transformContinueStatement: FunctionVisitor<ts.ContinueStatement> = (statement, context) => {
-    if (
+    const scope = findScope(context, ScopeType.Loop);
+    const continuedWith =
         context.luaTarget === LuaTarget.Universal ||
         context.luaTarget === LuaTarget.Lua50 ||
         context.luaTarget === LuaTarget.Lua51
-    ) {
-        context.diagnostics.push(unsupportedForTarget(statement, "Continue statement", context.luaTarget));
-    }
-
-    const scope = findScope(context, ScopeType.Loop);
+            ? LoopContinued.WithRepeatBreak
+            : LoopContinued.WithGoto;
 
     if (scope) {
-        scope.loopContinued = true;
+        scope.loopContinued = continuedWith;
     }
 
-    return lua.createGotoStatement(`__continue${scope?.id ?? ""}`, statement);
+    const label = `__continue${scope?.id ?? ""}`;
+
+    switch (continuedWith) {
+        case LoopContinued.WithGoto:
+            return lua.createGotoStatement(label, statement);
+
+        case LoopContinued.WithRepeatBreak:
+            return [
+                lua.createAssignmentStatement(lua.createIdentifier(label), lua.createBooleanLiteral(true), statement),
+                lua.createBreakStatement(statement),
+            ];
+    }
 };

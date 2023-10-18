@@ -81,25 +81,6 @@
                     "type": "boolean",
                     "default": false
                 },
-                "customNames": {
-                    "description": "Overwrite identifiers with custom names",
-                    "type": "array",
-                    "items": {
-                        "description": "Describes the overwriting of an identifier in TSTL",
-                        "type": "object",
-                        "required": ["name", "value"],
-                        "properties": {
-                            "name": {
-                                "description": "The original name of the identifier",
-                                "type": "string"
-                            },
-                            "value": {
-                                "description": "The name to replace the identifier with",
-                                "type": "string"
-                            }
-                        }
-                    }
-                },
                 "luaPlugins": {
                     "description": "List of TypeScriptToLua plugins.",
                     "type": "array",

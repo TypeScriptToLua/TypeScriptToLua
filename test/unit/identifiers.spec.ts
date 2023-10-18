@@ -845,3 +845,22 @@ test("lua built-in as in constructor assignment", () => {
         export const result = new A("42").error;
     `.expectToMatchJsResult();
 });
+
+test("customName", () => {
+    const result = util.testModule`
+        /** @customName test2 **/
+        function test(this: void) {}
+        test()
+    `.getLuaResult();
+    if (result.transpiledFiles.length === 0) {
+        throw new Error("No files transpiled");
+    }
+    const lua = result.transpiledFiles[0].lua;
+
+    if (!lua) {
+        throw new Error("Lua output is invalid");
+    }
+
+    expect(lua).toContain("function test2()");
+    expect(lua).toContain("test2()");
+});

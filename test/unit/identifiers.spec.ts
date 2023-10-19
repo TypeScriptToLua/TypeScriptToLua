@@ -852,15 +852,12 @@ test("customName", () => {
         function test(this: void) {}
         test()
     `.getLuaResult();
-    if (result.transpiledFiles.length === 0) {
-        throw new Error("No files transpiled");
-    }
+
+    expect(result.transpiledFiles).toHaveLength(1);
+
     const lua = result.transpiledFiles[0].lua;
 
-    if (!lua) {
-        throw new Error("Lua output is invalid");
-    }
-
+    expect(lua).toBeDefined();
     expect(lua).toContain("function test2()");
     expect(lua).toContain("test2()");
 });

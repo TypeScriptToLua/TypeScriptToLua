@@ -846,7 +846,7 @@ test("lua built-in as in constructor assignment", () => {
     `.expectToMatchJsResult();
 });
 
-test("customName", () => {
+test("customName rename function", () => {
     const result = util.testModule`
         /** @customName test2 **/
         function test(this: void) {}

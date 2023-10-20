@@ -56,12 +56,15 @@ test("ignores requires that should not be included", () => {
         require('req2')
         local b = 'require("This should not be included")'
         require("req3")
-        -- require("this should not be included")
+        local c = [[require("This should not be included")]]
         require("req4")
-        --[[ require("this should not be included") ]]
+        -- require("this should not be included")
         require("req5")
+        --[[ require("this should not be included") ]]
+        require("req6")
+
     `;
-    expect(requirePaths(findLuaRequires(lua))).toEqual(["req1", "req2", "req3", "req4", "req5"]);
+    expect(requirePaths(findLuaRequires(lua))).toEqual(["req1", "req2", "req3", "req4", "req5", "req6"]);
 });
 
 test("non-terminated require", () => {

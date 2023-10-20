@@ -28,7 +28,11 @@ function findRequire(lua: string, offset: number): LuaRequire[] {
             } else {
                 offset = m.end;
             }
-        } else if (c === '"' || c === "'") {
+        } else if (
+            c === '"' || c === "'"
+            // string literal surrounded by [[ & ]]
+            || (c === "[" && offset + 1 < lua.length && lua[offset + 1] === "[")
+        ) {
             offset = readString(lua, offset, c).offset; // Skip string and surrounding quotes
         } else if (c === "-" && offset + 1 < lua.length && lua[offset + 1] === "-") {
             offset = skipComment(lua, offset);
@@ -106,7 +110,11 @@ function readString(lua: string, offset: number, delimiter: string): { value: st
         if (lua[offset] === "\\" && !escaped) {
             escaped = true;
         } else {
-            if (lua[offset] === delimiter) {
+            if (
+                (delimiter !== "[" && lua[offset] === delimiter)
+                // string literal surrounded by [[ & ]]
+                || (delimiter === "[" && offset + 1 < lua.length && lua[offset] === "]" && lua[offset + 1] === "]")
+            ) {
                 result += lua.slice(start, offset - 1);
                 start = offset;
             }

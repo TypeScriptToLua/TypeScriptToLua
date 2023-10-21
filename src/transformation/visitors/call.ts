@@ -119,7 +119,7 @@ export function transformContextualCallExpression(
     node: ts.CallExpression | ts.TaggedTemplateExpression,
     args: ts.Expression[] | ts.NodeArray<ts.Expression>,
     signature?: ts.Signature,
-    customName?: string
+    calledMethod?: ts.PropertyAccessExpression
 ): lua.Expression {
     if (ts.isOptionalChain(node)) {
         return transformOptionalChain(context, node);
@@ -137,6 +137,13 @@ export function transformContextualCallExpression(
     ) {
         // table:name()
         const table = context.transformExpression(left.expression);
+
+        let customName: string | undefined;
+        if (calledMethod) {
+            const symbol = context.checker.getSymbolAtLocation(calledMethod);
+            customName = getCustomNameFromSymbol(symbol);
+        }
+
         return lua.createMethodCallExpression(
             table,
             lua.createIdentifier(customName ?? left.name.text, left.name),
@@ -189,10 +196,7 @@ function transformPropertyCall(
     const signatureDeclaration = signature?.getDeclaration();
     if (!signatureDeclaration || getDeclarationContextType(context, signatureDeclaration) !== ContextType.Void) {
         // table:name()
-        const symbol = context.checker.getSymbolAtLocation(calledMethod);
-        const customName = getCustomNameFromSymbol(symbol);
-
-        return transformContextualCallExpression(context, node, node.arguments, signature, customName);
+        return transformContextualCallExpression(context, node, node.arguments, signature, calledMethod);
     } else {
         // table.name()
         const [callPath, parameters] = transformCallAndArguments(context, node.expression, node.arguments, signature);

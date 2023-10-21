@@ -15,6 +15,7 @@ import { transformInPrecedingStatementScope } from "../utils/preceding-statement
 import { getOptionalContinuationData, transformOptionalChain } from "./optional-chaining";
 import { transformImportExpression } from "./modules/import";
 import { transformLanguageExtensionCallExpression } from "./language-extensions/call-extension";
+import { getCustomNameFromSymbol } from "./identifier";
 
 export function validateArguments(
     context: TransformationContext,
@@ -135,12 +136,16 @@ export function transformContextualCallExpression(
     ) {
         // table:name()
         const table = context.transformExpression(left.expression);
-        return lua.createMethodCallExpression(
-            table,
-            lua.createIdentifier(left.name.text, left.name),
-            transformedArguments,
-            node
-        );
+        let name = left.name.text;
+
+        const symbol = context.checker.getSymbolAtLocation(left);
+        const customName = getCustomNameFromSymbol(symbol);
+
+        if (customName) {
+            name = customName;
+        }
+
+        return lua.createMethodCallExpression(table, lua.createIdentifier(name, left.name), transformedArguments, node);
     } else if (ts.isElementAccessExpression(left) || ts.isPropertyAccessExpression(left)) {
         if (isExpressionWithEvaluationEffect(left.expression)) {
             return transformElementAccessCall(context, left, transformedArguments, argPrecedingStatements);

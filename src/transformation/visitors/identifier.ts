@@ -12,9 +12,36 @@ import { isStandardLibraryType } from "../utils/typescript";
 import { getExtensionKindForNode, getExtensionKindForSymbol } from "../utils/language-extensions";
 import { callExtensions } from "./language-extensions/call-extension";
 import { isIdentifierExtensionValue, reportInvalidExtensionValue } from "./language-extensions/identifier";
+import { Annotation, AnnotationKind, getNodeAnnotations } from "../utils/annotations";
 
 export function transformIdentifier(context: TransformationContext, identifier: ts.Identifier): lua.Identifier {
     return transformNonValueIdentifier(context, identifier, context.checker.getSymbolAtLocation(identifier));
+}
+
+export function getCustomNameFromSymbol(symbol?: ts.Symbol): undefined | string {
+    let retVal: undefined | string;
+
+    if (symbol) {
+        const declarations = symbol.getDeclarations();
+        if (declarations) {
+            let customNameAnnotation: undefined | Annotation = undefined;
+            for (const declaration of declarations) {
+                const nodeAnnotations = getNodeAnnotations(declaration);
+                const foundAnnotation = nodeAnnotations.get(AnnotationKind.CustomName);
+
+                if (foundAnnotation) {
+                    customNameAnnotation = foundAnnotation;
+                    break;
+                }
+            }
+
+            if (customNameAnnotation) {
+                retVal = customNameAnnotation.args[0];
+            }
+        }
+    }
+
+    return retVal;
 }
 
 function transformNonValueIdentifier(
@@ -53,9 +80,10 @@ function transformNonValueIdentifier(
         }
     }
 
-    const text = hasUnsafeIdentifierName(context, identifier, symbol)
-        ? createSafeName(identifier.text)
-        : identifier.text;
+    let text = hasUnsafeIdentifierName(context, identifier, symbol) ? createSafeName(identifier.text) : identifier.text;
+
+    const customName = getCustomNameFromSymbol(symbol);
+    if (customName) text = customName;
 
     const symbolId = getIdentifierSymbolId(context, identifier, symbol);
     return lua.createIdentifier(text, identifier, symbolId, identifier.text);

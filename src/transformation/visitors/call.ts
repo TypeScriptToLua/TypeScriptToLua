@@ -15,6 +15,7 @@ import { transformInPrecedingStatementScope } from "../utils/preceding-statement
 import { getOptionalContinuationData, transformOptionalChain } from "./optional-chaining";
 import { transformImportExpression } from "./modules/import";
 import { transformLanguageExtensionCallExpression } from "./language-extensions/call-extension";
+import { AnnotationKind, getFileAnnotations } from "../utils/annotations";
 
 export function validateArguments(
     context: TransformationContext,
@@ -245,6 +246,7 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     }
 
     const signature = context.checker.getResolvedSignature(node);
+    const srcFile = node.getSourceFile();
 
     // Handle super calls properly
     if (calledExpression.kind === ts.SyntaxKind.SuperKeyword) {
@@ -263,7 +265,7 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     let callPath: lua.Expression;
     let parameters: lua.Expression[];
 
-    const isContextualCall = isContextualCallExpression(context, signature);
+    const isContextualCall = isContextualCallExpression(context, signature, srcFile);
 
     if (isContextualCall) {
         [callPath, parameters] = transformCallAndArguments(context, calledExpression, node.arguments, signature);
@@ -287,7 +289,11 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     return wrapResultInTable ? wrapInTable(callExpression) : callExpression;
 };
 
-function isContextualCallExpression(context: TransformationContext, signature: ts.Signature | undefined): boolean {
+function isContextualCallExpression(
+    context: TransformationContext,
+    signature?: ts.Signature,
+    srcFile?: ts.SourceFile
+): boolean {
     if (signature) {
         const declaration = signature.getDeclaration();
 
@@ -296,7 +302,11 @@ function isContextualCallExpression(context: TransformationContext, signature: t
         }
     }
 
-    return context.options.noImplicitSelf !== undefined ? context.options.noImplicitSelf : false;
+    if (srcFile && getFileAnnotations(srcFile).has(AnnotationKind.NoSelfInFile)) {
+        return true;
+    }
+
+    return context.options.noImplicitSelf ?? false;
 }
 
 export function getCalledExpression(node: ts.CallExpression): ts.Expression {

@@ -176,8 +176,7 @@ export function transformContextualCallExpression(
 function transformPropertyCall(
     context: TransformationContext,
     node: ts.CallExpression,
-    calledMethod: ts.PropertyAccessExpression,
-    customName?: string
+    calledMethod: ts.PropertyAccessExpression
 ): lua.Expression {
     const signature = context.checker.getResolvedSignature(node);
 
@@ -190,6 +189,9 @@ function transformPropertyCall(
     const signatureDeclaration = signature?.getDeclaration();
     if (!signatureDeclaration || getDeclarationContextType(context, signatureDeclaration) !== ContextType.Void) {
         // table:name()
+        const symbol = context.checker.getSymbolAtLocation(calledMethod);
+        const customName = getCustomNameFromSymbol(symbol);
+
         return transformContextualCallExpression(context, node, node.arguments, signature, customName);
     } else {
         // table.name()
@@ -199,16 +201,12 @@ function transformPropertyCall(
     }
 }
 
-function transformElementCall(
-    context: TransformationContext,
-    node: ts.CallExpression,
-    customName?: string
-): lua.Expression {
+function transformElementCall(context: TransformationContext, node: ts.CallExpression): lua.Expression {
     const signature = context.checker.getResolvedSignature(node);
     const signatureDeclaration = signature?.getDeclaration();
     if (!signatureDeclaration || getDeclarationContextType(context, signatureDeclaration) !== ContextType.Void) {
         // A contextual parameter must be given to this call expression
-        return transformContextualCallExpression(context, node, node.arguments, signature, customName);
+        return transformContextualCallExpression(context, node, node.arguments, signature);
     } else {
         // No context
         const [expression, parameters] = transformCallAndArguments(context, node.expression, node.arguments, signature);
@@ -218,8 +216,6 @@ function transformElementCall(
 
 export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node, context) => {
     const calledExpression = getCalledExpression(node);
-    const symbol = context.checker.getSymbolAtLocation(calledExpression);
-    const customName = getCustomNameFromSymbol(symbol);
 
     if (calledExpression.kind === ts.SyntaxKind.ImportKeyword) {
         return transformImportExpression(node, context);
@@ -244,12 +240,12 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     }
 
     if (ts.isPropertyAccessExpression(calledExpression)) {
-        const result = transformPropertyCall(context, node, calledExpression, customName);
+        const result = transformPropertyCall(context, node, calledExpression);
         return wrapResultInTable ? wrapInTable(result) : result;
     }
 
     if (ts.isElementAccessExpression(calledExpression)) {
-        const result = transformElementCall(context, node, customName);
+        const result = transformElementCall(context, node);
         return wrapResultInTable ? wrapInTable(result) : result;
     }
 

@@ -949,3 +949,25 @@ test("customName rename namespace", () => {
     expect(mainFile.lua).not.toContain("Test =");
     expect(mainFile.lua).not.toContain("Func(");
 });
+
+test("customName rename declared function", () => {
+    const testModule = util.testModule`
+        /** @customName Test2 **/
+        declare function Test(this: void): void;
+        
+        Test();
+    `;
+
+    const result = testModule.getLuaResult();
+    expect(result.transpiledFiles).not.toHaveLength(0);
+
+    const mainFile = result.transpiledFiles.find(f => f.outPath === "main.lua");
+    expect(mainFile).toBeDefined();
+
+    // avoid ts error "not defined", even though toBeDefined is being checked above
+    if (!mainFile) return;
+
+    expect(mainFile.lua).toBeDefined();
+    expect(mainFile.lua).toContain("Test2(");
+    expect(mainFile.lua).not.toContain("Test(");
+});

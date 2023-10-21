@@ -833,3 +833,22 @@ test("static member definition order (#1457)", () => {
         return A.a;
     `.expectToMatchJsResult();
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1504
+test("Calling static inherited functions works (#1504)", () => {
+    util.testFunction`
+        class A {
+            static Get() {
+                return "A";
+            }
+        }
+
+        class B extends A {
+            static Get() {
+                return super.Get() + "B";
+            }
+        }
+
+        return B.Get();
+    `.expectToMatchJsResult();
+});

@@ -21,6 +21,7 @@ import { createClassSetup } from "./setup";
 import { LuaTarget } from "../../../CompilerOptions";
 import { transformInPrecedingStatementScope } from "../../utils/preceding-statements";
 import { createClassPropertyDecoratingExpression } from "./decorators";
+import { findFirstNodeAbove } from "../../utils/typescript";
 
 export const transformClassDeclaration: FunctionVisitor<ts.ClassLikeDeclaration> = (declaration, context) => {
     // If declaration is a default export, transform to export variable assignment instead
@@ -249,5 +250,14 @@ export const transformSuperExpression: FunctionVisitor<ts.SuperExpression> = (ex
         baseClassName = lua.createTableIndexExpression(className, lua.createStringLiteral("____super"), expression);
     }
 
-    return lua.createTableIndexExpression(baseClassName, lua.createStringLiteral("prototype"));
+    const f = findFirstNodeAbove(expression, ts.isFunctionLike);
+    if (f && ts.canHaveModifiers(f) && isStaticNode(f))
+    {
+        // In static method, don't add prototype to super call
+        return baseClassName;
+    }
+    else
+    {
+        return lua.createTableIndexExpression(baseClassName, lua.createStringLiteral("prototype"));
+    }    
 };

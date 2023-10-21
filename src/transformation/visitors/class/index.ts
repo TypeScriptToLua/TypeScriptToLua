@@ -251,13 +251,10 @@ export const transformSuperExpression: FunctionVisitor<ts.SuperExpression> = (ex
     }
 
     const f = findFirstNodeAbove(expression, ts.isFunctionLike);
-    if (f && ts.canHaveModifiers(f) && isStaticNode(f))
-    {
+    if (f && ts.canHaveModifiers(f) && isStaticNode(f)) {
         // In static method, don't add prototype to super call
         return baseClassName;
-    }
-    else
-    {
+    } else {
         return lua.createTableIndexExpression(baseClassName, lua.createStringLiteral("prototype"));
-    }    
+    }
 };

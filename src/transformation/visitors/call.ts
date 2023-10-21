@@ -118,8 +118,7 @@ export function transformContextualCallExpression(
     context: TransformationContext,
     node: ts.CallExpression | ts.TaggedTemplateExpression,
     args: ts.Expression[] | ts.NodeArray<ts.Expression>,
-    signature?: ts.Signature,
-    calledMethod?: ts.PropertyAccessExpression
+    signature?: ts.Signature
 ): lua.Expression {
     if (ts.isOptionalChain(node)) {
         return transformOptionalChain(context, node);
@@ -137,19 +136,16 @@ export function transformContextualCallExpression(
     ) {
         // table:name()
         const table = context.transformExpression(left.expression);
+        let name: string = left.name.text;
 
-        let customName: string | undefined;
-        if (calledMethod) {
-            const symbol = context.checker.getSymbolAtLocation(calledMethod);
-            customName = getCustomNameFromSymbol(symbol);
+        const symbol = context.checker.getSymbolAtLocation(left);
+        const customName = getCustomNameFromSymbol(symbol);
+
+        if (customName) {
+            name = customName;
         }
 
-        return lua.createMethodCallExpression(
-            table,
-            lua.createIdentifier(customName ?? left.name.text, left.name),
-            transformedArguments,
-            node
-        );
+        return lua.createMethodCallExpression(table, lua.createIdentifier(name, left.name), transformedArguments, node);
     } else if (ts.isElementAccessExpression(left) || ts.isPropertyAccessExpression(left)) {
         if (isExpressionWithEvaluationEffect(left.expression)) {
             return transformElementAccessCall(context, left, transformedArguments, argPrecedingStatements);
@@ -196,7 +192,7 @@ function transformPropertyCall(
     const signatureDeclaration = signature?.getDeclaration();
     if (!signatureDeclaration || getDeclarationContextType(context, signatureDeclaration) !== ContextType.Void) {
         // table:name()
-        return transformContextualCallExpression(context, node, node.arguments, signature, calledMethod);
+        return transformContextualCallExpression(context, node, node.arguments, signature);
     } else {
         // table.name()
         const [callPath, parameters] = transformCallAndArguments(context, node.expression, node.arguments, signature);

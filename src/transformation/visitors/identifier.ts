@@ -18,6 +18,32 @@ export function transformIdentifier(context: TransformationContext, identifier: 
     return transformNonValueIdentifier(context, identifier, context.checker.getSymbolAtLocation(identifier));
 }
 
+export function getCustomNameFromSymbol(symbol?: ts.Symbol): undefined | string {
+    let retVal: undefined | string;
+
+    if (symbol) {
+        const declarations = symbol.getDeclarations();
+        if (declarations) {
+            let customNameAnnotation: undefined | Annotation = undefined;
+            for (const declaration of declarations) {
+                const nodeAnnotations = getNodeAnnotations(declaration);
+                const foundAnnotation = nodeAnnotations.get(AnnotationKind.CustomName);
+
+                if (foundAnnotation) {
+                    customNameAnnotation = foundAnnotation;
+                    break;
+                }
+            }
+
+            if (customNameAnnotation) {
+                retVal = customNameAnnotation.args[0];
+            }
+        }
+    }
+
+    return retVal;
+}
+
 function transformNonValueIdentifier(
     context: TransformationContext,
     identifier: ts.Identifier,
@@ -56,25 +82,8 @@ function transformNonValueIdentifier(
 
     let text = hasUnsafeIdentifierName(context, identifier, symbol) ? createSafeName(identifier.text) : identifier.text;
 
-    if (symbol) {
-        const declarations = symbol.getDeclarations();
-        if (declarations) {
-            let customNameAnnotation: undefined | Annotation = undefined;
-            for (const declaration of declarations) {
-                const nodeAnnotations = getNodeAnnotations(declaration);
-                const foundAnnotation = nodeAnnotations.get(AnnotationKind.CustomName);
-
-                if (foundAnnotation) {
-                    customNameAnnotation = foundAnnotation;
-                    break;
-                }
-            }
-
-            if (customNameAnnotation) {
-                text = customNameAnnotation.args[0];
-            }
-        }
-    }
+    const customName = getCustomNameFromSymbol(symbol);
+    if (customName) text = customName;
 
     const symbolId = getIdentifierSymbolId(context, identifier, symbol);
     return lua.createIdentifier(text, identifier, symbolId, identifier.text);

@@ -15,7 +15,7 @@ import { transformInPrecedingStatementScope } from "../utils/preceding-statement
 import { getOptionalContinuationData, transformOptionalChain } from "./optional-chaining";
 import { transformImportExpression } from "./modules/import";
 import { transformLanguageExtensionCallExpression } from "./language-extensions/call-extension";
-import { Annotation, AnnotationKind, getNodeAnnotations } from "../utils/annotations";
+import { getCustomNameFromSymbol } from "./identifier";
 
 export function validateArguments(
     context: TransformationContext,
@@ -219,27 +219,7 @@ function transformElementCall(
 export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node, context) => {
     const calledExpression = getCalledExpression(node);
     const symbol = context.checker.getSymbolAtLocation(calledExpression);
-    let customName: undefined | string;
-
-    if (symbol) {
-        const declarations = symbol.getDeclarations();
-        if (declarations) {
-            let customNameAnnotation: undefined | Annotation = undefined;
-            for (const declaration of declarations) {
-                const nodeAnnotations = getNodeAnnotations(declaration);
-                const foundAnnotation = nodeAnnotations.get(AnnotationKind.CustomName);
-
-                if (foundAnnotation) {
-                    customNameAnnotation = foundAnnotation;
-                    break;
-                }
-            }
-
-            if (customNameAnnotation) {
-                customName = customNameAnnotation.args[0];
-            }
-        }
-    }
+    const customName = getCustomNameFromSymbol(symbol);
 
     if (calledExpression.kind === ts.SyntaxKind.ImportKeyword) {
         return transformImportExpression(node, context);

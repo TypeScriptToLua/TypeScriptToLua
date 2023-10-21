@@ -136,7 +136,7 @@ export function transformContextualCallExpression(
     ) {
         // table:name()
         const table = context.transformExpression(left.expression);
-        let name: string = left.name.text;
+        let name = left.name.text;
 
         const symbol = context.checker.getSymbolAtLocation(left);
         const customName = getCustomNameFromSymbol(symbol);

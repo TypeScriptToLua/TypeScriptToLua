@@ -15,6 +15,7 @@ import { transformInPrecedingStatementScope } from "../utils/preceding-statement
 import { getOptionalContinuationData, transformOptionalChain } from "./optional-chaining";
 import { transformImportExpression } from "./modules/import";
 import { transformLanguageExtensionCallExpression } from "./language-extensions/call-extension";
+import { Annotation, AnnotationKind, getNodeAnnotations } from "../utils/annotations";
 
 export function validateArguments(
     context: TransformationContext,
@@ -117,7 +118,8 @@ export function transformContextualCallExpression(
     context: TransformationContext,
     node: ts.CallExpression | ts.TaggedTemplateExpression,
     args: ts.Expression[] | ts.NodeArray<ts.Expression>,
-    signature?: ts.Signature
+    signature?: ts.Signature,
+    customName?: string
 ): lua.Expression {
     if (ts.isOptionalChain(node)) {
         return transformOptionalChain(context, node);
@@ -137,7 +139,7 @@ export function transformContextualCallExpression(
         const table = context.transformExpression(left.expression);
         return lua.createMethodCallExpression(
             table,
-            lua.createIdentifier(left.name.text, left.name),
+            lua.createIdentifier(customName ?? left.name.text, left.name),
             transformedArguments,
             node
         );
@@ -174,7 +176,8 @@ export function transformContextualCallExpression(
 function transformPropertyCall(
     context: TransformationContext,
     node: ts.CallExpression,
-    calledMethod: ts.PropertyAccessExpression
+    calledMethod: ts.PropertyAccessExpression,
+    customName?: string
 ): lua.Expression {
     const signature = context.checker.getResolvedSignature(node);
 
@@ -187,7 +190,7 @@ function transformPropertyCall(
     const signatureDeclaration = signature?.getDeclaration();
     if (!signatureDeclaration || getDeclarationContextType(context, signatureDeclaration) !== ContextType.Void) {
         // table:name()
-        return transformContextualCallExpression(context, node, node.arguments, signature);
+        return transformContextualCallExpression(context, node, node.arguments, signature, customName);
     } else {
         // table.name()
         const [callPath, parameters] = transformCallAndArguments(context, node.expression, node.arguments, signature);
@@ -196,12 +199,16 @@ function transformPropertyCall(
     }
 }
 
-function transformElementCall(context: TransformationContext, node: ts.CallExpression): lua.Expression {
+function transformElementCall(
+    context: TransformationContext,
+    node: ts.CallExpression,
+    customName?: string
+): lua.Expression {
     const signature = context.checker.getResolvedSignature(node);
     const signatureDeclaration = signature?.getDeclaration();
     if (!signatureDeclaration || getDeclarationContextType(context, signatureDeclaration) !== ContextType.Void) {
         // A contextual parameter must be given to this call expression
-        return transformContextualCallExpression(context, node, node.arguments, signature);
+        return transformContextualCallExpression(context, node, node.arguments, signature, customName);
     } else {
         // No context
         const [expression, parameters] = transformCallAndArguments(context, node.expression, node.arguments, signature);
@@ -211,6 +218,28 @@ function transformElementCall(context: TransformationContext, node: ts.CallExpre
 
 export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node, context) => {
     const calledExpression = getCalledExpression(node);
+    const symbol = context.checker.getSymbolAtLocation(calledExpression);
+    let customName: undefined | string;
+
+    if (symbol) {
+        const declarations = symbol.getDeclarations();
+        if (declarations) {
+            let customNameAnnotation: undefined | Annotation = undefined;
+            for (const declaration of declarations) {
+                const nodeAnnotations = getNodeAnnotations(declaration);
+                const foundAnnotation = nodeAnnotations.get(AnnotationKind.CustomName);
+
+                if (foundAnnotation) {
+                    customNameAnnotation = foundAnnotation;
+                    break;
+                }
+            }
+
+            if (customNameAnnotation) {
+                customName = customNameAnnotation.args[0];
+            }
+        }
+    }
 
     if (calledExpression.kind === ts.SyntaxKind.ImportKeyword) {
         return transformImportExpression(node, context);
@@ -235,12 +264,12 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     }
 
     if (ts.isPropertyAccessExpression(calledExpression)) {
-        const result = transformPropertyCall(context, node, calledExpression);
+        const result = transformPropertyCall(context, node, calledExpression, customName);
         return wrapResultInTable ? wrapInTable(result) : result;
     }
 
     if (ts.isElementAccessExpression(calledExpression)) {
-        const result = transformElementCall(context, node);
+        const result = transformElementCall(context, node, customName);
         return wrapResultInTable ? wrapInTable(result) : result;
     }
 

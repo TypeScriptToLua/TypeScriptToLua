@@ -262,8 +262,10 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
 
     let callPath: lua.Expression;
     let parameters: lua.Expression[];
+
     const isContextualCall = isContextualCallExpression(context, signature);
-    if (!isContextualCall) {
+
+    if (isContextualCall) {
         [callPath, parameters] = transformCallAndArguments(context, calledExpression, node.arguments, signature);
     } else {
         // if is optionalContinuation, context will be handled by transformOptionalChain.
@@ -287,10 +289,12 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
 
 function isContextualCallExpression(context: TransformationContext, signature: ts.Signature | undefined): boolean {
     const declaration = signature?.getDeclaration();
-    if (!declaration) {
-        return !context.options.noImplicitSelf;
+
+    if (declaration) {
+        return getDeclarationContextType(context, declaration) === ContextType.Void;
     }
-    return getDeclarationContextType(context, declaration) !== ContextType.Void;
+
+    return context.options.noImplicitSelf !== undefined ? context.options.noImplicitSelf : false;
 }
 
 export function getCalledExpression(node: ts.CallExpression): ts.Expression {

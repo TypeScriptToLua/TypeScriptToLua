@@ -288,10 +288,12 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
 };
 
 function isContextualCallExpression(context: TransformationContext, signature: ts.Signature | undefined): boolean {
-    const declaration = signature?.getDeclaration();
+    if (signature) {
+        const declaration = signature.getDeclaration();
 
-    if (declaration) {
-        return getDeclarationContextType(context, declaration) === ContextType.Void;
+        if (declaration) {
+            return getDeclarationContextType(context, declaration) === ContextType.Void;
+        }
     }
 
     return context.options.noImplicitSelf !== undefined ? context.options.noImplicitSelf : false;

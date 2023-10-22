@@ -271,7 +271,7 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
 
     const isContextualCall = isContextualCallExpression(context, signature, node.getSourceFile());
 
-    if (isContextualCall) {
+    if (!isContextualCall) {
         [callPath, parameters] = transformCallAndArguments(context, calledExpression, node.arguments, signature);
     } else {
         // if is optionalContinuation, context will be handled by transformOptionalChain.
@@ -287,7 +287,7 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     }
 
     const callExpression = lua.createCallExpression(callPath, parameters, node);
-    if (optionalContinuation && !isContextualCall) {
+    if (optionalContinuation && isContextualCall) {
         optionalContinuation.contextualCall = callExpression;
     }
     return wrapResultInTable ? wrapInTable(callExpression) : callExpression;
@@ -304,11 +304,12 @@ function isContextualCallExpression(
         const declaration = signature.getDeclaration();
 
         if (declaration) {
-            const contextTypeCheck = getDeclarationContextType(context, declaration) === ContextType.Void;
+            const contextTypeCheck = getDeclarationContextType(context, declaration) !== ContextType.Void;
 
             // respect implicit self over noSelfInFile
-            if (hasNoSelfInFile && contextTypeCheck === true) {
-                return true;
+            // look at "explicit this parameter respected over @noSelf" test
+            if (hasNoSelfInFile && contextTypeCheck !== true) {
+                return false;
             }
 
             return contextTypeCheck;
@@ -316,10 +317,10 @@ function isContextualCallExpression(
     }
 
     if (hasNoSelfInFile) {
-        return true;
+        return false;
     }
 
-    return context.options.noImplicitSelf ?? false;
+    return !context.options.noImplicitSelf;
 }
 
 export function getCalledExpression(node: ts.CallExpression): ts.Expression {

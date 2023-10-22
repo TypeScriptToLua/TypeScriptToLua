@@ -66,12 +66,7 @@ test("explicit this parameter respected over @noSelf", () => {
 test("respect noSelfInFile over noImplicitSelf", () => {
     const result = util.testModule`
         /** @noSelfInFile **/
-
-        const funcByValue: Record<string, Function> = {
-            hello: () => 1
-        };
-
-        const func = funcByValue["hello"];
+        const func: Function = () => 1;
         export const result = func(1);
     `
         .expectToMatchJsResult()

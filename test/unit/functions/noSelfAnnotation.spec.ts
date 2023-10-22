@@ -62,3 +62,30 @@ test("explicit this parameter respected over @noSelf", () => {
         export const result = foo(1);
     `.expectToMatchJsResult();
 });
+
+test("respect noSelfInFile over noImplicitSelf", () => {
+    const result = util.testModule`
+        /** @noSelfInFile **/
+
+        const funcByValue: Record<string, Function> = {
+            hello: () => 1
+        };
+
+        const func = funcByValue["hello"];
+        export const result = func(1);
+    `
+        .expectToMatchJsResult()
+        .getLuaResult();
+
+    expect(result.transpiledFiles).not.toHaveLength(0);
+
+    const mainFile = result.transpiledFiles.find(f => f.outPath === "main.lua");
+    expect(mainFile).toBeDefined();
+
+    // avoid ts error "not defined", even though toBeDefined is being checked above
+    if (!mainFile) return;
+
+    expect(mainFile.lua).toBeDefined();
+    expect(mainFile.lua).toContain("func(1)");
+    expect(mainFile.lua).not.toContain("_G");
+});

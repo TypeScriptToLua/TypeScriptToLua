@@ -15,8 +15,8 @@ import { transformInPrecedingStatementScope } from "../utils/preceding-statement
 import { getOptionalContinuationData, transformOptionalChain } from "./optional-chaining";
 import { transformImportExpression } from "./modules/import";
 import { transformLanguageExtensionCallExpression } from "./language-extensions/call-extension";
-import { AnnotationKind, getFileAnnotations } from "../utils/annotations";
 import { getCustomNameFromSymbol } from "./identifier";
+import { AnnotationKind, getFileAnnotations } from "../utils/annotations";
 
 export function validateArguments(
     context: TransformationContext,
@@ -251,7 +251,6 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     }
 
     const signature = context.checker.getResolvedSignature(node);
-    const srcFile = node.getSourceFile();
 
     // Handle super calls properly
     if (calledExpression.kind === ts.SyntaxKind.SuperKeyword) {
@@ -270,9 +269,9 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     let callPath: lua.Expression;
     let parameters: lua.Expression[];
 
-    const isContextualCall = isContextualCallExpression(context, signature, srcFile);
+    const isContextualCall = isContextualCallExpression(context, signature, node.getSourceFile());
 
-    if (isContextualCall) {
+    if (!isContextualCall) {
         [callPath, parameters] = transformCallAndArguments(context, calledExpression, node.arguments, signature);
     } else {
         // if is optionalContinuation, context will be handled by transformOptionalChain.
@@ -299,19 +298,28 @@ function isContextualCallExpression(
     signature?: ts.Signature,
     srcFile?: ts.SourceFile
 ): boolean {
+    const hasNoSelfInFile = srcFile && getFileAnnotations(srcFile).has(AnnotationKind.NoSelfInFile);
+
     if (signature) {
         const declaration = signature.getDeclaration();
 
         if (declaration) {
-            return getDeclarationContextType(context, declaration) === ContextType.Void;
+            const contextTypeCheck = getDeclarationContextType(context, declaration) !== ContextType.Void;
+
+            // respect implicit self over noSelfInFile
+            if (hasNoSelfInFile && contextTypeCheck !== true) {
+                return false;
+            }
+
+            return contextTypeCheck;
         }
     }
 
-    if (srcFile && getFileAnnotations(srcFile).has(AnnotationKind.NoSelfInFile)) {
-        return true;
+    if (hasNoSelfInFile) {
+        return false;
     }
 
-    return context.options.noImplicitSelf ?? false;
+    return !context.options.noImplicitSelf;
 }
 
 export function getCalledExpression(node: ts.CallExpression): ts.Expression {

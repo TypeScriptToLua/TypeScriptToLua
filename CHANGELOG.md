@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.21.0
+
+- Added support for `continue` for Lua 5.0, 5.1 and universal targets.
+- Added support for the new `/** @customName myCustomName **/` decorator, which allows renaming of variables and identifiers.
+  - This is useful to get around names that are reserved keywords in TypeScript, but are used in Lua API
+- Fixed a bug that caused super calls in static methods to throw an error
+
 ## 1.20.0
 
 - Added support for `Number.parseInt` and `Number.parseFloat` (mapped to same implementation as global `parseInt` and `parseFloat`)

@@ -64,6 +64,7 @@ export enum LuaLibFeature {
     MathSign = "MathSign",
     New = "New",
     Number = "Number",
+    NumberClass = "NumberClass",
     NumberIsFinite = "NumberIsFinite",
     NumberIsNaN = "NumberIsNaN",
     NumberParseInt = "ParseInt",

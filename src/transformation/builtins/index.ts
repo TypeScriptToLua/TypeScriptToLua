@@ -202,6 +202,10 @@ export function checkForLuaLibType(context: TransformationContext, type: ts.Type
         case "BooleanConstructor":
             importLuaLibFeature(context, LuaLibFeature.BooleanClass);
             return;
+        case "Number":
+        case "NumberConstructor":
+            importLuaLibFeature(context, LuaLibFeature.NumberClass);
+            return;
         case "Set":
         case "SetConstructor":
             importLuaLibFeature(context, LuaLibFeature.Set);

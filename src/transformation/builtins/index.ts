@@ -194,6 +194,14 @@ export function checkForLuaLibType(context: TransformationContext, type: ts.Type
         case "MapConstructor":
             importLuaLibFeature(context, LuaLibFeature.Map);
             return;
+        case "String":
+        case "StringConstructor":
+            importLuaLibFeature(context, LuaLibFeature.StringClass);
+            return;
+        case "Boolean":
+        case "BooleanConstructor":
+            importLuaLibFeature(context, LuaLibFeature.BooleanClass);
+            return;
         case "Set":
         case "SetConstructor":
             importLuaLibFeature(context, LuaLibFeature.Set);

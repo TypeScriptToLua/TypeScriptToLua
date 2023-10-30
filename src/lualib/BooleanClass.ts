@@ -7,6 +7,10 @@ export class Boolean {
         this.value = __TS__Boolean(value);
     }
 
+    public get() {
+        return this.value;
+    }
+
     public toString() {
         return this.value;
     }

@@ -7,6 +7,10 @@ export class String {
         this.value = __TS__String(value);
     }
 
+    public get() {
+        return this.value;
+    }
+
     public toString() {
         return this.value;
     }

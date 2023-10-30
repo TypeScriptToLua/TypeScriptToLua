@@ -7,6 +7,10 @@ export class Number {
         this.value = __TS__Number(value);
     }
 
+    public get() {
+        return this.value;
+    }
+
     public toString() {
         return this.value;
     }

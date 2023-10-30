@@ -21,6 +21,10 @@ export function tryTransformBuiltinGlobalCall(
             return transformLuaLibFunction(context, LuaLibFeature.Symbol, node, ...getParameters());
         case "NumberConstructor":
             return transformLuaLibFunction(context, LuaLibFeature.Number, node, ...getParameters());
+        case "StringConstructor":
+            return transformLuaLibFunction(context, LuaLibFeature.String, node, ...getParameters());
+        case "BooleanConstructor":
+            return transformLuaLibFunction(context, LuaLibFeature.Boolean, node, ...getParameters());
         case "isNaN":
         case "isFinite":
             const numberParameters = isNumberType(context, expressionType)

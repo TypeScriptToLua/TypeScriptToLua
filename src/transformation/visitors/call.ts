@@ -269,7 +269,7 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     let callPath: lua.Expression;
     let parameters: lua.Expression[];
 
-    const isContextualCall = isContextualCallExpression(context, signature, node.getSourceFile());
+    const isContextualCall = isContextualCallExpression(context, calledExpression, signature);
 
     if (!isContextualCall) {
         [callPath, parameters] = transformCallAndArguments(context, calledExpression, node.arguments, signature);
@@ -295,10 +295,20 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
 
 function isContextualCallExpression(
     context: TransformationContext,
-    signature?: ts.Signature,
-    srcFile?: ts.SourceFile
+    calledExpression: ts.Expression,
+    signature?: ts.Signature
 ): boolean {
-    const hasNoSelfInFile = srcFile && getFileAnnotations(srcFile).has(AnnotationKind.NoSelfInFile);
+    const symbol = context.checker.getSymbolAtLocation(calledExpression);
+    let hasNoSelfInFile = false;
+
+    if (symbol?.declarations) {
+        for (const declaration of symbol.declarations) {
+            const srcFile = declaration.getSourceFile();
+
+            hasNoSelfInFile = getFileAnnotations(srcFile).has(AnnotationKind.NoSelfInFile);
+            break;
+        }
+    }
 
     if (signature) {
         const declaration = signature.getDeclaration();

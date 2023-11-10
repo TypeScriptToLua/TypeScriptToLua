@@ -302,12 +302,9 @@ function isContextualCallExpression(
     let hasNoSelfInFile = false;
 
     if (symbol?.declarations) {
-        for (const declaration of symbol.declarations) {
-            const srcFile = declaration.getSourceFile();
-
-            hasNoSelfInFile = getFileAnnotations(srcFile).has(AnnotationKind.NoSelfInFile);
-            break;
-        }
+        hasNoSelfInFile =
+            symbol.declarations.some(d => getFileAnnotations(d.getSourceFile()).has(AnnotationKind.NoSelfInFile)) ??
+            false;
     }
 
     if (signature) {

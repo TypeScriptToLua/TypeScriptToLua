@@ -307,20 +307,18 @@ function isContextualCallExpression(
             false;
     }
 
-    if (signature) {
-        const declaration = signature.getDeclaration();
+    const declaration = signature?.getDeclaration();
 
-        if (declaration) {
-            const contextTypeCheck = getDeclarationContextType(context, declaration) !== ContextType.Void;
+    if (declaration) {
+        const contextTypeCheck = getDeclarationContextType(context, declaration) !== ContextType.Void;
 
-            // respect implicit self over noSelfInFile
-            // look at "explicit this parameter respected over @noSelf" test
-            if (hasNoSelfInFile && contextTypeCheck !== true) {
-                return false;
-            }
-
-            return contextTypeCheck;
+        // respect implicit self over noSelfInFile
+        // look at "explicit this parameter respected over @noSelf" test
+        if (hasNoSelfInFile && contextTypeCheck !== true) {
+            return false;
         }
+
+        return contextTypeCheck;
     }
 
     if (hasNoSelfInFile) {

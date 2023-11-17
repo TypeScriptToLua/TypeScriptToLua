@@ -46,6 +46,10 @@ describe("Number", () => {
     test.each(cases)("isFinite(%p)", value => {
         util.testExpressionTemplate`Number.isFinite(${value} as any)`.expectToMatchJsResult();
     });
+
+    test.each(cases)("isInteger(%p)", value => {
+        util.testExpressionTemplate`Number.isInteger(${value} as any)`.expectToMatchJsResult();
+    });
 });
 
 const toStringRadixes = [undefined, 10, 2, 8, 9, 16, 17, 36, 36.9];

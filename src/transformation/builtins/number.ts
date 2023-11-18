@@ -118,6 +118,8 @@ export function transformNumberConstructorCall(
     const parameters = transformArguments(context, node.arguments);
     const methodName = calledMethod.name.text;
     switch (methodName) {
+        case "isInteger":
+            return transformLuaLibFunction(context, LuaLibFeature.NumberIsInteger, node, ...parameters);
         case "isNaN":
             return transformLuaLibFunction(context, LuaLibFeature.NumberIsNaN, node, ...parameters);
         case "isFinite":

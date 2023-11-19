@@ -1,3 +1,4 @@
+import path = require("path");
 import * as util from "../../util";
 
 const methodHolders = ["class", "interface"];
@@ -75,6 +76,30 @@ test("respect noSelfInFile over noImplicitSelf", () => {
     expect(result.transpiledFiles).not.toHaveLength(0);
 
     const mainFile = result.transpiledFiles.find(f => f.outPath === "main.lua");
+    expect(mainFile).toBeDefined();
+
+    // avoid ts error "not defined", even though toBeDefined is being checked above
+    if (!mainFile) return;
+
+    expect(mainFile.lua).toBeDefined();
+    expect(mainFile.lua).toContain("func(1)");
+    expect(mainFile.lua).not.toContain("_G");
+});
+
+const projectPath = path.resolve(__dirname, "noSelfAnnotationRespect");
+
+const projectFile = util
+    .testProject(path.join(projectPath, "tsconfig.json"))
+    .setMainFileName(path.join(projectPath, "main.ts"));
+
+test("respect noSelfInFile over noImplicitSelf (func declared in other file)", () => {
+    const result = projectFile.getLuaResult();
+
+    expect(result.transpiledFiles).not.toHaveLength(0);
+
+    console.log(result);
+    console.log(result.transpiledFiles);
+    const mainFile = result.transpiledFiles.find(f => f.outPath.includes("main.lua"));
     expect(mainFile).toBeDefined();
 
     // avoid ts error "not defined", even though toBeDefined is being checked above

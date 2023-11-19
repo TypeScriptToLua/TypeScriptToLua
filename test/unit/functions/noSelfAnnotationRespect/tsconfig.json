@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "strict": true,
+        "moduleResolution": "Node",
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "target": "esnext",
+        "lib": ["esnext"],
+        "types": [],
+        "rootDir": "."
+    }
+}

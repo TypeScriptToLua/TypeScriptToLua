@@ -107,6 +107,48 @@ test("Function default binding parameter maintains order", () => {
     `.expectToMatchJsResult();
 });
 
+test.each(["undefined", "null"])("Function default parameter with value %p", defaultValue => {
+    util.testFunction`
+        function foo(x = ${defaultValue}) {
+            return x;
+        }
+        return foo();
+    `
+        .expectToMatchJsResult()
+        .tap(builder => {
+            const lua = builder.getMainLuaCodeChunk();
+            expect(lua).not.toMatch("if x == nil then");
+        })
+        .expectLuaToMatchSnapshot();
+});
+
+test("Function default parameter with preceding statements", () => {
+    util.testFunction`
+        let i = 1
+        function foo(x = i++) {
+            return x;
+        }
+        return [i, foo(), i];
+    `.expectToMatchJsResult();
+});
+
+test("Function default parameter with nil value and preceding statements", () => {
+    util.testFunction`
+        const a = new LuaTable()
+        a.set("foo", "bar")
+        function foo(x: any = a.set("foo", "baz")) {
+            return x ?? "nil";
+        }
+        return [a.get("foo"), foo(), a.get("foo")];
+    `
+        .withLanguageExtensions()
+        .tap(builder => {
+            const lua = builder.getMainLuaCodeChunk();
+            expect(lua).not.toMatch("    x = nil");
+        })
+        .expectToEqual(["bar", "nil", "baz"]);
+});
+
 test("Class method call", () => {
     util.testFunction`
         class TestClass {

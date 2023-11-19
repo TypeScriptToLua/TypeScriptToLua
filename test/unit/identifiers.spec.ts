@@ -196,7 +196,7 @@ test.each(validTsInvalidLuaNames)("class with invalid lua name has correct name 
 
 test.each(validTsInvalidLuaNames)("decorated class with invalid lua name", name => {
     util.testFunction`
-        function decorator<T extends new (...args: any[]) => any>(Class: T): T {
+        function decorator<T extends new (...args: any[]) => any>(Class: T, context: ClassDecoratorContext): T {
             return class extends Class {
                 public bar = "foobar";
             };
@@ -210,7 +210,7 @@ test.each(validTsInvalidLuaNames)("decorated class with invalid lua name", name 
 
 test.each(validTsInvalidLuaNames)("exported decorated class with invalid lua name", name => {
     util.testModule`
-        function decorator<T extends new (...args: any[]) => any>(Class: T): T {
+        function decorator<T extends new (...args: any[]) => any>(Class: T, context: ClassDecoratorContext): T {
             return class extends Class {
                 public bar = "foobar";
             };
@@ -283,6 +283,38 @@ describe("unicode identifiers in supporting environments (luajit)", () => {
             .setOptions({ luaTarget: LuaTarget.LuaJIT })
             .expectLuaToMatchSnapshot();
     });
+});
+
+test("unicode export class", () => {
+    util.testModule`
+        import { 你好 } from "./utfclass";
+        export const result = new 你好().hello();
+    `
+        .addExtraFile(
+            "utfclass.ts",
+            `export class 你好 {
+                hello() {
+                    return "你好";
+                }
+            }`
+        )
+        .expectToEqual({ result: "你好" });
+});
+
+test("unicode export default class", () => {
+    util.testModule`
+        import c from "./utfclass";
+        export const result = new c().hello();
+    `
+        .addExtraFile(
+            "utfclass.ts",
+            `export default class 你好 {
+                hello() {
+                    return "你好";
+                }
+            }`
+        )
+        .expectToEqual({ result: "你好" });
 });
 
 describe("lua keyword as identifier doesn't interfere with lua's value", () => {
@@ -812,4 +844,130 @@ test("lua built-in as in constructor assignment", () => {
 
         export const result = new A("42").error;
     `.expectToMatchJsResult();
+});
+
+test("customName rename function", () => {
+    const result = util.testModule`
+        /** @customName test2 **/
+        function test(this: void): number { return 3; }
+        export const result: number = test();
+    `
+        .expectToEqual({ result: 3 })
+        .getLuaResult();
+
+    expect(result.transpiledFiles).not.toHaveLength(0);
+
+    const mainFile = result.transpiledFiles.find(f => f.outPath === "main.lua");
+    expect(mainFile).toBeDefined();
+
+    // avoid ts error "not defined", even though toBeDefined is being checked above
+    if (!mainFile) return;
+
+    expect(mainFile.lua).toBeDefined();
+    expect(mainFile.lua).toContain("function test2()");
+    expect(mainFile.lua).not.toContain("test()");
+});
+
+test("customName rename variable", () => {
+    const result = util.testModule`
+        /** @customName result2 **/
+        export const result: number = 3;
+    `
+        .expectToEqual({ result2: 3 })
+        .getLuaResult();
+
+    const mainFile = result.transpiledFiles.find(f => f.outPath === "main.lua");
+    expect(mainFile).toBeDefined();
+
+    // avoid ts error "not defined", even though toBeDefined is being checked above
+    if (!mainFile) return;
+
+    expect(mainFile.lua).toBeDefined();
+    expect(mainFile.lua).toContain("result2 =");
+    expect(mainFile.lua).not.toContain("result =");
+});
+
+test("customName rename classes", () => {
+    const testModule = util.testModule`
+        /** @customName Class2 **/
+        class Class {
+            test: string;
+
+            constructor(test: string) {
+                this.test = test;
+            }
+        }
+        
+        export const result = new Class("hello world");
+    `;
+
+    const executionResult = testModule.getLuaExecutionResult();
+    expect(executionResult.result).toBeDefined();
+    expect(executionResult.result).toMatchObject({ test: "hello world" });
+
+    const result = testModule.getLuaResult();
+    expect(result.transpiledFiles).not.toHaveLength(0);
+
+    const mainFile = result.transpiledFiles.find(f => f.outPath === "main.lua");
+    expect(mainFile).toBeDefined();
+
+    // avoid ts error "not defined", even though toBeDefined is being checked above
+    if (!mainFile) return;
+
+    expect(mainFile.lua).toBeDefined();
+    expect(mainFile.lua).toContain("local Class2 =");
+    expect(mainFile.lua).not.toContain("local Class =");
+});
+
+test("customName rename namespace", () => {
+    const testModule = util.testModule`
+        /** @customName Test2 **/
+        namespace Test {
+            /** @customName Func2 **/
+            export function Func(): string {
+                return "hi";
+            }
+        }
+
+        export const result = Test.Func();
+    `;
+
+    testModule.expectToEqual({ result: "hi" });
+
+    const result = testModule.getLuaResult();
+    expect(result.transpiledFiles).not.toHaveLength(0);
+
+    const mainFile = result.transpiledFiles.find(f => f.outPath === "main.lua");
+    expect(mainFile).toBeDefined();
+
+    // avoid ts error "not defined", even though toBeDefined is being checked above
+    if (!mainFile) return;
+
+    expect(mainFile.lua).toBeDefined();
+    expect(mainFile.lua).toContain("Test2 =");
+    expect(mainFile.lua).toContain("Test2.Func2");
+    expect(mainFile.lua).not.toContain("Test =");
+    expect(mainFile.lua).not.toContain("Func(");
+});
+
+test("customName rename declared function", () => {
+    const testModule = util.testModule`
+        /** @customName Test2 **/
+        declare function Test(this: void): void;
+        
+        Test();
+    `;
+
+    const result = testModule.getLuaResult();
+    expect(result.transpiledFiles).not.toHaveLength(0);
+
+    const mainFile = result.transpiledFiles.find(f => f.outPath === "main.lua");
+    expect(mainFile).toBeDefined();
+
+    // avoid ts error "not defined", even though toBeDefined is being checked above
+    if (!mainFile) return;
+
+    expect(mainFile.lua).toBeDefined();
+    expect(mainFile.lua).toContain("Test2(");
+    expect(mainFile.lua).not.toContain("Test(");
 });

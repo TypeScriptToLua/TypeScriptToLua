@@ -58,11 +58,11 @@ export function __TS__ArraySplice<T>(this: T[], ...args: any[]): T[] {
             if (this[from - 1]) {
                 this[to - 1] = this[from - 1];
             } else {
-                this[to - 1] = undefined;
+                this[to - 1] = undefined!;
             }
         }
         for (const k of $range(len - actualDeleteCount + itemCount + 1, len)) {
-            this[k - 1] = undefined;
+            this[k - 1] = undefined!;
         }
     } else if (itemCount > actualDeleteCount) {
         for (const k of $range(len - actualDeleteCount, start + 1, -1)) {
@@ -72,7 +72,7 @@ export function __TS__ArraySplice<T>(this: T[], ...args: any[]): T[] {
             if (this[from - 1]) {
                 this[to - 1] = this[from - 1];
             } else {
-                this[to - 1] = undefined;
+                this[to - 1] = undefined!;
             }
         }
     }
@@ -84,7 +84,7 @@ export function __TS__ArraySplice<T>(this: T[], ...args: any[]): T[] {
     }
 
     for (const k of $range(this.length, len - actualDeleteCount + itemCount + 1, -1)) {
-        this[k - 1] = undefined;
+        this[k - 1] = undefined!;
     }
 
     return out;

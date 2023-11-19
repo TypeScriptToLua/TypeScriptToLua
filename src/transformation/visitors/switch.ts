@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
+import { transformInPrecedingStatementScope, WithPrecedingStatements } from "../utils/preceding-statements";
 import { ScopeType, separateHoistedStatements } from "../utils/scope";
 import { createShortCircuitBinaryExpressionPrecedingStatements } from "./binary-expression";
 
@@ -9,10 +9,16 @@ const containsBreakOrReturn = (nodes: Iterable<ts.Node>): boolean => {
     for (const s of nodes) {
         if (ts.isBreakStatement(s) || ts.isReturnStatement(s)) {
             return true;
-        } else if (ts.isBlock(s) && containsBreakOrReturn(s.getChildren())) {
+        } else if (ts.isBlock(s) && containsBreakOrReturn(s.statements)) {
             return true;
-        } else if (s.kind === ts.SyntaxKind.SyntaxList && containsBreakOrReturn(s.getChildren())) {
-            return true;
+        } else if (s.kind === ts.SyntaxKind.SyntaxList) {
+            // We cannot use getChildren() because that breaks when using synthetic nodes from transformers
+            // So get children the long way
+            const children: ts.Node[] = [];
+            ts.forEachChild(s, c => children.push(c));
+            if (containsBreakOrReturn(children)) {
+                return true;
+            }
         }
     }
 
@@ -24,7 +30,7 @@ const createOrExpression = (
     left: lua.Expression,
     right: lua.Expression,
     rightPrecedingStatements: lua.Statement[]
-): [lua.Statement[], lua.Expression] => {
+): WithPrecedingStatements<lua.Expression> => {
     if (rightPrecedingStatements.length > 0) {
         return createShortCircuitBinaryExpressionPrecedingStatements(
             context,
@@ -34,7 +40,10 @@ const createOrExpression = (
             ts.SyntaxKind.BarBarToken
         );
     } else {
-        return [rightPrecedingStatements, lua.createBinaryExpression(left, right, lua.SyntaxKind.OrOperator)];
+        return {
+            precedingStatements: rightPrecedingStatements,
+            result: lua.createBinaryExpression(left, right, lua.SyntaxKind.OrOperator),
+        };
     }
 };
 
@@ -44,8 +53,8 @@ const coalesceCondition = (
     switchVariable: lua.Identifier,
     expression: ts.Expression,
     context: TransformationContext
-): [lua.Statement[], lua.Expression] => {
-    const [precedingStatements, transformedExpression] = transformInPrecedingStatementScope(context, () =>
+): WithPrecedingStatements<lua.Expression> => {
+    const { precedingStatements, result: transformedExpression } = transformInPrecedingStatementScope(context, () =>
         context.transformExpression(expression)
     );
 
@@ -60,7 +69,7 @@ const coalesceCondition = (
     }
 
     // Next condition
-    return [[...conditionPrecedingStatements, ...precedingStatements], comparison];
+    return { precedingStatements: [...conditionPrecedingStatements, ...precedingStatements], result: comparison };
 };
 
 export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (statement, context) => {
@@ -108,13 +117,15 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
 
             // Compute the condition for the if statement
             if (!ts.isDefaultClause(clause)) {
-                [conditionPrecedingStatements, condition] = coalesceCondition(
+                const { precedingStatements, result } = coalesceCondition(
                     condition,
                     conditionPrecedingStatements,
                     switchVariable,
                     clause.expression,
                     context
                 );
+                conditionPrecedingStatements = precedingStatements;
+                condition = result;
 
                 // Skip empty clauses unless final clause (i.e side-effects)
                 if (i !== clauses.length - 1 && clause.statements.length === 0) continue;
@@ -126,12 +137,15 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
                         lua.createVariableDeclarationStatement(conditionVariable, condition)
                     );
                 } else {
-                    [conditionPrecedingStatements, condition] = createOrExpression(
+                    const { precedingStatements, result } = createOrExpression(
                         context,
                         conditionVariable,
                         condition,
                         conditionPrecedingStatements
                     );
+                    conditionPrecedingStatements = precedingStatements;
+                    condition = result;
+
                     statements.push(
                         ...conditionPrecedingStatements,
                         lua.createAssignmentStatement(conditionVariable, condition)
@@ -159,12 +173,14 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
                 if (i === clauses.length - 1) {
                     // Evaluate the final condition that we may be skipping
                     if (condition) {
-                        [conditionPrecedingStatements, condition] = createOrExpression(
+                        const { precedingStatements, result } = createOrExpression(
                             context,
                             conditionVariable,
                             condition,
                             conditionPrecedingStatements
                         );
+                        conditionPrecedingStatements = precedingStatements;
+                        condition = result;
                         statements.push(
                             ...conditionPrecedingStatements,
                             lua.createAssignmentStatement(conditionVariable, condition)

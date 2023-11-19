@@ -65,7 +65,10 @@ export class TransformationContext {
     /** @internal */
     public transformNodeRaw(node: ts.Node, isExpression?: boolean) {
         // TODO: Move to visitors?
-        if (node.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.DeclareKeyword)) {
+        if (
+            ts.canHaveModifiers(node) &&
+            node.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.DeclareKeyword)
+        ) {
             return [];
         }
 

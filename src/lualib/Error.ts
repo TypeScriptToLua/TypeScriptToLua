@@ -3,7 +3,10 @@ interface ErrorType {
     new (...args: any[]): Error;
 }
 
-function getErrorStack(constructor: () => any): string {
+function getErrorStack(constructor: () => any): string | undefined {
+    // If debug module is not available in this environment, don't bother trying to get stack trace
+    if (debug === undefined) return undefined;
+
     let level = 1;
     while (true) {
         const info = debug.getinfo(level, "f");
@@ -27,7 +30,7 @@ function getErrorStack(constructor: () => any): string {
 
 function wrapErrorToString<T extends Error>(getDescription: (this: T) => string): (this: T) => string {
     return function (this: Error): string {
-        const description = getDescription.call(this);
+        const description = getDescription.call(this as T);
         const caller = debug.getinfo(3, "f");
         // @ts-ignore Fails when compiled with Lua 5.0 types
         const isClassicLua = _VERSION.includes("Lua 5.0") || _VERSION === "Lua 5.1";
@@ -49,12 +52,12 @@ function initErrorClass(Type: ErrorType, name: string): any {
 export const Error: ErrorConstructor = initErrorClass(
     class implements Error {
         public name = "Error";
-        public stack: string;
+        public stack?: string;
 
         constructor(public message = "") {
             this.stack = getErrorStack((this.constructor as any).new);
             const metatable = getmetatable(this);
-            if (!metatable.__errorToStringPatched) {
+            if (metatable && !metatable.__errorToStringPatched) {
                 metatable.__errorToStringPatched = true;
                 metatable.__tostring = wrapErrorToString(metatable.__tostring);
             }

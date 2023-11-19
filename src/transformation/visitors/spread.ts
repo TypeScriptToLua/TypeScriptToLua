@@ -1,8 +1,9 @@
 import * as ts from "typescript";
 import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
+import { assertNever } from "../../utils";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { isLuaIterable } from "../utils/language-extensions";
+import { getIterableExtensionKindForNode, IterableExtensionKind } from "../utils/language-extensions";
 import { createUnpackCall } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import {
@@ -12,7 +13,7 @@ import {
     isFunctionScopeWithDefinition,
     ScopeType,
 } from "../utils/scope";
-import { isArrayType, findFirstNonOuterParent } from "../utils/typescript";
+import { findFirstNonOuterParent, isAlwaysArrayType } from "../utils/typescript";
 import { isMultiReturnCall } from "./language-extensions/multi";
 import { isGlobalVarargConstant } from "./language-extensions/vararg";
 
@@ -38,7 +39,10 @@ export function isOptimizedVarArgSpread(context: TransformationContext, symbol: 
     }
 
     // Scope cannot be an async function
-    if (scope.node.modifiers?.some(m => m.kind === ts.SyntaxKind.AsyncKeyword)) {
+    if (
+        ts.canHaveModifiers(scope.node) &&
+        ts.getModifiers(scope.node)?.some(m => m.kind === ts.SyntaxKind.AsyncKeyword)
+    ) {
         return false;
     }
 
@@ -76,12 +80,24 @@ export const transformSpreadElement: FunctionVisitor<ts.SpreadElement> = (node, 
     const innerExpression = context.transformExpression(node.expression);
     if (isMultiReturnCall(context, tsInnerExpression)) return innerExpression;
 
-    const type = context.checker.getTypeAtLocation(node.expression); // not ts-inner expression, in case of casts
-    if (isLuaIterable(context, type)) {
-        return transformLuaLibFunction(context, LuaLibFeature.LuaIteratorSpread, node, innerExpression);
+    const iterableExtensionType = getIterableExtensionKindForNode(context, node.expression);
+    if (iterableExtensionType) {
+        if (iterableExtensionType === IterableExtensionKind.Iterable) {
+            return transformLuaLibFunction(context, LuaLibFeature.LuaIteratorSpread, node, innerExpression);
+        } else if (iterableExtensionType === IterableExtensionKind.Pairs) {
+            const objectEntries = transformLuaLibFunction(context, LuaLibFeature.ObjectEntries, node, innerExpression);
+            return createUnpackCall(context, objectEntries, node);
+        } else if (iterableExtensionType === IterableExtensionKind.PairsKey) {
+            const objectKeys = transformLuaLibFunction(context, LuaLibFeature.ObjectKeys, node, innerExpression);
+            return createUnpackCall(context, objectKeys, node);
+        } else {
+            assertNever(iterableExtensionType);
+        }
     }
 
-    if (isArrayType(context, type)) {
+    const type = context.checker.getTypeAtLocation(node.expression); // not ts-inner expression, in case of casts
+    if (isAlwaysArrayType(context, type)) {
+        // All union members must be arrays to be able to shortcut to unpack call
         return createUnpackCall(context, innerExpression, node);
     }
 

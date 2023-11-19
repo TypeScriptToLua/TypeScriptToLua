@@ -1,4 +1,4 @@
-export class WeakMap<K, V> {
+export class WeakMap<K extends AnyNotNil, V> {
     public static [Symbol.species] = WeakMap;
     public [Symbol.toStringTag] = "WeakMap";
 
@@ -30,7 +30,7 @@ export class WeakMap<K, V> {
 
     public delete(key: K): boolean {
         const contains = this.has(key);
-        this.items.set(key, undefined);
+        this.items.set(key, undefined!);
         return contains;
     }
 

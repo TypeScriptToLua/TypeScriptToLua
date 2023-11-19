@@ -4,10 +4,8 @@ import { TransformationContext } from "../../../context";
 import { transformFunctionToExpression } from "../../function";
 import { transformPropertyName } from "../../literal";
 import { isStaticNode } from "../utils";
-import { createDecoratingExpression, transformDecoratorExpression } from "../decorators";
 import { createPrototypeName } from "./constructor";
-import { transformLuaLibFunction, LuaLibFeature } from "../../../utils/lualib";
-import { isNonNull } from "../../../../utils";
+import { createClassMethodDecoratingExpression } from "../decorators";
 
 export function transformMemberExpressionOwnerName(
     node: ts.PropertyDeclaration | ts.MethodDeclaration | ts.AccessorDeclaration,
@@ -28,55 +26,45 @@ export function transformMethodDeclaration(
     context: TransformationContext,
     node: ts.MethodDeclaration,
     className: lua.Identifier
-): lua.Statement | undefined {
+): lua.Statement[] {
     // Don't transform methods without body (overload declarations)
-    if (!node.body) return;
+    if (!node.body) return [];
 
     const methodTable = transformMemberExpressionOwnerName(node, className);
     const methodName = transformMethodName(context, node);
     const [functionExpression] = transformFunctionToExpression(context, node);
 
-    return lua.createAssignmentStatement(
-        lua.createTableIndexExpression(methodTable, methodName),
-        functionExpression,
-        node
-    );
-}
+    const methodHasDecorators = (ts.getDecorators(node)?.length ?? 0) > 0;
+    const methodHasParameterDecorators = node.parameters.some(p => (ts.getDecorators(p)?.length ?? 0) > 0); // Legacy decorators
 
-export function createMethodDecoratingExpression(
-    context: TransformationContext,
-    node: ts.MethodDeclaration,
-    className: lua.Identifier
-): lua.Statement | undefined {
-    const methodTable = transformMemberExpressionOwnerName(node, className);
-    const methodName = transformMethodName(context, node);
-
-    const parameterDecorators = node.parameters
-        .flatMap((parameter, index) =>
-            ts
-                .getDecorators(parameter)
-                ?.map(decorator =>
-                    transformLuaLibFunction(
-                        context,
-                        LuaLibFeature.DecorateParam,
-                        node,
-                        lua.createNumericLiteral(index),
-                        transformDecoratorExpression(context, decorator)
-                    )
-                )
-        )
-        .filter(isNonNull);
-
-    const methodDecorators = ts.getDecorators(node)?.map(d => transformDecoratorExpression(context, d)) ?? [];
-
-    if (methodDecorators.length > 0 || parameterDecorators.length > 0) {
-        const decorateMethod = createDecoratingExpression(
-            context,
-            node.kind,
-            [...methodDecorators, ...parameterDecorators],
-            methodTable,
-            methodName
-        );
-        return lua.createExpressionStatement(decorateMethod);
+    if (methodHasDecorators || methodHasParameterDecorators) {
+        if (context.options.experimentalDecorators) {
+            // Legacy decorator statement
+            return [
+                lua.createAssignmentStatement(
+                    lua.createTableIndexExpression(methodTable, methodName),
+                    functionExpression
+                ),
+                lua.createExpressionStatement(
+                    createClassMethodDecoratingExpression(context, node, functionExpression, className)
+                ),
+            ];
+        } else {
+            return [
+                lua.createAssignmentStatement(
+                    lua.createTableIndexExpression(methodTable, methodName),
+                    createClassMethodDecoratingExpression(context, node, functionExpression, className),
+                    node
+                ),
+            ];
+        }
+    } else {
+        return [
+            lua.createAssignmentStatement(
+                lua.createTableIndexExpression(methodTable, methodName),
+                functionExpression,
+                node
+            ),
+        ];
     }
 }

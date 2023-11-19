@@ -1,36 +1,34 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
+import { transformInPrecedingStatementScope, WithPrecedingStatements } from "../utils/preceding-statements";
 import { performHoisting, ScopeType } from "../utils/scope";
 import { transformBlockOrStatement } from "./block";
 import { canBeFalsy } from "../utils/typescript";
 import { truthyOnlyConditionalValue } from "../utils/diagnostics";
 
-type EvaluatedExpression = [precedingStatemens: lua.Statement[], value: lua.Expression];
-
 function transformProtectedConditionalExpression(
     context: TransformationContext,
     expression: ts.ConditionalExpression,
-    condition: EvaluatedExpression,
-    whenTrue: EvaluatedExpression,
-    whenFalse: EvaluatedExpression
+    condition: WithPrecedingStatements<lua.Expression>,
+    whenTrue: WithPrecedingStatements<lua.Expression>,
+    whenFalse: WithPrecedingStatements<lua.Expression>
 ): lua.Expression {
     const tempVar = context.createTempNameForNode(expression.condition);
 
-    const trueStatements = whenTrue[0].concat(
-        lua.createAssignmentStatement(lua.cloneIdentifier(tempVar), whenTrue[1], expression.whenTrue)
+    const trueStatements = whenTrue.precedingStatements.concat(
+        lua.createAssignmentStatement(lua.cloneIdentifier(tempVar), whenTrue.result, expression.whenTrue)
     );
 
-    const falseStatements = whenFalse[0].concat(
-        lua.createAssignmentStatement(lua.cloneIdentifier(tempVar), whenFalse[1], expression.whenFalse)
+    const falseStatements = whenFalse.precedingStatements.concat(
+        lua.createAssignmentStatement(lua.cloneIdentifier(tempVar), whenFalse.result, expression.whenFalse)
     );
 
     context.addPrecedingStatements([
         lua.createVariableDeclarationStatement(tempVar, undefined, expression.condition),
-        ...condition[0],
+        ...condition.precedingStatements,
         lua.createIfStatement(
-            condition[1],
+            condition.result,
             lua.createBlock(trueStatements, expression.whenTrue),
             lua.createBlock(falseStatements, expression.whenFalse),
             expression
@@ -53,17 +51,17 @@ export const transformConditionalExpression: FunctionVisitor<ts.ConditionalExpre
         context.transformExpression(expression.whenFalse)
     );
     if (
-        whenTrue[0].length > 0 ||
-        whenFalse[0].length > 0 ||
+        whenTrue.precedingStatements.length > 0 ||
+        whenFalse.precedingStatements.length > 0 ||
         canBeFalsy(context, context.checker.getTypeAtLocation(expression.whenTrue))
     ) {
         return transformProtectedConditionalExpression(context, expression, condition, whenTrue, whenFalse);
     }
 
     // condition and v1 or v2
-    context.addPrecedingStatements(condition[0]);
-    const conditionAnd = lua.createBinaryExpression(condition[1], whenTrue[1], lua.SyntaxKind.AndOperator);
-    return lua.createBinaryExpression(conditionAnd, whenFalse[1], lua.SyntaxKind.OrOperator, expression);
+    context.addPrecedingStatements(condition.precedingStatements);
+    const conditionAnd = lua.createBinaryExpression(condition.result, whenTrue.result, lua.SyntaxKind.AndOperator);
+    return lua.createBinaryExpression(conditionAnd, whenFalse.result, lua.SyntaxKind.OrOperator, expression);
 };
 
 export function transformIfStatement(statement: ts.IfStatement, context: TransformationContext): lua.IfStatement {
@@ -80,7 +78,7 @@ export function transformIfStatement(statement: ts.IfStatement, context: Transfo
     if (statement.elseStatement) {
         if (ts.isIfStatement(statement.elseStatement)) {
             const tsElseStatement = statement.elseStatement;
-            const [precedingStatements, elseStatement] = transformInPrecedingStatementScope(context, () =>
+            const { precedingStatements, result: elseStatement } = transformInPrecedingStatementScope(context, () =>
                 transformIfStatement(tsElseStatement, context)
             );
             // If else-if condition generates preceding statements, we can't use elseif, we have to break it down:

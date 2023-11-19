@@ -11,7 +11,7 @@ import { transformConsoleCall } from "./console";
 import { transformFunctionPrototypeCall, transformFunctionProperty } from "./function";
 import { tryTransformBuiltinGlobalCall } from "./global";
 import { transformMathCall, transformMathProperty } from "./math";
-import { transformNumberConstructorCall, transformNumberPrototypeCall } from "./number";
+import { transformNumberConstructorCall, transformNumberPrototypeCall, transformNumberProperty } from "./number";
 import { transformObjectConstructorCall, tryTransformObjectPrototypeCall } from "./object";
 import { transformPromiseConstructorCall } from "./promise";
 import { transformStringConstructorCall, transformStringProperty, transformStringPrototypeCall } from "./string";
@@ -27,6 +27,8 @@ export function transformBuiltinPropertyAccessExpression(
 
     if (ts.isIdentifier(node.expression) && isStandardLibraryType(context, ownerType, undefined)) {
         switch (ownerType.symbol.name) {
+            case "NumberConstructor":
+                return transformNumberProperty(context, node);
             case "Math":
                 return transformMathProperty(context, node);
             case "SymbolConstructor":
@@ -162,7 +164,6 @@ export function transformBuiltinIdentifierExpression(
                 const huge = lua.createStringLiteral("huge");
                 return lua.createTableIndexExpression(math, huge, node);
             }
-
         case "globalThis":
             return lua.createIdentifier("_G", node, getIdentifierSymbolId(context, node, symbol), "globalThis");
     }

@@ -3,7 +3,7 @@ import { Mapping, SourceMapGenerator, SourceNode } from "source-map";
 import * as ts from "typescript";
 import { CompilerOptions, isBundleEnabled, LuaLibImportKind, LuaTarget } from "./CompilerOptions";
 import * as lua from "./LuaAST";
-import { loadInlineLualibFeatures, LuaLibFeature, loadImportedLualibFeatures } from "./LuaLib";
+import { loadImportedLualibFeatures, loadInlineLualibFeatures, LuaLibFeature } from "./LuaLib";
 import { isValidLuaIdentifier, shouldAllowUnicode } from "./transformation/utils/safe-names";
 import { EmitHost, getEmitPath } from "./transpilation";
 import { intersperse, normalizeSlashes } from "./utils";
@@ -235,7 +235,10 @@ export class LuaPrinter {
 
         const luaTarget = this.options.luaTarget ?? LuaTarget.Universal;
         const luaLibImport = this.options.luaLibImport ?? LuaLibImportKind.Require;
-        if (luaLibImport === LuaLibImportKind.Require && file.luaLibFeatures.size > 0) {
+        if (
+            (luaLibImport === LuaLibImportKind.Require || luaLibImport === LuaLibImportKind.RequireMinimal) &&
+            file.luaLibFeatures.size > 0
+        ) {
             // Import lualib features
             sourceChunks = this.printStatementArray(
                 loadImportedLualibFeatures(file.luaLibFeatures, luaTarget, this.emitHost)
@@ -609,6 +612,8 @@ export class LuaPrinter {
                 return this.printIdentifier(expression as lua.Identifier);
             case lua.SyntaxKind.TableIndexExpression:
                 return this.printTableIndexExpression(expression as lua.TableIndexExpression);
+            case lua.SyntaxKind.ParenthesizedExpression:
+                return this.printParenthesizedExpression(expression as lua.ParenthesizedExpression);
             default:
                 throw new Error(`Tried to print unknown statement kind: ${lua.SyntaxKind[expression.kind]}`);
         }
@@ -819,6 +824,10 @@ export class LuaPrinter {
         return this.createSourceNode(expression, chunks);
     }
 
+    public printParenthesizedExpression(expression: lua.ParenthesizedExpression) {
+        return this.createSourceNode(expression, ["(", this.printExpression(expression.expression), ")"]);
+    }
+
     public printOperator(kind: lua.Operator): SourceNode {
         return new SourceNode(null, null, this.relativeSourcePath, LuaPrinter.operatorMap[kind]);
     }
@@ -899,9 +908,9 @@ export class LuaPrinter {
                 map.addMapping(currentMapping);
             }
 
-            for (const chunk of sourceNode.children) {
+            for (const chunk of sourceNode.children as SourceChunk[]) {
                 if (typeof chunk === "string") {
-                    const lines = (chunk as string).split("\n");
+                    const lines = chunk.split("\n");
                     if (lines.length > 1) {
                         generatedLine += lines.length - 1;
                         generatedColumn = 0;

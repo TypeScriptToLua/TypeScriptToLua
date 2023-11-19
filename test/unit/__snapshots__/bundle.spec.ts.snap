@@ -1,8 +1,8 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`LuaLibImportKind.Inline generates a warning: diagnostics 1`] = `"warning TSTL: Using 'luaBundle' with 'luaLibImport: \\"inline\\"' might generate duplicate code. It is recommended to use 'luaLibImport: \\"require\\"'."`;
+exports[`LuaLibImportKind.Inline generates a warning: diagnostics 1`] = `"warning TSTL: Using 'luaBundle' with 'luaLibImport: "inline"' might generate duplicate code. It is recommended to use 'luaLibImport: "require"'."`;
 
-exports[`bundling not allowed for buildmode library: diagnostics 1`] = `"error TSTL: Cannot bundle probjects with\\"buildmode\\": \\"library\\". Projects including the library can still bundle (which will include external library files)."`;
+exports[`bundling not allowed for buildmode library: diagnostics 1`] = `"error TSTL: Cannot bundle projects with "buildmode": "library". Projects including the library can still bundle (which will include external library files)."`;
 
 exports[`luaEntry doesn't exist: diagnostics 1`] = `"error TSTL: Could not find bundle entry point 'entry.ts'. It should be a file in the project."`;
 

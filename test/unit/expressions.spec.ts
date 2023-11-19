@@ -173,6 +173,13 @@ test("Typescript 4.7 instantiation expression", () => {
     `.expectToMatchJsResult();
 });
 
+test("Typescript 4.9 satisfies expression", () => {
+    util.testFunction`
+        const foo = { a: 1 } satisfies { a: number };
+        return foo.a;
+    `.expectToMatchJsResult();
+});
+
 test.each([
     '"foobar"',
     "17",

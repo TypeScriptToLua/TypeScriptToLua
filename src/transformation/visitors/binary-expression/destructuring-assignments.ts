@@ -97,15 +97,14 @@ function transformArrayLiteralAssignmentPattern(
                     lua.SyntaxKind.EqualityOperator
                 );
 
-                const [defaultPrecedingStatements, defaultAssignmentStatements] = transformInPrecedingStatementScope(
-                    context,
-                    () =>
+                const { precedingStatements: defaultPrecedingStatements, result: defaultAssignmentStatements } =
+                    transformInPrecedingStatementScope(context, () =>
                         transformAssignment(
                             context,
                             (element as ts.BinaryExpression).left,
                             context.transformExpression((element as ts.BinaryExpression).right)
                         )
-                );
+                    );
 
                 // Keep preceding statements inside if block
                 defaultAssignmentStatements.unshift(...defaultPrecedingStatements);
@@ -126,7 +125,7 @@ function transformArrayLiteralAssignmentPattern(
             case ts.SyntaxKind.Identifier:
             case ts.SyntaxKind.PropertyAccessExpression:
             case ts.SyntaxKind.ElementAccessExpression:
-                const [precedingStatements, statements] = transformInPrecedingStatementScope(context, () =>
+                const { precedingStatements, result: statements } = transformInPrecedingStatementScope(context, () =>
                     transformAssignment(context, element, indexedRoot, rightHasPrecedingStatements)
                 );
                 return [...precedingStatements, ...statements]; // Keep preceding statements in order
@@ -144,14 +143,15 @@ function transformArrayLiteralAssignmentPattern(
                     lua.createNumericLiteral(index)
                 );
 
-                const [spreadPrecedingStatements, spreadStatements] = transformInPrecedingStatementScope(context, () =>
-                    transformAssignment(
-                        context,
-                        (element as ts.SpreadElement).expression,
-                        restElements,
-                        rightHasPrecedingStatements
-                    )
-                );
+                const { precedingStatements: spreadPrecedingStatements, result: spreadStatements } =
+                    transformInPrecedingStatementScope(context, () =>
+                        transformAssignment(
+                            context,
+                            (element as ts.SpreadElement).expression,
+                            restElements,
+                            rightHasPrecedingStatements
+                        )
+                    );
                 return [...spreadPrecedingStatements, ...spreadStatements]; // Keep preceding statements in order
             case ts.SyntaxKind.OmittedExpression:
                 return [];
@@ -279,9 +279,8 @@ function transformPropertyAssignment(
             const left = cast(context.transformExpression(node.initializer.left), lua.isTableIndexExpression);
 
             const rightExpression = node.initializer.right;
-            const [defaultPrecedingStatements, defaultExpression] = transformInPrecedingStatementScope(context, () =>
-                context.transformExpression(rightExpression)
-            );
+            const { precedingStatements: defaultPrecedingStatements, result: defaultExpression } =
+                transformInPrecedingStatementScope(context, () => context.transformExpression(rightExpression));
 
             const tableTemp = context.createTempNameForLuaExpression(left.table);
             const indexTemp = context.createTempNameForLuaExpression(left.index);
@@ -292,7 +291,7 @@ function transformPropertyAssignment(
             );
 
             // obj[index] = extractingExpression ?? defaultExpression
-            const [rightPrecedingStatements, rhs] = transformBinaryOperation(
+            const { precedingStatements: rightPrecedingStatements, result: rhs } = transformBinaryOperation(
                 context,
                 extractingExpression,
                 defaultExpression,

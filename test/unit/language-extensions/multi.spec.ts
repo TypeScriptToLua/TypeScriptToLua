@@ -327,3 +327,49 @@ test("return LuaMultiReturn from catch", () => {
         .withLanguageExtensions()
         .expectToEqual(2);
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1404
+test("LuaMultiReturn applies after casting a function (#1404)", () => {
+    util.testFunction`
+        let swap: any = (a: number, b: number) => $multi(b, a);
+        let [a, b] = (swap as (...args: any) => LuaMultiReturn<[number, number]>)(4, 3);
+        return [a, b];
+    `
+        .withLanguageExtensions()
+        .expectToEqual([3, 4]);
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1411
+describe("LuaMultiReturn returns all values even when indexed with [0] #1411", () => {
+    const sharedCode = `
+        declare function select<T>(this:void, index: '#', ...args: T[]): number;
+
+        function foo(this: void): LuaMultiReturn<[number, number]> {
+            return $multi(123, 456);
+        }
+
+        function bar(this: void): number {
+            return foo()[0];
+        }
+    `;
+    test("Returns the correct value", () => {
+        util.testFunction`
+            return bar();
+        `
+            .setTsHeader(sharedCode)
+            .withLanguageExtensions()
+            .expectToEqual(123);
+    });
+
+    // We require an extra test since the test above would succeed even if bar() returned more than one value.
+    // This is because our test helper always returns just the first lua value returned from the testFunction.
+    // Here we need to test explicitly that only one value is returned.
+    test("Does not return multiple values", () => {
+        util.testFunction`
+            return select("#", bar());
+        `
+            .setTsHeader(sharedCode)
+            .withLanguageExtensions()
+            .expectToEqual(1);
+    });
+});

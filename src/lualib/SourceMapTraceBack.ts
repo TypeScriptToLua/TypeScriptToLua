@@ -4,10 +4,14 @@
 import { __TS__Match } from "./Match";
 
 interface SourceMap {
-    [line: number]: number | { line: number; file: string };
+    [line: string]: number | { line: number; file: string };
 }
 
-declare function __TS__originalTraceback(this: void, thread?: LuaThread, message?: string, level?: number);
+declare global {
+    function __TS__originalTraceback(this: void, thread?: LuaThread, message?: string, level?: number): void;
+    // eslint-disable-next-line no-var
+    var __TS__sourcemap: Record<string, SourceMap>;
+}
 
 export function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap: SourceMap): void {
     globalThis.__TS__sourcemap = globalThis.__TS__sourcemap || {};
@@ -15,8 +19,8 @@ export function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap
 
     if (globalThis.__TS__originalTraceback === undefined) {
         const originalTraceback = debug.traceback;
-        globalThis.__TS__originalTraceback = originalTraceback;
-        debug.traceback = ((thread, message, level) => {
+        globalThis.__TS__originalTraceback = originalTraceback as typeof __TS__originalTraceback;
+        debug.traceback = ((thread?: LuaThread, message?: string, level?: number) => {
             let trace: string;
             if (thread === undefined && message === undefined && level === undefined) {
                 trace = originalTraceback();
@@ -33,7 +37,7 @@ export function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap
 
             const replacer = (file: string, srcFile: string, line: string) => {
                 const fileSourceMap: SourceMap = globalThis.__TS__sourcemap[file];
-                if (fileSourceMap && fileSourceMap[line]) {
+                if (fileSourceMap !== undefined && fileSourceMap[line] !== undefined) {
                     const data = fileSourceMap[line];
                     if (typeof data === "number") {
                         return `${srcFile}:${data}`;
@@ -51,7 +55,7 @@ export function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap
 
             const stringReplacer = (file: string, line: string) => {
                 const fileSourceMap: SourceMap = globalThis.__TS__sourcemap[file];
-                if (fileSourceMap && fileSourceMap[line]) {
+                if (fileSourceMap !== undefined && fileSourceMap[line] !== undefined) {
                     const chunkName = __TS__Match(file, '%[string "([^"]+)"%]')[0];
                     const [sourceName] = string.gsub(chunkName, ".lua$", ".ts");
                     const data = fileSourceMap[line];

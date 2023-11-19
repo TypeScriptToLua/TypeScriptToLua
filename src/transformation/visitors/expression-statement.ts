@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
-import { FunctionVisitor, tempSymbolId, TransformationContext } from "../context";
+import { FunctionVisitor, tempSymbolId } from "../context";
 import { transformBinaryExpressionStatement } from "./binary-expression";
 import { transformUnaryExpressionStatement } from "./unary-expression";
 
@@ -15,15 +15,10 @@ export const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatemen
         return binaryExpressionResult;
     }
 
-    return transformExpressionToStatement(context, node.expression);
+    return wrapInStatement(context.transformExpression(node.expression));
 };
 
-export function transformExpressionToStatement(
-    context: TransformationContext,
-    expression: ts.Expression
-): lua.Statement | undefined {
-    const result = context.transformExpression(expression);
-
+export function wrapInStatement(result: lua.Expression): lua.Statement | undefined {
     const isTempVariable = lua.isIdentifier(result) && result.symbolId === tempSymbolId;
     if (isTempVariable) {
         return undefined;

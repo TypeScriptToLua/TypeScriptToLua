@@ -15,6 +15,7 @@ import { transformInPrecedingStatementScope } from "../utils/preceding-statement
 import { getOptionalContinuationData, transformOptionalChain } from "./optional-chaining";
 import { transformImportExpression } from "./modules/import";
 import { transformLanguageExtensionCallExpression } from "./language-extensions/call-extension";
+import { getCustomNameFromSymbol } from "./identifier";
 
 export function validateArguments(
     context: TransformationContext,
@@ -80,9 +81,8 @@ export function transformCallAndArguments(
     signature?: ts.Signature,
     callContext?: ts.Expression
 ): [lua.Expression, lua.Expression[]] {
-    const [argPrecedingStatements, transformedArguments] = transformInPrecedingStatementScope(context, () =>
-        transformArguments(context, params, signature, callContext)
-    );
+    const { precedingStatements: argPrecedingStatements, result: transformedArguments } =
+        transformInPrecedingStatementScope(context, () => transformArguments(context, params, signature, callContext));
     return transformCallWithArguments(context, callExpression, transformedArguments, argPrecedingStatements);
 }
 
@@ -125,9 +125,8 @@ export function transformContextualCallExpression(
     }
     const left = ts.isCallExpression(node) ? getCalledExpression(node) : node.tag;
 
-    let [argPrecedingStatements, transformedArguments] = transformInPrecedingStatementScope(context, () =>
-        transformArguments(context, args, signature)
-    );
+    let { precedingStatements: argPrecedingStatements, result: transformedArguments } =
+        transformInPrecedingStatementScope(context, () => transformArguments(context, args, signature));
 
     if (
         ts.isPropertyAccessExpression(left) &&
@@ -137,12 +136,16 @@ export function transformContextualCallExpression(
     ) {
         // table:name()
         const table = context.transformExpression(left.expression);
-        return lua.createMethodCallExpression(
-            table,
-            lua.createIdentifier(left.name.text, left.name),
-            transformedArguments,
-            node
-        );
+        let name = left.name.text;
+
+        const symbol = context.checker.getSymbolAtLocation(left);
+        const customName = getCustomNameFromSymbol(symbol);
+
+        if (customName) {
+            name = customName;
+        }
+
+        return lua.createMethodCallExpression(table, lua.createIdentifier(name, left.name), transformedArguments, node);
     } else if (ts.isElementAccessExpression(left) || ts.isPropertyAccessExpression(left)) {
         if (isExpressionWithEvaluationEffect(left.expression)) {
             return transformElementAccessCall(context, left, transformedArguments, argPrecedingStatements);

@@ -40,7 +40,7 @@ export function resolvePlugin(
     kind: string,
     optionName: string,
     basedir: string,
-    query: string,
+    query: unknown,
     importName = "default"
 ): { error?: ts.Diagnostic; result?: unknown } {
     if (typeof query !== "string") {

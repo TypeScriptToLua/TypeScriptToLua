@@ -47,6 +47,8 @@ jobs:
     steps:
       - name: Lua Install
         run: sudo apt-get install lua5.3 luajit
+      - name: Add Brew to Path (Required since Nov 2022)
+        run: echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
       - name: Glow Install
         run: brew install glow
       # Checkout master & commit

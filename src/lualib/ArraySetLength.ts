@@ -9,7 +9,7 @@ export function __TS__ArraySetLength<T>(this: T[], length: number): number {
         throw `invalid array length: ${length}`;
     }
     for (const i of $range(length + 1, this.length)) {
-        this[i - 1] = undefined;
+        this[i - 1] = undefined!;
     }
     return length;
 }

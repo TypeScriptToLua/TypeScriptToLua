@@ -1,0 +1,6 @@
+{
+    "compilerOptions": {
+        "moduleResolution": "node16"
+    },
+    "references": [{ "path": "./node_modules/dependency1" }]
+}

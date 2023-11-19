@@ -7,22 +7,52 @@ import { invalidCallExtensionUse } from "../utils/diagnostics";
 import { createExportedIdentifier, getSymbolExportScope } from "../utils/export";
 import { createSafeName, hasUnsafeIdentifierName } from "../utils/safe-names";
 import { getIdentifierSymbolId } from "../utils/symbols";
-import { isOptionalContinuation } from "./optional-chaining";
+import { getOptionalContinuationData, isOptionalContinuation } from "./optional-chaining";
 import { isStandardLibraryType } from "../utils/typescript";
 import { getExtensionKindForNode, getExtensionKindForSymbol } from "../utils/language-extensions";
 import { callExtensions } from "./language-extensions/call-extension";
 import { isIdentifierExtensionValue, reportInvalidExtensionValue } from "./language-extensions/identifier";
+import { Annotation, AnnotationKind, getNodeAnnotations } from "../utils/annotations";
 
 export function transformIdentifier(context: TransformationContext, identifier: ts.Identifier): lua.Identifier {
     return transformNonValueIdentifier(context, identifier, context.checker.getSymbolAtLocation(identifier));
 }
+
+export function getCustomNameFromSymbol(symbol?: ts.Symbol): undefined | string {
+    let retVal: undefined | string;
+
+    if (symbol) {
+        const declarations = symbol.getDeclarations();
+        if (declarations) {
+            let customNameAnnotation: undefined | Annotation = undefined;
+            for (const declaration of declarations) {
+                const nodeAnnotations = getNodeAnnotations(declaration);
+                const foundAnnotation = nodeAnnotations.get(AnnotationKind.CustomName);
+
+                if (foundAnnotation) {
+                    customNameAnnotation = foundAnnotation;
+                    break;
+                }
+            }
+
+            if (customNameAnnotation) {
+                retVal = customNameAnnotation.args[0];
+            }
+        }
+    }
+
+    return retVal;
+}
+
 function transformNonValueIdentifier(
     context: TransformationContext,
     identifier: ts.Identifier,
     symbol: ts.Symbol | undefined
 ) {
     if (isOptionalContinuation(identifier)) {
-        return lua.createIdentifier(identifier.text, undefined, tempSymbolId);
+        const result = lua.createIdentifier(identifier.text, undefined, tempSymbolId);
+        getOptionalContinuationData(identifier)!.usedIdentifiers.push(result);
+        return result;
     }
 
     const extensionKind = symbol
@@ -50,9 +80,10 @@ function transformNonValueIdentifier(
         }
     }
 
-    const text = hasUnsafeIdentifierName(context, identifier, symbol)
-        ? createSafeName(identifier.text)
-        : identifier.text;
+    let text = hasUnsafeIdentifierName(context, identifier, symbol) ? createSafeName(identifier.text) : identifier.text;
+
+    const customName = getCustomNameFromSymbol(symbol);
+    if (customName) text = customName;
 
     const symbolId = getIdentifierSymbolId(context, identifier, symbol);
     return lua.createIdentifier(text, identifier, symbolId, identifier.text);
@@ -82,7 +113,7 @@ export function transformIdentifierWithSymbol(
 }
 
 export const transformIdentifierExpression: FunctionVisitor<ts.Identifier> = (node, context) => {
-    if (node.originalKeywordKind === ts.SyntaxKind.UndefinedKeyword) {
+    if (ts.identifierToKeywordKind(node) === ts.SyntaxKind.UndefinedKeyword) {
         return lua.createNilLiteral(node);
     }
 

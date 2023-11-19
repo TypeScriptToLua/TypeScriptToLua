@@ -22,11 +22,12 @@ export const transformForStatement: FunctionVisitor<ts.ForStatement> = (statemen
 
     let condition: lua.Expression;
     if (statement.condition) {
-        let conditionPrecedingStatements: lua.Statement[];
         const tsCondition = statement.condition;
-        [conditionPrecedingStatements, condition] = transformInPrecedingStatementScope(context, () =>
-            context.transformExpression(tsCondition)
+        const { precedingStatements: conditionPrecedingStatements, result } = transformInPrecedingStatementScope(
+            context,
+            () => context.transformExpression(tsCondition)
         );
+        condition = result;
 
         // If condition has preceding statements, ensure they are executed every iteration by using the form:
         //

@@ -3,7 +3,7 @@ import * as lua from "../../LuaAST";
 import { FunctionVisitor } from "../context";
 import { ContextType, getDeclarationContextType } from "../utils/function-context";
 import { wrapInToStringForConcat } from "../utils/lua-ast";
-import { isStringType } from "../utils/typescript/types";
+import { isStringType } from "../utils/typescript";
 import { transformArguments, transformContextualCallExpression } from "./call";
 import { transformOrderedExpressions } from "./expression-list";
 

@@ -4,16 +4,22 @@ import { ScriptTarget } from "typescript";
 
 test.each(["null", "undefined", '{ foo: "foo" }'])("optional chaining (%p)", value => {
     util.testFunction`
-        const obj: any = ${value};
+        const obj: {foo: string} | null | undefined = ${value};
         return obj?.foo;
-    `.expectToMatchJsResult();
+    `
+        .expectToMatchJsResult()
+        .expectLuaToMatchSnapshot();
+    // should use "and" expression
 });
 
 test("long optional chain", () => {
     util.testFunction`
         const a = { b: { c: { d: { e: { f: "hello!"}}}}};
         return a.b?.c?.d.e.f;
-    `.expectToMatchJsResult();
+    `
+        .expectToMatchJsResult()
+        .expectLuaToMatchSnapshot();
+    // should use "and" expression
 });
 
 test.each(["undefined", "{}", "{ foo: {} }", "{ foo: {bar: 'baz'}}"])("nested optional chaining (%p)", value => {
@@ -69,7 +75,89 @@ test("optional element function calls", () => {
         const fooKey = "foo";
         const barKey = "bar";
         return obj[barKey]?.(5) ?? obj[fooKey]?.(15);
-    `.expectToMatchJsResult();
+    `
+        .expectToMatchJsResult()
+        .expectLuaToMatchSnapshot();
+    // should still use "and" statement, as functions have no self
+});
+
+test("unused expression", () => {
+    util.testFunction`
+        const obj = { foo: "bar" };
+        obj?.foo;
+    `
+        .expectToHaveNoDiagnostics()
+        .expectNoExecutionError()
+        .expectLuaToMatchSnapshot();
+    // should use if statement, as result is not used
+});
+
+test("unused call", () => {
+    util.testFunction`
+        let result
+        const obj = {
+            foo() {
+                result = "bar"
+            }
+        };
+        obj?.foo();
+        return result;
+    `
+        .expectToMatchJsResult()
+        .expectLuaToMatchSnapshot();
+    // should use if statement, as result is not used
+});
+
+test.each(["undefined", "{ foo: v=>v }"])("with preceding statements on right side", value => {
+    util.testFunction`
+        let i = 0
+        const obj: any = ${value};
+        return {result: obj?.foo(i++), i};
+    `
+        .expectToMatchJsResult()
+        .expectLuaToMatchSnapshot();
+    // should use if statement, as there are preceding statements
+});
+
+// unused, with preceding statements on right side
+test.each(["undefined", "{ foo(val) {return val} }"])(
+    "unused result with preceding statements on right side",
+    value => {
+        util.testFunction`
+        let i = 0
+        const obj = ${value};
+        obj?.foo(i++);
+        return i
+    `
+            .expectToHaveNoDiagnostics()
+            .expectLuaToMatchSnapshot();
+        // should use if statement, as there are preceding statements
+    }
+);
+
+test.each(["undefined", "{ foo(v) { return v} }"])("with preceding statements on right side modifying left", value => {
+    util.testFunction`
+        let i = 0
+        let obj: any = ${value};
+        function bar() {
+            if(obj) obj.foo = undefined
+            obj = undefined
+            return 1
+        }
+
+        return {result: obj?.foo(bar(), i++), obj, i}
+  `
+        .expectToMatchJsResult()
+        .expectLuaToMatchSnapshot();
+    // should use if statement, as there are preceding statements
+});
+
+test("does not suppress error if left side is false", () => {
+    const result = util.testFunction`
+        const obj: any = false
+        return obj?.foo
+    `.getLuaExecutionResult();
+    expect(result).toBeInstanceOf(util.ExecutionError);
 });
 
 describe("optional access method calls", () => {
@@ -85,7 +173,7 @@ describe("optional access method calls", () => {
     `.expectToMatchJsResult();
     });
 
-    test("optional access call", () => {
+    test("property access call", () => {
         util.testFunction`
         const obj: { value: string; foo?(prefix: string): string; bar?(prefix: string): string; } = {
             value: "foobar",

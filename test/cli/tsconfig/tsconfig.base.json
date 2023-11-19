@@ -1,0 +1,6 @@
+{
+    "tstl": {
+        "noHeader": true,
+        "luaTarget": "jit"
+    }
+}

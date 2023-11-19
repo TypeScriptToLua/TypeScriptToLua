@@ -1,0 +1,6 @@
+{
+    "extends": ["./tsconfig.json", "./tsconfig2.json"],
+    "tstl": {
+        "sourceMapTraceback": true
+    }
+}

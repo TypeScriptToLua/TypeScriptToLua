@@ -30,7 +30,7 @@ function hasNoSelfAncestor(declaration: ts.Declaration): boolean {
 
 function getExplicitThisParameter(signatureDeclaration: ts.SignatureDeclaration): ts.ParameterDeclaration | undefined {
     const param = signatureDeclaration.parameters[0];
-    if (param && ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword) {
+    if (param && ts.isIdentifier(param.name) && ts.identifierToKeywordKind(param.name) === ts.SyntaxKind.ThisKeyword) {
         return param;
     }
 }
@@ -116,7 +116,15 @@ function reduceContextTypes(contexts: ContextType[]): ContextType {
 }
 
 function getSignatureDeclarations(context: TransformationContext, signature: ts.Signature): ts.SignatureDeclaration[] {
+    if (signature.compositeSignatures) {
+        return signature.compositeSignatures.flatMap(s => getSignatureDeclarations(context, s));
+    }
+
     const signatureDeclaration = signature.getDeclaration();
+    if (signatureDeclaration === undefined) {
+        return [];
+    }
+
     let inferredType: ts.Type | undefined;
     if (
         ts.isMethodDeclaration(signatureDeclaration) &&

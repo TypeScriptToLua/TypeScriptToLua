@@ -15,10 +15,13 @@ module.exports = {
     testEnvironment: "node",
     testRunner: "jest-circus/runner",
     preset: "ts-jest",
-    globals: {
-        "ts-jest": {
-            tsconfig: "<rootDir>/test/tsconfig.json",
-            diagnostics: { warnOnly: !isCI },
-        },
+    transform: {
+        "^.+\\.ts?$": [
+            "ts-jest",
+            {
+                tsconfig: "<rootDir>/test/tsconfig.json",
+                diagnostics: { warnOnly: !isCI },
+            },
+        ],
     },
 };

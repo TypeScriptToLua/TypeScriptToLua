@@ -108,28 +108,36 @@ has = ____table.has"
 exports[`LuaTableHas extension invalid use method assignment ("LuaTable<string, number>"): diagnostics 1`] = `"main.ts(3,29): error TSTL: This function must be called directly and cannot be referred to."`;
 
 exports[`LuaTableHas extension invalid use method expression ("LuaMap<string, number>"): code 1`] = `
-"local ____lualib = require(\\"lualib_bundle\\")
+"local ____lualib = require("lualib_bundle")
 local __TS__ArrayMap = ____lualib.__TS__ArrayMap
 ____table = {}
-__TS__ArrayMap({\\"a\\", \\"b\\", \\"c\\"}, ____table.has)"
+__TS__ArrayMap({"a", "b", "c"}, ____table.has)"
 `;
 
 exports[`LuaTableHas extension invalid use method expression ("LuaMap<string, number>"): diagnostics 1`] = `"main.ts(3,37): error TSTL: This function must be called directly and cannot be referred to."`;
 
 exports[`LuaTableHas extension invalid use method expression ("LuaSet<string>"): code 1`] = `
-"local ____lualib = require(\\"lualib_bundle\\")
+"local ____lualib = require("lualib_bundle")
 local __TS__ArrayMap = ____lualib.__TS__ArrayMap
 ____table = {}
-__TS__ArrayMap({\\"a\\", \\"b\\", \\"c\\"}, ____table.has)"
+__TS__ArrayMap({"a", "b", "c"}, ____table.has)"
 `;
 
 exports[`LuaTableHas extension invalid use method expression ("LuaSet<string>"): diagnostics 1`] = `"main.ts(3,37): error TSTL: This function must be called directly and cannot be referred to."`;
 
 exports[`LuaTableHas extension invalid use method expression ("LuaTable<string, number>"): code 1`] = `
-"local ____lualib = require(\\"lualib_bundle\\")
+"local ____lualib = require("lualib_bundle")
 local __TS__ArrayMap = ____lualib.__TS__ArrayMap
 ____table = {}
-__TS__ArrayMap({\\"a\\", \\"b\\", \\"c\\"}, ____table.has)"
+__TS__ArrayMap({"a", "b", "c"}, ____table.has)"
 `;
 
 exports[`LuaTableHas extension invalid use method expression ("LuaTable<string, number>"): diagnostics 1`] = `"main.ts(3,37): error TSTL: This function must be called directly and cannot be referred to."`;
+
+exports[`does not crash on invalid extension use global function: code 1`] = `""`;
+
+exports[`does not crash on invalid extension use global function: diagnostics 1`] = `"main.ts(3,9): error TS2554: Expected 2 arguments, but got 1."`;
+
+exports[`does not crash on invalid extension use method: code 1`] = `"left = {}"`;
+
+exports[`does not crash on invalid extension use method: diagnostics 1`] = `"main.ts(5,14): error TS2554: Expected 2 arguments, but got 0."`;

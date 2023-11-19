@@ -2,7 +2,7 @@
 
 exports[`doesn't resolve paths out of root dir: code 1`] = `
 "local ____exports = {}
-local module = require(\\"module\\")
+local module = require("module")
 local ____ = module
 return ____exports"
 `;

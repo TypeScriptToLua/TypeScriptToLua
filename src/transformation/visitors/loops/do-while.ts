@@ -11,8 +11,9 @@ export const transformWhileStatement: FunctionVisitor<ts.WhileStatement> = (stat
 
     const body = transformLoopBody(context, statement);
 
-    let [conditionPrecedingStatements, condition] = transformInPrecedingStatementScope(context, () =>
-        context.transformExpression(statement.expression)
+    let { precedingStatements: conditionPrecedingStatements, result: condition } = transformInPrecedingStatementScope(
+        context,
+        () => context.transformExpression(statement.expression)
     );
 
     // If condition has preceding statements, ensure they are executed every iteration by using the form:
@@ -46,8 +47,9 @@ export const transformDoStatement: FunctionVisitor<ts.DoStatement> = (statement,
 
     const body = lua.createDoStatement(transformLoopBody(context, statement));
 
-    let [conditionPrecedingStatements, condition] = transformInPrecedingStatementScope(context, () =>
-        invertCondition(context.transformExpression(statement.expression))
+    let { precedingStatements: conditionPrecedingStatements, result: condition } = transformInPrecedingStatementScope(
+        context,
+        () => invertCondition(context.transformExpression(statement.expression))
     );
 
     // If condition has preceding statements, ensure they are executed every iteration by using the form:

@@ -1,5 +1,6 @@
 import * as tstl from "../../src";
-import { forbiddenForIn, unsupportedForTarget } from "../../src/transformation/utils/diagnostics";
+import { LuaTarget } from "../../src";
+import { forbiddenForIn } from "../../src/transformation/utils/diagnostics";
 import * as util from "../util";
 
 test("while", () => {
@@ -14,8 +15,9 @@ test("while", () => {
     `.expectToMatchJsResult();
 });
 
-test("while with continue", () => {
-    util.testFunction`
+util.testEachVersion(
+    "while with continue",
+    () => util.testFunction`
         let arrTest = [0, 1, 2, 3, 4];
         let i = 0;
         while (i < arrTest.length) {
@@ -36,11 +38,13 @@ test("while with continue", () => {
             i++;
         }
         return arrTest;
-    `.expectToMatchJsResult();
-});
+        `,
+    util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+);
 
-test("dowhile with continue", () => {
-    util.testFunction`
+util.testEachVersion(
+    "dowhile with continue",
+    () => util.testFunction`
         let arrTest = [0, 1, 2, 3, 4];
         let i = 0;
         do {
@@ -61,8 +65,9 @@ test("dowhile with continue", () => {
             i++;
         } while (i < arrTest.length)
         return arrTest;
-    `.expectToMatchJsResult();
-});
+        `,
+    util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+);
 
 test("for", () => {
     util.testFunction`
@@ -85,8 +90,9 @@ test("for with expression", () => {
     `.expectToMatchJsResult();
 });
 
-test("for with continue", () => {
-    util.testFunction`
+util.testEachVersion(
+    "for with continue",
+    () => util.testFunction`
         let arrTest = [0, 1, 2, 3, 4];
         for (let i = 0; i < arrTest.length; i++) {
             if (i % 2 == 0) {
@@ -101,8 +107,9 @@ test("for with continue", () => {
             }
         }
         return arrTest;
-    `.expectToMatchJsResult();
-});
+        `,
+    util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+);
 
 test("forMirror", () => {
     util.testFunction`
@@ -216,7 +223,20 @@ test("forin[Array]", () => {
     `.expectDiagnosticsToMatchSnapshot([forbiddenForIn.code]);
 });
 
-test.each([{ inp: { a: 0, b: 1, c: 2, d: 3, e: 4 } }])("forin with continue (%p)", ({ inp }) => {
+const luaTargetsExceptJit = [
+    LuaTarget.Lua50,
+    LuaTarget.Lua51,
+    LuaTarget.Lua52,
+    LuaTarget.Lua53,
+    LuaTarget.Lua54,
+    LuaTarget.Universal,
+];
+
+test.each(
+    luaTargetsExceptJit.flatMap(target =>
+        [{ inp: { a: 0, b: 1, c: 2, d: 3, e: 4 } }].map(testCase => [target, testCase] as const)
+    )
+)("forin with continue (%s %p)", (luaTarget, { inp }) => {
     util.testFunctionTemplate`
             let obj = ${inp};
             for (let i in obj) {
@@ -227,7 +247,9 @@ test.each([{ inp: { a: 0, b: 1, c: 2, d: 3, e: 4 } }])("forin with continue (%p)
                 obj[i] = 0;
             }
             return obj;
-        `.expectToMatchJsResult();
+        `
+        .setOptions({ luaTarget })
+        .expectToMatchJsResult();
 });
 
 test.each([{ inp: [0, 1, 2] }])("forof (%p)", ({ inp }) => {
@@ -331,8 +353,9 @@ test("forof destructing with existing variables", () => {
     `.expectToMatchJsResult();
 });
 
-test("forof with continue", () => {
-    util.testFunction`
+util.testEachVersion(
+    "forof with continue",
+    () => util.testFunction`
         let testArr = [0, 1, 2, 3, 4];
         let a = 0;
         for (let i of testArr) {
@@ -350,8 +373,9 @@ test("forof with continue", () => {
             a++;
         }
         return testArr;
-    `.expectToMatchJsResult();
-});
+    `,
+    util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+);
 
 test("forof with iterator", () => {
     util.testFunction`
@@ -515,13 +539,16 @@ for (const testCase of [
     "for (const a in {}) { continue; }",
     "for (const a of []) { continue; }",
 ]) {
+    const expectContinueVariable: util.TapCallback = builder =>
+        expect(builder.getMainLuaCodeChunk()).toMatch("local __continue2");
+
     const expectContinueGotoLabel: util.TapCallback = builder =>
         expect(builder.getMainLuaCodeChunk()).toMatch("::__continue2::");
 
     util.testEachVersion(`loop continue (${testCase})`, () => util.testModule(testCase), {
-        [tstl.LuaTarget.Universal]: builder => builder.expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]),
-        [tstl.LuaTarget.Lua50]: builder => builder.expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]),
-        [tstl.LuaTarget.Lua51]: builder => builder.expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]),
+        [tstl.LuaTarget.Universal]: expectContinueVariable,
+        [tstl.LuaTarget.Lua50]: expectContinueVariable,
+        [tstl.LuaTarget.Lua51]: expectContinueVariable,
         [tstl.LuaTarget.Lua52]: expectContinueGotoLabel,
         [tstl.LuaTarget.Lua53]: expectContinueGotoLabel,
         [tstl.LuaTarget.Lua54]: expectContinueGotoLabel,

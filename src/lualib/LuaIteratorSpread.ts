@@ -9,5 +9,5 @@ export function __TS__LuaIteratorSpread<TKey, TValue, TState>(
         results.push([key, value]);
         [key, value] = this(state, key);
     }
-    return $multi(...results);
+    return $multi(...results) as LuaMultiReturn<Array<[TKey, TValue]>>;
 }

@@ -176,6 +176,23 @@ describe("array.length", () => {
             `.expectToEqual(new util.ExecutionError(`invalid array length: ${luaSpecialValueString}`));
         });
 
+        // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1395
+        test("in compound assignment (#1395)", () => {
+            util.testFunction`
+                const arr = [1,2,3,4];
+                const returnVal = arr.length -= 2;
+                return { arr, returnVal };
+            `.expectToMatchJsResult();
+        });
+
+        test("as standalone compound assignment (#1395)", () => {
+            util.testFunction`
+                const arr = [1,2,3,4];
+                arr.length -= 2;
+                return arr;
+            `.expectToMatchJsResult();
+        });
+
         test("in array destructuring", () => {
             util.testFunction`
                 const array = [0, 1, 2];
@@ -253,6 +270,36 @@ test("tuple.forEach", () => {
         });
         return count;
     `.expectToMatchJsResult();
+});
+
+describe("at", () => {
+    test("valid index", () => {
+        util.testFunction`
+            const array = [1, 2, 3, 4];
+            return array.at(2);
+        `.expectToMatchJsResult();
+    });
+
+    test("invalid index", () => {
+        util.testFunction`
+            const array = [1, 2, 3, 4];
+            return array.at(10);
+        `.expectToMatchJsResult();
+    });
+
+    test("valid negative index", () => {
+        util.testFunction`
+            const array = [1, 2, 3, 4];
+            return array.at(-2);
+        `.expectToMatchJsResult();
+    });
+
+    test("invalid negative index", () => {
+        util.testFunction`
+            const array = [1, 2, 3, 4];
+            return array.at(-10);
+        `.expectToMatchJsResult();
+    });
 });
 
 test("array.forEach (%p)", () => {
@@ -741,6 +788,33 @@ test.each([
     util.testExpression(literal).expectToHaveNoDiagnostics();
 });
 
+describe("array.fill", () => {
+    test.each(["[]", "[1]", "[1,2,3,4]"])("Fills full length of array without other parameters (%p)", arr => {
+        util.testExpression`${arr}.fill(5)`.expectToMatchJsResult();
+    });
+
+    test.each(["[1,2,3]", "[1,2,3,4,5,6]"])("Fills starting from start parameter (%p)", arr => {
+        util.testExpression`${arr}.fill(5, 3)`.expectToMatchJsResult();
+    });
+
+    test("handles negative start parameter", () => {
+        util.testExpression`[1,2,3,4,5,6,7].fill(8, -3)`.expectToMatchJsResult();
+    });
+
+    test("handles negative end parameter", () => {
+        util.testExpression`[1,2,3,4,5,6,7].fill(8, -5, -2)`.expectToMatchJsResult();
+    });
+
+    test("Fills starting from start parameter, up to ending parameter", () => {
+        util.testExpression`[1,2,3,4,5,6,7,8].fill(5, 2, 6)`.expectToMatchJsResult();
+    });
+
+    // NOTE: This is different from the default ECMAScript specification for the behavior, but for Lua this is much more useful
+    test("Extends size of the array if ending size is larger than array", () => {
+        util.testExpression`[1,2,3].fill(5, 0, 6)`.expectToEqual([5, 5, 5, 5, 5, 5]);
+    });
+});
+
 // Issue #1218: https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1218
 test.each(["[1, 2, 3]", "undefined"])("prototype call on nullable array (%p)", value => {
     util.testFunction`
@@ -751,4 +825,54 @@ test.each(["[1, 2, 3]", "undefined"])("prototype call on nullable array (%p)", v
     `
         .setOptions({ strictNullChecks: true })
         .expectToMatchJsResult();
+});
+
+describe("copying array methods", () => {
+    test("toReversed", () => {
+        util.testFunction`
+            const original = [1,2,3,4,5];
+            const reversed = original.toReversed();
+
+            return {original, reversed};
+        `.expectToEqual({
+            original: [1, 2, 3, 4, 5],
+            reversed: [5, 4, 3, 2, 1],
+        });
+    });
+
+    test("toSorted", () => {
+        util.testFunction`
+            const original = [5,2,1,4,3];
+            const sorted = original.toSorted();
+
+            return {original, sorted};
+        `.expectToEqual({
+            original: [5, 2, 1, 4, 3],
+            sorted: [1, 2, 3, 4, 5],
+        });
+    });
+
+    test("toSpliced", () => {
+        util.testFunction`
+            const original = [1,2,3,4,5];
+            const spliced = original.toSpliced(2, 2, 10, 11);
+
+            return {original, spliced};
+        `.expectToEqual({
+            original: [1, 2, 3, 4, 5],
+            spliced: [1, 2, 10, 11, 5],
+        });
+    });
+
+    test("with", () => {
+        util.testFunction`
+            const original = [1,2,3,4,5];
+            const updated = original.with(2, 10);
+
+            return {original, updated};
+        `.expectToEqual({
+            original: [1, 2, 3, 4, 5],
+            updated: [1, 2, 10, 4, 5],
+        });
+    });
 });

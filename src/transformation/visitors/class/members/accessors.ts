@@ -7,11 +7,27 @@ import { transformFunctionBody, transformParameters } from "../../function";
 import { transformPropertyName } from "../../literal";
 import { isStaticNode } from "../utils";
 import { createPrototypeName } from "./constructor";
+import { createClassAccessorDecoratingExpression } from "../decorators";
 
-function transformAccessor(context: TransformationContext, node: ts.AccessorDeclaration): lua.FunctionExpression {
+function transformAccessor(
+    context: TransformationContext,
+    node: ts.AccessorDeclaration,
+    className: lua.Identifier
+): lua.Expression {
     const [params, dot, restParam] = transformParameters(context, node.parameters, createSelfIdentifier());
     const body = node.body ? transformFunctionBody(context, node.parameters, node.body, restParam)[0] : [];
-    return lua.createFunctionExpression(lua.createBlock(body), params, dot, lua.NodeFlags.Declaration);
+    const accessorFunction = lua.createFunctionExpression(
+        lua.createBlock(body),
+        params,
+        dot,
+        lua.NodeFlags.Declaration
+    );
+
+    if (ts.getDecorators(node)?.length) {
+        return createClassAccessorDecoratingExpression(context, node, accessorFunction, className);
+    } else {
+        return accessorFunction;
+    }
 }
 
 export function transformAccessorDeclarations(
@@ -23,12 +39,12 @@ export function transformAccessorDeclarations(
     const descriptor = lua.createTableExpression([]);
 
     if (getAccessor) {
-        const getterFunction = transformAccessor(context, getAccessor);
+        const getterFunction = transformAccessor(context, getAccessor, className);
         descriptor.fields.push(lua.createTableFieldExpression(getterFunction, lua.createStringLiteral("get")));
     }
 
     if (setAccessor) {
-        const setterFunction = transformAccessor(context, setAccessor);
+        const setterFunction = transformAccessor(context, setAccessor, className);
         descriptor.fields.push(lua.createTableFieldExpression(setterFunction, lua.createStringLiteral("set")));
     }
 

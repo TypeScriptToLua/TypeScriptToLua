@@ -749,9 +749,9 @@ test("default exported anonymous class has 'default' name property", () => {
 });
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/584
-test("constructor class name available with constructor", () => {
+test("constructor class name available with decorator", () => {
     util.testModule`
-        const decorator = <T extends new (...args: any[]) => any>(constructor: T) => class extends constructor {};
+        const decorator = <T extends new (...args: any[]) => any>(constructor: T, context: ClassDecoratorContext) => class extends constructor {};
 
         @decorator
         class MyClass {}
@@ -797,5 +797,58 @@ test.each(['(this["bar"])', '((((this["bar"]))))'])("methods in parentheses pass
 
         const inst = new Example();
         export const result = inst.foo();
+    `.expectToMatchJsResult();
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1447
+test("static initialization block (#1447)", () => {
+    util.testModule`
+        class A {
+            private static staticProperty1 = 3;
+            public static staticProperty2;
+            static {
+                this.staticProperty2 = this.staticProperty1 + 5;
+            }
+            public static staticProperty3;
+            static {
+                this.staticProperty3 = this.staticProperty1 + this.staticProperty2;
+            }
+        }
+        export const result1 = A.staticProperty2;
+        export const result2 = A.staticProperty3;
+    `.expectToMatchJsResult();
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1457
+test("static member definition order (#1457)", () => {
+    util.testFunction`
+        class A {
+            static a = A.foo()
+        
+            static foo(): number {
+                return 5
+            }
+        }
+        
+        return A.a;
+    `.expectToMatchJsResult();
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1504
+test("Calling static inherited functions works (#1504)", () => {
+    util.testFunction`
+        class A {
+            static Get() {
+                return "A";
+            }
+        }
+
+        class B extends A {
+            static Get() {
+                return super.Get() + "B";
+            }
+        }
+
+        return B.Get();
     `.expectToMatchJsResult();
 });

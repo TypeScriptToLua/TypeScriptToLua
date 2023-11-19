@@ -1,4 +1,4 @@
-export class WeakSet<T> {
+export class WeakSet<T extends AnyNotNil> {
     public static [Symbol.species] = WeakSet;
     public [Symbol.toStringTag] = "WeakSet";
 
@@ -33,7 +33,7 @@ export class WeakSet<T> {
 
     public delete(value: T): boolean {
         const contains = this.has(value);
-        this.items.set(value, undefined);
+        this.items.set(value, undefined!);
         return contains;
     }
 

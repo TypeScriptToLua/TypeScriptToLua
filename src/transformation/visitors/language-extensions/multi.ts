@@ -6,7 +6,7 @@ import {
     IterableExtensionKind,
 } from "../../utils/language-extensions";
 import { TransformationContext } from "../../context";
-import { findFirstNodeAbove } from "../../utils/typescript";
+import { findFirstNodeAbove, findFirstNonOuterParent } from "../../utils/typescript";
 
 const multiReturnExtensionName = "__tstlMultiReturn";
 export function isMultiReturnType(type: ts.Type): boolean {
@@ -58,46 +58,48 @@ export function shouldMultiReturnCallBeWrapped(context: TransformationContext, n
         return false;
     }
 
+    const parent = findFirstNonOuterParent(node);
+
     // Variable declaration with destructuring
-    if (ts.isVariableDeclaration(node.parent) && ts.isArrayBindingPattern(node.parent.name)) {
+    if (ts.isVariableDeclaration(parent) && ts.isArrayBindingPattern(parent.name)) {
         return false;
     }
 
     // Variable assignment with destructuring
     if (
-        ts.isBinaryExpression(node.parent) &&
-        node.parent.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
-        ts.isArrayLiteralExpression(node.parent.left)
+        ts.isBinaryExpression(parent) &&
+        parent.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+        ts.isArrayLiteralExpression(parent.left)
     ) {
         return false;
     }
 
     // Spread operator
-    if (ts.isSpreadElement(node.parent)) {
+    if (ts.isSpreadElement(parent)) {
         return false;
     }
 
     // Stand-alone expression
-    if (ts.isExpressionStatement(node.parent)) {
+    if (ts.isExpressionStatement(parent)) {
         return false;
     }
 
     // Forwarded multi-return call
     if (
-        (ts.isReturnStatement(node.parent) || ts.isArrowFunction(node.parent)) && // Body-less arrow func
+        (ts.isReturnStatement(parent) || ts.isArrowFunction(parent)) && // Body-less arrow func
         isInMultiReturnFunction(context, node)
     ) {
         return false;
     }
 
     // Element access expression 'foo()[0]' will be optimized using 'select'
-    if (ts.isElementAccessExpression(node.parent)) {
+    if (ts.isElementAccessExpression(parent)) {
         return false;
     }
 
     // LuaIterable in for...of
     if (
-        ts.isForOfStatement(node.parent) &&
+        ts.isForOfStatement(parent) &&
         getIterableExtensionKindForNode(context, node) === IterableExtensionKind.Iterable
     ) {
         return false;

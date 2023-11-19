@@ -1,5 +1,6 @@
 import * as ts from "typescript";
 import { TransformationContext } from "../context";
+import { invalidMethodCallExtensionUse, invalidSpreadInCallExtension } from "./diagnostics";
 
 export enum ExtensionKind {
     MultiFunction = "MultiFunction",
@@ -52,7 +53,10 @@ export enum ExtensionKind {
     TableSetMethodType = "TableSetMethod",
     TableAddKeyType = "TableAddKey",
     TableAddKeyMethodType = "TableAddKeyMethod",
+    TableIsEmptyType = "TableIsEmpty",
+    TableIsEmptyMethodType = "TableIsEmptyMethod",
 }
+
 const extensionValues: Set<string> = new Set(Object.values(ExtensionKind));
 
 export function getExtensionKindForType(context: TransformationContext, type: ts.Type): ExtensionKind | undefined {
@@ -118,4 +122,57 @@ export function getIterableExtensionKindForNode(
 ): IterableExtensionKind | undefined {
     const type = context.checker.getTypeAtLocation(node);
     return getIterableExtensionTypeForType(context, type);
+}
+
+export const methodExtensionKinds: ReadonlySet<ExtensionKind> = new Set<ExtensionKind>(
+    Object.values(ExtensionKind).filter(key => key.endsWith("Method"))
+);
+
+export function getNaryCallExtensionArgs(
+    context: TransformationContext,
+    node: ts.CallExpression,
+    kind: ExtensionKind,
+    numArgs: number
+): readonly ts.Expression[] | undefined {
+    let expressions: readonly ts.Expression[];
+    if (node.arguments.some(ts.isSpreadElement)) {
+        context.diagnostics.push(invalidSpreadInCallExtension(node));
+        return undefined;
+    }
+    if (methodExtensionKinds.has(kind)) {
+        if (!(ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression))) {
+            context.diagnostics.push(invalidMethodCallExtensionUse(node));
+            return undefined;
+        }
+        if (node.arguments.length < numArgs - 1) {
+            // assumed to be TS error
+            return undefined;
+        }
+        expressions = [node.expression.expression, ...node.arguments];
+    } else {
+        if (node.arguments.length < numArgs) {
+            // assumed to be TS error
+            return undefined;
+        }
+        expressions = node.arguments;
+    }
+    return expressions;
+}
+
+export function getUnaryCallExtensionArg(
+    context: TransformationContext,
+    node: ts.CallExpression,
+    kind: ExtensionKind
+): ts.Expression | undefined {
+    return getNaryCallExtensionArgs(context, node, kind, 1)?.[0];
+}
+
+export function getBinaryCallExtensionArgs(
+    context: TransformationContext,
+    node: ts.CallExpression,
+    kind: ExtensionKind
+): readonly [ts.Expression, ts.Expression] | undefined {
+    const expressions = getNaryCallExtensionArgs(context, node, kind, 2);
+    if (expressions === undefined) return undefined;
+    return [expressions[0], expressions[1]];
 }

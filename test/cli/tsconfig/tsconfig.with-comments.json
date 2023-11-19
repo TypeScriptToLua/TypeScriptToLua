@@ -1,0 +1,8 @@
+{
+    "extends": "./tsconfig.base.json",
+    "tstl": {
+        // Can handle comments
+        /* also of this kind */
+        "luaTarget": "5.3"
+    }
+}

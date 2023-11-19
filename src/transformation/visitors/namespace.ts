@@ -11,6 +11,16 @@ import { performHoisting, ScopeType } from "../utils/scope";
 import { getSymbolIdOfSymbol } from "../utils/symbols";
 import { transformIdentifier } from "./identifier";
 
+export function createModuleLocalName(context: TransformationContext, module: ts.ModuleDeclaration): lua.Expression {
+    if (!ts.isSourceFile(module.parent) && ts.isModuleDeclaration(module.parent)) {
+        const parentDeclaration = createModuleLocalName(context, module.parent);
+        const name = createModuleLocalNameIdentifier(context, module);
+        return lua.createTableIndexExpression(parentDeclaration, lua.createStringLiteral(name.text), module.name);
+    }
+
+    return createModuleLocalNameIdentifier(context, module);
+}
+
 export function createModuleLocalNameIdentifier(
     context: TransformationContext,
     declaration: ts.ModuleDeclaration
@@ -25,7 +35,6 @@ export function createModuleLocalNameIdentifier(
         );
     }
 
-    // TODO: Should synthetic name nodes be escaped as well?
     return transformIdentifier(context, declaration.name as ts.Identifier);
 }
 

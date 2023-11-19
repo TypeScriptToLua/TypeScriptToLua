@@ -1,5 +1,82 @@
 # Changelog
 
+## 1.21.0
+
+- Added support for `continue` for Lua 5.0, 5.1 and universal targets.
+- Added support for the new `/** @customName myCustomName **/` decorator, which allows renaming of variables and identifiers.
+  - This is useful to get around names that are reserved keywords in TypeScript, but are used in Lua API
+- Fixed a bug that caused super calls in static methods to throw an error
+
+## 1.20.0
+
+- Added support for `Number.parseInt` and `Number.parseFloat` (mapped to same implementation as global `parseInt` and `parseFloat`)
+- Added implementation for multiple `Number` constants like `Number.EPSILON`
+- Added support for `Array.at`
+- Fixed a bug when throwing an error object in a Lua environment without `debug` module
+- Fixed a bug causing files not to be found when returning an absolute path from a `moduleResolution` plugin
+
+## 1.19.0
+
+- Added support for the new TypeScript 5.2 `using` keyword for explicit resource management. See the [TypeScript release notes](https://devblogs.microsoft.com/typescript/announcing-typescript-5-2/#using-declarations-and-explicit-resource-management) for more information.
+- Added support for the newly introduced 'copying array methods' `toReversed`, `toSorted`, `toSpliced` and `with`. These were also introduced in TypeScript 5.2, see [their release notes](https://devblogs.microsoft.com/typescript/announcing-typescript-5-2/#copying-array-methods) for more information.
+
+## 1.18.0
+
+- Upgraded TypeScript to 5.2.2
+- The `noResolvePaths` option now accepts glob paths (for example, 'mydir/hello\*' to not resolve any files in mydir starting with hello).
+  - This also allows disabling module resolution completely by providing a '\*\*' pattern in your tsconfig.json `noResolvePaths`.
+
+## 1.17.0
+
+- Added the `moduleResolution` plugin, allowing you to provide custom module resolution logic. See [the docs](https://typescripttolua.github.io/docs/api/plugins#moduleresolution) for more info.
+- Added `isEmpty` to `LuaTable`, `LuaMap` and `LuaSet` (and their read-only counterparts). This simply to `next(tbl) == nil`, allowing for a simple check to see if a table is empty or not.
+- Fixed a bug with synthetic nodes (e.g. created by custom TypeScript transformers) throwing an exception.
+- Fixed unnecessary extra unpacking of tables
+- Fixed some bugs with new decorators
+
+## 1.16.0
+
+- Upgraded TypeScript to 5.1.3.
+- Added support for [TypeScript 5.0 decorators](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-0.html#decorators).
+  - Old-style decorators will still work as long as you have `experimentalDecorators` configured, otherwise the new standard is used.
+- Added support for [class static initialization blocks](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/Static_initialization_blocks).
+- Fixed a bug causing the `tstl` object in tsconfig.json not to be properly extended when extending a tsconfig from node_modules.
+
+## 1.15.0
+
+- Using `extends` in tsconfig.json now also correctly merges settings in the `tstl` block (shallow merge).
+- Now avoiding assigning default parameter values if the default value is `nil` (`null` or `undefined`).
+- Fixed a bug where indexing a `LuaMultiReturn` value with [0] would still return everything.
+- Fixed a bug with nested namespaces causing unexpected nil indexing errors.
+
+## 1.14.0
+
+- **[Breaking]** Upgraded TypeScript to 5.0.
+- Added support for `Number.toFixed`.
+- Added support for spread expressions with `LuaPairsIterable` and `LuaPairsKeysIterable`.
+- Fixed a bug breaking module resolution when using a custom file extension.
+- Fixed various exceptions that could happen when trying to translate invalid TS.
+
+## 1.13.0
+
+- Fixed alternate file extensions (other than .lua, if configured) breaking module resolution and emitted require statements.
+- Added experimental support for `"luaLibImport": "require-minimal"` configuration option. This will output a lualib bundle containing only the lualib functions used by your code. This might not work if you are including external tstl-generated Lua, for example from a npm package.
+- Added support for the "exports" field in package.json.
+- Fixed some exceptions resulting from invalid language-extensions use.
+- Fixed an exception when using compound assignment (like `+=`) with array length.
+
+## 1.12.0
+
+- Reworked how tstl detects and rewrites `require` statements during dependency resolution. This should reduce the amount of false-positive matches of require statements: require statements in string literals or comments should no longer be detected by tstl. This means require statements in string literals or comments can survive the transpiler without causing a 'could not resolve lua sources' error or getting rewritten into nonsense.
+- Now using `math.mod` for Lua 5.0 modulo operations.
+
+## 1.11.0
+
+- **[Breaking]** Upgraded TypeScript to 4.9.
+- `--tstlVerbose` now prints more resolver output when failing to resolve Lua sources.
+- Fixed a bug breaking default exported classes with unicode names
+- Relaxed conditions for the always-true warning to false positives.
+
 ## 1.10.0
 
 - **[Breaking]** Upgraded TypeScript to 4.8.

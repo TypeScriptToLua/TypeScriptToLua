@@ -13,12 +13,7 @@ export const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, 
     }
 
     const signature = context.checker.getResolvedSignature(node);
-    const [name, params] = transformCallAndArguments(
-        context,
-        node.expression,
-        node.arguments ?? [ts.factory.createTrue()],
-        signature
-    );
+    const [name, params] = transformCallAndArguments(context, node.expression, node.arguments ?? [], signature);
 
     const type = context.checker.getTypeAtLocation(node);
     const annotations = getTypeAnnotations(type);

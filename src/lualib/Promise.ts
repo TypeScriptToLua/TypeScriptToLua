@@ -20,6 +20,7 @@ function promiseDeferred<T>() {
         reject = rej;
     });
 
+    // @ts-ignore This is alright because TS doesnt understand the callback will immediately be called
     return { promise, resolve, reject };
 }
 
@@ -36,6 +37,7 @@ export class __TS__Promise<T> implements Promise<T> {
     private rejectedCallbacks: Array<RejectCallback<unknown>> = [];
     private finallyCallbacks: Array<() => void> = [];
 
+    // @ts-ignore
     public [Symbol.toStringTag]: string; // Required to implement interface, no output Lua
 
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/resolve
@@ -81,7 +83,7 @@ export class __TS__Promise<T> implements Promise<T> {
 
             if (isFulfilled) {
                 // If promise already resolved, immediately call callback
-                internalCallback(this.value);
+                internalCallback(this.value!);
             }
         } else {
             // We always want to resolve our child promise if this promise is resolved, even if we have no handler
@@ -103,7 +105,7 @@ export class __TS__Promise<T> implements Promise<T> {
 
         if (isFulfilled) {
             // If promise already resolved, also resolve returned promise
-            resolve(this.value);
+            resolve(this.value!);
         }
 
         if (isRejected) {
@@ -175,7 +177,7 @@ export class __TS__Promise<T> implements Promise<T> {
         resolve: FulfillCallback<TResult1 | TResult2, unknown>,
         reject: RejectCallback<unknown>
     ) {
-        return value => {
+        return (value: T) => {
             try {
                 this.handleCallbackData(f(value), resolve, reject);
             } catch (e) {
@@ -195,7 +197,7 @@ export class __TS__Promise<T> implements Promise<T> {
             if (nextpromise.state === PromiseState.Fulfilled) {
                 // If a handler function returns an already fulfilled promise,
                 // the promise returned by then gets fulfilled with that promise's value
-                resolve(nextpromise.value);
+                resolve(nextpromise.value!);
             } else if (nextpromise.state === PromiseState.Rejected) {
                 // If a handler function returns an already rejected promise,
                 // the promise returned by then gets fulfilled with that promise's value

@@ -1,5 +1,27 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`Function default parameter with value "null" 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local function foo(self, x)
+        return x
+    end
+    return foo(nil)
+end
+return ____exports"
+`;
+
+exports[`Function default parameter with value "undefined" 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local function foo(self, x)
+        return x
+    end
+    return foo(nil)
+end
+return ____exports"
+`;
+
 exports[`function.length unsupported ("5.0"): code 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)

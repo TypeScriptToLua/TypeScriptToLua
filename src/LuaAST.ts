@@ -5,7 +5,7 @@
 // because we don't create the AST from text
 
 import * as ts from "typescript";
-import { LuaLibFeature } from "./transformation/utils/lualib";
+import { LuaLibFeature } from "./LuaLib";
 import { castArray } from "./utils";
 
 export enum SyntaxKind {
@@ -44,6 +44,7 @@ export enum SyntaxKind {
     MethodCallExpression,
     Identifier,
     TableIndexExpression,
+    ParenthesizedExpression,
 
     // Operators
 
@@ -816,6 +817,7 @@ export function createTableIndexExpression(
 }
 
 export type AssignmentLeftHandSideExpression = Identifier | TableIndexExpression;
+
 export function isAssignmentLeftHandSideExpression(node: Node): node is AssignmentLeftHandSideExpression {
     return isIdentifier(node) || isTableIndexExpression(node);
 }
@@ -841,4 +843,21 @@ export function isInlineFunctionExpression(expression: FunctionExpression): expr
         expression.body.statements[0].expressions !== undefined &&
         (expression.flags & NodeFlags.Inline) !== 0
     );
+}
+
+export type ParenthesizedExpression = Expression & {
+    expression: Expression;
+};
+
+export function isParenthesizedExpression(node: Node): node is ParenthesizedExpression {
+    return node.kind === SyntaxKind.ParenthesizedExpression;
+}
+
+export function createParenthesizedExpression(expression: Expression, tsOriginal?: ts.Node): ParenthesizedExpression {
+    const parenthesizedExpression = createNode(
+        SyntaxKind.ParenthesizedExpression,
+        tsOriginal
+    ) as ParenthesizedExpression;
+    parenthesizedExpression.expression = expression;
+    return parenthesizedExpression;
 }

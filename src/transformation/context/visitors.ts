@@ -61,6 +61,7 @@ interface NodesBySyntaxKind {
     [ts.SyntaxKind.AsExpression]: ts.AsExpression;
     [ts.SyntaxKind.NonNullExpression]: ts.NonNullExpression;
     [ts.SyntaxKind.MetaProperty]: ts.MetaProperty;
+    [ts.SyntaxKind.SatisfiesExpression]: ts.SatisfiesExpression;
     [ts.SyntaxKind.TemplateSpan]: ts.TemplateSpan;
     [ts.SyntaxKind.SemicolonClassElement]: ts.SemicolonClassElement;
     [ts.SyntaxKind.Block]: ts.Block;
@@ -148,6 +149,7 @@ export type VisitorResult<T extends ts.Node> = T extends ExpressionLikeNode
 
 export type Visitor<T extends ts.Node> = FunctionVisitor<T> | ObjectVisitor<T>;
 export type FunctionVisitor<T extends ts.Node> = (node: T, context: TransformationContext) => VisitorResult<T>;
+
 export interface ObjectVisitor<T extends ts.Node> {
     transform: FunctionVisitor<T>;
 

@@ -1,4 +1,5 @@
 import * as ts from "typescript";
+import * as lua from "../../LuaAST";
 import { LuaTarget, TypeScriptToLuaOptions } from "../../CompilerOptions";
 import { createSerialDiagnosticFactory } from "../../utils";
 import { AnnotationKind } from "./annotations";
@@ -119,12 +120,6 @@ export const invalidMultiFunctionReturnType = createErrorDiagnosticFactory(
     "The $multi function cannot be cast to a non-LuaMultiReturn type."
 );
 
-export const invalidMultiTypeToNonArrayLiteral = createErrorDiagnosticFactory("Expected an array literal.");
-
-export const invalidMultiTypeToEmptyPatternOrArrayLiteral = createErrorDiagnosticFactory(
-    "There must be one or more elements specified here."
-);
-
 export const invalidMultiReturnAccess = createErrorDiagnosticFactory(
     "The LuaMultiReturn type can only be accessed via an element access expression of a numeric type."
 );
@@ -132,13 +127,6 @@ export const invalidMultiReturnAccess = createErrorDiagnosticFactory(
 export const invalidCallExtensionUse = createErrorDiagnosticFactory(
     "This function must be called directly and cannot be referred to."
 );
-
-export const annotationRemoved = createErrorDiagnosticFactory(
-    (kind: AnnotationKind) =>
-        `'@${kind}' has been removed and will no longer have any effect.` +
-        `See https://typescripttolua.github.io/docs/advanced/compiler-annotations#${kind.toLowerCase()} for more information.`
-);
-
 export const annotationDeprecated = createWarningDiagnosticFactory(
     (kind: AnnotationKind) =>
         `'@${kind}' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile. ` +
@@ -167,4 +155,20 @@ export const unsupportedOptionalCompileMembersOnly = createErrorDiagnosticFactor
 
 export const undefinedInArrayLiteral = createErrorDiagnosticFactory(
     "Array literals may not contain undefined or null."
+);
+
+export const invalidMethodCallExtensionUse = createErrorDiagnosticFactory(
+    "This language extension must be called as a method."
+);
+
+export const invalidSpreadInCallExtension = createErrorDiagnosticFactory(
+    "Spread elements are not supported in call extensions."
+);
+
+export const cannotAssignToNodeOfKind = createErrorDiagnosticFactory(
+    (kind: lua.SyntaxKind) => `Cannot create assignment assigning to a node of type ${lua.SyntaxKind[kind]}.`
+);
+
+export const incompleteFieldDecoratorWarning = createWarningDiagnosticFactory(
+    "You are using a class field decorator, note that tstl ignores returned value initializers!"
 );

@@ -5,7 +5,7 @@ export function __TS__InstanceOf(this: void, obj: LuaClassInstance, classTbl: Lu
 
     if (classTbl[Symbol.hasInstance] !== undefined) {
         // eslint-disable-next-line no-implicit-coercion
-        return !!classTbl[Symbol.hasInstance](obj);
+        return !!classTbl[Symbol.hasInstance]!(obj);
     }
 
     if (typeof obj === "object") {
@@ -14,7 +14,7 @@ export function __TS__InstanceOf(this: void, obj: LuaClassInstance, classTbl: Lu
             if (luaClass === classTbl) {
                 return true;
             }
-            luaClass = luaClass.____super;
+            luaClass = luaClass.____super!;
         }
     }
     return false;

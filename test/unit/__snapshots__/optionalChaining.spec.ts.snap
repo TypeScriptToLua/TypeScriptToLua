@@ -1,31 +1,31 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Unsupported optional chains Builtin global method: code 1`] = `
-"local ____lualib = require(\\"lualib_bundle\\")
+"local ____lualib = require("lualib_bundle")
 local __TS__Number = ____lualib.__TS__Number
-local ____Number_result_0 = Number
-if ____Number_result_0 ~= nil then
-    ____Number_result_0 = __TS__Number(\\"3\\")
+local ____opt_0 = Number
+if ____opt_0 ~= nil then
+    __TS__Number("3")
 end"
 `;
 
 exports[`Unsupported optional chains Builtin global method: diagnostics 1`] = `"main.ts(2,17): error TSTL: Optional calls are not supported for builtin or language extension functions."`;
 
 exports[`Unsupported optional chains Builtin global property: code 1`] = `
-"local ____console_log_result_0 = console
-if ____console_log_result_0 ~= nil then
-    ____console_log_result_0 = print(\\"3\\")
+"local ____opt_0 = console
+if ____opt_0 ~= nil then
+    print("3")
 end"
 `;
 
 exports[`Unsupported optional chains Builtin global property: diagnostics 1`] = `"main.ts(2,17): error TSTL: Optional calls are not supported for builtin or language extension functions."`;
 
 exports[`Unsupported optional chains Builtin prototype method: code 1`] = `
-"local ____lualib = require(\\"lualib_bundle\\")
+"local ____lualib = require("lualib_bundle")
 local __TS__ArrayForEach = ____lualib.__TS__ArrayForEach
-local ____table_forEach_result_0 = ({1, 2, 3, 4}).forEach
-if ____table_forEach_result_0 ~= nil then
-    ____table_forEach_result_0 = __TS__ArrayForEach(
+local ____opt_0 = ({1, 2, 3, 4}).forEach
+if ____opt_0 ~= nil then
+    __TS__ArrayForEach(
         {1, 2, 3, 4},
         function()
         end
@@ -49,10 +49,10 @@ function ____exports.__main(self)
     local C = 3
     ---
     -- @compileMembersOnly
-    local D = \\"D\\"
-    local ____TestEnum_B_0 = TestEnum
-    if ____TestEnum_B_0 ~= nil then
-        ____TestEnum_B_0 = B
+    local D = "D"
+    local ____opt_0 = TestEnum
+    if ____opt_0 ~= nil then
+        local ____ = B
     end
 end
 return ____exports"
@@ -61,10 +61,216 @@ return ____exports"
 exports[`Unsupported optional chains Compile members only: diagnostics 1`] = `"main.ts(10,17): error TSTL: Optional calls are not supported on enums marked with @compileMembersOnly."`;
 
 exports[`Unsupported optional chains Language extensions: code 1`] = `
-"local ____table_has_result_0 = ({}).has
-if ____table_has_result_0 ~= nil then
-    ____table_has_result_0 = nil[3] ~= nil
+"local ____opt_0 = ({}).has
+if ____opt_0 ~= nil then
 end"
 `;
 
-exports[`Unsupported optional chains Language extensions: diagnostics 1`] = `"main.ts(2,17): error TSTL: Optional calls are not supported for builtin or language extension functions."`;
+exports[`Unsupported optional chains Language extensions: diagnostics 1`] = `
+"main.ts(2,17): error TSTL: Optional calls are not supported for builtin or language extension functions.
+main.ts(2,17): error TSTL: This language extension must be called as a method."
+`;
+
+exports[`long optional chain 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local a = {b = {c = {d = {e = {f = "hello!"}}}}}
+    local ____opt_2 = a.b
+    local ____opt_0 = ____opt_2 and ____opt_2.c
+    return ____opt_0 and ____opt_0.d.e.f
+end
+return ____exports"
+`;
+
+exports[`optional chaining ("{ foo: \\"foo\\" }") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local obj = {foo = "foo"}
+    return obj and obj.foo
+end
+return ____exports"
+`;
+
+exports[`optional chaining ("null") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local obj = nil
+    return obj and obj.foo
+end
+return ____exports"
+`;
+
+exports[`optional chaining ("undefined") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local obj = nil
+    return obj and obj.foo
+end
+return ____exports"
+`;
+
+exports[`optional element function calls 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local obj = {
+        value = "foobar",
+        foo = function(v) return v + 10 end
+    }
+    local fooKey = "foo"
+    local barKey = "bar"
+    local ____opt_0 = obj[barKey]
+    local ____temp_4 = ____opt_0 and ____opt_0(5)
+    if ____temp_4 == nil then
+        local ____opt_2 = obj[fooKey]
+        ____temp_4 = ____opt_2 and ____opt_2(15)
+    end
+    return ____temp_4
+end
+return ____exports"
+`;
+
+exports[`unused call 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local result
+    local obj = {foo = function(self)
+        result = "bar"
+    end}
+    if obj ~= nil then
+        obj:foo()
+    end
+    return result
+end
+return ____exports"
+`;
+
+exports[`unused expression 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local obj = {foo = "bar"}
+    if obj ~= nil then
+        local ____ = obj.foo
+    end
+end
+return ____exports"
+`;
+
+exports[`unused result with preceding statements on right side 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local i = 0
+    local obj = nil
+    if obj ~= nil then
+        local ____opt_0_foo_2 = obj.foo
+        local ____i_1 = i
+        i = ____i_1 + 1
+        ____opt_0_foo_2(obj, ____i_1)
+    end
+    return i
+end
+return ____exports"
+`;
+
+exports[`unused result with preceding statements on right side 2`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local i = 0
+    local obj = {foo = function(self, val)
+        return val
+    end}
+    if obj ~= nil then
+        local ____opt_0_foo_2 = obj.foo
+        local ____i_1 = i
+        i = ____i_1 + 1
+        ____opt_0_foo_2(obj, ____i_1)
+    end
+    return i
+end
+return ____exports"
+`;
+
+exports[`with preceding statements on right side 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local i = 0
+    local obj = nil
+    local ____opt_result_4
+    if obj ~= nil then
+        local ____opt_0_foo_2 = obj.foo
+        local ____i_1 = i
+        i = ____i_1 + 1
+        ____opt_result_4 = ____opt_0_foo_2(obj, ____i_1)
+    end
+    return {result = ____opt_result_4, i = i}
+end
+return ____exports"
+`;
+
+exports[`with preceding statements on right side 2`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local i = 0
+    local obj = {foo = function(____, v) return v end}
+    local ____opt_result_4
+    if obj ~= nil then
+        local ____opt_0_foo_2 = obj.foo
+        local ____i_1 = i
+        i = ____i_1 + 1
+        ____opt_result_4 = ____opt_0_foo_2(obj, ____i_1)
+    end
+    return {result = ____opt_result_4, i = i}
+end
+return ____exports"
+`;
+
+exports[`with preceding statements on right side modifying left 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local i = 0
+    local obj = nil
+    local function bar(self)
+        if obj then
+            obj.foo = nil
+        end
+        obj = nil
+        return 1
+    end
+    local ____opt_0 = obj
+    if ____opt_0 ~= nil then
+        local ____opt_0_foo_3 = ____opt_0.foo
+        local ____bar_result_2 = bar(nil)
+        local ____i_1 = i
+        i = ____i_1 + 1
+        ____opt_0 = ____opt_0_foo_3(____opt_0, ____bar_result_2, ____i_1)
+    end
+    return {result = ____opt_0, obj = obj, i = i}
+end
+return ____exports"
+`;
+
+exports[`with preceding statements on right side modifying left 2`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local i = 0
+    local obj = {foo = function(self, v)
+        return v
+    end}
+    local function bar(self)
+        if obj then
+            obj.foo = nil
+        end
+        obj = nil
+        return 1
+    end
+    local ____opt_0 = obj
+    if ____opt_0 ~= nil then
+        local ____opt_0_foo_3 = ____opt_0.foo
+        local ____bar_result_2 = bar(nil)
+        local ____i_1 = i
+        i = ____i_1 + 1
+        ____opt_0 = ____opt_0_foo_3(____opt_0, ____bar_result_2, ____i_1)
+    end
+    return {result = ____opt_0, obj = obj, i = i}
+end
+return ____exports"
+`;

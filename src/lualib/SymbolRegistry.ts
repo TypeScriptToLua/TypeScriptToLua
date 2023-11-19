@@ -9,8 +9,10 @@ export function __TS__SymbolRegistryFor(this: void, key: string): symbol {
     return symbolRegistry[key];
 }
 
-export function __TS__SymbolRegistryKeyFor(this: void, sym: symbol): string {
+export function __TS__SymbolRegistryKeyFor(this: void, sym: symbol): string | undefined {
     for (const key in symbolRegistry) {
         if (symbolRegistry[key] === sym) return key;
     }
+
+    return undefined;
 }

@@ -147,7 +147,7 @@ function updateParsedCommandLine(parsedCommandLine: ts.ParsedCommandLine, args: 
         if (!args[i].startsWith("-")) continue;
 
         const isShorthand = !args[i].startsWith("--");
-        const argumentName = args[i].substr(isShorthand ? 1 : 2);
+        const argumentName = args[i].substring(isShorthand ? 1 : 2);
         const option = optionDeclarations.find(option => {
             if (option.name.toLowerCase() === argumentName.toLowerCase()) return true;
             if (isShorthand && option.aliases) {

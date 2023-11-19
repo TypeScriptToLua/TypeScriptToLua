@@ -42,7 +42,7 @@ export function transformStringPrototypeCall(
                 "find",
                 node,
                 caller,
-                params[0],
+                params[0] ?? lua.createNilLiteral(),
                 params[1]
                     ? // string.find handles negative indexes by making it relative to string end, but for indexOf it's the same as 0
                       lua.createCallExpression(
@@ -110,7 +110,7 @@ export function transformStringPrototypeCall(
             const literalValue = getNumberLiteralValue(params[0]);
             // Inline string.sub call if we know that parameter is pure and isn't negative
             if (literalValue !== undefined && literalValue >= 0) {
-                const firstParamPlusOne = addToNumericExpression(params[0], 1);
+                const firstParamPlusOne = addToNumericExpression(params[0] ?? lua.createNilLiteral(), 1);
                 return createStringCall("sub", node, caller, firstParamPlusOne, firstParamPlusOne);
             }
 
@@ -122,7 +122,12 @@ export function transformStringPrototypeCall(
             // Inline string.sub call if we know that parameter is pure and isn't negative
             if (literalValue !== undefined && literalValue >= 0) {
                 return lua.createBinaryExpression(
-                    createStringCall("byte", node, caller, addToNumericExpression(params[0], 1)),
+                    createStringCall(
+                        "byte",
+                        node,
+                        caller,
+                        addToNumericExpression(params[0] ?? lua.createNilLiteral(), 1)
+                    ),
                     createNaN(),
                     lua.SyntaxKind.OrOperator
                 );
@@ -140,7 +145,9 @@ export function transformStringPrototypeCall(
         case "repeat":
             const math = lua.createIdentifier("math");
             const floor = lua.createStringLiteral("floor");
-            const parameter = lua.createCallExpression(lua.createTableIndexExpression(math, floor), [params[0]]);
+            const parameter = lua.createCallExpression(lua.createTableIndexExpression(math, floor), [
+                params[0] ?? lua.createNilLiteral(),
+            ]);
             return createStringCall("rep", node, caller, parameter);
         case "padStart":
             return transformLuaLibFunction(context, LuaLibFeature.StringPadStart, node, caller, ...params);

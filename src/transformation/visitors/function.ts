@@ -24,11 +24,17 @@ import { transformBindingPattern } from "./variable-declaration";
 function transformParameterDefaultValueDeclaration(
     context: TransformationContext,
     parameterName: lua.Identifier,
-    value?: ts.Expression,
+    value: ts.Expression,
     tsOriginal?: ts.Node
-): lua.Statement {
-    const parameterValue = value ? context.transformExpression(value) : undefined;
-    const assignment = lua.createAssignmentStatement(parameterName, parameterValue);
+): lua.Statement | undefined {
+    const { precedingStatements: statements, result: parameterValue } = transformInPrecedingStatementScope(
+        context,
+        () => context.transformExpression(value)
+    );
+    if (!lua.isNilLiteral(parameterValue)) {
+        statements.push(lua.createAssignmentStatement(parameterName, parameterValue));
+    }
+    if (statements.length === 0) return undefined;
 
     const nilCondition = lua.createBinaryExpression(
         parameterName,
@@ -36,7 +42,7 @@ function transformParameterDefaultValueDeclaration(
         lua.SyntaxKind.EqualityOperator
     );
 
-    const ifBlock = lua.createBlock([assignment]);
+    const ifBlock = lua.createBlock(statements, tsOriginal);
 
     return lua.createIfStatement(nilCondition, ifBlock, undefined, tsOriginal);
 }
@@ -90,7 +96,7 @@ export function isFunctionTypeWithProperties(context: TransformationContext, fun
 
 export function transformFunctionBodyContent(context: TransformationContext, body: ts.ConciseBody): lua.Statement[] {
     if (!ts.isBlock(body)) {
-        const [precedingStatements, returnStatement] = transformInPrecedingStatementScope(context, () =>
+        const { precedingStatements, result: returnStatement } = transformInPrecedingStatementScope(context, () =>
             transformExpressionBodyToReturnStatement(context, body)
         );
         return [...precedingStatements, returnStatement];
@@ -106,7 +112,7 @@ export function transformFunctionBodyHeader(
     parameters: ts.NodeArray<ts.ParameterDeclaration>,
     spreadIdentifier?: lua.Identifier
 ): lua.Statement[] {
-    const headerStatements = [];
+    const headerStatements: lua.Statement[] = [];
 
     // Add default parameters and object binding patterns
     const bindingPatternDeclarations: lua.Statement[] = [];
@@ -116,26 +122,28 @@ export function transformFunctionBodyHeader(
             const identifier = lua.createIdentifier(`____bindingPattern${bindPatternIndex++}`);
             if (declaration.initializer !== undefined) {
                 // Default binding parameter
-                headerStatements.push(
-                    transformParameterDefaultValueDeclaration(context, identifier, declaration.initializer)
+                const initializer = transformParameterDefaultValueDeclaration(
+                    context,
+                    identifier,
+                    declaration.initializer
                 );
+                if (initializer) headerStatements.push(initializer);
             }
 
             // Binding pattern
             const name = declaration.name;
-            const [precedingStatements, bindings] = transformInPrecedingStatementScope(context, () =>
+            const { precedingStatements, result: bindings } = transformInPrecedingStatementScope(context, () =>
                 transformBindingPattern(context, name, identifier)
             );
             bindingPatternDeclarations.push(...precedingStatements, ...bindings);
         } else if (declaration.initializer !== undefined) {
             // Default parameter
-            headerStatements.push(
-                transformParameterDefaultValueDeclaration(
-                    context,
-                    transformIdentifier(context, declaration.name),
-                    declaration.initializer
-                )
+            const initializer = transformParameterDefaultValueDeclaration(
+                context,
+                transformIdentifier(context, declaration.name),
+                declaration.initializer
             );
+            if (initializer) headerStatements.push(initializer);
         }
     }
 
@@ -187,7 +195,7 @@ export function transformParameters(
 
     // Only push parameter name to paramName array if it isn't a spread parameter
     for (const param of parameters) {
-        if (ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword) {
+        if (ts.isIdentifier(param.name) && ts.identifierToKeywordKind(param.name) === ts.SyntaxKind.ThisKeyword) {
             continue;
         }
 
@@ -219,7 +227,15 @@ export function transformFunctionToExpression(
 
     const type = context.checker.getTypeAtLocation(node);
     let functionContext: lua.Identifier | undefined;
-    if (getFunctionContextType(context, type) !== ContextType.Void) {
+
+    const firstParam = node.parameters[0];
+    const hasThisVoidParameter =
+        firstParam &&
+        ts.isIdentifier(firstParam.name) &&
+        ts.identifierToKeywordKind(firstParam.name) === ts.SyntaxKind.ThisKeyword &&
+        firstParam.type?.kind === ts.SyntaxKind.VoidKeyword;
+
+    if (!hasThisVoidParameter && getFunctionContextType(context, type) !== ContextType.Void) {
         if (ts.isArrowFunction(node)) {
             // dummy context for arrow functions with parameters
             if (node.parameters.length > 0) {

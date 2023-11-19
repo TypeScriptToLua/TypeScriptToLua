@@ -1,0 +1,14 @@
+{
+    "name": "dependency1",
+    "version": "0.0.1",
+    "exports": {
+        "./sub": {
+            "require": "./dist/index",
+            "types": "./dist/index.d.ts"
+        },
+        "./sub/*": {
+            "require": "./dist/*",
+            "types": "./dist/*.d.ts"
+        }
+    }
+}

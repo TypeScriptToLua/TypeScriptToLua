@@ -174,6 +174,22 @@ describe("module resolution with sourceDir", () => {
             .setOptions({ luaBundle: "bundle.lua", luaBundleEntry: mainFile })
             .expectToEqual(expectedResult);
     });
+
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1394
+    test("can resolve files with non-standard extension (#1394)", () => {
+        util.testProject(path.join(projectPath, "tsconfig.json"))
+            .setMainFileName(path.join(projectPath, "src", "main.ts"))
+            .setOptions({ outDir: "tstl-out", extension: ".script" })
+            .expectToEqual(expectedResult);
+    });
+
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1394
+    test("can resolve files with non-standard extension without separator (#1394)", () => {
+        util.testProject(path.join(projectPath, "tsconfig.json"))
+            .setMainFileName(path.join(projectPath, "src", "main.ts"))
+            .setOptions({ outDir: "tstl-out", extension: "script" })
+            .expectToEqual(expectedResult);
+    });
 });
 
 describe("module resolution project with lua sources", () => {
@@ -268,6 +284,51 @@ describe("module resolution project with dependencies built by tstl library mode
         util.testProject(path.join(projectPath, "tsconfig.json"))
             .setMainFileName(mainFile)
             .setOptions({ luaBundle: "bundle.lua", luaBundleEntry: mainFile })
+            .expectToEqual(expectedResult);
+    });
+});
+
+describe("module resolution project with dependencies built by tstl library mode and has exports field", () => {
+    const projectPath = path.resolve(__dirname, "module-resolution", "project-with-tstl-library-has-exports-field");
+
+    // First compile dependencies into node_modules. NOTE: Actually writing to disk, very slow
+    const dependency1Path = path.join(projectPath, "node_modules", "dependency1");
+    tstl.transpileProject(path.join(dependency1Path, "tsconfig.json"));
+
+    const expectedResult = {
+        dependency1IndexResult: "function in dependency 1 index: dependency1OtherFileFunc in dependency1/d1otherfile",
+        dependency1OtherFileFuncResult: "dependency1OtherFileFunc in dependency1/d1otherfile",
+    };
+
+    test("can resolve lua dependencies", () => {
+        const transpileResult = util
+            .testProject(path.join(projectPath, "tsconfig.json"))
+            .setMainFileName(path.join(projectPath, "main.ts"))
+            .setOptions({
+                outDir: "tstl-out",
+                moduleResolution: ts.ModuleResolutionKind.Node16,
+                module: ts.ModuleKind.Node16,
+            })
+            .expectToEqual(expectedResult)
+            .getLuaResult();
+
+        // Assert node_modules file requires the correct lualib_bundle
+        const requiringLuaFile = path.join("lua_modules", "dependency1", "dist", "index.lua");
+        const lualibRequiringFile = transpileResult.transpiledFiles.find(f => f.outPath.endsWith(requiringLuaFile));
+        expect(lualibRequiringFile).toBeDefined();
+        expect(lualibRequiringFile?.lua).toContain('require("lualib_bundle")');
+    });
+
+    test("can resolve dependencies and bundle", () => {
+        const mainFile = path.join(projectPath, "main.ts");
+        util.testProject(path.join(projectPath, "tsconfig.json"))
+            .setMainFileName(mainFile)
+            .setOptions({
+                luaBundle: "bundle.lua",
+                luaBundleEntry: mainFile,
+                moduleResolution: ts.ModuleResolutionKind.Node16,
+                module: ts.ModuleKind.Node16,
+            })
             .expectToEqual(expectedResult);
     });
 });
@@ -385,6 +446,65 @@ describe("module resolution should not try to resolve modules in noResolvePaths"
             .setOptions({ noResolvePaths: ["a.b.c.foo", "somethingExtra", "dontResolveThis"] })
             .expectToHaveNoDiagnostics();
     });
+
+    test("can ignore specific files with glob pattern", () => {
+        util.testModule`
+            // Pre-Load as to not error out at runtime
+            import "preload";
+
+            import "ignoreme";
+            import * as b from "./actualfile";
+
+            export const result = b.foo();
+        `
+            .addExtraFile("preload.lua", 'package.preload["ignoreme"] = function() return nil end')
+            .addExtraFile(
+                "actualfile.ts",
+                `export function foo()
+                {
+                    return 'foo';
+                }`
+            )
+            .addExtraFile(
+                "ignoreme.d.ts",
+                `declare module "ignoreme" {
+                    export function foo(): void;
+                }`
+            )
+            .setOptions({ noResolvePaths: ["ignore*"] })
+            .expectToHaveNoDiagnostics()
+            .expectToEqual({ result: "foo" });
+    });
+
+    test("can ignore all files with glob pattern in require", () => {
+        util.testModule`
+            declare function require(this: void, module: string): any;
+            
+            const a = require("a")
+            const b = require("b/b")
+            const c = require("c/c/c")
+            const d = require("!:?somefile")
+        `
+            .setOptions({ noResolvePaths: ["**"] })
+            .expectToHaveNoDiagnostics();
+    });
+
+    test("can ignore all files with glob pattern as used in imported lua sources", () => {
+        util.testModule`
+            import * as lua from "./luasource";
+            lua.foo();
+        `
+            .addExtraFile("luasource.d.ts", "export function foo(): void;")
+            .addExtraFile(
+                "luasource.lua",
+                `
+                require("ignoreme!")
+                require("i.g.n.o.r.e")
+            `
+            )
+            .setOptions({ noResolvePaths: ["**"] })
+            .expectToHaveNoDiagnostics();
+    });
 });
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1062
@@ -411,7 +531,7 @@ test("module resolution should not rewrite @NoResolution requires in library mod
 });
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1050
-test("module resolution should not try to resolve resolve-like functions", () => {
+test("module resolution should not try to resolve require-like functions", () => {
     util.testModule`
         function custom_require(this: void, value: string) {
             return value;
@@ -589,6 +709,30 @@ test("supports complicated paths configuration", () => {
 
 test("paths without baseUrl is error", () => {
     util.testFunction``.setOptions({ paths: {} }).expectToHaveDiagnostics([pathsWithoutBaseUrl.code]);
+});
+
+test("module resolution using plugin", () => {
+    const baseProjectPath = path.resolve(__dirname, "module-resolution", "project-with-module-resolution-plugin");
+    const projectTsConfig = path.join(baseProjectPath, "tsconfig.json");
+    const mainFile = path.join(baseProjectPath, "main.ts");
+
+    const testBuilder = util
+        .testProject(projectTsConfig)
+        .setMainFileName(mainFile)
+        .setOptions({
+            luaPlugins: [
+                {
+                    name: path.join(__dirname, "./plugins/moduleResolution.ts"),
+                },
+            ],
+        })
+        .expectToHaveNoDiagnostics();
+
+    const luaResult = testBuilder.getLuaResult();
+
+    expect(luaResult.transpiledFiles).toHaveLength(3);
+
+    testBuilder.expectToEqual({ result: ["foo", "absolutefoo"] });
 });
 
 function snapshotPaths(files: tstl.TranspiledFile[]) {

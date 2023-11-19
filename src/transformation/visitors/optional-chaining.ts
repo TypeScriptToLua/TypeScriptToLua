@@ -1,10 +1,12 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
-import { TransformationContext, tempSymbolId } from "../context";
+import { tempSymbolId, TransformationContext } from "../context";
 import { assert, assertNever } from "../../utils";
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
-import { transformPropertyAccessExpressionWithCapture, transformElementAccessExpressionWithCapture } from "./access";
+import { transformElementAccessExpressionWithCapture, transformPropertyAccessExpressionWithCapture } from "./access";
 import { shouldMoveToTemp } from "./expression-list";
+import { canBeFalsyWhenNotNull, expressionResultIsUsed } from "../utils/typescript";
+import { wrapInStatement } from "./expression-statement";
 
 type NormalOptionalChain = ts.PropertyAccessChain | ts.ElementAccessChain | ts.CallChain;
 
@@ -56,7 +58,7 @@ export function captureThisValue(
     thisValueCapture: lua.Identifier,
     tsOriginal: ts.Node
 ): lua.Expression {
-    if (!shouldMoveToTemp(context, expression, tsOriginal) && !isOptionalContinuation(tsOriginal)) {
+    if (!shouldMoveToTemp(context, expression, tsOriginal)) {
         return expression;
     }
     const tempAssignment = lua.createAssignmentStatement(thisValueCapture, expression, tsOriginal);
@@ -66,6 +68,7 @@ export function captureThisValue(
 
 export interface OptionalContinuation {
     contextualCall?: lua.CallExpression;
+    usedIdentifiers: lua.Identifier[];
 }
 
 const optionalContinuations = new WeakMap<ts.Identifier, OptionalContinuation>();
@@ -74,12 +77,16 @@ const optionalContinuations = new WeakMap<ts.Identifier, OptionalContinuation>()
 function createOptionalContinuationIdentifier(text: string, tsOriginal: ts.Expression): ts.Identifier {
     const identifier = ts.factory.createIdentifier(text);
     ts.setOriginalNode(identifier, tsOriginal);
-    optionalContinuations.set(identifier, {});
+    optionalContinuations.set(identifier, {
+        usedIdentifiers: [],
+    });
     return identifier;
 }
+
 export function isOptionalContinuation(node: ts.Node): boolean {
     return ts.isIdentifier(node) && optionalContinuations.has(node);
 }
+
 export function getOptionalContinuationData(identifier: ts.Identifier): OptionalContinuation | undefined {
     return optionalContinuations.get(identifier);
 }
@@ -90,16 +97,16 @@ export function transformOptionalChain(context: TransformationContext, node: ts.
 
 export function transformOptionalChainWithCapture(
     context: TransformationContext,
-    node: ts.OptionalChain,
+    tsNode: ts.OptionalChain,
     thisValueCapture: lua.Identifier | undefined,
     isDelete?: ts.DeleteExpression
 ): ExpressionWithThisValue {
-    const luaTemp = context.createTempNameForNode(node);
+    const luaTempName = context.createTempName("opt");
 
-    const { expression: tsLeftExpression, chain } = flattenChain(node);
+    const { expression: tsLeftExpression, chain } = flattenChain(tsNode);
 
     // build temp.b.c.d
-    const tsTemp = createOptionalContinuationIdentifier(luaTemp.text, tsLeftExpression);
+    const tsTemp = createOptionalContinuationIdentifier(luaTempName, tsLeftExpression);
     let tsRightExpression: ts.Expression = tsTemp;
     for (const link of chain) {
         if (ts.isPropertyAccessExpression(link)) {
@@ -121,39 +128,44 @@ export function transformOptionalChainWithCapture(
     // transform right expression first to check if thisValue capture is needed
     // capture and return thisValue if requested from outside
     let returnThisValue: lua.Expression | undefined;
-    const [rightPrecedingStatements, rightAssignment] = transformInPrecedingStatementScope(context, () => {
-        let result: lua.Expression;
-        if (thisValueCapture) {
-            ({ expression: result, thisValue: returnThisValue } = transformExpressionWithThisValueCapture(
+    const { precedingStatements: rightPrecedingStatements, result: rightExpression } =
+        transformInPrecedingStatementScope(context, () => {
+            if (!thisValueCapture) {
+                return context.transformExpression(tsRightExpression);
+            }
+
+            const { expression: result, thisValue } = transformExpressionWithThisValueCapture(
                 context,
                 tsRightExpression,
                 thisValueCapture
-            ));
-        } else {
-            result = context.transformExpression(tsRightExpression);
-        }
-        return lua.createAssignmentStatement(luaTemp, result);
-    });
+            );
+            returnThisValue = thisValue;
+            return result;
+        });
 
     // transform left expression, handle thisValue if needed by rightExpression
     const thisValueCaptureName = context.createTempName("this");
     const leftThisValueTemp = lua.createIdentifier(thisValueCaptureName, undefined, tempSymbolId);
     let capturedThisValue: lua.Expression | undefined;
 
-    const rightContextualCall = getOptionalContinuationData(tsTemp)?.contextualCall;
-    const [leftPrecedingStatements, leftExpression] = transformInPrecedingStatementScope(context, () => {
-        let result: lua.Expression;
-        if (rightContextualCall) {
-            ({ expression: result, thisValue: capturedThisValue } = transformExpressionWithThisValueCapture(
-                context,
-                tsLeftExpression,
-                leftThisValueTemp
-            ));
-        } else {
-            result = context.transformExpression(tsLeftExpression);
+    const optionalContinuationData = getOptionalContinuationData(tsTemp);
+    const rightContextualCall = optionalContinuationData?.contextualCall;
+    const { precedingStatements: leftPrecedingStatements, result: leftExpression } = transformInPrecedingStatementScope(
+        context,
+        () => {
+            let result: lua.Expression;
+            if (rightContextualCall) {
+                ({ expression: result, thisValue: capturedThisValue } = transformExpressionWithThisValueCapture(
+                    context,
+                    tsLeftExpression,
+                    leftThisValueTemp
+                ));
+            } else {
+                result = context.transformExpression(tsLeftExpression);
+            }
+            return result;
         }
-        return result;
-    });
+    );
     // handle context
     if (rightContextualCall) {
         if (capturedThisValue) {
@@ -177,26 +189,78 @@ export function transformOptionalChainWithCapture(
         }
     }
 
-    // <left preceding statements>
-    // local temp = <left>
-    // if temp ~= nil then
-    //   <right preceding statements>
-    //   temp = temp.b.c.d
-    // end
-    // return temp
+    // evaluate optional chain
+    context.addPrecedingStatements(leftPrecedingStatements);
 
-    context.addPrecedingStatements([
-        ...leftPrecedingStatements,
-        lua.createVariableDeclarationStatement(luaTemp, leftExpression),
-        lua.createIfStatement(
-            lua.createBinaryExpression(luaTemp, lua.createNilLiteral(), lua.SyntaxKind.InequalityOperator),
-            lua.createBlock([...rightPrecedingStatements, rightAssignment])
-        ),
-    ]);
-    return {
-        expression: luaTemp,
-        thisValue: returnThisValue,
-    };
+    // try use existing variable instead of creating new one, if possible
+    let leftIdentifier: lua.Identifier | undefined;
+    const usedLuaIdentifiers = optionalContinuationData?.usedIdentifiers;
+    const reuseLeftIdentifier =
+        usedLuaIdentifiers &&
+        usedLuaIdentifiers.length > 0 &&
+        lua.isIdentifier(leftExpression) &&
+        (rightPrecedingStatements.length === 0 || !shouldMoveToTemp(context, leftExpression, tsLeftExpression));
+    if (reuseLeftIdentifier) {
+        leftIdentifier = leftExpression;
+        for (const usedIdentifier of usedLuaIdentifiers) {
+            usedIdentifier.text = leftIdentifier.text;
+        }
+    } else {
+        leftIdentifier = lua.createIdentifier(luaTempName, undefined, tempSymbolId);
+        context.addPrecedingStatements(lua.createVariableDeclarationStatement(leftIdentifier, leftExpression));
+    }
+
+    if (!expressionResultIsUsed(tsNode) || isDelete) {
+        // if left ~= nil then
+        //   <right preceding statements>
+        //   <right expression>
+        // end
+
+        const innerExpression = wrapInStatement(rightExpression);
+        const innerStatements = rightPrecedingStatements;
+        if (innerExpression) innerStatements.push(innerExpression);
+
+        context.addPrecedingStatements(
+            lua.createIfStatement(
+                lua.createBinaryExpression(leftIdentifier, lua.createNilLiteral(), lua.SyntaxKind.InequalityOperator),
+                lua.createBlock(innerStatements)
+            )
+        );
+        return { expression: lua.createNilLiteral(), thisValue: returnThisValue };
+    } else if (
+        rightPrecedingStatements.length === 0 &&
+        !canBeFalsyWhenNotNull(context, context.checker.getTypeAtLocation(tsLeftExpression))
+    ) {
+        // return a && a.b
+        return {
+            expression: lua.createBinaryExpression(leftIdentifier, rightExpression, lua.SyntaxKind.AndOperator, tsNode),
+            thisValue: returnThisValue,
+        };
+    } else {
+        let resultIdentifier: lua.Identifier;
+        if (!reuseLeftIdentifier) {
+            // reuse temp variable for output
+            resultIdentifier = leftIdentifier;
+        } else {
+            resultIdentifier = lua.createIdentifier(context.createTempName("opt_result"), undefined, tempSymbolId);
+            context.addPrecedingStatements(lua.createVariableDeclarationStatement(resultIdentifier));
+        }
+        // if left ~= nil then
+        //   <right preceding statements>
+        //   result = <right expression>
+        // end
+        // return result
+        context.addPrecedingStatements(
+            lua.createIfStatement(
+                lua.createBinaryExpression(leftIdentifier, lua.createNilLiteral(), lua.SyntaxKind.InequalityOperator),
+                lua.createBlock([
+                    ...rightPrecedingStatements,
+                    lua.createAssignmentStatement(resultIdentifier, rightExpression),
+                ])
+            )
+        );
+        return { expression: resultIdentifier, thisValue: returnThisValue };
+    }
 }
 
 export function transformOptionalDeleteExpression(

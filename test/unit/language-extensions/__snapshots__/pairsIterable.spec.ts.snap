@@ -3,7 +3,7 @@
 exports[`invalid LuaPairsIterable without destructuring ("for (const s of testIterable) {}"): code 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local testIterable = {a1 = \\"a2\\", b1 = \\"b2\\", c1 = \\"c2\\"}
+    local testIterable = {a1 = "a2", b1 = "b2", c1 = "c2"}
     for ____ in pairs(testIterable) do
     end
 end
@@ -15,7 +15,7 @@ exports[`invalid LuaPairsIterable without destructuring ("for (const s of testIt
 exports[`invalid LuaPairsIterable without destructuring ("let s; for (s of testIterable) {}"): code 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local testIterable = {a1 = \\"a2\\", b1 = \\"b2\\", c1 = \\"c2\\"}
+    local testIterable = {a1 = "a2", b1 = "b2", c1 = "c2"}
     local s
     for ____ in pairs(testIterable) do
     end

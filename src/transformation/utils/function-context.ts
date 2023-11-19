@@ -35,10 +35,10 @@ function getExplicitThisParameter(signatureDeclaration: ts.SignatureDeclaration)
     }
 }
 
-const signatureDeclarationContextTypes = new WeakMap<ts.CallLikeExpression, ContextType>();
+const callContextTypes = new WeakMap<ts.CallLikeExpression, ContextType>();
 
 export function getCallContextType(context: TransformationContext, callExpression: ts.CallLikeExpression): ContextType {
-    const known = signatureDeclarationContextTypes.get(callExpression);
+    const known = callContextTypes.get(callExpression);
     if (known !== undefined) return known;
 
     const signature = context.checker.getResolvedSignature(callExpression);
@@ -59,18 +59,20 @@ export function getCallContextType(context: TransformationContext, callExpressio
             : ContextType.NonVoid;
     }
 
-    signatureDeclarationContextTypes.set(callExpression, contextType);
+    callContextTypes.set(callExpression, contextType);
     return contextType;
 }
+
+const signatureDeclarationContextTypes = new WeakMap<ts.SignatureDeclaration, ContextType>();
 
 function getSignatureContextType(
     context: TransformationContext,
     signatureDeclaration: ts.SignatureDeclaration
 ): ContextType {
-    // const known = signatureDeclarationContextTypes.get(signatureDeclaration);
-    // if (known !== undefined) return known;
+    const known = signatureDeclarationContextTypes.get(signatureDeclaration);
+    if (known !== undefined) return known;
     const contextType = computeDeclarationContextType(context, signatureDeclaration);
-    // signatureDeclarationContextTypes.set(signatureDeclaration, contextType);
+    signatureDeclarationContextTypes.set(signatureDeclaration, contextType);
     return contextType;
 }
 

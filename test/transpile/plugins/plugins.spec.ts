@@ -1,5 +1,6 @@
 import * as path from "path";
 import * as util from "../../util";
+import * as ts from "typescript";
 
 test("printer", () => {
     util.testModule``
@@ -159,4 +160,25 @@ test("beforeEmit plugin bundle", () => {
         // Expect bundle to be affected by plugin
         expect(f.lua).toContain("-- Comment added by beforeEmit plugin");
     }
+});
+
+test("afterEmit plugin", () => {
+    const { diagnostics } = util.testModule`
+        console.log("Hello, World!");
+        [].push(1,2,3); // Use lualib code
+    `
+        .addExtraFile(
+            "extrafile.ts",
+            `
+                console.log("Hello, Mars!");
+            `
+        )
+        .setOptions({ luaPlugins: [{ name: path.join(__dirname, "afterEmit.ts") }] })
+        .getLuaResult();
+
+    // Expect to see the diagnostic returned by the plugin in the output
+    const diagnostic = diagnostics.find(d => d.code === 1234);
+    expect(diagnostic).toBeDefined();
+    expect(diagnostic?.category).toBe(ts.DiagnosticCategory.Message);
+    expect(diagnostic?.messageText).toContain("After emit");
 });

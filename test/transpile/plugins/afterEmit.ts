@@ -6,10 +6,17 @@ const plugin: tstl.Plugin = {
         void program;
         void options;
         void emitHost;
+        void result;
 
-        for (const file of result) {
-            console.log(`File was written to disk: ${file.outputPath}`);
-        }
+        const diagnostic = {
+            category: ts.DiagnosticCategory.Message,
+            messageText: "After emit diagnostic message!",
+            code: 1234,
+            file: program.getSourceFiles()[0],
+            start: undefined,
+            length: undefined,
+        } satisfies ts.Diagnostic;
+        return [diagnostic];
     },
 };
 

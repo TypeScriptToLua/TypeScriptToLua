@@ -92,8 +92,8 @@ export class Transpiler {
 
         for (const plugin of plugins) {
             if (plugin.afterEmit) {
-                const beforeEmitPluginDiagnostics = plugin.afterEmit(program, options, this.emitHost, emitPlan) ?? [];
-                diagnostics.push(...beforeEmitPluginDiagnostics);
+                const afterEmitPluginDiagnostics = plugin.afterEmit(program, options, this.emitHost, emitPlan) ?? [];
+                diagnostics.push(...afterEmitPluginDiagnostics);
             }
         }
 

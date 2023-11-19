@@ -56,6 +56,10 @@ export interface Plugin {
         result: EmitFile[]
     ) => ts.Diagnostic[] | void;
 
+    /**
+     * This function is called when trying to resolve the .lua file corresponding to a Lua require statement. Allows you to provide
+     * your own module resolution logic. If return value is undefined, regular module resolution is done.
+     */
     moduleResolution?: (
         moduleIdentifier: string,
         requiringFile: string,

@@ -97,8 +97,6 @@ test("respect noSelfInFile over noImplicitSelf (func declared in other file)", (
 
     expect(result.transpiledFiles).not.toHaveLength(0);
 
-    console.log(result);
-    console.log(result.transpiledFiles);
     const mainFile = result.transpiledFiles.find(f => f.outPath.includes("main.lua"));
     expect(mainFile).toBeDefined();
 

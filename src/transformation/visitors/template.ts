@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor } from "../context";
-import { ContextType, getDeclarationContextType } from "../utils/function-context";
+import { ContextType, getCallContextType } from "../utils/function-context";
 import { wrapInToStringForConcat } from "../utils/lua-ast";
 import { isStringType } from "../utils/typescript";
 import { transformArguments, transformContextualCallExpression } from "./call";
@@ -88,17 +88,14 @@ export const transformTaggedTemplateExpression: FunctionVisitor<ts.TaggedTemplat
     expressions.unshift(stringObject);
 
     // Evaluate if there is a self parameter to be used.
-    const signature = context.checker.getResolvedSignature(expression);
-    const signatureDeclaration = signature?.getDeclaration();
-    const useSelfParameter =
-        signatureDeclaration && getDeclarationContextType(context, signatureDeclaration) !== ContextType.Void;
+    const useSelfParameter = getCallContextType(context, expression) !== ContextType.Void;
 
     if (useSelfParameter) {
-        return transformContextualCallExpression(context, expression, expressions, signature);
+        return transformContextualCallExpression(context, expression, expressions);
     }
 
     // Argument evaluation.
-    const callArguments = transformArguments(context, expressions, signature);
+    const callArguments = transformArguments(context, expressions);
 
     const leftHandSideExpression = context.transformExpression(expression.tag);
     return lua.createCallExpression(leftHandSideExpression, callArguments);

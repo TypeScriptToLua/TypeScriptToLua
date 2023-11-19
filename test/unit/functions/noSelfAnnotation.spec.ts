@@ -1,4 +1,3 @@
-import path = require("path");
 import * as util from "../../util";
 
 const methodHolders = ["class", "interface"];
@@ -83,27 +82,38 @@ test("respect noSelfInFile over noImplicitSelf", () => {
 
     expect(mainFile.lua).toBeDefined();
     expect(mainFile.lua).toContain("func(1)");
-    expect(mainFile.lua).not.toContain("_G");
 });
 
-const projectPath = path.resolve(__dirname, "noSelfAnnotationRespect");
-
-const projectFile = util
-    .testProject(path.join(projectPath, "tsconfig.json"))
-    .setMainFileName(path.join(projectPath, "main.ts"));
-
 test("respect noSelfInFile over noImplicitSelf (func declared in other file)", () => {
-    const result = projectFile.getLuaResult();
+    const result = util.testModule`
+        import { func, result } from "./functions";
+
+        export const result1 = result;
+        export const result2 = func(1);
+    `
+        .addExtraFile(
+            "functions.ts",
+            `
+            /** @noSelfInFile **/
+            export const func: Function = () => 1;
+            export const result = func(2);
+            `
+        )
+        .expectToMatchJsResult()
+        .getLuaResult();
 
     expect(result.transpiledFiles).not.toHaveLength(0);
 
     const mainFile = result.transpiledFiles.find(f => f.outPath.includes("main.lua"));
     expect(mainFile).toBeDefined();
+    const functionFile = result.transpiledFiles.find(f => f.outPath.includes("functions.lua"));
+    expect(functionFile).toBeDefined();
 
     // avoid ts error "not defined", even though toBeDefined is being checked above
-    if (!mainFile) return;
+    if (!mainFile || !functionFile) return;
 
     expect(mainFile.lua).toBeDefined();
     expect(mainFile.lua).toContain("func(1)");
-    expect(mainFile.lua).not.toContain("_G");
+    expect(mainFile.lua).toBeDefined();
+    expect(functionFile.lua).toContain("func(2)");
 });

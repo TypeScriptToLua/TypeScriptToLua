@@ -3,7 +3,7 @@ import * as lua from "../../LuaAST";
 import { transformBuiltinCallExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { validateAssignment } from "../utils/assignment-validation";
-import { ContextType, getDeclarationContextType } from "../utils/function-context";
+import { ContextType, getCallContextType } from "../utils/function-context";
 import { wrapInTable } from "../utils/lua-ast";
 import { isValidLuaIdentifier } from "../utils/safe-names";
 import { isExpressionWithEvaluationEffect } from "../utils/typescript";
@@ -16,7 +16,6 @@ import { getOptionalContinuationData, transformOptionalChain } from "./optional-
 import { transformImportExpression } from "./modules/import";
 import { transformLanguageExtensionCallExpression } from "./language-extensions/call-extension";
 import { getCustomNameFromSymbol } from "./identifier";
-import { AnnotationKind, getFileAnnotations } from "../utils/annotations";
 
 export function validateArguments(
     context: TransformationContext,
@@ -118,8 +117,7 @@ function transformElementAccessCall(
 export function transformContextualCallExpression(
     context: TransformationContext,
     node: ts.CallExpression | ts.TaggedTemplateExpression,
-    args: ts.Expression[] | ts.NodeArray<ts.Expression>,
-    signature?: ts.Signature
+    args: ts.Expression[] | ts.NodeArray<ts.Expression>
 ): lua.Expression {
     if (ts.isOptionalChain(node)) {
         return transformOptionalChain(context, node);
@@ -127,7 +125,7 @@ export function transformContextualCallExpression(
     const left = ts.isCallExpression(node) ? getCalledExpression(node) : node.tag;
 
     let { precedingStatements: argPrecedingStatements, result: transformedArguments } =
-        transformInPrecedingStatementScope(context, () => transformArguments(context, args, signature));
+        transformInPrecedingStatementScope(context, () => transformArguments(context, args));
 
     if (
         ts.isPropertyAccessExpression(left) &&
@@ -190,10 +188,9 @@ function transformPropertyCall(
         return lua.createCallExpression(context.transformExpression(node.expression), parameters, node);
     }
 
-    const signatureDeclaration = signature?.getDeclaration();
-    if (!signatureDeclaration || getDeclarationContextType(context, signatureDeclaration) !== ContextType.Void) {
+    if (getCallContextType(context, node) !== ContextType.Void) {
         // table:name()
-        return transformContextualCallExpression(context, node, node.arguments, signature);
+        return transformContextualCallExpression(context, node, node.arguments);
     } else {
         // table.name()
         const [callPath, parameters] = transformCallAndArguments(context, node.expression, node.arguments, signature);
@@ -203,14 +200,12 @@ function transformPropertyCall(
 }
 
 function transformElementCall(context: TransformationContext, node: ts.CallExpression): lua.Expression {
-    const signature = context.checker.getResolvedSignature(node);
-    const signatureDeclaration = signature?.getDeclaration();
-    if (!signatureDeclaration || getDeclarationContextType(context, signatureDeclaration) !== ContextType.Void) {
+    if (getCallContextType(context, node) !== ContextType.Void) {
         // A contextual parameter must be given to this call expression
-        return transformContextualCallExpression(context, node, node.arguments, signature);
+        return transformContextualCallExpression(context, node, node.arguments);
     } else {
         // No context
-        const [expression, parameters] = transformCallAndArguments(context, node.expression, node.arguments, signature);
+        const [expression, parameters] = transformCallAndArguments(context, node.expression, node.arguments);
         return lua.createCallExpression(expression, parameters, node);
     }
 }
@@ -269,7 +264,7 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     let callPath: lua.Expression;
     let parameters: lua.Expression[];
 
-    const isContextualCall = isContextualCallExpression(context, calledExpression, signature);
+    const isContextualCall = getCallContextType(context, node) !== ContextType.Void;
 
     if (!isContextualCall) {
         [callPath, parameters] = transformCallAndArguments(context, calledExpression, node.arguments, signature);
@@ -292,41 +287,6 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     }
     return wrapResultInTable ? wrapInTable(callExpression) : callExpression;
 };
-
-function isContextualCallExpression(
-    context: TransformationContext,
-    calledExpression: ts.Expression,
-    signature?: ts.Signature
-): boolean {
-    const symbol = context.checker.getSymbolAtLocation(calledExpression);
-    let hasNoSelfInFile = false;
-
-    if (symbol?.declarations) {
-        hasNoSelfInFile =
-            symbol.declarations.some(d => getFileAnnotations(d.getSourceFile()).has(AnnotationKind.NoSelfInFile)) ??
-            false;
-    }
-
-    const declaration = signature?.getDeclaration();
-
-    if (declaration) {
-        const contextTypeCheck = getDeclarationContextType(context, declaration) !== ContextType.Void;
-
-        // respect implicit self over noSelfInFile
-        // look at "explicit this parameter respected over @noSelf" test
-        if (hasNoSelfInFile && contextTypeCheck !== true) {
-            return false;
-        }
-
-        return contextTypeCheck;
-    }
-
-    if (hasNoSelfInFile) {
-        return false;
-    }
-
-    return !context.options.noImplicitSelf;
-}
 
 export function getCalledExpression(node: ts.CallExpression): ts.Expression {
     return ts.skipOuterExpressions(node.expression);

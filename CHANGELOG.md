@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.22.0
+
+- Added support for `Number.isInteger(n)`
+- Added support for `afterEmit` plugin hook that can be used to post-process lua files after (possibly incremental) builds
+- Fixed a bug causing `@noSelfInFile` sometimes to be ignored
+
 ## 1.21.0
 
 - Added support for `continue` for Lua 5.0, 5.1 and universal targets.

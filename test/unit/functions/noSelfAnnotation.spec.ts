@@ -62,3 +62,58 @@ test("explicit this parameter respected over @noSelf", () => {
         export const result = foo(1);
     `.expectToMatchJsResult();
 });
+
+test("respect noSelfInFile over noImplicitSelf", () => {
+    const result = util.testModule`
+        /** @noSelfInFile **/
+        const func: Function = () => 1;
+        export const result = func(1);
+    `
+        .expectToMatchJsResult()
+        .getLuaResult();
+
+    expect(result.transpiledFiles).not.toHaveLength(0);
+
+    const mainFile = result.transpiledFiles.find(f => f.outPath === "main.lua");
+    expect(mainFile).toBeDefined();
+
+    // avoid ts error "not defined", even though toBeDefined is being checked above
+    if (!mainFile) return;
+
+    expect(mainFile.lua).toBeDefined();
+    expect(mainFile.lua).toContain("func(1)");
+});
+
+test("respect noSelfInFile over noImplicitSelf (func declared in other file)", () => {
+    const result = util.testModule`
+        import { func, result } from "./functions";
+
+        export const result1 = result;
+        export const result2 = func(1);
+    `
+        .addExtraFile(
+            "functions.ts",
+            `
+            /** @noSelfInFile **/
+            export const func: Function = () => 1;
+            export const result = func(2);
+            `
+        )
+        .expectToMatchJsResult()
+        .getLuaResult();
+
+    expect(result.transpiledFiles).not.toHaveLength(0);
+
+    const mainFile = result.transpiledFiles.find(f => f.outPath.includes("main.lua"));
+    expect(mainFile).toBeDefined();
+    const functionFile = result.transpiledFiles.find(f => f.outPath.includes("functions.lua"));
+    expect(functionFile).toBeDefined();
+
+    // avoid ts error "not defined", even though toBeDefined is being checked above
+    if (!mainFile || !functionFile) return;
+
+    expect(mainFile.lua).toBeDefined();
+    expect(mainFile.lua).toContain("func(1)");
+    expect(mainFile.lua).toBeDefined();
+    expect(functionFile.lua).toContain("func(2)");
+});

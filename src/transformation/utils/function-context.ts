@@ -83,7 +83,12 @@ function findRootDeclarations(context: TransformationContext, callExpression: ts
         ? callExpression.tagName
         : ts.isJsxOpeningElement(callExpression)
         ? callExpression.tagName
-        : callExpression.expression;
+        : ts.isCallExpression(callExpression)
+        ? callExpression.expression
+        : undefined;
+
+    if (!calledExpression) return [];
+
     const calledSymbol = context.checker.getSymbolAtLocation(calledExpression);
     if (calledSymbol === undefined) return [];
 

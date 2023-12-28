@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.23.0
+
+- Upgraded TypeScript to 5.3.3
+
 ## 1.22.0
 
 - Added support for `Number.isInteger(n)`

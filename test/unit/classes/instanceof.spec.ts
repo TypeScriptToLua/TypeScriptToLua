@@ -84,7 +84,7 @@ test("instanceof export", () => {
 test("instanceof Symbol.hasInstance", () => {
     util.testFunction`
         class myClass {
-            static [Symbol.hasInstance]() {
+            static [Symbol.hasInstance](instance: unknown) {
                 return false;
             }
         }

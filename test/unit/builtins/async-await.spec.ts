@@ -24,6 +24,31 @@ function defer<T>() {
     return { promise, resolve, reject };
 }`;
 
+test("high amount of chained awaits doesn't cause stack overflow", () => {
+    util.testFunction`
+        let result = "not executed";
+
+        async function delay() {
+            return;
+        }
+
+        async function loop() {
+            try {
+                for (let i = 0; i < 500000; ++i) {
+                    await delay();
+                }
+                result = "success";
+            } catch (e) {
+                result = e;
+            }
+        }
+
+        loop();
+
+        return result;
+    `.expectToEqual("success");
+});
+
 test("can await already resolved promise", () => {
     util.testFunction`
         const result = [];

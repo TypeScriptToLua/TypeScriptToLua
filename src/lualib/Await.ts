@@ -16,44 +16,53 @@
 
 import { __TS__Promise } from "./Promise";
 
+const cocreate = coroutine.create;
+const coresume = coroutine.resume;
+const costatus = coroutine.status;
+const coyield = coroutine.yield;
+
+// Be extremely careful editing this function. A single non-tail function call may ruin chained awaits performance
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 export function __TS__AsyncAwaiter(this: void, generator: (this: void) => void) {
     return new Promise((resolve, reject) => {
         let resolved = false;
-        const asyncCoroutine = coroutine.create(generator);
+        const asyncCoroutine = cocreate(generator);
 
-        // eslint-disable-next-line @typescript-eslint/promise-function-async
-        function adopt(value: unknown) {
-            return value instanceof __TS__Promise ? value : Promise.resolve(value);
-        }
-        function fulfilled(value: unknown) {
-            const [success, resultOrError] = coroutine.resume(asyncCoroutine, value);
+        function fulfilled(value: unknown): void {
+            const [success, resultOrError] = coresume(asyncCoroutine, value);
             if (success) {
-                step(resultOrError);
-            } else {
-                reject(resultOrError);
+                // `step` never throws. Tail call return is important!
+                return step(resultOrError);
             }
+            // `reject` should never throw. Tail call return is important!
+            return reject(resultOrError);
         }
-        function step(result: unknown) {
-            if (resolved) return;
-            if (coroutine.status(asyncCoroutine) === "dead") {
-                resolve(result);
-            } else {
-                adopt(result).then(fulfilled, reject);
+
+        function step(this: void, result: unknown): void {
+            if (resolved) {
+                return;
             }
+            if (costatus(asyncCoroutine) === "dead") {
+                // `resolve` never throws. Tail call return is important!
+                return resolve(result);
+            }
+            // We cannot use `then` because we need to avoid calling `coroutine.resume` from inside `pcall`
+            // `fulfilled` and `reject` should never throw. Tail call return is important!
+            return __TS__Promise.resolve(result).addCallbacks(fulfilled, reject);
         }
-        const [success, resultOrError] = coroutine.resume(asyncCoroutine, (v: unknown) => {
+
+        const [success, resultOrError] = coresume(asyncCoroutine, (v: unknown) => {
             resolved = true;
-            adopt(v).then(resolve, reject);
+            return __TS__Promise.resolve(v).addCallbacks(resolve, reject);
         });
         if (success) {
-            step(resultOrError);
+            return step(resultOrError);
         } else {
-            reject(resultOrError);
+            return reject(resultOrError);
         }
     });
 }
 
 export function __TS__Await(this: void, thing: unknown) {
-    return coroutine.yield(thing);
+    return coyield(thing);
 }

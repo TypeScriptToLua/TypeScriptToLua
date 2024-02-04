@@ -839,6 +839,26 @@ test("resolving promise with pending promise will keep pending until promise2 re
         .expectToEqual(["promise 2", "rejection", "promise 1", "rejection"]);
 });
 
+describe("Promise.resolve", () => {
+    test("returns the given resolved promise", () => {
+        util.testFunction`
+        let result = 0;
+        Promise.resolve(Promise.resolve(4))
+            .then((value) => result = value);
+        return result;
+    `.expectToEqual(4);
+    });
+
+    test("returns the given rejected promise", () => {
+        util.testFunction`
+        let result = 0;
+        Promise.resolve(Promise.reject(4))
+            .catch((value) => result = value);
+        return result;
+    `.expectToEqual(4);
+    });
+});
+
 describe("Promise.all", () => {
     test("resolves once all arguments are resolved", () => {
         util.testFunction`

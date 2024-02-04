@@ -51,7 +51,7 @@ export class __TS__Promise<T> implements Promise<T> {
     public [Symbol.toStringTag]: string; // Required to implement interface, no output Lua
 
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/resolve
-    public static resolve<T>(this: void, value: T | PromiseLike<T>): Promise<Awaited<T>> {
+    public static resolve<T>(this: void, value: T | PromiseLike<T>): __TS__Promise<Awaited<T>> {
         if (value instanceof __TS__Promise) {
             return value;
         }
@@ -63,7 +63,7 @@ export class __TS__Promise<T> implements Promise<T> {
     }
 
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/reject
-    public static reject<T = never>(this: void, reason?: any): Promise<T> {
+    public static reject<T = never>(this: void, reason?: any): __TS__Promise<T> {
         // Create and return a promise instance that is already rejected
         const promise = new __TS__Promise<T>(doNothing);
         promise.state = PromiseState.Rejected;

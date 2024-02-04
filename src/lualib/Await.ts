@@ -21,11 +21,6 @@ const coresume = coroutine.resume;
 const costatus = coroutine.status;
 const coyield = coroutine.yield;
 
-// The precise implementation type is important here because we use special functions due to necessary optimizations
-function adopt(this: void, value: unknown): __TS__Promise<unknown> {
-    return value instanceof __TS__Promise ? value : (__TS__Promise.resolve(value) as __TS__Promise<unknown>);
-}
-
 // Be extremely careful editing this function. A single non-tail function call may ruin chained awaits performance
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 export function __TS__AsyncAwaiter(this: void, generator: (this: void) => void) {
@@ -53,12 +48,12 @@ export function __TS__AsyncAwaiter(this: void, generator: (this: void) => void) 
             }
             // We cannot use `then` because we need to avoid calling `coroutine.resume` from inside `pcall`
             // `fulfilled` and `reject` should never throw. Tail call return is important!
-            return adopt(result).addCallbacks(fulfilled, reject);
+            return __TS__Promise.resolve(result).addCallbacks(fulfilled, reject);
         }
 
         const [success, resultOrError] = coresume(asyncCoroutine, (v: unknown) => {
             resolved = true;
-            return adopt(v).addCallbacks(resolve, reject);
+            return __TS__Promise.resolve(v).addCallbacks(resolve, reject);
         });
         if (success) {
             return step(resultOrError);

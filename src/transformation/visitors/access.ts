@@ -22,6 +22,7 @@ import {
     isOptionalContinuation,
     captureThisValue,
 } from "./optional-chaining";
+import { SyntaxKind } from "typescript";
 
 function addOneToArrayAccessArgument(
     context: TransformationContext,
@@ -171,6 +172,18 @@ export function transformPropertyAccessExpressionWithCapture(
         return {
             expression,
             thisValue,
+        };
+    }
+    if (node.expression.kind === SyntaxKind.SuperKeyword) {
+        return {
+            expression: transformLuaLibFunction(
+                context,
+                LuaLibFeature.DescriptorGet,
+                node,
+                lua.createIdentifier("self"),
+                table,
+                lua.createStringLiteral(property)
+            ),
         };
     }
     return { expression: lua.createTableIndexExpression(table, lua.createStringLiteral(property), node) };

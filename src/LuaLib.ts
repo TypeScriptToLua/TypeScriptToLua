@@ -48,6 +48,8 @@ export enum LuaLibFeature {
     DecorateParam = "DecorateParam",
     Delete = "Delete",
     DelegatedYield = "DelegatedYield",
+    DescriptorGet = "DescriptorGet",
+    DescriptorSet = "DescriptorSet",
     Error = "Error",
     FunctionBind = "FunctionBind",
     Generator = "Generator",

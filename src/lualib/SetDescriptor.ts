@@ -1,58 +1,15 @@
 import { __TS__CloneDescriptor } from "./CloneDescriptor";
+import { __TS__DescriptorGet } from "./DescriptorGet";
+import { __TS__DescriptorSet } from "./DescriptorSet";
+
+const getmetatable = _G.getmetatable;
 
 function descriptorIndex(this: any, key: string): void {
-    const value = rawget(this, key);
-    if (value !== null) {
-        return value;
-    }
-
-    let metatable = getmetatable(this);
-    while (metatable) {
-        const rawResult = rawget(metatable, key as any);
-        if (rawResult !== undefined) {
-            return rawResult;
-        }
-
-        const descriptors = rawget(metatable, "_descriptors");
-        if (descriptors) {
-            const descriptor: PropertyDescriptor = descriptors[key];
-            if (descriptor !== undefined) {
-                if (descriptor.get) {
-                    return descriptor.get.call(this);
-                }
-
-                return descriptor.value;
-            }
-        }
-
-        metatable = getmetatable(metatable);
-    }
+    return __TS__DescriptorGet.call(this, getmetatable(this), key);
 }
 
 function descriptorNewIndex(this: any, key: string, value: any): void {
-    let metatable = getmetatable(this);
-    while (metatable) {
-        const descriptors = rawget(metatable, "_descriptors");
-        if (descriptors) {
-            const descriptor: PropertyDescriptor = descriptors[key];
-            if (descriptor !== undefined) {
-                if (descriptor.set) {
-                    descriptor.set.call(this, value);
-                } else {
-                    if (descriptor.writable === false) {
-                        throw `Cannot assign to read only property '${key}' of object '${this}'`;
-                    }
-
-                    descriptor.value = value;
-                }
-                return;
-            }
-        }
-
-        metatable = getmetatable(metatable);
-    }
-
-    rawset(this, key, value);
+    return __TS__DescriptorSet.call(this, getmetatable(this), key, value);
 }
 
 // It's also used directly in class transform to add descriptors to the prototype

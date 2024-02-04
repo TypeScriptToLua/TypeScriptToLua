@@ -327,3 +327,44 @@ test("static get/set accessors in base class", () => {
         return fooOriginal + Bar.foo;
     `.expectToMatchJsResult();
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1437
+test("super class get accessor (#1437)", () => {
+    util.testFunction`
+        class A {
+            get foo() {
+                return "A";
+            }
+        }
+
+        class B extends A {
+            override get foo() {
+                return super.foo + "B";
+            }
+        }
+
+        return new B().foo;
+    `.expectToMatchJsResult();
+});
+
+test("super class set accessor", () => {
+    util.testFunction`
+        let result = "unset";
+
+        class A {
+            set result(value: string) {
+                result = "foo" + value;
+            }
+        }
+
+        class B extends A {
+            override set result(value: string) {
+                super.result = "bar" + value;
+            }
+        }
+
+        new B().result = "baz";
+
+        return result;
+    `.expectToMatchJsResult();
+});

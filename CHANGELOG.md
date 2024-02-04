@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.24.0
+
+- Optimized promises and async/await to better handle long chains of promises, like for example using await in a loop
+- Fixed a bug causing errors when accessing `super` properties
+
 ## 1.23.0
 
 - Upgraded TypeScript to 5.3.3

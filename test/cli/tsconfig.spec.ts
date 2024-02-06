@@ -20,7 +20,7 @@ afterEach(async () => {
 const locate = (project: string | undefined, fileNames: string[] = []) =>
     locateConfigFile({ errors: [], fileNames, options: { project } });
 
-const normalize = (name: string) => normalizeSlashes(path.resolve(temp, name));
+const normalize = (name: string) => normalizeSlashes(fs.realpathSync(path.resolve(temp, name)));
 
 describe("specified", () => {
     for (const separator of process.platform === "win32" ? ["/", "\\"] : ["/"]) {

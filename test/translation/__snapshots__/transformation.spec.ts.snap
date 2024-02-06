@@ -24,6 +24,8 @@ escapedCharsInTemplateString = "\\\\ \\0 \\b \\t \\n \\v \\f \\" ' \`"
 nonEmptyTemplateString = ("Level 0: \\n\\t " .. ("Level 1: \\n\\t\\t " .. ("Level 3: \\n\\t\\t\\t " .. "Last level \\n --") .. " \\n --") .. " \\n --") .. " \\n --""
 `;
 
+exports[`Transformation (customNameWithNoSelf) 1`] = `"TestNamespace.pass()"`;
+
 exports[`Transformation (exportStatement) 1`] = `
 "local ____exports = {}
 local xyz = 4

@@ -852,3 +852,39 @@ test("Calling static inherited functions works (#1504)", () => {
         return B.Get();
     `.expectToMatchJsResult();
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1537
+test("get inherted __index member from super (DotA 2 inheritance) (#1537)", () => {
+    util.testFunction`
+            // Inherit 'connected' class
+            class C extends Connected {
+                bar() {
+                    return super.foo();
+                }
+            }
+
+            return new C().bar();`
+        .setTsHeader(
+            `interface I {
+                foo(): string;
+            }
+
+            // Hacky interface/class merging
+            interface Connected extends I {}
+            class Connected {}
+
+            declare function setmetatable(this: void, t: any, mt: any);
+            
+            const A = {
+                foo() {
+                    return "foo";
+                }
+            };
+
+            // Connect class 'Connected' to 'traditional' class A
+            setmetatable(Connected.prototype, {
+                __index: A
+            });`
+        )
+        .expectToEqual("foo");
+});

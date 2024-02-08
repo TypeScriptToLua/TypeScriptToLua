@@ -78,21 +78,24 @@ export function transformAssignment(
 
     if (ts.isPropertyAccessExpression(lhs) || ts.isElementAccessExpression(lhs)) {
         if (lhs.expression.kind === SyntaxKind.SuperKeyword) {
-            return [
-                lua.createExpressionStatement(
-                    transformLuaLibFunction(
-                        context,
-                        LuaLibFeature.DescriptorSet,
-                        parent,
-                        lua.createIdentifier("self"),
-                        context.transformExpression(lhs.expression),
-                        ts.isPropertyAccessExpression(lhs)
-                            ? lua.createStringLiteral(lhs.name.text)
-                            : context.transformExpression(lhs.argumentExpression),
-                        right
-                    )
-                ),
-            ];
+            const symbol = context.checker.getSymbolAtLocation(lhs);
+            if (symbol && symbol.flags & ts.SymbolFlags.SetAccessor) {
+                return [
+                    lua.createExpressionStatement(
+                        transformLuaLibFunction(
+                            context,
+                            LuaLibFeature.DescriptorSet,
+                            parent,
+                            lua.createIdentifier("self"),
+                            context.transformExpression(lhs.expression),
+                            ts.isPropertyAccessExpression(lhs)
+                                ? lua.createStringLiteral(lhs.name.text)
+                                : context.transformExpression(lhs.argumentExpression),
+                            right
+                        )
+                    ),
+                ];
+            }
         }
     }
 

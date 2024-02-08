@@ -182,16 +182,19 @@ export function transformPropertyAccessExpressionWithCapture(
         };
     }
     if (node.expression.kind === SyntaxKind.SuperKeyword) {
-        return {
-            expression: transformLuaLibFunction(
-                context,
-                LuaLibFeature.DescriptorGet,
-                node,
-                lua.createIdentifier("self"),
-                table,
-                lua.createStringLiteral(property)
-            ),
-        };
+        const symbol = context.checker.getSymbolAtLocation(node);
+        if (symbol && symbol.flags & ts.SymbolFlags.GetAccessor) {
+            return {
+                expression: transformLuaLibFunction(
+                    context,
+                    LuaLibFeature.DescriptorGet,
+                    node,
+                    lua.createIdentifier("self"),
+                    table,
+                    lua.createStringLiteral(property)
+                ),
+            };
+        }
     }
     return { expression: lua.createTableIndexExpression(table, lua.createStringLiteral(property), node) };
 }

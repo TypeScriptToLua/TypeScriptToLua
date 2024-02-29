@@ -203,7 +203,9 @@ export function getSourceDir(program: ts.Program): string {
     if (rootDir && rootDir.length > 0) {
         return path.isAbsolute(rootDir) ? rootDir : path.resolve(getProjectRoot(program), rootDir);
     }
-    return program.getCommonSourceDirectory();
+
+    // If no rootDir is given, source is relative to the project root
+    return getProjectRoot(program);
 }
 
 export function getEmitOutDir(program: ts.Program): string {

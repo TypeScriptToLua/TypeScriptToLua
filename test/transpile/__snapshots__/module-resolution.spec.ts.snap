@@ -10,8 +10,8 @@ exports[`supports complicated paths configuration 1`] = `
 
 exports[`supports paths configuration 1`] = `
 [
+  "/paths-simple/myprogram/dist/main.lua",
   "/paths-simple/myprogram/dist/mypackage/bar.lua",
   "/paths-simple/myprogram/dist/mypackage/index.lua",
-  "/paths-simple/myprogram/dist/myprogram/main.lua",
 ]
 `;

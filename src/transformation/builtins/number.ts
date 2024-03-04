@@ -24,6 +24,8 @@ export function transformNumberPrototypeCall(
                 : transformLuaLibFunction(context, LuaLibFeature.NumberToString, node, caller, ...params);
         case "toFixed":
             return transformLuaLibFunction(context, LuaLibFeature.NumberToFixed, node, caller, ...params);
+        case "valueOf":
+            return transformLuaLibFunction(context, LuaLibFeature.NumberValueOf, node, caller, ...params);
         default:
             context.diagnostics.push(unsupportedProperty(calledMethod.name, "number", expressionName));
     }

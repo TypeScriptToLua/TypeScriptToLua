@@ -2,6 +2,7 @@
 
 exports[`Unsupported optional chains Builtin global method: code 1`] = `
 "local ____lualib = require("lualib_bundle")
+local Number = ____lualib.Number
 local __TS__Number = ____lualib.__TS__Number
 local ____opt_0 = Number
 if ____opt_0 ~= nil then

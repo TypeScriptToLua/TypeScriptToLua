@@ -13,6 +13,18 @@ test("Supported lua string function", () => {
     util.testExpression`"test".upper()`.setTsHeader(tsHeader).expectToEqual("TEST");
 });
 
+describe("String", () => {
+    const cases: Array<string | number | boolean> = [false, true, "hi", 1, 123, -1, "wtf?!?"];
+
+    test.each(cases)("constructor(%p)", value => {
+        util.testExpressionTemplate`String(${value})`.expectToMatchJsResult();
+    });
+
+    test.each(cases)("class(%p)", value => {
+        util.testExpressionTemplate`new String(${value}).valueOf() === String(${value}).valueOf()`.expectToMatchJsResult();
+    });
+});
+
 test("string.toString()", () => {
     util.testExpression`"test".toString()`.expectToEqual("test");
 });

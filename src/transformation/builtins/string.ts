@@ -65,7 +65,8 @@ export function transformStringPrototypeCall(
             return transformLuaLibFunction(context, LuaLibFeature.StringSubstr, node, caller, ...params);
         case "substring":
             return transformLuaLibFunction(context, LuaLibFeature.StringSubstring, node, caller, ...params);
-
+        case "valueOf":
+            return transformLuaLibFunction(context, LuaLibFeature.StringValueOf, node, caller, ...params);
         case "slice": {
             const literalArg1 = getNumberLiteralValue(params[0]);
             if (params[0] && literalArg1 !== undefined) {

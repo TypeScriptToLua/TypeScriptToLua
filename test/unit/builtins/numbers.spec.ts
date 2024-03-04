@@ -39,6 +39,10 @@ describe("Number", () => {
         util.testExpressionTemplate`Number(${value})`.expectToMatchJsResult();
     });
 
+    test.each(cases)("class(%p)", value => {
+        util.testExpressionTemplate`new Number(${value}).valueOf() === Number(${value}).valueOf()`.expectToMatchJsResult();
+    });
+
     test.each(cases)("isNaN(%p)", value => {
         util.testExpressionTemplate`Number.isNaN(${value} as any)`.expectToMatchJsResult();
     });

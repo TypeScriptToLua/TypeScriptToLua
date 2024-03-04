@@ -18,6 +18,7 @@ import { transformStringConstructorCall, transformStringProperty, transformStrin
 import { transformSymbolConstructorCall } from "./symbol";
 import { unsupportedBuiltinOptionalCall } from "../utils/diagnostics";
 import { LuaTarget } from "../../CompilerOptions";
+import { transformBooleanPrototypeCall } from "./boolean";
 
 export function transformBuiltinPropertyAccessExpression(
     context: TransformationContext,
@@ -135,6 +136,8 @@ function tryTransformBuiltinPropertyCall(
             return transformStringPrototypeCall(context, node, calledMethod);
         case "Number":
             return transformNumberPrototypeCall(context, node, calledMethod);
+        case "Boolean":
+            return transformBooleanPrototypeCall(context, node, calledMethod);
         case "Array":
         case "ReadonlyArray":
             return transformArrayPrototypeCall(context, node, calledMethod);
@@ -193,6 +196,18 @@ export function checkForLuaLibType(context: TransformationContext, type: ts.Type
         case "Map":
         case "MapConstructor":
             importLuaLibFeature(context, LuaLibFeature.Map);
+            return;
+        case "String":
+        case "StringConstructor":
+            importLuaLibFeature(context, LuaLibFeature.StringClass);
+            return;
+        case "Boolean":
+        case "BooleanConstructor":
+            importLuaLibFeature(context, LuaLibFeature.BooleanClass);
+            return;
+        case "Number":
+        case "NumberConstructor":
+            importLuaLibFeature(context, LuaLibFeature.NumberClass);
             return;
         case "Set":
         case "SetConstructor":

@@ -209,3 +209,47 @@ describe.each(iterationMethods)("map.%s() preserves insertion order", iterationM
         `.expectToMatchJsResult();
     });
 });
+
+describe("Map.groupBy", () => {
+    test("empty", () => {
+        util.testFunction`
+            const array = [];
+
+            const map = Map.groupBy(array, (num, index) => {
+                return num % 2 === 0 ? "even": "odd";
+            });
+
+            return Object.fromEntries(map.entries());
+        `.expectToEqual([]);
+    });
+
+    test("groupBy", () => {
+        util.testFunction`
+            const array = [0, 1, 2, 3, 4, 5];
+
+            const map = Map.groupBy(array, (num, index) => {
+                return num % 2 === 0 ? "even": "odd";
+            });
+
+            return Object.fromEntries(map.entries());
+        `.expectToEqual({
+            even: [0, 2, 4],
+            odd: [1, 3, 5],
+        });
+    });
+
+    test("groupBy index", () => {
+        util.testFunction`
+            const array = [0, 1, 2, 3, 4, 5];
+
+            const map = Map.groupBy(array, (num, index) => {
+                return index < 3 ? "low": "high";
+            });
+
+            return Object.fromEntries(map.entries());
+        `.expectToEqual({
+            low: [0, 1, 2],
+            high: [3, 4, 5],
+        });
+    });
+});

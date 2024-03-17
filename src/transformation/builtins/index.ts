@@ -18,6 +18,7 @@ import { transformStringConstructorCall, transformStringProperty, transformStrin
 import { transformSymbolConstructorCall } from "./symbol";
 import { unsupportedBuiltinOptionalCall } from "../utils/diagnostics";
 import { LuaTarget } from "../../CompilerOptions";
+import { transformMapConstructorCall } from "./map";
 
 export function transformBuiltinPropertyAccessExpression(
     context: TransformationContext,
@@ -92,6 +93,9 @@ function tryTransformBuiltinGlobalMethodCall(
             break;
         case "Console":
             result = transformConsoleCall(context, node, calledMethod);
+            break;
+        case "MapConstructor":
+            result = transformMapConstructorCall(context, node, calledMethod);
             break;
         case "Math":
             result = transformMathCall(context, node, calledMethod);

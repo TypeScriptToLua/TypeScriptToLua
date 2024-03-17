@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.25.0
+
+- Upgraded TypeScript to 5.4.2
+- Added support for new TypeScript 5.4 features `Map.groupBy` and `Object.groupBy`
+- Fixed a bug causing files to not be emitted at the correct output path
+- Fixed a bug causing `@customname` to not work together with `@noSelf`
+- Fixed a bug causing extended tsconfigs to not be correctly read when using watch mode
+
 ## 1.24.0
 
 - Optimized promises and async/await to better handle long chains of promises, like for example using await in a loop

@@ -264,3 +264,41 @@ describe("delete from object", () => {
             .expectToMatchJsResult();
     });
 });
+
+describe("Object.groupBy", () => {
+    test("empty", () => {
+        util.testFunction`
+            const array = [];
+
+            return Object.groupBy(array, (num, index) => {
+                return num % 2 === 0 ? "even": "odd";
+            });
+        `.expectToEqual([]);
+    });
+
+    test("groupBy", () => {
+        util.testFunction`
+            const array = [0, 1, 2, 3, 4, 5];
+
+            return Object.groupBy(array, (num, index) => {
+                return num % 2 === 0 ? "even": "odd";
+            });
+        `.expectToEqual({
+            even: [0, 2, 4],
+            odd: [1, 3, 5],
+        });
+    });
+
+    test("groupBy index", () => {
+        util.testFunction`
+            const array = [0, 1, 2, 3, 4, 5];
+
+            return Object.groupBy(array, (num, index) => {
+                return index < 3 ? "low": "high";
+            });
+        `.expectToEqual({
+            low: [0, 1, 2],
+            high: [3, 4, 5],
+        });
+    });
+});

@@ -26,6 +26,8 @@ export function transformObjectConstructorCall(
             return transformLuaLibFunction(context, LuaLibFeature.ObjectGetOwnPropertyDescriptor, node, ...args);
         case "getOwnPropertyDescriptors":
             return transformLuaLibFunction(context, LuaLibFeature.ObjectGetOwnPropertyDescriptors, node, ...args);
+        case "groupBy":
+            return transformLuaLibFunction(context, LuaLibFeature.ObjectGroupBy, node, ...args);
         case "keys":
             return transformLuaLibFunction(context, LuaLibFeature.ObjectKeys, node, ...args);
         case "values":

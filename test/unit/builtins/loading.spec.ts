@@ -75,9 +75,8 @@ test("using lualib does not crash when coroutine is not defined", () => {
         _G.coroutine = undefined;
         require("lualib_bundle");
         export const result = 1
-    `
-        .expectToEqual({ result: 1 });
-})
+    `.expectToEqual({ result: 1 });
+});
 
 describe("Unknown builtin property", () => {
     test("access", () => {

@@ -16,6 +16,7 @@
 
 import { __TS__Promise } from "./Promise";
 
+const coroutine = _G.coroutine ?? {};
 const cocreate = coroutine.create;
 const coresume = coroutine.resume;
 const costatus = coroutine.status;

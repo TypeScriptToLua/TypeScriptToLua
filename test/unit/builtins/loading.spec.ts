@@ -67,6 +67,17 @@ test("lualib should not include tstl header", () => {
     );
 });
 
+test("using lualib does not crash when coroutine is not defined", () => {
+    util.testModule`
+        declare const _G: any;
+        declare function require(this: void, name: string): any
+
+        _G.coroutine = undefined;
+        require("lualib_bundle");
+        export const result = 1
+    `.expectToEqual({ result: 1 });
+});
+
 describe("Unknown builtin property", () => {
     test("access", () => {
         util.testExpression`Math.unknownProperty`

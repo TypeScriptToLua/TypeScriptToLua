@@ -15,8 +15,8 @@ const createModulePath = (pathToResolve: string, program: ts.Program) =>
 function requireOverride(options: CompilerOptions) {
     const runModule =
         options.luaTarget === LuaTarget.Lua50
-            ? "(table.getn(arg) > 0) and module(unpack(arg)) or module(file)"
-            : '(select("#", ...) > 0) and module(...) or module(file)';
+            ? "if (table.getn(arg) > 0) then value = module(unpack(arg)) else value = module(file) end"
+            : 'if (select("#", ...) > 0) then value = module(...) else value = module(file) end';
     return `
 local ____modules = {}
 local ____moduleCache = {}
@@ -27,8 +27,10 @@ local function require(file, ...)
     end
     if ____modules[file] then
         local module = ____modules[file]
-        ____moduleCache[file] = { value = ${runModule} }
-        return ____moduleCache[file].value
+        local value = nil
+        ${runModule}
+        ____moduleCache[file] = { value = value }
+        return value
     else
         if ____originalRequire then
             return ____originalRequire(file)

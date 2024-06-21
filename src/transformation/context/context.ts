@@ -15,7 +15,6 @@ export const tempSymbolId = -1 as lua.SymbolId;
 
 export interface AllAccessorDeclarations {
     firstAccessor: ts.AccessorDeclaration;
-    secondAccessor: ts.AccessorDeclaration | undefined;
     getAccessor: ts.GetAccessorDeclaration | undefined;
     setAccessor: ts.SetAccessorDeclaration | undefined;
 }
@@ -24,8 +23,6 @@ export interface EmitResolver {
     isValueAliasDeclaration(node: ts.Node): boolean;
     isReferencedAliasDeclaration(node: ts.Node, checkChildren?: boolean): boolean;
     isTopLevelValueImportEqualsWithEntityName(node: ts.ImportEqualsDeclaration): boolean;
-    moduleExportsSomeValue(moduleReferenceExpression: ts.Expression): boolean;
-    getAllAccessorDeclarations(declaration: ts.AccessorDeclaration): AllAccessorDeclarations;
 }
 
 export interface TypeCheckerWithEmitResolver extends ts.TypeChecker {

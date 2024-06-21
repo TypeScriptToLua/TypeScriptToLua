@@ -39,10 +39,6 @@ export const transformExportAssignment: FunctionVisitor<ts.ExportAssignment> = (
 function transformExportAll(context: TransformationContext, node: ts.ExportDeclaration): lua.Statement | undefined {
     assert(node.moduleSpecifier);
 
-    if (!context.resolver.moduleExportsSomeValue(node.moduleSpecifier)) {
-        return undefined;
-    }
-
     const moduleRequire = createModuleRequire(context, node.moduleSpecifier);
 
     // export * as ns from "...";

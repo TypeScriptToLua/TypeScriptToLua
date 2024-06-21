@@ -121,7 +121,7 @@ class LuaLibPlugin implements tstl.Plugin {
                 }
                 return statement;
             })
-            .filter(statement => statement !== undefined) as tstl.Statement[];
+            .filter(statement => statement !== undefined);
 
         const exportNames = filteredStatements.filter(isExportAssignment).map(s => s.left[0].index.value);
         if (!filteredStatements.every(isExportAssignment)) {

@@ -201,3 +201,221 @@ test("instanceof Set without creating set", () => {
         return myset instanceof Set;
     `.expectToMatchJsResult();
 });
+
+describe("new ECMAScript Set methods", () => {
+    test("union", () => {
+        util.testFunction`
+            const set1 = new Set([1,2,3,4,5,6]);
+            const set2 = new Set([4,5,6,7,8,9]);
+
+            const intersection = set1.union(set2);
+            return [...intersection];
+        `.expectToEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    });
+
+    test("union with empty sets", () => {
+        util.testFunction`
+            const set1 = new Set([1,2,3,4,5,6]);
+            const set2 = new Set([]);
+
+            const intersection = set1.union(set2);
+            return [...intersection];
+        `.expectToEqual([1, 2, 3, 4, 5, 6]);
+
+        util.testFunction`
+            const set1 = new Set([]);
+            const set2 = new Set([4,5,6,7,8,9]);
+
+            const intersection = set1.union(set2);
+            return [...intersection];
+        `.expectToEqual([4, 5, 6, 7, 8, 9]);
+    });
+
+    test("intersection", () => {
+        util.testFunction`
+            const set1 = new Set([1,2,3,4,5,6]);
+            const set2 = new Set([4,5,6,7,8,9]);
+
+            const intersection = set1.intersection(set2);
+            return [...intersection];
+        `.expectToEqual([4, 5, 6]);
+    });
+
+    test("intersection with empty sets", () => {
+        util.testFunction`
+            const set1 = new Set([1,2,3,4,5,6]);
+            const set2 = new Set([]);
+
+            const intersection = set1.intersection(set2);
+            return [...intersection];
+        `.expectToEqual([]);
+
+        util.testFunction`
+            const set1 = new Set([]);
+            const set2 = new Set([4,5,6,7,8,9]);
+
+            const intersection = set1.intersection(set2);
+            return [...intersection];
+        `.expectToEqual([]);
+    });
+
+    test("difference", () => {
+        util.testFunction`
+            const set1 = new Set([1,2,3,4,5,6]);
+            const set2 = new Set([4,5,6,7,8,9]);
+
+            const intersection = set1.difference(set2);
+            return [...intersection];
+        `.expectToEqual([1, 2, 3]);
+    });
+
+    test("symmetricDifference", () => {
+        util.testFunction`
+            const set1 = new Set([1,2,3,4,5,6]);
+            const set2 = new Set([4,5,6,7,8,9]);
+
+            const intersection = set1.symmetricDifference(set2);
+            return [...intersection];
+        `.expectToEqual([1, 2, 3, 7, 8, 9]);
+    });
+
+    test("isSubsetOf", () => {
+        util.testFunction`
+            const set1 = new Set([3,4,5,6]);
+            const set2 = new Set([1,2,3,4,5,6,7,8,9]);
+
+            return {
+                set1SubsetOfSet2: set1.isSubsetOf(set2),
+                set2SubsetOfSet1: set2.isSubsetOf(set1),
+            };
+        `.expectToEqual({
+            set1SubsetOfSet2: true,
+            set2SubsetOfSet1: false,
+        });
+    });
+
+    test("isSubsetOf equal", () => {
+        util.testFunction`
+            const set1 = new Set([1,2,3,4,5,6,7,8,9]);
+            const set2 = new Set([1,2,3,4,5,6,7,8,9]);
+
+            return {
+                set1SubsetOfSet2: set1.isSubsetOf(set2),
+                set2SubsetOfSet1: set2.isSubsetOf(set1),
+            };
+        `.expectToEqual({
+            set1SubsetOfSet2: true,
+            set2SubsetOfSet1: true,
+        });
+    });
+
+    test("isSubsetOf empty", () => {
+        util.testFunction`
+            const set1 = new Set([]);
+            const set2 = new Set([1,2,3]);
+
+            return {
+                set1SubsetOfSet2: set1.isSubsetOf(set2),
+                set2SubsetOfSet1: set2.isSubsetOf(set1),
+            };
+        `.expectToEqual({
+            set1SubsetOfSet2: true,
+            set2SubsetOfSet1: false,
+        });
+    });
+
+    test("isSupersetOf", () => {
+        util.testFunction`
+            const set1 = new Set([3,4,5,6]);
+            const set2 = new Set([1,2,3,4,5,6,7,8,9]);
+
+            return {
+                set1SupersetOfSet2: set1.isSupersetOf(set2),
+                set2SupersetOfSet1: set2.isSupersetOf(set1),
+            };
+        `.expectToEqual({
+            set1SupersetOfSet2: false,
+            set2SupersetOfSet1: true,
+        });
+    });
+
+    test("isSupersetOf equal", () => {
+        util.testFunction`
+            const set1 = new Set([1,2,3,4,5,6,7,8,9]);
+            const set2 = new Set([1,2,3,4,5,6,7,8,9]);
+
+            return {
+                set1SupersetOfSet2: set1.isSupersetOf(set2),
+                set2SupersetOfSet1: set2.isSupersetOf(set1),
+            };
+        `.expectToEqual({
+            set1SupersetOfSet2: true,
+            set2SupersetOfSet1: true,
+        });
+    });
+
+    test("isSupersetOf empty", () => {
+        util.testFunction`
+            const set1 = new Set([]);
+            const set2 = new Set([1,2,3]);
+
+            return {
+                set1SupersetOfSet2: set1.isSupersetOf(set2),
+                set2SupersetOfSet1: set2.isSupersetOf(set1),
+            };
+        `.expectToEqual({
+            set1SupersetOfSet2: false,
+            set2SupersetOfSet1: true,
+        });
+    });
+
+    test("isDisjointFrom", () => {
+        util.testFunction`
+            const set1 = new Set([3,4,5,6]);
+            const set2 = new Set([7,8,9]);
+            const set3 = new Set([1,2,3,4]);
+
+            return {
+                set1DisjointFromSet2: set1.isDisjointFrom(set2),
+                set2DisjointFromSet1: set2.isDisjointFrom(set1),
+                set1DisjointFromSet3: set1.isDisjointFrom(set3),
+                set3DisjointFromSet1: set3.isDisjointFrom(set1),
+            };
+        `.expectToEqual({
+            set1DisjointFromSet2: true,
+            set2DisjointFromSet1: true,
+            set1DisjointFromSet3: false,
+            set3DisjointFromSet1: false,
+        });
+    });
+
+    test("isDisjointFrom equal", () => {
+        util.testFunction`
+            const set1 = new Set([1,2,3,4,5,6,7,8,9]);
+            const set2 = new Set([1,2,3,4,5,6,7,8,9]);
+
+            return {
+                set1DisjointFromSet2: set1.isDisjointFrom(set2),
+                set2DisjointFromSet1: set2.isDisjointFrom(set1),
+            };
+        `.expectToEqual({
+            set1DisjointFromSet2: false,
+            set2DisjointFromSet1: false,
+        });
+    });
+
+    test("isDisjointFrom empty", () => {
+        util.testFunction`
+            const set1 = new Set([]);
+            const set2 = new Set([1,2,3]);
+
+            return {
+                set1DisjointFromSet2: set1.isDisjointFrom(set2),
+                set2DisjointFromSet1: set2.isDisjointFrom(set1),
+            };
+        `.expectToEqual({
+            set1DisjointFromSet2: true,
+            set2DisjointFromSet1: true,
+        });
+    });
+});

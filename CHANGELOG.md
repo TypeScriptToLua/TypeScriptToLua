@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.26.0
+
+- Upgraded TypeScript to 5.5.2
+- Added support for the new proposed ECMAScript Set methods in ESNext: `intersection`, `union`, `difference`, `symmetricDifference`, `isSubsetOf`, `isSupersetOf`, `isDisjointFrom`. For more info see [the TypeScript release notes](https://devblogs.microsoft.com/typescript/announcing-typescript-5-5/#support-for-new-ecmascript-set-methods).
+- Fixed a bug causing bundled code to be executed twice in some edge cases.
+- Fixed a bug causing errors when using lualib in an environment without coroutines.
+
 ## 1.25.0
 
 - Upgraded TypeScript to 5.4.2

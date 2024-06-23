@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import { FunctionVisitor, TransformationContext } from "../../context";
+import { AllAccessorDeclarations, FunctionVisitor, TransformationContext } from "../../context";
 import {
     createDefaultExportExpression,
     createExportedIdentifier,
@@ -175,7 +175,7 @@ function transformClassLikeDeclaration(
     for (const member of classDeclaration.members) {
         if (ts.isAccessor(member)) {
             // Accessors
-            const accessors = context.resolver.getAllAccessorDeclarations(member);
+            const accessors = getAllAccessorDeclarations(classDeclaration);
             if (accessors.firstAccessor !== member) continue;
 
             const accessorsResult = transformAccessorDeclarations(context, accessors, localClassName);
@@ -225,6 +225,21 @@ function transformClassLikeDeclaration(
     context.classSuperInfos.pop();
 
     return { statements: result, name: className };
+}
+
+function getAllAccessorDeclarations(classDeclaration: ts.ClassLikeDeclaration): AllAccessorDeclarations {
+    const getAccessor = classDeclaration.members.find(ts.isGetAccessor);
+    const setAccessor = classDeclaration.members.find(ts.isSetAccessor);
+
+    // Get the first of the two (that is not undefined)
+    const firstAccessor =
+        getAccessor && (!setAccessor || getAccessor.pos < setAccessor.pos) ? getAccessor : setAccessor!;
+
+    return {
+        firstAccessor,
+        setAccessor,
+        getAccessor,
+    };
 }
 
 export const transformSuperExpression: FunctionVisitor<ts.SuperExpression> = (expression, context) => {

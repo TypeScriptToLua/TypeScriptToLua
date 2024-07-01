@@ -51,6 +51,12 @@ test.each([
     // sqrt
     "Math.sqrt(2)",
     "Math.sqrt(-2)",
+    // trunc
+    "Math.trunc(42.42)",
+    "Math.trunc(-42.42)",
+    "Math.trunc(0)",
+    "Math.trunc(Infinity)",
+    "Math.trunc(-Infinity)",
 ])("%s", code => {
     util.testExpression(code).expectToMatchJsResult();
 });
@@ -65,7 +71,14 @@ test.each(["E", "LN10", "LN2", "LOG10E", "LOG2E", "SQRT1_2", "SQRT2"])("Math.%s"
 });
 
 // LuaLib MathSign
-test.each(["Math.sign(-42)", "Math.sign(42)", "Math.sign(-4.2)", "Math.sign(4.2)", "Math.sign(0)"])("%s", code => {
+test.each([
+    "Math.sign(-42)",
+    "Math.sign(42)",
+    "Math.sign(-4.2)",
+    "Math.sign(4.2)",
+    "Math.sign(0)",
+    "Math.sign(-Infinity)",
+])("%s", code => {
     util.testExpression(code).expectToMatchJsResult();
 });
 

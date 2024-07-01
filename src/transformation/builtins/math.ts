@@ -100,6 +100,10 @@ export function transformMathCall(
             return transformLuaLibFunction(context, LuaLibFeature.MathSign, node, ...params);
         }
 
+        case "trunc": {
+            return transformLuaLibFunction(context, LuaLibFeature.MathTrunc, node, ...params);
+        }
+
         case "abs":
         case "acos":
         case "asin":

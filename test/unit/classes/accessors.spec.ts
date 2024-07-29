@@ -11,6 +11,19 @@ test("get accessor", () => {
     `.expectToMatchJsResult();
 });
 
+test("multiple get accessors", () => {
+    util.testFunction`
+        class Foo {
+            _foo = "foo";
+            get foo() { return this._foo; }
+            _bar = "bar";
+            get bar() { return this._bar; }
+        }
+        const f = new Foo();
+        return f.foo + f.bar;
+    `.expectToMatchJsResult();
+});
+
 test("get accessor in base class", () => {
     util.testFunction`
         class Foo {
@@ -139,6 +152,26 @@ test("get/set accessors", () => {
         const fooOriginal = f.foo;
         f.foo = "bar";
         return fooOriginal + f.foo;
+    `.expectToMatchJsResult();
+});
+
+test("multiple get/set accessors", () => {
+    util.testFunction`
+        class Foo {
+            _foo = "foo";
+            get foo() { return this._foo; }
+            set foo(val: string) { this._foo = val; }
+
+            _bar = "bar";
+            get bar() { return this._bar; }
+            set bar(val: string) { this._bar = val; }
+        }
+        const f = new Foo();
+        const fooOriginal = f.foo;
+        f.foo = "fizz";
+        const barOriginal = f.bar;
+        f.bar = "buzz";
+        return [fooOriginal, f.foo, barOriginal, f.bar];
     `.expectToMatchJsResult();
 });
 

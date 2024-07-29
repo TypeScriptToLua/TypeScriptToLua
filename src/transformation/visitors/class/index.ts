@@ -175,7 +175,9 @@ function transformClassLikeDeclaration(
     for (const member of classDeclaration.members) {
         if (ts.isAccessor(member)) {
             // Accessors
-            const accessors = getAllAccessorDeclarations(classDeclaration);
+            const symbol = context.checker.getSymbolAtLocation(member.name);
+            if (!symbol) continue;
+            const accessors = getAllAccessorDeclarations(classDeclaration, symbol, context);
             if (accessors.firstAccessor !== member) continue;
 
             const accessorsResult = transformAccessorDeclarations(context, accessors, localClassName);
@@ -227,9 +229,19 @@ function transformClassLikeDeclaration(
     return { statements: result, name: className };
 }
 
-function getAllAccessorDeclarations(classDeclaration: ts.ClassLikeDeclaration): AllAccessorDeclarations {
-    const getAccessor = classDeclaration.members.find(ts.isGetAccessor);
-    const setAccessor = classDeclaration.members.find(ts.isSetAccessor);
+function getAllAccessorDeclarations(
+    classDeclaration: ts.ClassLikeDeclaration,
+    symbol: ts.Symbol,
+    context: TransformationContext
+): AllAccessorDeclarations {
+    const getAccessor = classDeclaration.members.find(
+        (m): m is ts.GetAccessorDeclaration =>
+            ts.isGetAccessor(m) && context.checker.getSymbolAtLocation(m.name) === symbol
+    );
+    const setAccessor = classDeclaration.members.find(
+        (m): m is ts.SetAccessorDeclaration =>
+            ts.isSetAccessor(m) && context.checker.getSymbolAtLocation(m.name) === symbol
+    );
 
     // Get the first of the two (that is not undefined)
     const firstAccessor =

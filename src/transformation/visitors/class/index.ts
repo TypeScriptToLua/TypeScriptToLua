@@ -236,11 +236,11 @@ function getAllAccessorDeclarations(
 ): AllAccessorDeclarations {
     const getAccessor = classDeclaration.members.find(
         (m): m is ts.GetAccessorDeclaration =>
-            ts.isGetAccessor(m) && context.checker.getSymbolAtLocation(m.name) == symbol
+            ts.isGetAccessor(m) && context.checker.getSymbolAtLocation(m.name) === symbol
     );
     const setAccessor = classDeclaration.members.find(
         (m): m is ts.SetAccessorDeclaration =>
-            ts.isSetAccessor(m) && context.checker.getSymbolAtLocation(m.name) == symbol
+            ts.isSetAccessor(m) && context.checker.getSymbolAtLocation(m.name) === symbol
     );
 
     // Get the first of the two (that is not undefined)

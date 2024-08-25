@@ -150,7 +150,10 @@ export function transformPropertyAccessExpressionWithCapture(
             return { expression };
         } else {
             // Check if we need to account for enum being exported int his file
-            if (isSymbolExported(context, type.symbol) && getSymbolExportScope(context, type.symbol) === node.expression.getSourceFile()) {
+            if (
+                isSymbolExported(context, type.symbol) &&
+                getSymbolExportScope(context, type.symbol) === node.expression.getSourceFile()
+            ) {
                 return {
                     expression: lua.createTableIndexExpression(
                         createExportsIdentifier(),

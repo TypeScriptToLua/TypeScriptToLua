@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import { CompilerOptions } from "../../CompilerOptions";
 import { TransformationContext } from "../context";
 import { AnnotationKind, getFileAnnotations, getNodeAnnotations } from "./annotations";
-import { findFirstNodeAbove, getAllCallSignatures, inferAssignedType } from "./typescript";
+import { findFirstNodeAbove, findFirstNonOuterParent, getAllCallSignatures, inferAssignedType } from "./typescript";
 
 export enum ContextType {
     None = 0,
@@ -115,6 +115,13 @@ function computeDeclarationContextType(context: TransformationContext, signature
 
     // noSelf declaration on function signature
     if (getNodeAnnotations(signatureDeclaration).has(AnnotationKind.NoSelf)) {
+        return ContextType.Void;
+    }
+
+    if (
+        ts.isArrowFunction(signatureDeclaration) &&
+        ts.isCallExpression(findFirstNonOuterParent(signatureDeclaration))
+    ) {
         return ContextType.Void;
     }
 

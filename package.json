@@ -67,7 +67,7 @@
         "jest-circus": "^29.5.0",
         "lua-types": "^2.13.0",
         "lua-wasm-bindings": "^0.3.1",
-        "prettier": "^2.8.4",
+        "prettier": "^2.8.8",
         "ts-jest": "^29.1.0",
         "ts-node": "^10.9.1",
         "typescript": "^5.6.2",

@@ -1,6 +1,7 @@
 /dist
 /coverage
 /test/translation/transformation/characterEscapeSequence.ts
+/test/translation/transformation/exportStatement.ts
 /benchmark/dist
 /test/transpile/module-resolution/**/node_modules
 /test/transpile/module-resolution/**/dist

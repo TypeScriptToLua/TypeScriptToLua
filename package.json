@@ -42,7 +42,7 @@
         "node": ">=16.10.0"
     },
     "peerDependencies": {
-        "typescript": "^5.6.2"
+        "typescript": "5.6.2"
     },
     "dependencies": {
         "@typescript-to-lua/language-extensions": "1.19.0",

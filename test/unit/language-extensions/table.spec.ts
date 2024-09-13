@@ -338,6 +338,7 @@ describe("Table extensions use as expression", () => {
         `
             .withLanguageExtensions()
             .setReturnExport("result")
+            .ignoreDiagnostics([2872 /* TS2872: This kind of expression is always truthy. */])
             .expectToEqual(value);
     });
 

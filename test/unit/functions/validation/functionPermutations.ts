@@ -351,11 +351,16 @@ const noSelfInFileTestFunctions: TestFunction[] = [
     },
 ];
 
-export const anonTestFunctionExpressions: TestFunction[] = [
-    { value: "s => s" },
-    { value: "(s => s)" },
+export const anonArrowFunctionExpressions: TestFunction[] = [{ value: "s => s" }, { value: "(s => s)" }];
+
+export const anonNonArrowFunctionExpressions: TestFunction[] = [
     { value: "function(s) { return s; }" },
     { value: "(function(s) { return s; })" },
+];
+
+export const anonTestFunctionExpressions: TestFunction[] = [
+    ...anonArrowFunctionExpressions,
+    ...anonNonArrowFunctionExpressions,
 ];
 
 export const selfTestFunctionExpressions: TestFunction[] = [

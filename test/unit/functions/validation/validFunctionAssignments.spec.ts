@@ -1,6 +1,7 @@
 import * as util from "../../../util";
 import {
-    anonTestFunctionExpressions,
+    anonArrowFunctionExpressions,
+    anonNonArrowFunctionExpressions,
     anonTestFunctionType,
     noSelfTestFunctionExpressions,
     noSelfTestFunctions,
@@ -133,10 +134,10 @@ test.each([
 });
 
 test.each([
-    ...anonTestFunctionExpressions.map((f): [TestFunction, string[]] => [f, ["0", "'foobar'"]]),
-    ...selfTestFunctionExpressions.map((f): [TestFunction, string[]] => [f, ["0", "'foobar'"]]),
+    ...anonNonArrowFunctionExpressions.map((f): [TestFunction, string[]] => [f, ["'context'", "'foobar'"]]),
+    ...selfTestFunctionExpressions.map((f): [TestFunction, string[]] => [f, ["'context'", "'foobar'"]]),
     ...noSelfTestFunctionExpressions.map((f): [TestFunction, string[]] => [f, ["'foobar'"]]),
-])("Valid function expression argument with no signature (%p, %p)", (testFunction, args) => {
+])("Valid function expression argument with no signature have context (%p, %p)", (testFunction, args) => {
     util.testFunction`
         const takesFunction: any = (fn: (this: void, ...args: any[]) => any, ...args: any[]) => {
             return fn(...args);
@@ -146,6 +147,20 @@ test.each([
         .setTsHeader(testFunction.definition ?? "")
         .expectToEqual("foobar");
 });
+
+test.each([...anonArrowFunctionExpressions.map((f): [TestFunction, string[]] => [f, ["'foobar'"]])])(
+    "Valid arrow function expression argument with no signature do not have context (%p, %p)",
+    (testFunction, args) => {
+        util.testFunction`
+        const takesFunction: any = (fn: (this: void, ...args: any[]) => any, ...args: any[]) => {
+            return fn(...args);
+        }
+        return takesFunction(${testFunction.value}, ${args.join(", ")});
+    `
+            .setTsHeader(testFunction.definition ?? "")
+            .expectToEqual("foobar");
+    }
+);
 
 test.each(validTestFunctionAssignments)("Valid function return (%p)", (testFunction, functionType) => {
     util.testFunction`

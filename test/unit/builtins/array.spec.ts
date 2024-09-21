@@ -753,6 +753,14 @@ test.each([
     util.testExpression`Array.from(${valueString})`.expectToMatchJsResult();
 });
 
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1576
+test("array.from with non-array iterable (#1576)", () => {
+    util.testFunction`
+        const map = new Map().set(1, 2);
+        return Array.from(map, ([v,k]) => ({k,v}));
+    `.expectToMatchJsResult();
+});
+
 // Array.of
 test.each(["1, 2, 3", "", "...[1, 2, 3], 4, 5, 6"])("Array.of(%p)", valueString => {
     util.testExpression`Array.of(${valueString})`.expectToMatchJsResult();

@@ -5,7 +5,7 @@ export function __TS__Using<TArgs extends Disposable[], TReturn>(
 ): TReturn {
     let thrownError;
     const [ok, result] = xpcall(
-        () => cb(...args),
+        () => cb.call(this, ...args),
         err => (thrownError = err)
     );
 

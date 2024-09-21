@@ -76,8 +76,8 @@ export class __TS__Promise<T> implements Promise<T> {
         const [success, error] = pcall(
             executor,
             undefined,
-            v => this.resolve(v),
-            err => this.reject(err)
+            this.resolve.bind(this),
+            this.reject.bind(this)
         );
         if (!success) {
             // When a promise executor throws, the promise should be rejected with the thrown object as reason

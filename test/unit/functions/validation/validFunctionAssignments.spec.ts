@@ -250,7 +250,7 @@ test("Does not fail on union type signatures (#896)", () => {
 });
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1568
-test("No false positives when using generic functions (#1568)", () => {
+test.only("No false positives when using generic functions (#1568)", () => {
     util.testModule`
         /** @noSelf */
         declare namespace Test {

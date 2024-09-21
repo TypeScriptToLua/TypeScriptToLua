@@ -1,18 +1,26 @@
 import * as util from "../util";
 
 test.each(["null", "undefined"])("nullish-coalesing operator returns rhs", nullishValue => {
-    util.testExpression`${nullishValue} ?? "Hello, World!"`.expectToMatchJsResult();
+    util.testExpression`${nullishValue} ?? "Hello, World!"`
+        .ignoreDiagnostics([2871 /* TS2871: This expression is always nullish. */])
+        .expectToMatchJsResult();
 });
 
 test.each([3, "foo", {}, [], true, false])("nullish-coalesing operator returns lhs", value => {
-    util.testExpression`${util.formatCode(value)} ?? "Hello, World!"`.expectToMatchJsResult();
+    util.testExpression`${util.formatCode(value)} ?? "Hello, World!"`
+        .ignoreDiagnostics([
+            2869 /* TS2869: Right operand of ?? is unreachable because the left operand is never nullish. */,
+        ])
+        .expectToMatchJsResult();
 });
 
 test.each(["any", "unknown"])("nullish-coalesing operator with any/unknown type", type => {
     util.testFunction`
         const unknownType = false as ${type};
         return unknownType ?? "This should not be returned!";
-    `.expectToMatchJsResult();
+    `
+        .ignoreDiagnostics([2871 /* TS2871: This expression is always nullish. */])
+        .expectToMatchJsResult();
 });
 
 test.each(["boolean | string", "number | false", "undefined | true"])(
@@ -38,7 +46,9 @@ test("nullish-coalescing operator with side effect rhs", () => {
         let i = 0;
         const incI = () => ++i;
         return [i, undefined ?? incI(), i];
-    `.expectToMatchJsResult();
+    `
+        .ignoreDiagnostics([2871 /* TS2871: This expression is always nullish. */])
+        .expectToMatchJsResult();
 });
 
 test("nullish-coalescing operator with vararg", () => {

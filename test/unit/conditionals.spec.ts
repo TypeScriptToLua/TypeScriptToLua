@@ -90,7 +90,10 @@ test.each([
     { condition: 3, lhs: 4, rhs: 5 },
 ])("Ternary Conditional (%p)", ({ condition, lhs, rhs }) => {
     util.testExpressionTemplate`${condition} ? ${lhs} : ${rhs}`
-        .ignoreDiagnostics([truthyOnlyConditionalValue.code])
+        .ignoreDiagnostics([
+            truthyOnlyConditionalValue.code,
+            2872 /* TS2872: This kind of expression is always truthy. */,
+        ])
         .expectToMatchJsResult();
 });
 

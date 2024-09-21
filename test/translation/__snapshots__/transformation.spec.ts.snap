@@ -41,15 +41,20 @@ do
 end
 do
     local ____xyz = require("xyz")
-    local abc = ____xyz.abc
-    local def = ____xyz.def
-    ____exports.abc = abc
-    ____exports.def = def
+    ____exports.abc = ____xyz.abc
+    ____exports.def = ____xyz.def
 end
 do
     local ____xyz = require("xyz")
-    local def = ____xyz.abc
-    ____exports.def = def
+    ____exports.def = ____xyz.abc
+end
+do
+    local ____bla = require("bla")
+    ____exports.bar = ____bla["123"]
+end
+do
+    local ____bla = require("bla")
+    ____exports["123"] = ____bla.foo
 end
 return ____exports"
 `;

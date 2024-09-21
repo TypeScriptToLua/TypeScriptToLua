@@ -2,17 +2,12 @@ import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { assert } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
-import {
-    createDefaultExportExpression,
-    createDefaultExportStringLiteral,
-    createExportedIdentifier,
-} from "../../utils/export";
+import { createDefaultExportExpression, createDefaultExportStringLiteral } from "../../utils/export";
 import { createExportsIdentifier } from "../../utils/lua-ast";
-import { ScopeType } from "../../utils/scope";
-import { transformScopeBlock } from "../block";
-import { transformIdentifier } from "../identifier";
-import { createShorthandIdentifier } from "../literal";
+import { createShorthandIdentifier, transformPropertyName } from "../literal";
 import { createModuleRequire } from "./import";
+import { createSafeName } from "../../utils/safe-names";
+import * as path from "path";
 
 export const transformExportAssignment: FunctionVisitor<ts.ExportAssignment> = (node, context) => {
     if (!context.resolver.isValueAliasDeclaration(node)) {
@@ -101,20 +96,37 @@ function transformExportAll(context: TransformationContext, node: ts.ExportDecla
 }
 
 const isDefaultExportSpecifier = (node: ts.ExportSpecifier) =>
-    (node.name && ts.identifierToKeywordKind(node.name) === ts.SyntaxKind.DefaultKeyword) ||
-    (node.propertyName && ts.identifierToKeywordKind(node.propertyName) === ts.SyntaxKind.DefaultKeyword);
+    (node.name &&
+        ts.isIdentifier(node.name) &&
+        ts.identifierToKeywordKind(node.name) === ts.SyntaxKind.DefaultKeyword) ||
+    (node.propertyName &&
+        ts.isIdentifier(node.propertyName) &&
+        ts.identifierToKeywordKind(node.propertyName) === ts.SyntaxKind.DefaultKeyword);
 
 function transformExportSpecifier(context: TransformationContext, node: ts.ExportSpecifier): lua.AssignmentStatement {
-    const exportedSymbol = context.checker.getExportSpecifierLocalTargetSymbol(node);
-    const exportedIdentifier = node.propertyName ? node.propertyName : node.name;
-    const exportedExpression = createShorthandIdentifier(context, exportedSymbol, exportedIdentifier);
+    const exportedName = node.name;
+    const exportedValue = node.propertyName ?? node.name;
+    let rhs: lua.Expression;
+    if (ts.isIdentifier(exportedValue)) {
+        const exportedSymbol = context.checker.getExportSpecifierLocalTargetSymbol(node);
+        rhs = createShorthandIdentifier(context, exportedSymbol, exportedValue);
+    } else {
+        rhs = lua.createStringLiteral(exportedName.text, exportedValue);
+    }
 
-    const isDefault = isDefaultExportSpecifier(node);
-    const exportAssignmentLeftHandSide = isDefault
-        ? createDefaultExportExpression(node)
-        : createExportedIdentifier(context, transformIdentifier(context, node.name));
+    if (isDefaultExportSpecifier(node)) {
+        const lhs = createDefaultExportExpression(node);
+        return lua.createAssignmentStatement(lhs, rhs, node);
+    } else {
+        const exportsTable = createExportsIdentifier();
+        const lhs = lua.createTableIndexExpression(
+            exportsTable,
+            lua.createStringLiteral(exportedName.text),
+            exportedName
+        );
 
-    return lua.createAssignmentStatement(exportAssignmentLeftHandSide, exportedExpression, node);
+        return lua.createAssignmentStatement(lhs, rhs, node);
+    }
 }
 
 function transformExportSpecifiersFrom(
@@ -123,32 +135,32 @@ function transformExportSpecifiersFrom(
     moduleSpecifier: ts.Expression,
     exportSpecifiers: ts.ExportSpecifier[]
 ): lua.Statement {
-    // First transpile as import clause
-    const importClause = ts.factory.createImportClause(
-        false,
-        undefined,
-        ts.factory.createNamedImports(
-            exportSpecifiers.map(s => ts.factory.createImportSpecifier(statement.isTypeOnly, s.propertyName, s.name))
-        )
-    );
+    const result: lua.Statement[] = [];
 
-    const importDeclaration = ts.factory.createImportDeclaration(statement.modifiers, importClause, moduleSpecifier);
+    const importPath = ts.isStringLiteral(moduleSpecifier) ? moduleSpecifier.text.replace(/"/g, "") : "module";
 
-    // Wrap in block to prevent imports from hoisting out of `do` statement
-    const [block] = transformScopeBlock(context, ts.factory.createBlock([importDeclaration]), ScopeType.Block);
-    const result = block.statements;
+    // Create the require statement to extract values.
+    // local ____module = require("module")
+    const importUniqueName = lua.createIdentifier(createSafeName(path.basename(importPath)));
+    const requireCall = createModuleRequire(context, moduleSpecifier);
+    result.push(lua.createVariableDeclarationStatement(importUniqueName, requireCall, statement));
 
-    // Now the module is imported, add the imports to the export table
     for (const specifier of exportSpecifiers) {
-        result.push(
-            lua.createAssignmentStatement(
-                createExportedIdentifier(context, transformIdentifier(context, specifier.name)),
-                transformIdentifier(context, specifier.name)
-            )
+        // Assign to exports table
+        const exportsTable = createExportsIdentifier();
+        const exportedName = specifier.name;
+        const exportedNameTransformed = transformPropertyName(context, exportedName);
+        const lhs = lua.createTableIndexExpression(exportsTable, exportedNameTransformed, exportedName);
+
+        const exportedValue = specifier.propertyName ?? specifier.name;
+        const rhs = lua.createTableIndexExpression(
+            lua.cloneIdentifier(importUniqueName),
+            transformPropertyName(context, exportedValue),
+            specifier
         );
+        result.push(lua.createAssignmentStatement(lhs, rhs, specifier));
     }
 
-    // Wrap this in a DoStatement to prevent polluting the scope.
     return lua.createDoStatement(result, statement);
 }
 

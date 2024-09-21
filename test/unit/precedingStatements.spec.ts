@@ -633,7 +633,11 @@ test("class member initializers", () => {
         }
         const inst = new MyClass();
         return [inst.myField, inst.foo];
-    `.expectToMatchJsResult();
+    `
+        .ignoreDiagnostics([
+            2869 /* TS2869: Right operand of ?? is unreachable because the left operand is never nullish. */,
+        ])
+        .expectToMatchJsResult();
 });
 
 test("class member initializers in extended class", () => {
@@ -644,5 +648,9 @@ test("class member initializers in extended class", () => {
         }
         const inst = new MyClass();
         return inst.myField;
-    `.expectToMatchJsResult();
+    `
+        .ignoreDiagnostics([
+            2869 /* TS2869: Right operand of ?? is unreachable because the left operand is never nullish. */,
+        ])
+        .expectToMatchJsResult();
 });

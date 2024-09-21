@@ -291,3 +291,25 @@ test("import expression", () => {
         .setOptions({ module: ts.ModuleKind.ESNext })
         .expectToEqual({ result: "foo" });
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1572
+test("correctly exports @compileMembersOnly enums (#1572)", () => {
+    util.testModule`
+        export { val } from "./otherfile";
+    `
+        .addExtraFile(
+            "otherfile.ts",
+            `
+        // Would put this in the main file, but we cannot transfer enum types over lua/js boundary
+        // but we still need to have an exported enum, hence it is in another file
+        /** @compileMembersOnly */
+        export enum MyEnum {
+            A = 0,
+            B = 1,
+            C = 2
+        }
+        export const val = MyEnum.B | MyEnum.C;
+    `
+        )
+        .expectToEqual({ val: 3 });
+});

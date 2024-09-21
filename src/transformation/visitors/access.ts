@@ -9,7 +9,7 @@ import {
     unsupportedOptionalCompileMembersOnly,
 } from "../utils/diagnostics";
 import { getExtensionKindForNode } from "../utils/language-extensions";
-import { addToNumericExpression } from "../utils/lua-ast";
+import { addToNumericExpression, createExportsIdentifier } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isArrayType, isNumberType, isStringType } from "../utils/typescript";
 import { tryGetConstEnumValue } from "./enum";
@@ -24,6 +24,7 @@ import {
 } from "./optional-chaining";
 import { SyntaxKind } from "typescript";
 import { getCustomNameFromSymbol } from "./identifier";
+import { getSymbolExportScope, isSymbolExported } from "../utils/export";
 
 function addOneToArrayAccessArgument(
     context: TransformationContext,
@@ -138,6 +139,7 @@ export function transformPropertyAccessExpressionWithCapture(
         if (isOptionalLeft) {
             context.diagnostics.push(unsupportedOptionalCompileMembersOnly(node));
         }
+
         if (ts.isPropertyAccessExpression(node.expression)) {
             // in case of ...x.enum.y transform to ...x.y
             const expression = lua.createTableIndexExpression(
@@ -147,7 +149,21 @@ export function transformPropertyAccessExpressionWithCapture(
             );
             return { expression };
         } else {
-            return { expression: lua.createIdentifier(property, node) };
+            // Check if we need to account for enum being exported int his file
+            if (
+                isSymbolExported(context, type.symbol) &&
+                getSymbolExportScope(context, type.symbol) === node.expression.getSourceFile()
+            ) {
+                return {
+                    expression: lua.createTableIndexExpression(
+                        createExportsIdentifier(),
+                        lua.createStringLiteral(property),
+                        node
+                    ),
+                };
+            } else {
+                return { expression: lua.createIdentifier(property, node) };
+            }
         }
     }
 

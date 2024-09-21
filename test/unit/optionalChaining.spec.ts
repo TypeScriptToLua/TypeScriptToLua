@@ -438,3 +438,22 @@ describe("Non-null chain", () => {
         `.expectToMatchJsResult();
     });
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1585
+test("optional chaining of super call (#1585)", () => {
+    util.testFunction`
+        class Parent {
+            private name = "foo";
+            M2() { return this.name; }
+        }
+
+        class Child extends Parent {
+            M2() {
+                return super.M2?.();
+            }
+        }
+
+        const c = new Child();
+        return c.M2();
+    `.expectToMatchJsResult();
+});

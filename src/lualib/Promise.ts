@@ -73,12 +73,7 @@ export class __TS__Promise<T> implements Promise<T> {
 
     constructor(executor: PromiseExecutor<T>) {
         // Avoid unnecessary local functions allocations by using `pcall` explicitly
-        const [success, error] = pcall(
-            executor,
-            undefined,
-            this.resolve.bind(this),
-            this.reject.bind(this)
-        );
+        const [success, error] = pcall(executor, undefined, this.resolve.bind(this), this.reject.bind(this));
         if (!success) {
             // When a promise executor throws, the promise should be rejected with the thrown object as reason
             this.reject(error);

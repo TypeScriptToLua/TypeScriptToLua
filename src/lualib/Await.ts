@@ -52,7 +52,7 @@ export function __TS__AsyncAwaiter(this: void, generator: (this: void) => void) 
             return __TS__Promise.resolve(result).addCallbacks(fulfilled, reject);
         }
 
-        const [success, resultOrError] = coresume(asyncCoroutine, function(v: unknown) {
+        const [success, resultOrError] = coresume(asyncCoroutine, function (v: unknown) {
             resolved = true;
             return __TS__Promise.resolve(v).addCallbacks(resolve, reject);
         });

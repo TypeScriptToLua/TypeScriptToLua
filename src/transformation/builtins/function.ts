@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
-import { unsupportedForTarget, unsupportedProperty, unsupportedSelfFunctionConversion } from "../utils/diagnostics";
+import { unsupportedForTarget, unsupportedProperty } from "../utils/diagnostics";
 import { ContextType, getFunctionContextType } from "../utils/function-context";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { transformCallAndArguments } from "../visitors/call";
@@ -13,11 +13,6 @@ export function transformFunctionPrototypeCall(
     node: ts.CallExpression,
     calledMethod: ts.PropertyAccessExpression
 ): lua.CallExpression | undefined {
-    const callerType = context.checker.getTypeAtLocation(calledMethod.expression);
-    if (getFunctionContextType(context, callerType) === ContextType.Void) {
-        context.diagnostics.push(unsupportedSelfFunctionConversion(node));
-    }
-
     const signature = context.checker.getResolvedSignature(node);
     const [caller, params] = transformCallAndArguments(context, calledMethod.expression, node.arguments, signature);
     const expressionName = calledMethod.name.text;

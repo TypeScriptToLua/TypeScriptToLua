@@ -175,3 +175,45 @@ test("await using can handle non-async disposables", () => {
         .setTsHeader(usingTestLib)
         .expectToEqual({ logs: ["Creating a", "function content", "Disposing a"] });
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1571
+test("await using no extra diagnostics (#1571)", () => {
+    util.testModule`
+        async function getResource(): Promise<AsyncDisposable> {
+            return {
+                [Symbol.asyncDispose]: async () => {}
+            };
+        }
+
+        async function someOtherAsync() {}
+
+        async function main() {
+            await using resource = await getResource();
+            await someOtherAsync();
+        }
+    `.expectToHaveNoDiagnostics();
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1584
+test("works with disposable classes (#1584)", () => {
+    util.testFunction`
+        const log = [];
+        
+        class Scoped {
+            action(): void {
+                log.push("action")
+            }
+            [Symbol.dispose]() {
+                log.push("cleanup")
+            }
+        }
+
+        function TestScoped(): void {
+            using s = new Scoped();
+            s.action();
+        }
+
+        TestScoped();
+        return log;
+    `.expectToEqual(["action", "cleanup"]);
+});

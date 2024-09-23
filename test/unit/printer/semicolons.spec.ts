@@ -10,6 +10,7 @@ test.each(["const a = 1; const b = a;", "const a = 1; let b: number; b = a;", "{
             (undefined || foo)();
             return result;
         `
+            .ignoreDiagnostics([2873 /* TS2873: This kind of expression is always falsy. */])
             .expectToMatchJsResult()
             .expectLuaToMatchSnapshot();
     }

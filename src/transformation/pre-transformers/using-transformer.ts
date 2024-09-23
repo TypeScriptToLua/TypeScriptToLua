@@ -18,7 +18,7 @@ export function usingTransformer(context: TransformationContext): ts.Transformer
                         ts.setParent(node2, parent[parent.length - 1]);
                         parent.push(node2);
                         ts.visitEachChild(node2, setParent, ctx);
-                        parent.push();
+                        parent.pop();
                         return node2;
                     }
                     ts.visitEachChild(updatedBlock, setParent, ctx);
@@ -74,12 +74,13 @@ function transformBlockWithUsing(
             );
 
             const callback = ts.factory.createFunctionExpression(
-                undefined,
+                // Put async keyword in front of callback when we are in an async using
+                isAwaitUsing ? [ts.factory.createModifier(ts.SyntaxKind.AsyncKeyword)] : undefined,
                 undefined,
                 undefined,
                 undefined,
                 variableNames,
-                undefined,
+                ts.factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword), // Required for TS to not freak out trying to infer the type of synthetic nodes
                 callbackBody
             );
 

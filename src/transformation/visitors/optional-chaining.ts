@@ -166,6 +166,19 @@ export function transformOptionalChainWithCapture(
             return result;
         }
     );
+
+    // handle super calls by passing self as context
+    function getLeftMostChainItem(node: ts.Node): ts.Node {
+        if (ts.isPropertyAccessExpression(node)) {
+            return getLeftMostChainItem(node.expression);
+        } else {
+            return node;
+        }
+    }
+    if (getLeftMostChainItem(tsLeftExpression).kind === ts.SyntaxKind.SuperKeyword) {
+        capturedThisValue = lua.createIdentifier("self");
+    }
+
     // handle context
     if (rightContextualCall) {
         if (capturedThisValue) {

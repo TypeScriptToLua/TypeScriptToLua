@@ -28,8 +28,9 @@ export function __TS__ArrayFrom(
             result.push(v);
         }
     } else {
-        for (const [i, v] of arrayLikeIterator(arrayLike)) {
-            result.push(mapFn.call(thisArg, v, i - 1));
+        let i = 0;
+        for (const [, v] of arrayLikeIterator(arrayLike)) {
+            result.push(mapFn.call(thisArg, v, i++));
         }
     }
     return result;

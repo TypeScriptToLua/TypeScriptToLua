@@ -1,6 +1,6 @@
 export function __TS__Using<TArgs extends Disposable[], TReturn>(
     this: undefined,
-    cb: (...args: TArgs) => TReturn,
+    cb: (this: void, ...args: TArgs) => TReturn,
     ...args: TArgs
 ): TReturn {
     let thrownError;

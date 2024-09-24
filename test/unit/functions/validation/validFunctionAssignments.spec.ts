@@ -250,19 +250,18 @@ test("Does not fail on union type signatures (#896)", () => {
 });
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1568
-test.only("No false positives when using generic functions (#1568)", () => {
+test("No false positives when using generic functions (#1568)", () => {
     util.testModule`
         /** @noSelf */
         declare namespace Test {
             export function testCallback<T extends (...args: any[]) => void>(
                 callback: T,
             ): void;
-            export function testCallback2(
-                callback: (...args: any[]) => void,
-            ): void;
         }
 
         Test.testCallback(() => {});
-        Test.testCallback2(() => {});
+
+        const f = () => {};
+        Test.testCallback(f);
     `.expectToHaveNoDiagnostics();
 });

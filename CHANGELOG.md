@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.27.0
+
+- Upgraded TypeScript to 5.6.2
+- Added support for `Math.trunc` (see [Math.trunc()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/trunc))
+- Fixed a runtime error when disposing a disposable class
+- Fixed the wrong `this` value being passed when using `?.` to call a `super` method
+- Fixed a bug causing exported `/** @compileMembersOnly */` enums to break
+- Fixed a bug in `Array.from` when calling it with a non-array iterable
+- Fixed an incorrect diagnostic being shown for `await using` code
+- Fixed a bug causing not all getters/setters to be transpiled
+
 ## 1.26.0
 
 - Upgraded TypeScript to 5.5.2

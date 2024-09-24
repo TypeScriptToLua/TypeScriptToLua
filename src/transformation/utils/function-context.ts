@@ -140,6 +140,10 @@ function computeDeclarationContextType(context: TransformationContext, signature
         return ContextType.NonVoid;
     }
 
+    if (signatureDeclaration.parent && ts.isTypeParameterDeclaration(signatureDeclaration.parent)) {
+        return ContextType.NonVoid;
+    }
+
     // When using --noImplicitSelf and the signature is defined in a file targeted by the program apply the @noSelf rule.
     const program = context.program;
     const options = program.getCompilerOptions() as CompilerOptions;

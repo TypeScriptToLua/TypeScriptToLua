@@ -1,6 +1,5 @@
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty
 
-// eslint-disable-next-line @typescript-eslint/ban-types
 import { __TS__SetDescriptor } from "./SetDescriptor";
 
 export function __TS__ObjectDefineProperty<T extends object>(
@@ -26,9 +25,9 @@ export function __TS__ObjectDefineProperty<T extends object>(
         descriptor = {
             set: desc.set,
             get: desc.get,
-            configurable: desc.configurable !== undefined ? desc.configurable : valueExists,
-            enumerable: desc.enumerable !== undefined ? desc.enumerable : valueExists,
-            writable: desc.writable !== undefined ? desc.writable : valueExists,
+            configurable: desc.configurable ?? valueExists,
+            enumerable: desc.enumerable ?? valueExists,
+            writable: desc.writable ?? valueExists,
             value: desc.value !== undefined ? desc.value : value,
         };
     }

@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/naming-convention */
+
 type AnyTable = Record<any, any>;
-// eslint-disable-next-line @typescript-eslint/ban-types, @typescript-eslint/consistent-type-definitions
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions,@typescript-eslint/no-empty-object-type
 type AnyNotNil = {};
 
 /**

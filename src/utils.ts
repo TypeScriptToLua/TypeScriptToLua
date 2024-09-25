@@ -50,7 +50,6 @@ export function formatPathToLuaPath(filePath: string): string {
 type NoInfer<T> = [T][T extends any ? 0 : never];
 
 export function getOrUpdate<K, V>(
-    // eslint-disable-next-line @typescript-eslint/ban-types
     map: Map<K, V> | (K extends object ? WeakMap<K, V> : never),
     key: K,
     getDefaultValue: () => NoInfer<V>
@@ -62,7 +61,6 @@ export function getOrUpdate<K, V>(
     return map.get(key)!;
 }
 
-// eslint-disable-next-line @typescript-eslint/ban-types
 export function isNonNull<T>(value: T | null | undefined): value is T {
     return value != null;
 }

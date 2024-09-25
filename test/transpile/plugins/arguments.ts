@@ -6,7 +6,6 @@ interface Options {
     option: boolean;
 }
 
-// eslint-disable-next-line import/no-default-export
 export default function plugin(options: Options): tstl.Plugin {
     return {
         visitors: {

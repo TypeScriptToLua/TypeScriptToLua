@@ -39,6 +39,7 @@ export class TransformationContext {
     public readonly luaTarget = this.options.luaTarget ?? LuaTarget.Universal;
     public readonly isModule = ts.isExternalModule(this.sourceFile);
     public readonly isStrict =
+        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
         (this.options.alwaysStrict ?? this.options.strict) ||
         (this.isModule && this.options.target !== undefined && this.options.target >= ts.ScriptTarget.ES2015);
 

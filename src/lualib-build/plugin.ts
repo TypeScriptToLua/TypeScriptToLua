@@ -185,5 +185,4 @@ class LuaLibPrinter extends tstl.LuaPrinter {
 }
 
 const pluginInstance = new LuaLibPlugin();
-// eslint-disable-next-line import/no-default-export
 export default pluginInstance;

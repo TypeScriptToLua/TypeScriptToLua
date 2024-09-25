@@ -20,5 +20,4 @@ const plugin: tstl.Plugin = {
     printer: (program, emitHost, fileName, file) => new CustomPrinter(emitHost, program, fileName).print(file),
 };
 
-// eslint-disable-next-line import/no-default-export
 export default plugin;

@@ -30,8 +30,6 @@ declare module "typescript" {
     }
 
     interface Symbol {
-        // false positive
-        // eslint-disable-next-line @typescript-eslint/ban-types
         parent?: Symbol;
     }
 

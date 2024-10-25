@@ -181,6 +181,27 @@ test("SubclassConstructor", () => {
     `.expectToMatchJsResult();
 });
 
+test("SubclassConstructorPropertyInitiailizationSuperOrder", () => {
+    util.testFunction`
+        class a {
+            field: number;
+            constructor(field: number) {
+                this.field = field;
+            }
+        }
+        class b extends a {
+            fieldDouble = this.field * 2;
+            constructor(field: number) {
+                const newField = field + 1;
+                super(newField);
+            }
+        }
+
+        const result = new b(10);
+        return [result.field, result.fieldDouble];
+    `.expectToMatchJsResult();
+});
+
 test("Subclass constructor across merged namespace", () => {
     util.testModule`
         namespace NS {

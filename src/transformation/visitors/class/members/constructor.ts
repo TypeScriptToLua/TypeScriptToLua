@@ -45,23 +45,22 @@ export function transformConstructorDeclaration(
 
     const classInstanceFields = transformClassInstanceFields(context, instanceFields);
 
-    // If there are field initializers and the first statement is a super call,
-    // move super call between default assignments and initializers
+    // If there are field initializers and there is a super call somewhere,
+    // move super call and everything before it to between default assignments and initializers
     if (
         (constructorFieldsDeclarations.length > 0 || classInstanceFields.length > 0) &&
         statement.body &&
         statement.body.statements.length > 0
     ) {
-        const firstStatement = statement.body.statements[0];
-        if (
-            ts.isExpressionStatement(firstStatement) &&
-            ts.isCallExpression(firstStatement.expression) &&
-            firstStatement.expression.expression.kind === ts.SyntaxKind.SuperKeyword
-        ) {
-            const superCall = body.shift();
-            if (superCall) {
-                bodyWithFieldInitializers.push(superCall);
-            }
+        const superIndex = statement.body.statements.findIndex(
+            s =>
+                ts.isExpressionStatement(s) &&
+                ts.isCallExpression(s.expression) &&
+                s.expression.expression.kind === ts.SyntaxKind.SuperKeyword
+        );
+
+        if (superIndex !== -1) {
+            bodyWithFieldInitializers.push(...body.splice(0, superIndex + 1));
         }
     }
 

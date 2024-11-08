@@ -373,3 +373,31 @@ describe("LuaMultiReturn returns all values even when indexed with [0] #1411", (
             .expectToEqual(1);
     });
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1591
+test("LuaMultiReturn in LuaIterable (#1591)", () => {
+    const lua = util.testModule`
+        type IterableAlias = LuaIterable<LuaMultiReturn<[number, number]>>;
+
+        declare const iterable: IterableAlias;
+
+        for (const [a, b] of iterable) {}
+    `
+        .withLanguageExtensions()
+        .getMainLuaCodeChunk();
+
+    expect(lua).toContain("a, b");
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1591
+test("LuaMultiReturn in LuaIterable intersection (#1591)", () => {
+    const lua = util.testModule`
+        declare function iterator(): { a: string } & LuaIterable<LuaMultiReturn<[string, string]>>;
+
+        for (const [a, b] of iterator()) {}
+    `
+        .withLanguageExtensions()
+        .getMainLuaCodeChunk();
+
+    expect(lua).toContain("a, b");
+});

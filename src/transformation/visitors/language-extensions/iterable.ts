@@ -62,14 +62,13 @@ export function transformForOfIterableStatement(
     statement: ts.ForOfStatement,
     block: lua.Block
 ): lua.Statement {
-    const hasBindingPattern =
-        ts.isVariableDeclarationList(statement.initializer) &&
-        statement.initializer.declarations.length > 0 &&
-        ts.isArrayBindingPattern(statement.initializer.declarations[0].name);
-    const bindingPatternType =
-        hasBindingPattern && context.checker.getTypeAtLocation(statement.initializer.declarations[0].name);
+    const iteratedExpressionType = context.checker.getTypeAtLocation(statement.expression);
+    const iterableType =
+        iteratedExpressionType.isIntersection() &&
+        iteratedExpressionType.types.find(t => t.symbol.escapedName === "Iterable");
+    const iterableTypeArguments = (iterableType as ts.TypeReference)?.typeArguments;
 
-    if (bindingPatternType && isMultiReturnType(bindingPatternType)) {
+    if (iterableTypeArguments && iterableTypeArguments.length > 0 && isMultiReturnType(iterableTypeArguments[0])) {
         const luaIterator = context.transformExpression(statement.expression);
         return transformForOfMultiIterableStatement(
             context,

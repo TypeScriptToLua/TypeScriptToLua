@@ -17,7 +17,7 @@ import { transformInPrecedingStatementScope } from "../../utils/preceding-statem
 export function transformAssignmentLeftHandSideExpression(
     context: TransformationContext,
     node: ts.Expression,
-    rightHasPrecedingStatements?: boolean
+    rightHasPrecedingStatements?: boolean,
 ): lua.AssignmentLeftHandSideExpression {
     // Access expressions need the components of the left side cached in temps before the right side's preceding statements
     if (rightHasPrecedingStatements && (ts.isElementAccessExpression(node) || ts.isPropertyAccessExpression(node))) {
@@ -55,7 +55,7 @@ export function transformAssignment(
     lhs: ts.Expression,
     right: lua.Expression,
     rightHasPrecedingStatements?: boolean,
-    parent?: ts.Expression
+    parent?: ts.Expression,
 ): lua.Statement[] {
     if (ts.isOptionalChain(lhs)) {
         context.diagnostics.push(notAllowedOptionalAssignment(lhs));
@@ -69,8 +69,8 @@ export function transformAssignment(
                 LuaLibFeature.ArraySetLength,
                 parent,
                 context.transformExpression(lhs.expression),
-                right
-            )
+                right,
+            ),
         );
 
         return [arrayLengthAssignment];
@@ -91,8 +91,8 @@ export function transformAssignment(
                             ts.isPropertyAccessExpression(lhs)
                                 ? lua.createStringLiteral(lhs.name.text)
                                 : context.transformExpression(lhs.argumentExpression),
-                            right
-                        )
+                            right,
+                        ),
                     ),
                 ];
             }
@@ -125,7 +125,7 @@ export function transformAssignmentWithRightPrecedingStatements(
     lhs: ts.Expression,
     right: lua.Expression,
     rightPrecedingStatements: lua.Statement[],
-    parent?: ts.Expression
+    parent?: ts.Expression,
 ): lua.Statement[] {
     return [
         ...rightPrecedingStatements,
@@ -135,11 +135,11 @@ export function transformAssignmentWithRightPrecedingStatements(
 
 function transformDestructuredAssignmentExpression(
     context: TransformationContext,
-    expression: ts.DestructuringAssignment
+    expression: ts.DestructuringAssignment,
 ) {
     let { precedingStatements: rightPrecedingStatements, result: right } = transformInPrecedingStatementScope(
         context,
-        () => context.transformExpression(expression.right)
+        () => context.transformExpression(expression.right),
     );
     context.addPrecedingStatements(rightPrecedingStatements);
     if (isMultiReturnCall(context, expression.right)) {
@@ -151,7 +151,7 @@ function transformDestructuredAssignmentExpression(
         context,
         expression,
         rightExpr,
-        rightPrecedingStatements.length > 0
+        rightPrecedingStatements.length > 0,
     );
 
     return { statements, result: rightExpr };
@@ -159,7 +159,7 @@ function transformDestructuredAssignmentExpression(
 
 export function transformAssignmentExpression(
     context: TransformationContext,
-    expression: ts.AssignmentExpression<ts.EqualsToken>
+    expression: ts.AssignmentExpression<ts.EqualsToken>,
 ): lua.Expression {
     // Validate assignment
     const rightType = context.checker.getTypeAtLocation(expression.right);
@@ -173,7 +173,7 @@ export function transformAssignmentExpression(
             LuaLibFeature.ArraySetLength,
             expression,
             context.transformExpression(expression.left.expression),
-            context.transformExpression(expression.right)
+            context.transformExpression(expression.right),
         );
     }
 
@@ -185,13 +185,13 @@ export function transformAssignmentExpression(
 
     if (ts.isPropertyAccessExpression(expression.left) || ts.isElementAccessExpression(expression.left)) {
         const { precedingStatements, result: right } = transformInPrecedingStatementScope(context, () =>
-            context.transformExpression(expression.right)
+            context.transformExpression(expression.right),
         );
 
         const left = transformAssignmentLeftHandSideExpression(
             context,
             expression.left,
-            precedingStatements.length > 0
+            precedingStatements.length > 0,
         );
 
         context.addPrecedingStatements(precedingStatements);
@@ -210,7 +210,7 @@ export function transformAssignmentExpression(
 
 const canBeTransformedToLuaAssignmentStatement = (
     context: TransformationContext,
-    node: ts.DestructuringAssignment
+    node: ts.DestructuringAssignment,
 ): node is ts.ArrayDestructuringAssignment =>
     ts.isArrayLiteralExpression(node.left) &&
     node.left.elements.every(element => {
@@ -235,7 +235,7 @@ const canBeTransformedToLuaAssignmentStatement = (
 
 export function transformAssignmentStatement(
     context: TransformationContext,
-    expression: ts.AssignmentExpression<ts.EqualsToken>
+    expression: ts.AssignmentExpression<ts.EqualsToken>,
 ): lua.Statement[] {
     // Validate assignment
     const rightType = context.checker.getTypeAtLocation(expression.right);
@@ -265,7 +265,7 @@ export function transformAssignmentStatement(
         return statements;
     } else {
         const { precedingStatements, result: right } = transformInPrecedingStatementScope(context, () =>
-            context.transformExpression(expression.right)
+            context.transformExpression(expression.right),
         );
         return transformAssignmentWithRightPrecedingStatements(context, expression.left, right, precedingStatements);
     }

@@ -226,5 +226,5 @@ export default tseslint.config(
             "test/transpile/outFile/",
             "test/transpile/resolve-plugin/",
         ],
-    }
+    },
 );

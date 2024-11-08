@@ -76,10 +76,10 @@ declare type LuaIterator<TValue, TState> = TState extends undefined
               (
                   this: void,
                   state: TState,
-                  lastValue: TValue extends LuaMultiReturn<infer TTuple> ? TTuple[0] : TValue
+                  lastValue: TValue extends LuaMultiReturn<infer TTuple> ? TTuple[0] : TValue,
               ) => TValue,
               TState,
-              TValue extends LuaMultiReturn<infer TTuple> ? TTuple[0] : TValue
+              TValue extends LuaMultiReturn<infer TTuple> ? TTuple[0] : TValue,
           ]
       >;
 
@@ -471,7 +471,7 @@ declare type LuaLengthMethod<TReturn> = (() => TReturn) & LuaExtension<"LengthMe
  */
 declare type LuaTableGet<TTable extends AnyTable, TKey extends AnyNotNil, TValue> = ((
     table: TTable,
-    key: TKey
+    key: TKey,
 ) => TValue) &
     LuaExtension<"TableGet">;
 
@@ -496,7 +496,7 @@ declare type LuaTableGetMethod<TKey extends AnyNotNil, TValue> = ((key: TKey) =>
 declare type LuaTableSet<TTable extends AnyTable, TKey extends AnyNotNil, TValue> = ((
     table: TTable,
     key: TKey,
-    value: TValue
+    value: TValue,
 ) => void) &
     LuaExtension<"TableSet">;
 

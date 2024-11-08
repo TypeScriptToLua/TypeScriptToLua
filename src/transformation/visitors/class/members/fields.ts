@@ -7,7 +7,7 @@ import { transformPropertyName } from "../../literal";
 
 export function transformClassInstanceFields(
     context: TransformationContext,
-    instanceFields: ts.PropertyDeclaration[]
+    instanceFields: ts.PropertyDeclaration[],
 ): lua.Statement[] {
     const statements: lua.Statement[] = [];
 
@@ -36,7 +36,7 @@ export function transformClassInstanceFields(
 export function transformStaticPropertyDeclaration(
     context: TransformationContext,
     field: ts.PropertyDeclaration,
-    className: lua.Identifier
+    className: lua.Identifier,
 ): lua.AssignmentStatement | undefined {
     if (!field.initializer) return;
     const fieldName = transformPropertyName(context, field.name);

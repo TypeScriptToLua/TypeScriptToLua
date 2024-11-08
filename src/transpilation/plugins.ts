@@ -33,7 +33,7 @@ export interface Plugin {
         program: ts.Program,
         options: CompilerOptions,
         emitHost: EmitHost,
-        result: ProcessedFile[]
+        result: ProcessedFile[],
     ) => ts.Diagnostic[] | void;
 
     /**
@@ -43,7 +43,7 @@ export interface Plugin {
         program: ts.Program,
         options: CompilerOptions,
         emitHost: EmitHost,
-        result: EmitFile[]
+        result: EmitFile[],
     ) => ts.Diagnostic[] | void;
 
     /**
@@ -53,7 +53,7 @@ export interface Plugin {
         program: ts.Program,
         options: CompilerOptions,
         emitHost: EmitHost,
-        result: EmitFile[]
+        result: EmitFile[],
     ) => ts.Diagnostic[] | void;
 
     /**
@@ -64,7 +64,7 @@ export interface Plugin {
         moduleIdentifier: string,
         requiringFile: string,
         options: CompilerOptions,
-        emitHost: EmitHost
+        emitHost: EmitHost,
     ) => string | undefined;
 }
 
@@ -82,7 +82,7 @@ export function getPlugins(program: ts.Program): { diagnostics: ts.Diagnostic[];
             `${optionName}.name`,
             getConfigDirectory(options),
             pluginOption.name,
-            pluginOption.import
+            pluginOption.import,
         );
 
         if (resolveError) diagnostics.push(resolveError);

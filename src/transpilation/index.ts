@@ -16,7 +16,7 @@ export { TranspiledFile };
 export function transpileFiles(
     rootNames: string[],
     options: CompilerOptions = {},
-    writeFile?: ts.WriteFileCallback
+    writeFile?: ts.WriteFileCallback,
 ): EmitResult {
     const program = ts.createProgram(rootNames, options);
     const preEmitDiagnostics = ts.getPreEmitDiagnostics(program);
@@ -29,7 +29,7 @@ export function transpileFiles(
 export function transpileProject(
     configFileName: string,
     optionsToExtend?: CompilerOptions,
-    writeFile?: ts.WriteFileCallback
+    writeFile?: ts.WriteFileCallback,
 ): EmitResult {
     const parseResult = parseConfigFileWithSystem(configFileName, optionsToExtend);
     if (parseResult.errors.length > 0) {
@@ -93,7 +93,7 @@ export interface TranspileVirtualProjectResult {
 
 export function transpileVirtualProject(
     files: Record<string, string>,
-    options: CompilerOptions = {}
+    options: CompilerOptions = {},
 ): TranspileVirtualProjectResult {
     const program = createVirtualProgram(files, options);
     const preEmitDiagnostics = ts.getPreEmitDiagnostics(program);

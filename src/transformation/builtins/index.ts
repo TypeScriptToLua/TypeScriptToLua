@@ -22,7 +22,7 @@ import { transformMapConstructorCall } from "./map";
 
 export function transformBuiltinPropertyAccessExpression(
     context: TransformationContext,
-    node: ts.PropertyAccessExpression
+    node: ts.PropertyAccessExpression,
 ): lua.Expression | undefined {
     const ownerType = context.checker.getTypeAtLocation(node.expression);
 
@@ -52,7 +52,7 @@ export function transformBuiltinPropertyAccessExpression(
 
 export function transformBuiltinCallExpression(
     context: TransformationContext,
-    node: ts.CallExpression
+    node: ts.CallExpression,
 ): lua.Expression | undefined {
     const expressionType = context.checker.getTypeAtLocation(node.expression);
     if (ts.isIdentifier(node.expression) && isStandardLibraryType(context, expressionType, undefined)) {
@@ -80,7 +80,7 @@ export function transformBuiltinCallExpression(
 function tryTransformBuiltinGlobalMethodCall(
     context: TransformationContext,
     node: ts.CallExpression,
-    calledMethod: ts.PropertyAccessExpression
+    calledMethod: ts.PropertyAccessExpression,
 ) {
     const ownerType = context.checker.getTypeAtLocation(calledMethod.expression);
     const ownerSymbol = tryGetStandardLibrarySymbolOfType(context, ownerType);
@@ -126,7 +126,7 @@ function tryTransformBuiltinGlobalMethodCall(
 function tryTransformBuiltinPropertyCall(
     context: TransformationContext,
     node: ts.CallExpression,
-    calledMethod: ts.PropertyAccessExpression
+    calledMethod: ts.PropertyAccessExpression,
 ) {
     const functionType = context.checker.getTypeAtLocation(node.expression);
     const callSymbol = tryGetStandardLibrarySymbolOfType(context, functionType);
@@ -152,7 +152,7 @@ function tryTransformBuiltinPropertyCall(
 export function transformBuiltinIdentifierExpression(
     context: TransformationContext,
     node: ts.Identifier,
-    symbol: ts.Symbol | undefined
+    symbol: ts.Symbol | undefined,
 ): lua.Expression | undefined {
     switch (node.text) {
         case "NaN":

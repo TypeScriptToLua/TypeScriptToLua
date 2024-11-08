@@ -16,7 +16,7 @@ export function validateAssignment(
     node: ts.Node,
     fromType: ts.Type,
     toType: ts.Type,
-    toName?: string
+    toName?: string,
 ): void {
     if (toType === fromType) {
         return;
@@ -84,7 +84,7 @@ export function validateAssignment(
             node,
             fromMemberType,
             toMemberType,
-            toName ? `${toName}.${memberName}` : memberName
+            toName ? `${toName}.${memberName}` : memberName,
         );
     }
 }
@@ -94,7 +94,7 @@ function validateFunctionAssignment(
     node: ts.Node,
     fromType: ts.Type,
     toType: ts.Type,
-    toName?: string
+    toName?: string,
 ): void {
     const fromContext = getFunctionContextType(context, fromType);
     const toContext = getFunctionContextType(context, toType);
@@ -105,7 +105,7 @@ function validateFunctionAssignment(
         context.diagnostics.push(
             toContext === ContextType.Void
                 ? unsupportedNoSelfFunctionConversion(node, toName)
-                : unsupportedSelfFunctionConversion(node, toName)
+                : unsupportedSelfFunctionConversion(node, toName),
         );
     }
 }

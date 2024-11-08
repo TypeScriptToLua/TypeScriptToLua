@@ -49,7 +49,7 @@ export function __TS__PromiseAll<T>(this: void, iterable: Iterable<T | PromiseLi
                 reason => {
                     // When rejected, immediately reject the returned promise
                     reject(reason);
-                }
+                },
             );
         }
     });

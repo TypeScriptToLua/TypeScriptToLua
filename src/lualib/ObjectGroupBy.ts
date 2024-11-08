@@ -1,7 +1,7 @@
 export function __TS__ObjectGroupBy<K extends PropertyKey, T>(
     this: void,
     items: Iterable<T>,
-    keySelector: (item: T, index: number) => K
+    keySelector: (item: T, index: number) => K,
 ): Partial<Record<K, T[]>> {
     const result: Partial<Record<K, T[]>> = {};
 

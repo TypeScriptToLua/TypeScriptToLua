@@ -78,7 +78,7 @@ test.each(binaryMathOperatorTests)(
             .setOptions(operatorsProjectOptions)
             .setReturnExport("result")
             .expectToEqual(expectResult);
-    }
+    },
 );
 
 test.each(binaryMathOperatorTests)(
@@ -96,7 +96,7 @@ test.each(binaryMathOperatorTests)(
             .setOptions(operatorsProjectOptions)
             .setReturnExport("result")
             .expectToEqual(expectResult);
-    }
+    },
 );
 
 test.each(binaryMathOperatorTests)(
@@ -114,7 +114,7 @@ test.each(binaryMathOperatorTests)(
             .setOptions(operatorsProjectOptions)
             .setReturnExport("result")
             .expectToEqual(expectResult);
-    }
+    },
 );
 
 const luaTargetsPre53 = [LuaTarget.Lua50, LuaTarget.Lua51, LuaTarget.Lua52, LuaTarget.LuaJIT, LuaTarget.Universal];
@@ -140,7 +140,7 @@ test.each(luaTargetsPre53.flatMap(target => operatorTypesPost53.map(opType => [t
     `
             .setOptions({ ...operatorsProjectOptions, luaTarget })
             .expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]);
-    }
+    },
 );
 
 const comparisonOperatorTests: Array<{ opType: string; left: number; right: number; expectResult: boolean }> = [
@@ -163,7 +163,7 @@ test.each(comparisonOperatorTests)(
             .setOptions(operatorsProjectOptions)
             .setReturnExport("result")
             .expectToEqual(expectResult);
-    }
+    },
 );
 
 test.each(comparisonOperatorTests)(
@@ -181,7 +181,7 @@ test.each(comparisonOperatorTests)(
             .setOptions(operatorsProjectOptions)
             .setReturnExport("result")
             .expectToEqual(expectResult);
-    }
+    },
 );
 
 test.each(comparisonOperatorTests)(
@@ -199,7 +199,7 @@ test.each(comparisonOperatorTests)(
             .setOptions(operatorsProjectOptions)
             .setReturnExport("result")
             .expectToEqual(expectResult);
-    }
+    },
 );
 
 test("concat operator mapping - global function", () => {

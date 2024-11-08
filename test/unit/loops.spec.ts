@@ -39,7 +39,7 @@ util.testEachVersion(
         }
         return arrTest;
         `,
-    util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
 );
 
 util.testEachVersion(
@@ -66,7 +66,7 @@ util.testEachVersion(
         } while (i < arrTest.length)
         return arrTest;
         `,
-    util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
 );
 
 test("for", () => {
@@ -108,7 +108,7 @@ util.testEachVersion(
         }
         return arrTest;
         `,
-    util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
 );
 
 test("forMirror", () => {
@@ -234,8 +234,8 @@ const luaTargetsExceptJit = [
 
 test.each(
     luaTargetsExceptJit.flatMap(target =>
-        [{ inp: { a: 0, b: 1, c: 2, d: 3, e: 4 } }].map(testCase => [target, testCase] as const)
-    )
+        [{ inp: { a: 0, b: 1, c: 2, d: 3, e: 4 } }].map(testCase => [target, testCase] as const),
+    ),
 )("forin with continue (%s %p)", (luaTarget, { inp }) => {
     util.testFunctionTemplate`
             let obj = ${inp};
@@ -374,7 +374,7 @@ util.testEachVersion(
         }
         return testArr;
     `,
-    util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
 );
 
 test("forof with iterator", () => {

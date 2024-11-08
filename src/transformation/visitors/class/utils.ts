@@ -22,7 +22,7 @@ export function getExtendedNode(node: ts.ClassLikeDeclarationBase): ts.Expressio
 
 export function getExtendedType(
     context: TransformationContext,
-    node: ts.ClassLikeDeclarationBase
+    node: ts.ClassLikeDeclarationBase,
 ): ts.Type | undefined {
     const extendedNode = getExtendedNode(node);
     return extendedNode && context.checker.getTypeAtLocation(extendedNode);

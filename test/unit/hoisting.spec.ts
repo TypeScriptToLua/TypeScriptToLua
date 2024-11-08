@@ -56,7 +56,7 @@ test("Namespace Function Hoisting", () => {
                 foo = bar();
                 function bar() { return "bar"; }
             }
-        `
+        `,
         )
         .expectToMatchJsResult();
 });
@@ -70,7 +70,7 @@ test("Exported Namespace Function Hoisting", () => {
                 foo = bar();
                 export function bar() { return "bar"; }
             }
-        `
+        `,
         )
         .expectToMatchJsResult();
 });
@@ -114,7 +114,7 @@ test("Hoisting with synthetic source file node", () => {
                         sourceFile.referencedFiles,
                         sourceFile.typeReferenceDirectives,
                         sourceFile.hasNoDefaultLib,
-                        sourceFile.libReferenceDirectives
+                        sourceFile.libReferenceDirectives,
                     ),
             ],
         })

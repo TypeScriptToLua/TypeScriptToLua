@@ -54,7 +54,7 @@ test.each(["let result;", "const result = null;", "const result = undefined;"])(
             ${declaration}
             return result;
         `.expectToEqual(undefined);
-    }
+    },
 );
 
 test.each(["x = y", "x += y"])("Assignment expressions (%p)", expression => {
@@ -84,7 +84,7 @@ test.each(["o.p = x", "a[0] = x", "o.p = a[0]", "o.p = a[0] = x"])(
             let a = ["a"];
             return ${expression};
         `.expectToMatchJsResult();
-    }
+    },
 );
 
 test.each([

@@ -30,7 +30,7 @@ test.each(["boolean | string", "number | false", "undefined | true"])(
             const unknownType = false as ${unionType};
             return unknownType ?? "This should not be returned!";
         `.expectToMatchJsResult();
-    }
+    },
 );
 
 test("nullish-coalescing operator with side effect lhs", () => {

@@ -905,7 +905,7 @@ test("get inherted __index member from super (DotA 2 inheritance) (#1537)", () =
             // Connect class 'Connected' to 'traditional' class A
             setmetatable(Connected.prototype, {
                 __index: A
-            });`
+            });`,
         )
         .expectToEqual("foo");
 });

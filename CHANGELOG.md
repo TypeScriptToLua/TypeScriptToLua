@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.27.1
+
+- Upgraded TypeScript to 5.6.3
+
 ## 1.27.0
 
 - Upgraded TypeScript to 5.6.2

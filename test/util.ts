@@ -59,7 +59,7 @@ export const formatCode = (...values: unknown[]) => values.map(e => stringify(e)
 export function testEachVersion<T extends TestBuilder>(
     name: string | undefined,
     common: () => T,
-    special?: Record<tstl.LuaTarget, ((builder: T) => void) | boolean>
+    special?: Record<tstl.LuaTarget, ((builder: T) => void) | boolean>,
 ): void {
     for (const version of Object.values(tstl.LuaTarget) as tstl.LuaTarget[]) {
         const specialBuilder = special?.[version];
@@ -77,7 +77,7 @@ export function testEachVersion<T extends TestBuilder>(
 }
 
 export function expectEachVersionExceptJit<T>(
-    expectation: (builder: T) => void
+    expectation: (builder: T) => void,
 ): Record<tstl.LuaTarget, ((builder: T) => void) | boolean> {
     return {
         [tstl.LuaTarget.Universal]: expectation,
@@ -221,7 +221,7 @@ export abstract class TestBuilder {
 
         // Exclude lua files from TS program, but keep them in extraFiles so module resolution can find them
         const nonLuaExtraFiles = Object.fromEntries(
-            Object.entries(this.extraFiles).filter(([fileName]) => !fileName.endsWith(".lua"))
+            Object.entries(this.extraFiles).filter(([fileName]) => !fileName.endsWith(".lua")),
         );
 
         return tstl.createVirtualProgram({ ...nonLuaExtraFiles, [this.mainFileName]: this.getTsCode() }, this.options);
@@ -266,7 +266,7 @@ export abstract class TestBuilder {
             throw new Error(
                 `No source file could be found matching main file: ${mainFileName}.\nSource files in test:\n${transpiledFiles
                     .flatMap(f => f.sourceFiles.map(sf => sf.fileName))
-                    .join("\n")}`
+                    .join("\n")}`,
             );
         }
 
@@ -299,7 +299,7 @@ export abstract class TestBuilder {
     public getMainJsCodeChunk(): string {
         const { transpiledFiles } = this.getJsResult();
         const code = transpiledFiles.find(({ sourceFiles }) =>
-            sourceFiles.some(f => f.fileName === this.mainFileName)
+            sourceFiles.some(f => f.fileName === this.mainFileName),
         )?.js;
         assert(code !== undefined);
 
@@ -319,7 +319,7 @@ export abstract class TestBuilder {
     private getLuaDiagnostics(): ts.Diagnostic[] {
         const { diagnostics } = this.getLuaResult();
         return diagnostics.filter(
-            d => (this.semanticCheck || d.source === "typescript-to-lua") && !this.ignoredDiagnostics.includes(d.code)
+            d => (this.semanticCheck || d.source === "typescript-to-lua") && !this.ignoredDiagnostics.includes(d.code),
         );
     }
 
@@ -339,7 +339,7 @@ export abstract class TestBuilder {
                     getCurrentDirectory: () => "",
                     getCanonicalFileName: fileName => fileName,
                     getNewLine: () => "\n",
-                })
+                }),
             );
         }
 
@@ -423,7 +423,7 @@ export abstract class TestBuilder {
 
         const diagnosticMessages = ts.formatDiagnostics(
             this.getLuaDiagnostics().map(tstl.prepareDiagnosticForFormatting),
-            { getCurrentDirectory: () => "", getCanonicalFileName: fileName => fileName, getNewLine: () => "\n" }
+            { getCurrentDirectory: () => "", getCanonicalFileName: fileName => fileName, getNewLine: () => "\n" },
         );
 
         expect(diagnosticMessages.trim()).toMatchSnapshot("diagnostics");
@@ -533,7 +533,7 @@ end)());`;
             globalContext.exports = moduleExports;
             globalContext.module = { exports: moduleExports };
             const transpiledExtraFile = transpiledFiles.find(({ sourceFiles }) =>
-                sourceFiles.some(f => f.fileName === fileName.replace("./", "") + ".ts")
+                sourceFiles.some(f => f.fileName === fileName.replace("./", "") + ".ts"),
             );
 
             if (transpiledExtraFile?.js) {

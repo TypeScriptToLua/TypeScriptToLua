@@ -8,7 +8,7 @@ import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 export function transformMapConstructorCall(
     context: TransformationContext,
     node: ts.CallExpression,
-    calledMethod: ts.PropertyAccessExpression
+    calledMethod: ts.PropertyAccessExpression,
 ): lua.Expression | undefined {
     const args = transformArguments(context, node.arguments);
     const methodName = calledMethod.name.text;

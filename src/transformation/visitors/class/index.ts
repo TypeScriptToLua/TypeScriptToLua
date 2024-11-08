@@ -42,7 +42,7 @@ export const transformThisExpression: FunctionVisitor<ts.ThisExpression> = node 
 
 export function transformClassAsExpression(
     expression: ts.ClassLikeDeclaration,
-    context: TransformationContext
+    context: TransformationContext,
 ): lua.Expression {
     const { statements, name } = transformClassLikeDeclaration(expression, context);
     context.addPrecedingStatements(statements);
@@ -58,7 +58,7 @@ export interface ClassSuperInfo {
 function transformClassLikeDeclaration(
     classDeclaration: ts.ClassLikeDeclaration,
     context: TransformationContext,
-    nameOverride?: lua.Identifier
+    nameOverride?: lua.Identifier,
 ): { statements: lua.Statement[]; name: lua.Identifier } {
     let className: lua.Identifier;
     if (nameOverride !== undefined) {
@@ -89,7 +89,7 @@ function transformClassLikeDeclaration(
             createSafeName(className.text),
             undefined,
             className.symbolId,
-            className.text
+            className.text,
         );
         lua.setNodePosition(localClassName, className);
     } else {
@@ -100,7 +100,7 @@ function transformClassLikeDeclaration(
 
     // Find first constructor with body
     const constructor = classDeclaration.members.find(
-        (n): n is ts.ConstructorDeclaration => ts.isConstructorDeclaration(n) && n.body !== undefined
+        (n): n is ts.ConstructorDeclaration => ts.isConstructorDeclaration(n) && n.body !== undefined,
     );
 
     if (constructor) {
@@ -110,7 +110,7 @@ function transformClassLikeDeclaration(
             constructor,
             localClassName,
             instanceFields,
-            classDeclaration
+            classDeclaration,
         );
 
         if (constructorResult) result.push(constructorResult);
@@ -125,7 +125,7 @@ function transformClassLikeDeclaration(
             ts.factory.createConstructorDeclaration([], [], ts.factory.createBlock([], true)),
             localClassName,
             instanceFields,
-            classDeclaration
+            classDeclaration,
         );
 
         if (constructorResult) result.push(constructorResult);
@@ -143,20 +143,20 @@ function transformClassLikeDeclaration(
             lua.createCallExpression(
                 lua.createTableIndexExpression(
                     context.transformExpression(ts.factory.createSuper()),
-                    lua.createStringLiteral("____constructor")
+                    lua.createStringLiteral("____constructor"),
                 ),
-                [createSelfIdentifier(), argsExpression]
-            )
+                [createSelfIdentifier(), argsExpression],
+            ),
         );
         constructorBody.unshift(superCall);
         const constructorFunction = lua.createFunctionExpression(
             lua.createBlock(constructorBody),
             [createSelfIdentifier()],
             lua.createDotsLiteral(),
-            lua.NodeFlags.Declaration
+            lua.NodeFlags.Declaration,
         );
         result.push(
-            lua.createAssignmentStatement(createConstructorName(localClassName), constructorFunction, classDeclaration)
+            lua.createAssignmentStatement(createConstructorName(localClassName), constructorFunction, classDeclaration),
         );
     }
 
@@ -193,7 +193,7 @@ function transformClassLikeDeclaration(
 
             if (ts.getDecorators(member)?.length) {
                 result.push(
-                    lua.createExpressionStatement(createClassPropertyDecoratingExpression(context, member, className))
+                    lua.createExpressionStatement(createClassPropertyDecoratingExpression(context, member, className)),
                 );
             }
         } else if (ts.isClassStaticBlockDeclaration(member)) {
@@ -232,15 +232,15 @@ function transformClassLikeDeclaration(
 function getAllAccessorDeclarations(
     classDeclaration: ts.ClassLikeDeclaration,
     symbol: ts.Symbol,
-    context: TransformationContext
+    context: TransformationContext,
 ): AllAccessorDeclarations {
     const getAccessor = classDeclaration.members.find(
         (m): m is ts.GetAccessorDeclaration =>
-            ts.isGetAccessor(m) && context.checker.getSymbolAtLocation(m.name) === symbol
+            ts.isGetAccessor(m) && context.checker.getSymbolAtLocation(m.name) === symbol,
     );
     const setAccessor = classDeclaration.members.find(
         (m): m is ts.SetAccessorDeclaration =>
-            ts.isSetAccessor(m) && context.checker.getSymbolAtLocation(m.name) === symbol
+            ts.isSetAccessor(m) && context.checker.getSymbolAtLocation(m.name) === symbol,
     );
 
     // Get the first of the two (that is not undefined)

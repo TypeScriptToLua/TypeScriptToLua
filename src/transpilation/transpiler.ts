@@ -42,7 +42,7 @@ export class Transpiler {
             {
                 ...emitOptions,
                 plugins,
-            }
+            },
         );
 
         const { emitPlan } = this.getEmitPlan(program, transpileDiagnostics, freshFiles, plugins);
@@ -59,7 +59,7 @@ export class Transpiler {
         program: ts.Program,
         plugins: Plugin[],
         emitPlan: EmitFile[],
-        writeFile: ts.WriteFileCallback
+        writeFile: ts.WriteFileCallback,
     ): ts.Diagnostic[] {
         performance.startSection("emit");
 
@@ -110,7 +110,7 @@ export class Transpiler {
         program: ts.Program,
         diagnostics: ts.Diagnostic[],
         files: ProcessedFile[],
-        plugins: Plugin[]
+        plugins: Plugin[],
     ): { emitPlan: EmitFile[] } {
         performance.startSection("getEmitPlan");
         const options = program.getCompilerOptions() as CompilerOptions;
@@ -160,7 +160,7 @@ export class Transpiler {
             const usedFeatures = findUsedLualibFeatures(
                 luaTarget,
                 this.emitHost,
-                resolvedFiles.map(f => f.code)
+                resolvedFiles.map(f => f.code),
             );
             return buildMinimalLualibBundle(usedFeatures, luaTarget, this.emitHost);
         } else {

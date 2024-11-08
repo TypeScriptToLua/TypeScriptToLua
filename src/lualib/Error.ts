@@ -67,7 +67,7 @@ export const Error: ErrorConstructor = initErrorClass(
             return this.message !== "" ? `${this.name}: ${this.message}` : this.name;
         }
     },
-    "Error"
+    "Error",
 );
 
 function createErrorClass(name: string) {
@@ -75,7 +75,7 @@ function createErrorClass(name: string) {
         class extends Error {
             public name = name;
         },
-        name
+        name,
     );
 }
 

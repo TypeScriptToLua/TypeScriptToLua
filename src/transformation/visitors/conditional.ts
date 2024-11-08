@@ -12,16 +12,16 @@ function transformProtectedConditionalExpression(
     expression: ts.ConditionalExpression,
     condition: WithPrecedingStatements<lua.Expression>,
     whenTrue: WithPrecedingStatements<lua.Expression>,
-    whenFalse: WithPrecedingStatements<lua.Expression>
+    whenFalse: WithPrecedingStatements<lua.Expression>,
 ): lua.Expression {
     const tempVar = context.createTempNameForNode(expression.condition);
 
     const trueStatements = whenTrue.precedingStatements.concat(
-        lua.createAssignmentStatement(lua.cloneIdentifier(tempVar), whenTrue.result, expression.whenTrue)
+        lua.createAssignmentStatement(lua.cloneIdentifier(tempVar), whenTrue.result, expression.whenTrue),
     );
 
     const falseStatements = whenFalse.precedingStatements.concat(
-        lua.createAssignmentStatement(lua.cloneIdentifier(tempVar), whenFalse.result, expression.whenFalse)
+        lua.createAssignmentStatement(lua.cloneIdentifier(tempVar), whenFalse.result, expression.whenFalse),
     );
 
     context.addPrecedingStatements([
@@ -31,7 +31,7 @@ function transformProtectedConditionalExpression(
             condition.result,
             lua.createBlock(trueStatements, expression.whenTrue),
             lua.createBlock(falseStatements, expression.whenFalse),
-            expression
+            expression,
         ),
     ]);
     return lua.cloneIdentifier(tempVar);
@@ -42,13 +42,13 @@ export const transformConditionalExpression: FunctionVisitor<ts.ConditionalExpre
     checkOnlyTruthyCondition(expression.condition, context);
 
     const condition = transformInPrecedingStatementScope(context, () =>
-        context.transformExpression(expression.condition)
+        context.transformExpression(expression.condition),
     );
     const whenTrue = transformInPrecedingStatementScope(context, () =>
-        context.transformExpression(expression.whenTrue)
+        context.transformExpression(expression.whenTrue),
     );
     const whenFalse = transformInPrecedingStatementScope(context, () =>
-        context.transformExpression(expression.whenFalse)
+        context.transformExpression(expression.whenFalse),
     );
     if (
         whenTrue.precedingStatements.length > 0 ||
@@ -79,7 +79,7 @@ export function transformIfStatement(statement: ts.IfStatement, context: Transfo
         if (ts.isIfStatement(statement.elseStatement)) {
             const tsElseStatement = statement.elseStatement;
             const { precedingStatements, result: elseStatement } = transformInPrecedingStatementScope(context, () =>
-                transformIfStatement(tsElseStatement, context)
+                transformIfStatement(tsElseStatement, context),
             );
             // If else-if condition generates preceding statements, we can't use elseif, we have to break it down:
             // if conditionA then
@@ -99,7 +99,7 @@ export function transformIfStatement(statement: ts.IfStatement, context: Transfo
             context.pushScope(ScopeType.Conditional);
             const elseStatements = performHoisting(
                 context,
-                transformBlockOrStatement(context, statement.elseStatement)
+                transformBlockOrStatement(context, statement.elseStatement),
             );
             context.popScope();
             const elseBlock = lua.createBlock(elseStatements);

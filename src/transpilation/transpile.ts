@@ -24,7 +24,7 @@ export interface TranspileResult {
 export function getProgramTranspileResult(
     emitHost: EmitHost,
     writeFileResult: ts.WriteFileCallback,
-    { program, sourceFiles: targetSourceFiles, customTransformers = {}, plugins = [] }: TranspileOptions
+    { program, sourceFiles: targetSourceFiles, customTransformers = {}, plugins = [] }: TranspileOptions,
 ): TranspileResult {
     performance.startSection("beforeTransform");
 

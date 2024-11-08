@@ -136,7 +136,7 @@ describe.each(["parseInt", "parseFloat", "Number.parseInt", "Number.parseFloat"]
         test.each([" 3", "          4", "   -231", "    1px"])("leading whitespace (%s)", numberString => {
             util.testExpression`${parseFunction}("${numberString}")`.expectToMatchJsResult();
         });
-    }
+    },
 );
 
 test.each(["Infinity", "-Infinity", "   -Infinity"])("parseFloat handles Infinity", numberString => {

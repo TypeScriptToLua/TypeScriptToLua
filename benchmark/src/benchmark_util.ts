@@ -9,7 +9,7 @@ export function compareNumericBenchmarks<T extends BenchmarkResult>(
     oldResults: T[],
     unit: string,
     extractValue: (result: T) => number,
-    formatValue: (value: number) => string
+    formatValue: (value: number) => string,
 ): string {
     let comparisonTable = makeMarkdownTableRow([
         "name",

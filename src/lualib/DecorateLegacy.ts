@@ -7,7 +7,7 @@ import { __TS__SetDescriptor } from "./SetDescriptor";
 export type LegacyDecorator<TTarget extends AnyTable, TKey extends keyof TTarget> = (
     target: TTarget,
     key?: TKey,
-    descriptor?: PropertyDescriptor
+    descriptor?: PropertyDescriptor,
 ) => TTarget;
 
 export function __TS__DecorateLegacy<TTarget extends AnyTable, TKey extends keyof TTarget>(
@@ -15,7 +15,7 @@ export function __TS__DecorateLegacy<TTarget extends AnyTable, TKey extends keyo
     decorators: Array<LegacyDecorator<TTarget, TKey>>,
     target: TTarget,
     key?: TKey,
-    desc?: any
+    desc?: any,
 ): TTarget {
     let result = target;
 

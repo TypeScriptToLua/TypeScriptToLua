@@ -25,11 +25,11 @@ function transformParameterDefaultValueDeclaration(
     context: TransformationContext,
     parameterName: lua.Identifier,
     value: ts.Expression,
-    tsOriginal?: ts.Node
+    tsOriginal?: ts.Node,
 ): lua.Statement | undefined {
     const { precedingStatements: statements, result: parameterValue } = transformInPrecedingStatementScope(
         context,
-        () => context.transformExpression(value)
+        () => context.transformExpression(value),
     );
     if (!lua.isNilLiteral(parameterValue)) {
         statements.push(lua.createAssignmentStatement(parameterName, parameterValue));
@@ -39,7 +39,7 @@ function transformParameterDefaultValueDeclaration(
     const nilCondition = lua.createBinaryExpression(
         parameterName,
         lua.createNilLiteral(),
-        lua.SyntaxKind.EqualityOperator
+        lua.SyntaxKind.EqualityOperator,
     );
 
     const ifBlock = lua.createBlock(statements, tsOriginal);
@@ -71,7 +71,7 @@ export function createCallableTable(functionExpression: lua.Expression): lua.Exp
             ]),
             [lua.createAnonymousIdentifier()],
             lua.createDotsLiteral(),
-            lua.NodeFlags.Inline
+            lua.NodeFlags.Inline,
         );
     }
     return lua.createCallExpression(lua.createIdentifier("setmetatable"), [
@@ -97,7 +97,7 @@ export function isFunctionTypeWithProperties(context: TransformationContext, fun
 export function transformFunctionBodyContent(context: TransformationContext, body: ts.ConciseBody): lua.Statement[] {
     if (!ts.isBlock(body)) {
         const { precedingStatements, result: returnStatement } = transformInPrecedingStatementScope(context, () =>
-            transformExpressionBodyToReturnStatement(context, body)
+            transformExpressionBodyToReturnStatement(context, body),
         );
         return [...precedingStatements, returnStatement];
     }
@@ -110,7 +110,7 @@ export function transformFunctionBodyHeader(
     context: TransformationContext,
     bodyScope: Scope,
     parameters: ts.NodeArray<ts.ParameterDeclaration>,
-    spreadIdentifier?: lua.Identifier
+    spreadIdentifier?: lua.Identifier,
 ): lua.Statement[] {
     const headerStatements: lua.Statement[] = [];
 
@@ -125,7 +125,7 @@ export function transformFunctionBodyHeader(
                 const initializer = transformParameterDefaultValueDeclaration(
                     context,
                     identifier,
-                    declaration.initializer
+                    declaration.initializer,
                 );
                 if (initializer) headerStatements.push(initializer);
             }
@@ -133,7 +133,7 @@ export function transformFunctionBodyHeader(
             // Binding pattern
             const name = declaration.name;
             const { precedingStatements, result: bindings } = transformInPrecedingStatementScope(context, () =>
-                transformBindingPattern(context, name, identifier)
+                transformBindingPattern(context, name, identifier),
             );
             bindingPatternDeclarations.push(...precedingStatements, ...bindings);
         } else if (declaration.initializer !== undefined) {
@@ -141,7 +141,7 @@ export function transformFunctionBodyHeader(
             const initializer = transformParameterDefaultValueDeclaration(
                 context,
                 transformIdentifier(context, declaration.name),
-                declaration.initializer
+                declaration.initializer,
             );
             if (initializer) headerStatements.push(initializer);
         }
@@ -165,7 +165,7 @@ export function transformFunctionBody(
     parameters: ts.NodeArray<ts.ParameterDeclaration>,
     body: ts.ConciseBody,
     spreadIdentifier?: lua.Identifier,
-    node?: ts.FunctionLikeDeclaration
+    node?: ts.FunctionLikeDeclaration,
 ): [lua.Statement[], Scope] {
     const scope = context.pushScope(ScopeType.Function);
     scope.node = node;
@@ -181,7 +181,7 @@ export function transformFunctionBody(
 export function transformParameters(
     context: TransformationContext,
     parameters: ts.NodeArray<ts.ParameterDeclaration>,
-    functionContext?: lua.Identifier
+    functionContext?: lua.Identifier,
 ): [lua.Identifier[], lua.DotsLiteral | undefined, lua.Identifier | undefined] {
     // Build parameter string
     const paramNames: lua.Identifier[] = [];
@@ -221,7 +221,7 @@ export function transformParameters(
 
 export function transformFunctionToExpression(
     context: TransformationContext,
-    node: ts.FunctionLikeDeclaration
+    node: ts.FunctionLikeDeclaration,
 ): [lua.Expression, Scope] {
     assert(node.body);
 
@@ -259,7 +259,7 @@ export function transformFunctionToExpression(
         node.parameters,
         node.body,
         spreadIdentifier,
-        node
+        node,
     );
 
     const functionExpression = lua.createFunctionExpression(
@@ -267,7 +267,7 @@ export function transformFunctionToExpression(
         paramNames,
         dotsLiteral,
         flags,
-        node
+        node,
     );
 
     return [
@@ -280,7 +280,7 @@ export function transformFunctionToExpression(
 
 export function transformFunctionLikeDeclaration(
     node: ts.FunctionLikeDeclaration,
-    context: TransformationContext
+    context: TransformationContext,
 ): lua.Expression {
     if (node.body === undefined) {
         // This code can be reached only from object methods, which is TypeScript error
@@ -296,7 +296,7 @@ export function transformFunctionLikeDeclaration(
         if (symbol) {
             // TODO: Not using symbol ids because of https://github.com/microsoft/TypeScript/issues/37131
             const isReferenced = [...functionScope.referencedSymbols].some(([, nodes]) =>
-                nodes.some(n => context.checker.getSymbolAtLocation(n)?.valueDeclaration === symbol.valueDeclaration)
+                nodes.some(n => context.checker.getSymbolAtLocation(n)?.valueDeclaration === symbol.valueDeclaration),
             );
 
             // Only handle if the name is actually referenced inside the function
@@ -309,7 +309,7 @@ export function transformFunctionLikeDeclaration(
                     ]);
                 } else {
                     context.addPrecedingStatements(
-                        lua.createVariableDeclarationStatement(nameIdentifier, functionExpression)
+                        lua.createVariableDeclarationStatement(nameIdentifier, functionExpression),
                     );
                 }
                 return lua.cloneIdentifier(nameIdentifier);
@@ -331,7 +331,7 @@ export const transformFunctionDeclaration: FunctionVisitor<ts.FunctionDeclaratio
     if (hasDefaultExportModifier(node)) {
         return lua.createAssignmentStatement(
             lua.createTableIndexExpression(createExportsIdentifier(), createDefaultExportStringLiteral(node)),
-            transformFunctionLikeDeclaration(node, context)
+            transformFunctionLikeDeclaration(node, context),
         );
     }
 
@@ -367,6 +367,6 @@ export const transformYieldExpression: FunctionVisitor<ts.YieldExpression> = (ex
         : lua.createCallExpression(
               lua.createTableIndexExpression(lua.createIdentifier("coroutine"), lua.createStringLiteral("yield")),
               parameters,
-              expression
+              expression,
           );
 };

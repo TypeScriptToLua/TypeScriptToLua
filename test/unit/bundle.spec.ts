@@ -52,7 +52,7 @@ test("entry point in directory", () => {
             "main/main.ts",
             `
                 export { value } from "../module";
-            `
+            `,
         )
         .addExtraFile("module.ts", "export const value = true")
         .setEntryPoint("main/main.ts")
@@ -86,7 +86,7 @@ test("LuaLibImportKind.Inline generates a warning", () => {
         .setOptions({ luaLibImport: LuaLibImportKind.Inline })
         .expectDiagnosticsToMatchSnapshot(
             [diagnosticFactories.usingLuaBundleWithInlineMightGenerateDuplicateCode.code],
-            true
+            true,
         )
         .expectToEqual({ result: [1, 2, 3] });
 });
@@ -104,7 +104,7 @@ test("cyclic imports", () => {
                 import * as a from "./main";
                 export const value = a.a;
                 export const lazyValue = () => a.a;
-            `
+            `,
         )
         .expectToEqual(new util.ExecutionError("stack overflow"));
 });
@@ -120,14 +120,14 @@ test("does not evaluate files multiple times", () => {
             "otherfile.ts",
             `
                 import "./countingfile";
-            `
+            `,
         )
         .addExtraFile(
             "countingfile.ts",
             `
                 declare var _count: number | undefined;
                 _count = (_count ?? 0) + 1;
-            `
+            `,
         )
         .expectToEqual({ count: 1 });
 });

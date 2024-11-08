@@ -102,7 +102,7 @@ test("resolves non-standard requires", () => {
                 require "requiredLuaFile5"  -- no parentheses and space
                 require "requiredLua'File6"  -- no parentheses and space
                 require 'requiredLua"File7'  -- no parentheses and space
-            `
+            `,
         )
         .addExtraFile("requiredLuaFile1.lua", "")
         .addExtraFile("requiredLuaFile2.lua", "")

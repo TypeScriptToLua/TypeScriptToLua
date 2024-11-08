@@ -32,7 +32,7 @@ test.each(["[]", '[["a", 1], ["b", 2]]', '[["a", 1], ["a", 2]]', 'new Map([["foo
     "Object.fromEntries(%s)",
     entries => {
         util.testExpression`Object.fromEntries(${entries})`.expectToMatchJsResult();
-    }
+    },
 );
 
 describe(".toString()", () => {

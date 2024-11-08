@@ -11,7 +11,7 @@ import { createUnpackCall } from "../utils/lua-ast";
 export function transformFunctionPrototypeCall(
     context: TransformationContext,
     node: ts.CallExpression,
-    calledMethod: ts.PropertyAccessExpression
+    calledMethod: ts.PropertyAccessExpression,
 ): lua.CallExpression | undefined {
     const callerType = context.checker.getTypeAtLocation(calledMethod.expression);
     if (getFunctionContextType(context, callerType) === ContextType.Void) {
@@ -36,7 +36,7 @@ export function transformFunctionPrototypeCall(
 
 export function transformFunctionProperty(
     context: TransformationContext,
-    node: ts.PropertyAccessExpression
+    node: ts.PropertyAccessExpression,
 ): lua.Expression | undefined {
     switch (node.name.text) {
         case "length":
@@ -51,7 +51,7 @@ export function transformFunctionProperty(
             // debug.getinfo(fn)
             const getInfoCall = lua.createCallExpression(
                 lua.createTableIndexExpression(lua.createIdentifier("debug"), lua.createStringLiteral("getinfo")),
-                [context.transformExpression(node.expression)]
+                [context.transformExpression(node.expression)],
             );
 
             const nparams = lua.createTableIndexExpression(getInfoCall, lua.createStringLiteral("nparams"));

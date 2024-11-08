@@ -25,8 +25,8 @@ const transformAsyncTry: FunctionVisitor<ts.TryStatement> = (statement, context)
                 statement,
                 "try/catch inside async functions",
                 LuaTarget.Lua51,
-                "lua51AllowTryCatchInAsyncAwait"
-            )
+                "lua51AllowTryCatchInAsyncAwait",
+            ),
         );
         return tryBlock.statements;
     }
@@ -42,12 +42,12 @@ const transformAsyncTry: FunctionVisitor<ts.TryStatement> = (statement, context)
     if (statement.finallyBlock) {
         const awaiterFinally = lua.createTableIndexExpression(awaiterIdentifier, lua.createStringLiteral("finally"));
         const finallyFunction = lua.createFunctionExpression(
-            lua.createBlock(context.transformStatements(statement.finallyBlock.statements))
+            lua.createBlock(context.transformStatements(statement.finallyBlock.statements)),
         );
         const finallyCall = lua.createCallExpression(
             awaiterFinally,
             [awaiterIdentifier, finallyFunction],
-            statement.finallyBlock
+            statement.finallyBlock,
         );
         // ____try.finally(<finally function>)
         result.push(lua.createExpressionStatement(finallyCall));
@@ -87,7 +87,7 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
         isInGeneratorFunction(statement)
     ) {
         context.diagnostics.push(
-            unsupportedForTarget(statement, "try/catch inside generator functions", LuaTarget.Lua51)
+            unsupportedForTarget(statement, "try/catch inside generator functions", LuaTarget.Lua51),
         );
         return tryBlock.statements;
     }
@@ -123,12 +123,12 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
 
         const catchCall = lua.createCallExpression(
             catchIdentifier,
-            statement.catchClause.variableDeclaration ? [lua.cloneIdentifier(returnedIdentifier)] : []
+            statement.catchClause.variableDeclaration ? [lua.cloneIdentifier(returnedIdentifier)] : [],
         );
         const catchCallStatement = hasReturn
             ? lua.createAssignmentStatement(
                   [lua.cloneIdentifier(returnedIdentifier), lua.cloneIdentifier(returnValueIdentifier)],
-                  catchCall
+                  catchCall,
               )
             : lua.createExpressionStatement(catchCall);
 
@@ -144,7 +144,7 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
         returnCondition = lua.createBinaryExpression(
             lua.cloneIdentifier(tryResultIdentifier),
             returnedIdentifier,
-            lua.SyntaxKind.AndOperator
+            lua.SyntaxKind.AndOperator,
         );
     } else {
         // try without return or catch
@@ -182,13 +182,13 @@ export const transformThrowStatement: FunctionVisitor<ts.ThrowStatement> = (stat
 
     return lua.createExpressionStatement(
         lua.createCallExpression(lua.createIdentifier("error"), parameters),
-        statement
+        statement,
     );
 };
 
 function transformCatchClause(
     context: TransformationContext,
-    catchClause: ts.CatchClause
+    catchClause: ts.CatchClause,
 ): [lua.FunctionExpression, Scope] {
     const [catchBlock, catchScope] = transformScopeBlock(context, catchClause.block, ScopeType.Catch);
 
@@ -197,7 +197,7 @@ function transformCatchClause(
         : undefined;
     const catchFunction = lua.createFunctionExpression(
         catchBlock,
-        catchParameter ? [lua.cloneIdentifier(catchParameter)] : []
+        catchParameter ? [lua.cloneIdentifier(catchParameter)] : [],
     );
 
     return [catchFunction, catchScope];

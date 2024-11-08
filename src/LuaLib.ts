@@ -157,7 +157,7 @@ const lualibExportToFeature = new Map<LuaTarget, ReadonlyMap<string, LuaLibFeatu
 
 export function getLuaLibExportToFeatureMap(
     luaTarget: LuaTarget,
-    emitHost: EmitHost
+    emitHost: EmitHost,
 ): ReadonlyMap<string, LuaLibFeature> {
     if (!lualibExportToFeature.has(luaTarget)) {
         const luaLibModulesInfo = getLuaLibModulesInfo(luaTarget, emitHost);
@@ -192,7 +192,7 @@ export function resolveRecursiveLualibFeatures(
     features: Iterable<LuaLibFeature>,
     luaTarget: LuaTarget,
     emitHost: EmitHost,
-    luaLibModulesInfo: LuaLibModulesInfo = getLuaLibModulesInfo(luaTarget, emitHost)
+    luaLibModulesInfo: LuaLibModulesInfo = getLuaLibModulesInfo(luaTarget, emitHost),
 ): LuaLibFeature[] {
     const loadedFeatures = new Set<LuaLibFeature>();
     const result: LuaLibFeature[] = [];
@@ -219,7 +219,7 @@ export function resolveRecursiveLualibFeatures(
 export function loadInlineLualibFeatures(
     features: Iterable<LuaLibFeature>,
     luaTarget: LuaTarget,
-    emitHost: EmitHost
+    emitHost: EmitHost,
 ): string {
     return resolveRecursiveLualibFeatures(features, luaTarget, emitHost)
         .map(feature => readLuaLibFeature(feature, luaTarget, emitHost))
@@ -229,7 +229,7 @@ export function loadInlineLualibFeatures(
 export function loadImportedLualibFeatures(
     features: Iterable<LuaLibFeature>,
     luaTarget: LuaTarget,
-    emitHost: EmitHost
+    emitHost: EmitHost,
 ): lua.Statement[] {
     const luaLibModuleInfo = getLuaLibModulesInfo(luaTarget, emitHost);
 
@@ -250,8 +250,8 @@ export function loadImportedLualibFeatures(
         statements.push(
             lua.createVariableDeclarationStatement(
                 lua.createIdentifier(item),
-                lua.createTableIndexExpression(luaLibId, lua.createStringLiteral(item))
-            )
+                lua.createTableIndexExpression(luaLibId, lua.createStringLiteral(item)),
+            ),
         );
     }
     return statements;
@@ -280,7 +280,7 @@ export function getLualibBundleReturn(exportedValues: string[]): string {
 export function buildMinimalLualibBundle(
     features: Iterable<LuaLibFeature>,
     luaTarget: LuaTarget,
-    emitHost: EmitHost
+    emitHost: EmitHost,
 ): string {
     const code = loadInlineLualibFeatures(features, luaTarget, emitHost);
     const moduleInfo = getLuaLibModulesInfo(luaTarget, emitHost);
@@ -292,7 +292,7 @@ export function buildMinimalLualibBundle(
 export function findUsedLualibFeatures(
     luaTarget: LuaTarget,
     emitHost: EmitHost,
-    luaContents: string[]
+    luaContents: string[],
 ): Set<LuaLibFeature> {
     const features = new Set<LuaLibFeature>();
     const exportToFeatureMap = getLuaLibExportToFeatureMap(luaTarget, emitHost);

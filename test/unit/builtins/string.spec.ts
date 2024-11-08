@@ -77,7 +77,7 @@ describe.each(["replace", "replaceAll"])("string.%s", method => {
     test.each(testCases)("string replacer %p", ({ inp, searchValue, replaceValue }) => {
         util.testExpression`"${inp}${inp}".${method}(${util.formatCode(
             searchValue,
-            replaceValue
+            replaceValue,
         )})`.expectToMatchJsResult();
     });
 
@@ -166,7 +166,7 @@ test.each([{ inp: "0123456789", args: [] }, { inp: "0123456789", args: [undefine
     "string.slice (%p)",
     ({ inp, args }) => {
         util.testExpression`"${inp}".slice(${util.formatCode(...args)})`.expectToMatchJsResult();
-    }
+    },
 );
 
 test.each(stringPartCases)("string.substring (%p)", ({ inp, args }) => {
@@ -396,7 +396,7 @@ test.each(["string | undefined", "string | null", "null | string", "null | undef
     `
             .setOptions({ strictNullChecks: true })
             .expectToMatchJsResult();
-    }
+    },
 );
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1406

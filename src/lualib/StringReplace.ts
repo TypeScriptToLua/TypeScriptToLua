@@ -3,7 +3,7 @@ export function __TS__StringReplace(
     this: void,
     source: string,
     searchValue: string,
-    replaceValue: string | ((match: string, offset: number, string: string) => string)
+    replaceValue: string | ((match: string, offset: number, string: string) => string),
 ): string {
     const [startPos, endPos] = string.find(source, searchValue, undefined, true);
     if (!startPos) {

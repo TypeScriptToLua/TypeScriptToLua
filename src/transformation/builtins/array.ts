@@ -12,7 +12,7 @@ import { isUnpackCall, wrapInTable } from "../utils/lua-ast";
 export function transformArrayConstructorCall(
     context: TransformationContext,
     node: ts.CallExpression,
-    calledMethod: ts.PropertyAccessExpression
+    calledMethod: ts.PropertyAccessExpression,
 ): lua.Expression | undefined {
     const signature = context.checker.getResolvedSignature(node);
     const params = transformArguments(context, node.arguments, signature);
@@ -34,7 +34,7 @@ function createTableLengthExpression(context: TransformationContext, expression:
     if (context.luaTarget === LuaTarget.Lua50) {
         const tableGetn = lua.createTableIndexExpression(
             lua.createIdentifier("table"),
-            lua.createStringLiteral("getn")
+            lua.createStringLiteral("getn"),
         );
         return lua.createCallExpression(tableGetn, [expression], node);
     } else {
@@ -52,7 +52,7 @@ function transformSingleElementArrayPush(
     context: TransformationContext,
     node: ts.CallExpression,
     caller: lua.Expression,
-    param: lua.Expression
+    param: lua.Expression,
 ): lua.Expression {
     const arrayIdentifier = lua.isIdentifier(caller) ? caller : moveToPrecedingTemp(context, caller);
 
@@ -60,7 +60,7 @@ function transformSingleElementArrayPush(
     let lengthExpression: lua.Expression = lua.createBinaryExpression(
         createTableLengthExpression(context, arrayIdentifier),
         lua.createNumericLiteral(1),
-        lua.SyntaxKind.AdditionOperator
+        lua.SyntaxKind.AdditionOperator,
     );
 
     const expressionIsUsed = expressionResultIsUsed(node);
@@ -72,7 +72,7 @@ function transformSingleElementArrayPush(
     const pushStatement = lua.createAssignmentStatement(
         lua.createTableIndexExpression(arrayIdentifier, lengthExpression),
         param,
-        node
+        node,
     );
     context.addPrecedingStatements(pushStatement);
     return expressionIsUsed ? lengthExpression : lua.createNilLiteral();
@@ -81,7 +81,7 @@ function transformSingleElementArrayPush(
 export function transformArrayPrototypeCall(
     context: TransformationContext,
     node: ts.CallExpression,
-    calledMethod: ts.PropertyAccessExpression
+    calledMethod: ts.PropertyAccessExpression,
 ): lua.Expression | undefined {
     const signature = context.checker.getResolvedSignature(node);
     const [caller, params] = transformCallAndArguments(context, calledMethod.expression, node.arguments, signature);
@@ -105,7 +105,7 @@ export function transformArrayPrototypeCall(
                         LuaLibFeature.ArrayPushArray,
                         node,
                         caller,
-                        (param as lua.CallExpression).params[0] ?? lua.createNilLiteral()
+                        (param as lua.CallExpression).params[0] ?? lua.createNilLiteral(),
                     );
                 }
                 if (!lua.isDotsLiteral(param)) {
@@ -120,7 +120,7 @@ export function transformArrayPrototypeCall(
             return lua.createCallExpression(
                 lua.createTableIndexExpression(lua.createIdentifier("table"), lua.createStringLiteral("remove")),
                 [caller, lua.createNumericLiteral(1)],
-                node
+                node,
             );
         case "unshift":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayUnshift, node, caller, ...params);
@@ -130,7 +130,7 @@ export function transformArrayPrototypeCall(
             return lua.createCallExpression(
                 lua.createTableIndexExpression(lua.createIdentifier("table"), lua.createStringLiteral("remove")),
                 [caller],
-                node
+                node,
             );
         case "forEach":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayForEach, node, caller, ...params);
@@ -172,14 +172,14 @@ export function transformArrayPrototypeCall(
                     node.arguments.length === 0
                         ? defaultSeparatorLiteral
                         : lua.isStringLiteral(param)
-                        ? param
-                        : lua.createBinaryExpression(param, defaultSeparatorLiteral, lua.SyntaxKind.OrOperator),
+                          ? param
+                          : lua.createBinaryExpression(param, defaultSeparatorLiteral, lua.SyntaxKind.OrOperator),
                 ];
 
                 return lua.createCallExpression(
                     lua.createTableIndexExpression(lua.createIdentifier("table"), lua.createStringLiteral("concat")),
                     parameters,
-                    node
+                    node,
                 );
             }
 
@@ -203,7 +203,7 @@ export function transformArrayPrototypeCall(
 
 export function transformArrayProperty(
     context: TransformationContext,
-    node: ts.PropertyAccessExpression
+    node: ts.PropertyAccessExpression,
 ): lua.Expression | undefined {
     switch (node.name.text) {
         case "length":

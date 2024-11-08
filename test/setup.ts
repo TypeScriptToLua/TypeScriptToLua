@@ -19,7 +19,7 @@ expect.extend({
 
         const diagnosticMessages = ts.formatDiagnosticsWithColorAndContext(
             diagnostics.map(tstl.prepareDiagnosticForFormatting),
-            { getCurrentDirectory: () => "", getCanonicalFileName: fileName => fileName, getNewLine: () => "\n" }
+            { getCurrentDirectory: () => "", getCanonicalFileName: fileName => fileName, getNewLine: () => "\n" },
         );
 
         if (this.isNot && expected !== undefined) {
@@ -36,10 +36,10 @@ expect.extend({
                 const message = this.isNot
                     ? diagnosticMessages
                     : expected
-                    ? `Expected:\n${expected.join("\n")}\nReceived:\n${diagnostics
-                          .map(diag => diag.code)
-                          .join("\n")}\n\n${diagnosticMessages}\n`
-                    : `Received: ${this.utils.printReceived([])}\n`;
+                      ? `Expected:\n${expected.join("\n")}\nReceived:\n${diagnostics
+                            .map(diag => diag.code)
+                            .join("\n")}\n\n${diagnosticMessages}\n`
+                      : `Received: ${this.utils.printReceived([])}\n`;
 
                 return matcherHint + "\n\n" + message;
             },

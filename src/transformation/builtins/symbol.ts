@@ -8,7 +8,7 @@ import { transformArguments } from "../visitors/call";
 export function transformSymbolConstructorCall(
     context: TransformationContext,
     node: ts.CallExpression,
-    calledMethod: ts.PropertyAccessExpression
+    calledMethod: ts.PropertyAccessExpression,
 ): lua.CallExpression | undefined {
     const signature = context.checker.getResolvedSignature(node);
     const parameters = transformArguments(context, node.arguments, signature);

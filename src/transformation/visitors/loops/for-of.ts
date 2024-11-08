@@ -16,7 +16,7 @@ import { assertNever } from "../../../utils";
 function transformForOfArrayStatement(
     context: TransformationContext,
     statement: ts.ForOfStatement,
-    block: lua.Block
+    block: lua.Block,
 ): lua.Statement {
     const valueVariable = transformForInitializer(context, statement.initializer, block);
     const ipairsCall = lua.createCallExpression(lua.createIdentifier("ipairs"), [
@@ -29,14 +29,14 @@ function transformForOfArrayStatement(
 function transformForOfIteratorStatement(
     context: TransformationContext,
     statement: ts.ForOfStatement,
-    block: lua.Block
+    block: lua.Block,
 ): lua.Statement {
     const valueVariable = transformForInitializer(context, statement.initializer, block);
     const iterable = transformLuaLibFunction(
         context,
         LuaLibFeature.Iterator,
         statement.expression,
-        context.transformExpression(statement.expression)
+        context.transformExpression(statement.expression),
     );
 
     return lua.createForInStatement(block, [lua.createAnonymousIdentifier(), valueVariable], [iterable], statement);

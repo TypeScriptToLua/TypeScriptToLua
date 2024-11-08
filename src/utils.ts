@@ -28,7 +28,7 @@ export const createDiagnosticFactoryWithCode = <T extends DiagnosticFactory>(cod
             source: "typescript-to-lua",
             ...create(...(args as any)),
         }),
-        { code }
+        { code },
     );
 
 let serialDiagnosticCodeCounter = 100000;
@@ -52,7 +52,7 @@ type NoInfer<T> = [T][T extends any ? 0 : never];
 export function getOrUpdate<K, V>(
     map: Map<K, V> | (K extends object ? WeakMap<K, V> : never),
     key: K,
-    getDefaultValue: () => NoInfer<V>
+    getDefaultValue: () => NoInfer<V>,
 ): V {
     if (!map.has(key)) {
         map.set(key, getDefaultValue());
@@ -67,7 +67,7 @@ export function isNonNull<T>(value: T | null | undefined): value is T {
 
 export function cast<TOriginal, TCast extends TOriginal>(
     item: TOriginal,
-    cast: (item: TOriginal) => item is TCast
+    cast: (item: TOriginal) => item is TCast,
 ): TCast {
     if (cast(item)) {
         return item;

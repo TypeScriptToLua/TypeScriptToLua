@@ -9,7 +9,7 @@ const plugin: tstl.Plugin = {
                 "module-resolution",
                 "project-with-module-resolution-plugin",
                 "lua_sources",
-                "absolutebar.lua"
+                "absolutebar.lua",
             );
         }
 

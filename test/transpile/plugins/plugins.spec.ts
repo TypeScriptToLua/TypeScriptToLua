@@ -18,7 +18,7 @@ test("printer in bundle", () => {
             "otherfile.ts",
             `
                 const bar = "bar";
-            `
+            `,
         )
         .setOptions({ luaPlugins: [{ name: path.join(__dirname, "printer.ts") }] })
         .expectToHaveNoDiagnostics()
@@ -79,7 +79,7 @@ test.each(["namespace", "module"])("%s with TS transformer plugin", moduleOrName
                     return false;
                 }
             }
-            `
+            `,
         )
         .setOptions({ plugins: [{ transform: path.join(__dirname, "transformer-plugin.ts") }] })
         .expectNoExecutionError();
@@ -105,7 +105,7 @@ test("afterPrint plugin", () => {
             "extrafile.ts",
             `
                 console.log("Hello, Mars!");
-            `
+            `,
         )
         .setOptions({ luaPlugins: [{ name: path.join(__dirname, "afterPrint.ts") }] })
         .getLuaResult();
@@ -126,7 +126,7 @@ test("beforeEmit plugin", () => {
             "extrafile.ts",
             `
             console.log("Hello, Mars!");
-        `
+        `,
         )
         .setOptions({ luaPlugins: [{ name: path.join(__dirname, "beforeEmit.ts") }] })
         .getLuaResult();
@@ -149,7 +149,7 @@ test("beforeEmit plugin bundle", () => {
             "extrafile.ts",
             `
             console.log("Hello, Mars!");
-        `
+        `,
         )
         .setOptions({ luaPlugins: [{ name: path.join(__dirname, "beforeEmit.ts") }] })
         .getLuaResult();
@@ -171,7 +171,7 @@ test("afterEmit plugin", () => {
             "extrafile.ts",
             `
                 console.log("Hello, Mars!");
-            `
+            `,
         )
         .setOptions({ luaPlugins: [{ name: path.join(__dirname, "afterEmit.ts") }] })
         .getLuaResult();

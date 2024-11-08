@@ -164,7 +164,11 @@ export class LuaPrinter {
 
     public static readonly sourceMapTracebackPlaceholder = "{#SourceMapTraceback}";
 
-    constructor(private emitHost: EmitHost, private program: ts.Program, private sourceFile: string) {
+    constructor(
+        private emitHost: EmitHost,
+        private program: ts.Program,
+        private sourceFile: string,
+    ) {
         this.options = program.getCompilerOptions();
         this.luaFile = normalizeSlashes(getEmitPath(this.sourceFile, this.program));
         // Source nodes contain relative path from mapped lua file to original TS source file
@@ -241,7 +245,7 @@ export class LuaPrinter {
         ) {
             // Import lualib features
             sourceChunks = this.printStatementArray(
-                loadImportedLualibFeatures(file.luaLibFeatures, luaTarget, this.emitHost)
+                loadImportedLualibFeatures(file.luaLibFeatures, luaTarget, this.emitHost),
             );
         } else if (luaLibImport === LuaLibImportKind.Inline && file.luaLibFeatures.size > 0) {
             // Inline lualib features
@@ -341,7 +345,7 @@ export class LuaPrinter {
             resultNode = this.concatNodes(
                 statement.leadingComments.map(c => this.printComment(c)).join("\n"),
                 "\n",
-                resultNode
+                resultNode,
             );
         }
 
@@ -349,7 +353,7 @@ export class LuaPrinter {
             resultNode = this.concatNodes(
                 resultNode,
                 "\n",
-                statement.trailingComments.map(c => this.printComment(c)).join("\n")
+                statement.trailingComments.map(c => this.printComment(c)).join("\n"),
             );
         }
 
@@ -727,8 +731,8 @@ export class LuaPrinter {
         chunks.push(
             this.printExpressionInParenthesesIfNeeded(
                 expression.operand,
-                LuaPrinter.operatorPrecedence[expression.operator]
-            )
+                LuaPrinter.operatorPrecedence[expression.operator],
+            ),
         );
 
         return this.createSourceNode(expression, chunks);
@@ -739,14 +743,17 @@ export class LuaPrinter {
         const isRightAssociative = LuaPrinter.rightAssociativeOperators.has(expression.operator);
         const precedence = LuaPrinter.operatorPrecedence[expression.operator];
         chunks.push(
-            this.printExpressionInParenthesesIfNeeded(expression.left, isRightAssociative ? precedence + 1 : precedence)
+            this.printExpressionInParenthesesIfNeeded(
+                expression.left,
+                isRightAssociative ? precedence + 1 : precedence,
+            ),
         );
         chunks.push(" ", this.printOperator(expression.operator), " ");
         chunks.push(
             this.printExpressionInParenthesesIfNeeded(
                 expression.right,
-                isRightAssociative ? precedence : precedence + 1
-            )
+                isRightAssociative ? precedence : precedence + 1,
+            ),
         );
 
         return this.createSourceNode(expression, chunks);
@@ -808,7 +815,7 @@ export class LuaPrinter {
         return this.createSourceNode(
             expression,
             expression.text,
-            expression.originalName !== expression.text ? expression.originalName : undefined
+            expression.originalName !== expression.text ? expression.originalName : undefined,
         );
     }
 

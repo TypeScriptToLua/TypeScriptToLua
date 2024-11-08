@@ -23,7 +23,7 @@ export function runRuntimeBenchmark(benchmarkFunction: () => void): RuntimeBench
 
 export function compareRuntimeBenchmarks(
     oldResults: RuntimeBenchmarkResult[],
-    newResults: RuntimeBenchmarkResult[]
+    newResults: RuntimeBenchmarkResult[],
 ): ComparisonInfo {
     const summary =
         "### runtime\n\n" +
@@ -32,11 +32,11 @@ export function compareRuntimeBenchmarks(
             oldResults,
             "s",
             result => result.time,
-            time => toFixed(time, 4)
+            time => toFixed(time, 4),
         );
 
     const text = `### master\n\`\`\`json\n${json.encode(oldResults)}\n\`\`\`\n### commit\n\`\`\`json\n${json.encode(
-        newResults
+        newResults,
     )}\n\`\`\``;
 
     return { summary, text };

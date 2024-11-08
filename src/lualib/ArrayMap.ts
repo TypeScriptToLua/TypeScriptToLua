@@ -1,7 +1,7 @@
 export function __TS__ArrayMap<T, U>(
     this: T[],
     callbackfn: (value: T, index?: number, array?: T[]) => U,
-    thisArg?: any
+    thisArg?: any,
 ): U[] {
     const result: U[] = [];
     for (const i of $range(1, this.length)) {

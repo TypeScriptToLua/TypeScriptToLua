@@ -110,7 +110,7 @@ test.each(validTsInvalidLuaNames)(
             declare var ${name}: any;
             const foo = { ${name} };
         `.expectDiagnosticsToMatchSnapshot([invalidAmbientIdentifierName.code]);
-    }
+    },
 );
 
 test.each(validTsInvalidLuaNames)("undeclared identifier must be a valid lua identifier (%p)", name => {
@@ -129,7 +129,7 @@ test.each(validTsInvalidLuaNames)(
         `
             .disableSemanticCheck()
             .expectDiagnosticsToMatchSnapshot([invalidAmbientIdentifierName.code]);
-    }
+    },
 );
 
 test.each(validTsInvalidLuaNames)("exported values with invalid lua identifier names (%p)", name => {
@@ -184,7 +184,7 @@ test.each(validTsInvalidLuaNames)(
             }
             export const bar = NS.foo;
         `.expectToMatchJsResult();
-    }
+    },
 );
 
 test.each(validTsInvalidLuaNames)("class with invalid lua name has correct name property", name => {
@@ -296,7 +296,7 @@ test("unicode export class", () => {
                 hello() {
                     return "你好";
                 }
-            }`
+            }`,
         )
         .expectToEqual({ result: "你好" });
 });
@@ -312,7 +312,7 @@ test("unicode export default class", () => {
                 hello() {
                     return "你好";
                 }
-            }`
+            }`,
         )
         .expectToEqual({ result: "你好" });
 });

@@ -20,7 +20,7 @@ export function getSymbolIdOfSymbol(context: TransformationContext, symbol: ts.S
 export function trackSymbolReference(
     context: TransformationContext,
     symbol: ts.Symbol,
-    identifier: ts.Identifier
+    identifier: ts.Identifier,
 ): lua.SymbolId | undefined {
     // Track first time symbols are seen
     let symbolId = context.symbolIdMaps.get(symbol);
@@ -43,7 +43,7 @@ export function trackSymbolReference(
 export function getIdentifierSymbolId(
     context: TransformationContext,
     identifier: ts.Identifier,
-    symbol: ts.Symbol | undefined
+    symbol: ts.Symbol | undefined,
 ): lua.SymbolId | undefined {
     if (symbol) {
         return trackSymbolReference(context, symbol, identifier);

@@ -8,7 +8,7 @@ type MessageProvider<TArgs extends any[]> = string | ((...args: TArgs) => string
 
 const createDiagnosticFactory = <TArgs extends any[]>(
     category: ts.DiagnosticCategory,
-    message: MessageProvider<TArgs>
+    message: MessageProvider<TArgs>,
 ) =>
     createSerialDiagnosticFactory((node: ts.Node, ...args: TArgs) => ({
         file: ts.getOriginalNode(node).getSourceFile(),
@@ -24,7 +24,7 @@ const createWarningDiagnosticFactory = <TArgs extends any[]>(message: MessagePro
     createDiagnosticFactory(ts.DiagnosticCategory.Warning, message);
 
 export const unsupportedNodeKind = createErrorDiagnosticFactory(
-    (kind: ts.SyntaxKind) => `Unsupported node kind ${ts.SyntaxKind[kind]}`
+    (kind: ts.SyntaxKind) => `Unsupported node kind ${ts.SyntaxKind[kind]}`,
 );
 
 export const forbiddenForIn = createErrorDiagnosticFactory("Iterating over arrays with 'for ... in' is not allowed.");
@@ -56,119 +56,120 @@ export const unsupportedOverloadAssignment = createErrorDiagnosticFactory((name?
 export const decoratorInvalidContext = createErrorDiagnosticFactory("Decorator function cannot have 'this: void'.");
 
 export const annotationInvalidArgumentCount = createErrorDiagnosticFactory(
-    (kind: AnnotationKind, got: number, expected: number) => `'@${kind}' expects ${expected} arguments, but got ${got}.`
+    (kind: AnnotationKind, got: number, expected: number) =>
+        `'@${kind}' expects ${expected} arguments, but got ${got}.`,
 );
 
 export const invalidRangeUse = createErrorDiagnosticFactory("$range can only be used in a for...of loop.");
 
 export const invalidVarargUse = createErrorDiagnosticFactory(
-    "$vararg can only be used in a spread element ('...$vararg') in global scope."
+    "$vararg can only be used in a spread element ('...$vararg') in global scope.",
 );
 
 export const invalidRangeControlVariable = createErrorDiagnosticFactory(
-    "For loop using $range must declare a single control variable."
+    "For loop using $range must declare a single control variable.",
 );
 
 export const invalidMultiIterableWithoutDestructuring = createErrorDiagnosticFactory(
-    "LuaIterable with a LuaMultiReturn return value type must be destructured."
+    "LuaIterable with a LuaMultiReturn return value type must be destructured.",
 );
 
 export const invalidPairsIterableWithoutDestructuring = createErrorDiagnosticFactory(
-    "LuaPairsIterable type must be destructured in a for...of statement."
+    "LuaPairsIterable type must be destructured in a for...of statement.",
 );
 
 export const unsupportedAccessorInObjectLiteral = createErrorDiagnosticFactory(
-    "Accessors in object literal are not supported."
+    "Accessors in object literal are not supported.",
 );
 
 export const unsupportedRightShiftOperator = createErrorDiagnosticFactory(
-    "Right shift operator is not supported for target Lua 5.3. Use `>>>` instead."
+    "Right shift operator is not supported for target Lua 5.3. Use `>>>` instead.",
 );
 
 const getLuaTargetName = (version: LuaTarget) => (version === LuaTarget.LuaJIT ? "LuaJIT" : `Lua ${version}`);
 export const unsupportedForTarget = createErrorDiagnosticFactory(
     (functionality: string, version: LuaTarget) =>
-        `${functionality} is/are not supported for target ${getLuaTargetName(version)}.`
+        `${functionality} is/are not supported for target ${getLuaTargetName(version)}.`,
 );
 
 export const unsupportedForTargetButOverrideAvailable = createErrorDiagnosticFactory(
     (functionality: string, version: LuaTarget, optionName: keyof TypeScriptToLuaOptions) =>
         `As a precaution, ${functionality} is/are not supported for target ${getLuaTargetName(
-            version
+            version,
         )} due to language features/limitations. ` +
         `However "--${optionName}" can be used to bypass this precaution. ` +
-        "See https://typescripttolua.github.io/docs/configuration for more information."
+        "See https://typescripttolua.github.io/docs/configuration for more information.",
 );
 
 export const unsupportedProperty = createErrorDiagnosticFactory(
-    (parentName: string, property: string) => `${parentName}.${property} is unsupported.`
+    (parentName: string, property: string) => `${parentName}.${property} is unsupported.`,
 );
 
 export const invalidAmbientIdentifierName = createErrorDiagnosticFactory(
-    (text: string) => `Invalid ambient identifier name '${text}'. Ambient identifiers must be valid lua identifiers.`
+    (text: string) => `Invalid ambient identifier name '${text}'. Ambient identifiers must be valid lua identifiers.`,
 );
 
 export const unsupportedVarDeclaration = createErrorDiagnosticFactory(
-    "`var` declarations are not supported. Use `let` or `const` instead."
+    "`var` declarations are not supported. Use `let` or `const` instead.",
 );
 
 export const invalidMultiFunctionUse = createErrorDiagnosticFactory(
-    "The $multi function must be called in a return statement."
+    "The $multi function must be called in a return statement.",
 );
 
 export const invalidMultiFunctionReturnType = createErrorDiagnosticFactory(
-    "The $multi function cannot be cast to a non-LuaMultiReturn type."
+    "The $multi function cannot be cast to a non-LuaMultiReturn type.",
 );
 
 export const invalidMultiReturnAccess = createErrorDiagnosticFactory(
-    "The LuaMultiReturn type can only be accessed via an element access expression of a numeric type."
+    "The LuaMultiReturn type can only be accessed via an element access expression of a numeric type.",
 );
 
 export const invalidCallExtensionUse = createErrorDiagnosticFactory(
-    "This function must be called directly and cannot be referred to."
+    "This function must be called directly and cannot be referred to.",
 );
 export const annotationDeprecated = createWarningDiagnosticFactory(
     (kind: AnnotationKind) =>
         `'@${kind}' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile. ` +
-        `See https://typescripttolua.github.io/docs/advanced/compiler-annotations#${kind.toLowerCase()} for more information.`
+        `See https://typescripttolua.github.io/docs/advanced/compiler-annotations#${kind.toLowerCase()} for more information.`,
 );
 
 export const truthyOnlyConditionalValue = createWarningDiagnosticFactory(
-    "Only false and nil evaluate to 'false' in Lua, everything else is considered 'true'. Explicitly compare the value with ===."
+    "Only false and nil evaluate to 'false' in Lua, everything else is considered 'true'. Explicitly compare the value with ===.",
 );
 
 export const notAllowedOptionalAssignment = createErrorDiagnosticFactory(
-    "The left-hand side of an assignment expression may not be an optional property access."
+    "The left-hand side of an assignment expression may not be an optional property access.",
 );
 
 export const awaitMustBeInAsyncFunction = createErrorDiagnosticFactory(
-    "Await can only be used inside async functions."
+    "Await can only be used inside async functions.",
 );
 
 export const unsupportedBuiltinOptionalCall = createErrorDiagnosticFactory(
-    "Optional calls are not supported for builtin or language extension functions."
+    "Optional calls are not supported for builtin or language extension functions.",
 );
 
 export const unsupportedOptionalCompileMembersOnly = createErrorDiagnosticFactory(
-    "Optional calls are not supported on enums marked with @compileMembersOnly."
+    "Optional calls are not supported on enums marked with @compileMembersOnly.",
 );
 
 export const undefinedInArrayLiteral = createErrorDiagnosticFactory(
-    "Array literals may not contain undefined or null."
+    "Array literals may not contain undefined or null.",
 );
 
 export const invalidMethodCallExtensionUse = createErrorDiagnosticFactory(
-    "This language extension must be called as a method."
+    "This language extension must be called as a method.",
 );
 
 export const invalidSpreadInCallExtension = createErrorDiagnosticFactory(
-    "Spread elements are not supported in call extensions."
+    "Spread elements are not supported in call extensions.",
 );
 
 export const cannotAssignToNodeOfKind = createErrorDiagnosticFactory(
-    (kind: lua.SyntaxKind) => `Cannot create assignment assigning to a node of type ${lua.SyntaxKind[kind]}.`
+    (kind: lua.SyntaxKind) => `Cannot create assignment assigning to a node of type ${lua.SyntaxKind[kind]}.`,
 );
 
 export const incompleteFieldDecoratorWarning = createWarningDiagnosticFactory(
-    "You are using a class field decorator, note that tstl ignores returned value initializers!"
+    "You are using a class field decorator, note that tstl ignores returned value initializers!",
 );

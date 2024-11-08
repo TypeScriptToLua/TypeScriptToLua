@@ -297,7 +297,7 @@ describe("jsx", () => {
             .setTsHeader(
                 `function createElement(tag: string | Function, props: { [key: string]: string | boolean }, ...children: any[]) {
                 return { tag, children };
-            }`
+            }`,
             )
             .setOptions({ jsxFactory: "createElement", noImplicitSelf: true })
             .expectToMatchJsResult();
@@ -337,7 +337,7 @@ describe("jsx", () => {
             return <><b>c</b></>
         `
             .setTsHeader(
-                '/** @jsx MyLib.myCreate */\n/** @jsxFrag MyLib.MyFragment */\nimport { MyLib } from "./myJsx";'
+                '/** @jsx MyLib.myCreate */\n/** @jsxFrag MyLib.MyFragment */\nimport { MyLib } from "./myJsx";',
             )
             .addExtraFile("myJsx.ts", customJsxLib)
             .expectToMatchJsResult();
@@ -346,7 +346,7 @@ describe("jsx", () => {
         `
             .setTsHeader(
                 "/** @jsx MyLib.myCreate */\n/** @jsxFrag MyFragment2 */\n" +
-                    'import { MyLib } from "./myJsx";function MyFragment2(){};'
+                    'import { MyLib } from "./myJsx";function MyFragment2(){};',
             )
             .setOptions({ jsxFactory: "MyLib.myCreate", jsxFragmentFactory: "MyFragment" })
             .addExtraFile("myJsx.ts", customJsxLib)

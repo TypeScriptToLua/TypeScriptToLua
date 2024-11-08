@@ -1,7 +1,7 @@
 export function __TS__ArrayFlatMap<T, U>(
     this: T[],
     callback: (value: T, index: number, array: T[]) => U | readonly U[],
-    thisArg?: any
+    thisArg?: any,
 ): U[] {
     const result: U[] = [];
     let len = 0;

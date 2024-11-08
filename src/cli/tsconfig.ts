@@ -39,7 +39,7 @@ export function locateConfigFile(commandLine: ParsedCommandLine): ts.Diagnostic 
 export function parseConfigFileWithSystem(
     configFileName: string,
     commandLineOptions?: CompilerOptions,
-    system = ts.sys
+    system = ts.sys,
 ): ParsedCommandLine {
     const configRootDir = path.dirname(configFileName);
     const parsedConfigFile = ts.parseJsonSourceFileConfigFileContent(
@@ -47,7 +47,7 @@ export function parseConfigFileWithSystem(
         system,
         configRootDir,
         commandLineOptions,
-        configFileName
+        configFileName,
     );
 
     const cycleCache = new Set<string>();
@@ -61,7 +61,7 @@ export function parseConfigFileWithSystem(
 function resolveNpmModuleConfig(
     moduleName: string,
     configRootDir: string,
-    host: ts.ModuleResolutionHost
+    host: ts.ModuleResolutionHost,
 ): string | undefined {
     const resolved = ts.nodeNextJsonConfigResolver(moduleName, path.join(configRootDir, "tsconfig.json"), host);
     if (resolved.resolvedModule) {
@@ -73,13 +73,13 @@ function getExtendedTstlOptions(
     configFilePath: string,
     configRootDir: string,
     cycleCache: Set<string>,
-    system: ts.System
+    system: ts.System,
 ): TypeScriptToLuaOptions {
     const absolutePath = ts.pathIsAbsolute(configFilePath)
         ? configFilePath
         : ts.pathIsRelative(configFilePath)
-        ? path.resolve(configRootDir, configFilePath)
-        : resolveNpmModuleConfig(configFilePath, configRootDir, system); // if a path is neither relative nor absolute, it is probably a npm module
+          ? path.resolve(configRootDir, configFilePath)
+          : resolveNpmModuleConfig(configFilePath, configRootDir, system); // if a path is neither relative nor absolute, it is probably a npm module
 
     if (!absolutePath) {
         return {};
@@ -112,7 +112,7 @@ function getExtendedTstlOptions(
                 for (const extendedConfigFile of parsedConfig.extends) {
                     Object.assign(
                         options,
-                        getExtendedTstlOptions(extendedConfigFile, newConfigRoot, cycleCache, system)
+                        getExtendedTstlOptions(extendedConfigFile, newConfigRoot, cycleCache, system),
                     );
                 }
             } else {
@@ -129,7 +129,7 @@ function getExtendedTstlOptions(
 }
 
 export function createConfigFileUpdater(
-    optionsToExtend: CompilerOptions
+    optionsToExtend: CompilerOptions,
 ): (options: ts.CompilerOptions) => ts.Diagnostic[] {
     const configFileMap = new WeakMap<ts.TsConfigSourceFile, ts.ParsedCommandLine>();
     return options => {

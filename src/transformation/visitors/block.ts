@@ -10,7 +10,7 @@ export function transformBlockOrStatement(context: TransformationContext, statem
 export function transformScopeBlock(
     context: TransformationContext,
     node: ts.Block,
-    scopeType: ScopeType
+    scopeType: ScopeType,
 ): [lua.Block, Scope] {
     context.pushScope(scopeType);
     const statements = performHoisting(context, context.transformStatements(node.statements));

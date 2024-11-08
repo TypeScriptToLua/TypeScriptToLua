@@ -29,7 +29,7 @@ export function __TS__PromiseRace<T>(this: void, iterable: Iterable<T | PromiseL
         for (const promise of pending) {
             promise.then(
                 value => resolve(value),
-                reason => reject(reason)
+                reason => reject(reason),
             );
         }
     });

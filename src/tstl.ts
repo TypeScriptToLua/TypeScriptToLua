@@ -10,7 +10,7 @@ import { isBundleEnabled } from "./CompilerOptions";
 import * as performance from "./measure-performance";
 
 const shouldBePretty = ({ pretty }: ts.CompilerOptions = {}) =>
-    pretty !== undefined ? (pretty as boolean) : ts.sys.writeOutputIsTTY?.() ?? false;
+    pretty !== undefined ? (pretty as boolean) : (ts.sys.writeOutputIsTTY?.() ?? false);
 
 let reportDiagnostic = createDiagnosticReporter(false);
 function updateReportDiagnostic(options?: ts.CompilerOptions): void {
@@ -72,7 +72,7 @@ function executeCommandLine(args: string[]): void {
                 configParseResult.fileNames,
                 configParseResult.projectReferences,
                 configParseResult.options,
-                ts.getConfigFileParsingDiagnostics(configParseResult)
+                ts.getConfigFileParsingDiagnostics(configParseResult),
             );
         }
     } else {
@@ -94,7 +94,7 @@ function performCompilation(
     rootNames: string[],
     projectReferences: readonly ts.ProjectReference[] | undefined,
     options: tstl.CompilerOptions,
-    configFileParsingDiagnostics?: readonly ts.Diagnostic[]
+    configFileParsingDiagnostics?: readonly ts.Diagnostic[],
 ): void {
     if (options.measurePerformance) performance.enableMeasurement();
 
@@ -121,8 +121,8 @@ function performCompilation(
         diagnostics.filter(d => d.category === ts.DiagnosticCategory.Error).length === 0
             ? ts.ExitStatus.Success
             : emitSkipped
-            ? ts.ExitStatus.DiagnosticsPresent_OutputsSkipped
-            : ts.ExitStatus.DiagnosticsPresent_OutputsGenerated;
+              ? ts.ExitStatus.DiagnosticsPresent_OutputsSkipped
+              : ts.ExitStatus.DiagnosticsPresent_OutputsGenerated;
 
     return ts.sys.exit(exitCode);
 }
@@ -134,7 +134,7 @@ function createWatchOfConfigFile(configFileName: string, optionsToExtend: tstl.C
         ts.sys,
         ts.createSemanticDiagnosticsBuilderProgram,
         undefined,
-        createWatchStatusReporter(optionsToExtend)
+        createWatchStatusReporter(optionsToExtend),
     );
 
     updateWatchCompilationHost(watchCompilerHost, optionsToExtend);
@@ -148,7 +148,7 @@ function createWatchOfFilesAndCompilerOptions(rootFiles: string[], options: tstl
         ts.sys,
         ts.createSemanticDiagnosticsBuilderProgram,
         undefined,
-        createWatchStatusReporter(options)
+        createWatchStatusReporter(options),
     );
 
     updateWatchCompilationHost(watchCompilerHost, options);
@@ -157,7 +157,7 @@ function createWatchOfFilesAndCompilerOptions(rootFiles: string[], options: tstl
 
 function updateWatchCompilationHost(
     host: ts.WatchCompilerHost<ts.SemanticDiagnosticsBuilderProgram>,
-    optionsToExtend: tstl.CompilerOptions
+    optionsToExtend: tstl.CompilerOptions,
 ): void {
     let hadErrorLastTime = true;
     const updateConfigFile = createConfigFileUpdater(optionsToExtend);

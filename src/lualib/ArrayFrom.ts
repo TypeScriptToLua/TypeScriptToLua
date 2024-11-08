@@ -10,7 +10,7 @@ function arrayLikeStep(this: ArrayLike<unknown>, index: number): LuaMultiReturn<
 
 const arrayLikeIterator: (
     this: void,
-    arr: ArrayLike<unknown> | Iterable<unknown>
+    arr: ArrayLike<unknown> | Iterable<unknown>,
 ) => LuaIterable<LuaMultiReturn<[number, unknown]>> = ((arr: any) => {
     if (typeof arr.length === "number") return $multi(arrayLikeStep, arr, 0);
     return __TS__Iterator(arr);
@@ -20,7 +20,7 @@ export function __TS__ArrayFrom(
     this: void,
     arrayLike: ArrayLike<unknown> | Iterable<unknown>,
     mapFn?: (this: unknown, element: unknown, index: number) => unknown,
-    thisArg?: unknown
+    thisArg?: unknown,
 ): unknown[] {
     const result = [];
     if (mapFn === undefined) {

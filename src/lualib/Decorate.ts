@@ -7,7 +7,7 @@ export function __TS__Decorate<TClass, TTarget>(
     this: TClass,
     originalValue: TTarget,
     decorators: Array<Decorator<TTarget>>,
-    context: DecoratorContext
+    context: DecoratorContext,
 ): TTarget {
     let result = originalValue;
 

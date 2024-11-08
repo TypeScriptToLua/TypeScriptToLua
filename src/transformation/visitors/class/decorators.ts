@@ -23,7 +23,7 @@ export function transformDecoratorExpression(context: TransformationContext, dec
 export function createClassDecoratingExpression(
     context: TransformationContext,
     classDeclaration: ts.ClassDeclaration | ts.ClassExpression,
-    className: lua.Expression
+    className: lua.Expression,
 ): lua.Expression {
     const classDecorators =
         ts.getDecorators(classDeclaration)?.map(d => transformDecoratorExpression(context, d)) ?? [];
@@ -44,7 +44,7 @@ export function createClassMethodDecoratingExpression(
     context: TransformationContext,
     methodDeclaration: ts.MethodDeclaration,
     originalMethod: lua.Expression,
-    className: lua.Identifier
+    className: lua.Identifier,
 ): lua.Expression {
     const parameterDecorators = getParameterDecorators(context, methodDeclaration);
     const methodDecorators =
@@ -60,7 +60,7 @@ export function createClassMethodDecoratingExpression(
             methodDeclaration.kind,
             [...methodDecorators, ...parameterDecorators],
             methodTable,
-            methodName
+            methodName,
         );
     }
 
@@ -77,7 +77,7 @@ export function createClassAccessorDecoratingExpression(
     context: TransformationContext,
     accessor: ts.AccessorDeclaration,
     originalAccessor: lua.Expression,
-    className: lua.Identifier
+    className: lua.Identifier,
 ): lua.Expression {
     const accessorDecorators = ts.getDecorators(accessor)?.map(d => transformDecoratorExpression(context, d)) ?? [];
     const propertyName = transformPropertyName(context, accessor.name);
@@ -91,7 +91,7 @@ export function createClassAccessorDecoratingExpression(
             accessor.kind,
             accessorDecorators,
             propertyOwnerTable,
-            propertyName
+            propertyName,
         );
     }
 
@@ -107,7 +107,7 @@ export function createClassAccessorDecoratingExpression(
 export function createClassPropertyDecoratingExpression(
     context: TransformationContext,
     property: ts.PropertyDeclaration,
-    className: lua.Identifier
+    className: lua.Identifier,
 ): lua.Expression {
     const decorators = ts.getDecorators(property) ?? [];
     const propertyDecorators = decorators.map(d => transformDecoratorExpression(context, d));
@@ -122,7 +122,7 @@ export function createClassPropertyDecoratingExpression(
             property.kind,
             propertyDecorators,
             propertyOwnerTable,
-            propertyName
+            propertyName,
         );
     }
 
@@ -151,7 +151,7 @@ function createDecoratingExpression<TValue extends lua.Expression>(
     className: lua.Expression,
     originalValue: TValue,
     decorators: lua.Expression[],
-    decoratorContext: Record<string, lua.Expression>
+    decoratorContext: Record<string, lua.Expression>,
 ): lua.Expression {
     const decoratorTable = lua.createTableExpression(decorators.map(d => lua.createTableFieldExpression(d)));
     const decoratorContextTable = objectToLuaTableLiteral(decoratorContext);
@@ -163,13 +163,13 @@ function createDecoratingExpression<TValue extends lua.Expression>(
         className,
         originalValue,
         decoratorTable,
-        decoratorContextTable
+        decoratorContextTable,
     );
 }
 
 function objectToLuaTableLiteral(obj: Record<string, lua.Expression>): lua.Expression {
     return lua.createTableExpression(
-        Object.entries(obj).map(([key, value]) => lua.createTableFieldExpression(value, lua.createStringLiteral(key)))
+        Object.entries(obj).map(([key, value]) => lua.createTableFieldExpression(value, lua.createStringLiteral(key))),
     );
 }
 
@@ -179,7 +179,7 @@ function createLegacyDecoratingExpression(
     kind: ts.SyntaxKind,
     decorators: lua.Expression[],
     targetTableName: lua.Expression,
-    targetFieldExpression?: lua.Expression
+    targetFieldExpression?: lua.Expression,
 ): lua.Expression {
     const decoratorTable = lua.createTableExpression(decorators.map(e => lua.createTableFieldExpression(e)));
     const trailingExpressions = [decoratorTable, targetTableName];
@@ -198,7 +198,7 @@ function createLegacyDecoratingExpression(
 
 function getParameterDecorators(
     context: TransformationContext,
-    node: ts.FunctionLikeDeclarationBase
+    node: ts.FunctionLikeDeclarationBase,
 ): lua.CallExpression[] {
     return node.parameters
         .flatMap((parameter, index) =>
@@ -210,9 +210,9 @@ function getParameterDecorators(
                         LuaLibFeature.DecorateParam,
                         node,
                         lua.createNumericLiteral(index),
-                        transformDecoratorExpression(context, decorator)
-                    )
-                )
+                        transformDecoratorExpression(context, decorator),
+                    ),
+                ),
         )
         .filter(isNonNull);
 }
@@ -220,7 +220,7 @@ function getParameterDecorators(
 export function createConstructorDecoratingExpression(
     context: TransformationContext,
     node: ts.ConstructorDeclaration,
-    className: lua.Identifier
+    className: lua.Identifier,
 ): lua.Statement | undefined {
     const parameterDecorators = getParameterDecorators(context, node);
 

@@ -19,7 +19,7 @@ export function createPromiseIdentifier(original: ts.Node) {
 export function transformPromiseConstructorCall(
     context: TransformationContext,
     node: ts.CallExpression,
-    calledMethod: ts.PropertyAccessExpression
+    calledMethod: ts.PropertyAccessExpression,
 ): lua.Expression | undefined {
     const signature = context.checker.getResolvedSignature(node);
     const params = transformArguments(context, node.arguments, signature);
@@ -49,6 +49,6 @@ export function createStaticPromiseFunctionAccessor(functionName: string, node: 
     return lua.createTableIndexExpression(
         lua.createIdentifier("__TS__Promise"),
         lua.createStringLiteral(functionName),
-        node
+        node,
     );
 }

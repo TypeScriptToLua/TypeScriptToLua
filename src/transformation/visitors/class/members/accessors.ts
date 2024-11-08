@@ -12,7 +12,7 @@ import { createClassAccessorDecoratingExpression } from "../decorators";
 function transformAccessor(
     context: TransformationContext,
     node: ts.AccessorDeclaration,
-    className: lua.Identifier
+    className: lua.Identifier,
 ): lua.Expression {
     const [params, dot, restParam] = transformParameters(context, node.parameters, createSelfIdentifier());
     const body = node.body ? transformFunctionBody(context, node.parameters, node.body, restParam)[0] : [];
@@ -20,7 +20,7 @@ function transformAccessor(
         lua.createBlock(body),
         params,
         dot,
-        lua.NodeFlags.Declaration
+        lua.NodeFlags.Declaration,
     );
 
     if (ts.getDecorators(node)?.length) {
@@ -33,7 +33,7 @@ function transformAccessor(
 export function transformAccessorDeclarations(
     context: TransformationContext,
     { firstAccessor, getAccessor, setAccessor }: AllAccessorDeclarations,
-    className: lua.Identifier
+    className: lua.Identifier,
 ): lua.Statement | undefined {
     const propertyName = transformPropertyName(context, firstAccessor.name);
     const descriptor = lua.createTableExpression([]);

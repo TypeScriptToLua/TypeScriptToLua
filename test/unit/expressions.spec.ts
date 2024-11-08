@@ -22,7 +22,7 @@ for (const expression of ["3+4", "5-2", "6*3", "6**3", "20/5", "15/10", "15%3"])
     util.testEachVersion(
         `Binary expressions basic numeric (${expression})`,
         () => util.testExpression(expression),
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 }
 
@@ -30,7 +30,7 @@ test.each(["1==1", "1===1", "1!=1", "1!==1", "1>1", "1>=1", "1<1", "1<=1", "1&&1
     "Binary expressions basic boolean (%p)",
     input => {
         util.testExpression(input).expectToMatchJsResult();
-    }
+    },
 );
 
 test.each(["'key' in obj", "'existingKey' in obj", "0 in obj", "9 in obj"])("Binary expression in (%p)", input => {
@@ -114,7 +114,7 @@ test.each(["1+1", "-1+1", "1*30+4", "1*(3+4)", "1*(3+4*2)", "10-(4+5)"])(
     "Binary expressions ordering parentheses (%p)",
     input => {
         util.testExpression(input).expectLuaToMatchSnapshot();
-    }
+    },
 );
 
 test("Assignment order of operations is preserved", () => {

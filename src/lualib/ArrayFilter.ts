@@ -1,7 +1,7 @@
 export function __TS__ArrayFilter<T>(
     this: T[],
     callbackfn: (value: T, index?: number, array?: any[]) => boolean,
-    thisArg?: any
+    thisArg?: any,
 ): T[] {
     const result: T[] = [];
     let len = 0;

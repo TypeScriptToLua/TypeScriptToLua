@@ -98,7 +98,7 @@ test.each<[string, any]>(createCasesThatCall("multi"))(
             .withLanguageExtensions()
             .setReturnExport("a")
             .expectToEqual(result);
-    }
+    },
 );
 
 test.each<[string, number[]]>([

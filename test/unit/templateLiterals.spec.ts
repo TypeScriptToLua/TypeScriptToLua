@@ -58,7 +58,7 @@ test.each(["func`noSelfParameter`", "obj.func`noSelfParameter`", "obj[`func`]`no
             const obj = { func };
             return ${expression};
         `.expectToMatchJsResult();
-    }
+    },
 );
 
 test.each(["number", "string | any"])("template span expect tostring for non string type (%p)", type => {
@@ -81,5 +81,5 @@ test.each(["string", "'string literal type'", "string & unknown"])(
         `
             .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toContain("tostring"))
             .expectToMatchJsResult();
-    }
+    },
 );

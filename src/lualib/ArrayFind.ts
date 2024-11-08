@@ -2,7 +2,7 @@
 export function __TS__ArrayFind<T>(
     this: T[],
     predicate: (value: T, index: number, obj: T[]) => unknown,
-    thisArg?: any
+    thisArg?: any,
 ): T | undefined {
     for (const i of $range(1, this.length)) {
         const elem = this[i - 1];

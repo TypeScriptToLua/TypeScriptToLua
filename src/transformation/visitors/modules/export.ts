@@ -26,7 +26,7 @@ export const transformExportAssignment: FunctionVisitor<ts.ExportAssignment> = (
         return lua.createAssignmentStatement(
             lua.createTableIndexExpression(createExportsIdentifier(), createDefaultExportStringLiteral(node)),
             exportedValue,
-            node
+            node,
         );
     }
 };
@@ -42,9 +42,9 @@ function transformExportAll(context: TransformationContext, node: ts.ExportDecla
         const assignToExports = lua.createAssignmentStatement(
             lua.createTableIndexExpression(
                 createExportsIdentifier(),
-                lua.createStringLiteral(node.exportClause.name.text)
+                lua.createStringLiteral(node.exportClause.name.text),
             ),
-            moduleRequire
+            moduleRequire,
         );
         return assignToExports;
     }
@@ -63,7 +63,7 @@ function transformExportAll(context: TransformationContext, node: ts.ExportDecla
     const forValue = lua.createIdentifier("____exportValue");
     const leftAssignment = lua.createAssignmentStatement(
         lua.createTableIndexExpression(createExportsIdentifier(), forKey),
-        forValue
+        forValue,
     );
 
     // if key ~= "default" then
@@ -74,9 +74,9 @@ function transformExportAll(context: TransformationContext, node: ts.ExportDecla
         lua.createBinaryExpression(
             lua.cloneIdentifier(forKey),
             lua.createStringLiteral("default"),
-            lua.SyntaxKind.InequalityOperator
+            lua.SyntaxKind.InequalityOperator,
         ),
-        ifBody
+        ifBody,
     );
 
     // for ____exportKey, ____exportValue in ____export do
@@ -86,7 +86,7 @@ function transformExportAll(context: TransformationContext, node: ts.ExportDecla
     const forIn = lua.createForInStatement(
         lua.createBlock([ifStatement]),
         [lua.cloneIdentifier(forKey), lua.cloneIdentifier(forValue)],
-        [lua.createCallExpression(pairsIdentifier, [lua.cloneIdentifier(tempModuleIdentifier)])]
+        [lua.createCallExpression(pairsIdentifier, [lua.cloneIdentifier(tempModuleIdentifier)])],
     );
 
     result.push(forIn);
@@ -122,7 +122,7 @@ function transformExportSpecifier(context: TransformationContext, node: ts.Expor
         const lhs = lua.createTableIndexExpression(
             exportsTable,
             lua.createStringLiteral(exportedName.text),
-            exportedName
+            exportedName,
         );
 
         return lua.createAssignmentStatement(lhs, rhs, node);
@@ -133,7 +133,7 @@ function transformExportSpecifiersFrom(
     context: TransformationContext,
     statement: ts.ExportDeclaration,
     moduleSpecifier: ts.Expression,
-    exportSpecifiers: ts.ExportSpecifier[]
+    exportSpecifiers: ts.ExportSpecifier[],
 ): lua.Statement {
     const result: lua.Statement[] = [];
 
@@ -156,7 +156,7 @@ function transformExportSpecifiersFrom(
         const rhs = lua.createTableIndexExpression(
             lua.cloneIdentifier(importUniqueName),
             transformPropertyName(context, exportedValue),
-            specifier
+            specifier,
         );
         result.push(lua.createAssignmentStatement(lhs, rhs, specifier));
     }

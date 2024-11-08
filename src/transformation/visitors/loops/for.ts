@@ -25,7 +25,7 @@ export const transformForStatement: FunctionVisitor<ts.ForStatement> = (statemen
         const tsCondition = statement.condition;
         const { precedingStatements: conditionPrecedingStatements, result } = transformInPrecedingStatementScope(
             context,
-            () => context.transformExpression(tsCondition)
+            () => context.transformExpression(tsCondition),
         );
         condition = result;
 
@@ -44,8 +44,8 @@ export const transformForStatement: FunctionVisitor<ts.ForStatement> = (statemen
                     invertCondition(condition),
                     lua.createBlock([lua.createBreakStatement()]),
                     undefined,
-                    statement.condition
-                )
+                    statement.condition,
+                ),
             );
             body.unshift(...conditionPrecedingStatements);
             condition = lua.createBooleanLiteral(true);

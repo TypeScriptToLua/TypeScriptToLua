@@ -199,7 +199,7 @@ test("enum merging multiple files", () => {
             `enum TestEnum {
                 C = 3,
                 D
-            }`
+            }`,
         )
         .expectToMatchJsResult();
 });

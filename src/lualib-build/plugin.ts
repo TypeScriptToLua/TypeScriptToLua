@@ -45,7 +45,7 @@ class LuaLibPlugin implements tstl.Plugin {
         emitHost.writeFile(
             path.join(tstl.getEmitOutDir(program), luaLibModulesInfoFileName),
             JSON.stringify(luaLibModuleInfo, null, 2),
-            emitBOM
+            emitBOM,
         );
 
         // Flatten the output folder structure; we do not want to keep the target-specific directories
@@ -110,7 +110,7 @@ class LuaLibPlugin implements tstl.Plugin {
 
         const filteredStatements = fileResult.statements
             .filter(
-                s => !isExportTableDeclaration(s) && !isRequire(s) && !isImport(s, importNames) && !isExportsReturn(s)
+                s => !isExportTableDeclaration(s) && !isRequire(s) && !isImport(s, importNames) && !isExportsReturn(s),
             )
             .map(statement => {
                 if (isExportAlias(statement)) {
@@ -131,14 +131,14 @@ class LuaLibPlugin implements tstl.Plugin {
             const bodyStatements = filteredStatements.map(s =>
                 isExportAssignment(s)
                     ? tstl.createAssignmentStatement(tstl.createIdentifier(s.left[0].index.value), s.right[0])
-                    : s
+                    : s,
             );
 
             fileResult.statements = [exports, tstl.createDoStatement(bodyStatements)];
         } else {
             // transform export assignments to local variable declarations
             fileResult.statements = filteredStatements.map(s =>
-                tstl.createVariableDeclarationStatement(tstl.createIdentifier(s.left[0].index.value), s.right[0])
+                tstl.createVariableDeclarationStatement(tstl.createIdentifier(s.left[0].index.value), s.right[0]),
             );
         }
 

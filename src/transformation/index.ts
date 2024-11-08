@@ -25,7 +25,7 @@ export function createVisitorMap(customVisitors: Visitors[]): VisitorMap {
     for (const [kind, nodeVisitors] of objectVisitorMap) {
         result.set(
             kind,
-            nodeVisitors.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0)).map(visitor => visitor.transform)
+            nodeVisitors.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0)).map(visitor => visitor.transform),
         );
     }
     return result;

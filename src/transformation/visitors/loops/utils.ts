@@ -12,7 +12,7 @@ import { checkVariableDeclarationList, transformBindingPattern } from "../variab
 
 export function transformLoopBody(
     context: TransformationContext,
-    loop: ts.WhileStatement | ts.DoStatement | ts.ForStatement | ts.ForOfStatement | ts.ForInOrOfStatement
+    loop: ts.WhileStatement | ts.DoStatement | ts.ForStatement | ts.ForOfStatement | ts.ForInOrOfStatement,
 ): lua.Statement[] {
     context.pushScope(ScopeType.Loop);
     const body = performHoisting(context, transformBlockOrStatement(context, loop.statement));
@@ -35,11 +35,11 @@ export function transformLoopBody(
                     lua.createVariableDeclarationStatement(identifier),
                     lua.createRepeatStatement(
                         lua.createBlock([...body, lua.createAssignmentStatement(identifier, literalTrue)]),
-                        literalTrue
+                        literalTrue,
                     ),
                     lua.createIfStatement(
                         lua.createUnaryExpression(identifier, lua.SyntaxKind.NotOperator),
-                        lua.createBlock([lua.createBreakStatement()])
+                        lua.createBlock([lua.createBreakStatement()]),
                     ),
                 ]),
             ];
@@ -48,7 +48,7 @@ export function transformLoopBody(
 
 export function getVariableDeclarationBinding(
     context: TransformationContext,
-    node: ts.VariableDeclarationList
+    node: ts.VariableDeclarationList,
 ): ts.BindingName {
     checkVariableDeclarationList(context, node);
 
@@ -62,7 +62,7 @@ export function getVariableDeclarationBinding(
 export function transformForInitializer(
     context: TransformationContext,
     initializer: ts.ForInitializer,
-    block: lua.Block
+    block: lua.Block,
 ): lua.Identifier {
     const valueVariable = lua.createIdentifier("____value");
 
@@ -74,7 +74,7 @@ export function transformForInitializer(
         const binding = getVariableDeclarationBinding(context, initializer);
         if (ts.isArrayBindingPattern(binding) || ts.isObjectBindingPattern(binding)) {
             const { precedingStatements, result: bindings } = transformInPrecedingStatementScope(context, () =>
-                transformBindingPattern(context, binding, valueVariable)
+                transformBindingPattern(context, binding, valueVariable),
             );
             block.statements.unshift(...precedingStatements, ...bindings);
         } else {
@@ -88,7 +88,7 @@ export function transformForInitializer(
         block.statements.unshift(
             ...(isAssignmentPattern(initializer)
                 ? transformAssignmentPattern(context, initializer, valueVariable, false)
-                : transformAssignment(context, initializer, valueVariable))
+                : transformAssignment(context, initializer, valueVariable)),
         );
     }
 

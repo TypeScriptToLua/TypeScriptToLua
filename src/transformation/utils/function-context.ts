@@ -14,7 +14,7 @@ export enum ContextType {
 function hasNoSelfAncestor(declaration: ts.Declaration): boolean {
     const scopeDeclaration = findFirstNodeAbove(
         declaration,
-        (node): node is ts.SourceFile | ts.ModuleDeclaration => ts.isSourceFile(node) || ts.isModuleDeclaration(node)
+        (node): node is ts.SourceFile | ts.ModuleDeclaration => ts.isSourceFile(node) || ts.isModuleDeclaration(node),
     );
 
     if (!scopeDeclaration) {
@@ -55,8 +55,8 @@ export function getCallContextType(context: TransformationContext, callExpressio
         contextType = declarations.some(d => getFileAnnotations(d.getSourceFile()).has(AnnotationKind.NoSelfInFile))
             ? ContextType.Void
             : context.options.noImplicitSelf
-            ? ContextType.Void
-            : ContextType.NonVoid;
+              ? ContextType.Void
+              : ContextType.NonVoid;
     }
 
     callContextTypes.set(callExpression, contextType);
@@ -67,7 +67,7 @@ const signatureDeclarationContextTypes = new WeakMap<ts.SignatureDeclaration, Co
 
 function getSignatureContextType(
     context: TransformationContext,
-    signatureDeclaration: ts.SignatureDeclaration
+    signatureDeclaration: ts.SignatureDeclaration,
 ): ContextType {
     const known = signatureDeclarationContextTypes.get(signatureDeclaration);
     if (known !== undefined) return known;
@@ -80,12 +80,12 @@ function findRootDeclarations(context: TransformationContext, callExpression: ts
     const calledExpression = ts.isTaggedTemplateExpression(callExpression)
         ? callExpression.tag
         : ts.isJsxSelfClosingElement(callExpression)
-        ? callExpression.tagName
-        : ts.isJsxOpeningElement(callExpression)
-        ? callExpression.tagName
-        : ts.isCallExpression(callExpression)
-        ? callExpression.expression
-        : undefined;
+          ? callExpression.tagName
+          : ts.isJsxOpeningElement(callExpression)
+            ? callExpression.tagName
+            : ts.isCallExpression(callExpression)
+              ? callExpression.expression
+              : undefined;
 
     if (!calledExpression) return [];
 
@@ -130,7 +130,7 @@ function computeDeclarationContextType(context: TransformationContext, signature
         const scopeDeclaration = findFirstNodeAbove(
             signatureDeclaration,
             (n): n is ts.ClassLikeDeclaration | ts.InterfaceDeclaration =>
-                ts.isClassDeclaration(n) || ts.isClassExpression(n) || ts.isInterfaceDeclaration(n)
+                ts.isClassDeclaration(n) || ts.isClassExpression(n) || ts.isInterfaceDeclaration(n),
         );
 
         if (scopeDeclaration !== undefined && getNodeAnnotations(scopeDeclaration).has(AnnotationKind.NoSelf)) {
@@ -232,6 +232,6 @@ function computeFunctionContextType(context: TransformationContext, type: ts.Typ
     }
 
     return reduceContextTypes(
-        signatures.flatMap(s => getSignatureDeclarations(context, s)).map(s => getSignatureContextType(context, s))
+        signatures.flatMap(s => getSignatureDeclarations(context, s)).map(s => getSignatureContextType(context, s)),
     );
 }

@@ -8,7 +8,7 @@ const transformAssertionExpression: FunctionVisitor<ts.AssertionExpression> = (e
             context,
             expression,
             context.checker.getTypeAtLocation(expression.expression),
-            context.checker.getTypeAtLocation(expression.type)
+            context.checker.getTypeAtLocation(expression.type),
         );
     }
 

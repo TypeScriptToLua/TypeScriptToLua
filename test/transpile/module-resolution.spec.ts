@@ -52,7 +52,7 @@ describe("basic module resolution", () => {
     test("can resolve package depencency with a dependency on another package", () => {
         // Declarations in the node_modules directory
         expect(projectWithNodeModules.getLuaExecutionResult().moduleWithDependencyResult).toBe(
-            "Calling dependency: foo from lua module with decls"
+            "Calling dependency: foo from lua module with decls",
         );
     });
 
@@ -396,7 +396,7 @@ test("module resolution should not try to resolve @noResolution annotation", () 
                     function encode(this: void, data: unknown): string;
                     function decode(this: void, data: string): unknown;
                 }
-            `
+            `,
         )
         .expectToHaveNoDiagnostics();
 });
@@ -422,7 +422,7 @@ describe("module resolution should not try to resolve modules in noResolvePaths"
                 "directimport.d.ts",
                 `declare module "directimport" {
                     export function foo(): void;
-                }`
+                }`,
             )
             .setOptions({ noResolvePaths: ["directimport"] })
             .expectToHaveNoDiagnostics();
@@ -441,7 +441,7 @@ describe("module resolution should not try to resolve modules in noResolvePaths"
                 require("a.b.c.foo")
 
                 return { foo = function() return "bar" end }
-            `
+            `,
             )
             .setOptions({ noResolvePaths: ["a.b.c.foo", "somethingExtra", "dontResolveThis"] })
             .expectToHaveNoDiagnostics();
@@ -463,13 +463,13 @@ describe("module resolution should not try to resolve modules in noResolvePaths"
                 `export function foo()
                 {
                     return 'foo';
-                }`
+                }`,
             )
             .addExtraFile(
                 "ignoreme.d.ts",
                 `declare module "ignoreme" {
                     export function foo(): void;
-                }`
+                }`,
             )
             .setOptions({ noResolvePaths: ["ignore*"] })
             .expectToHaveNoDiagnostics()
@@ -500,7 +500,7 @@ describe("module resolution should not try to resolve modules in noResolvePaths"
                 `
                 require("ignoreme!")
                 require("i.g.n.o.r.e")
-            `
+            `,
             )
             .setOptions({ noResolvePaths: ["**"] })
             .expectToHaveNoDiagnostics();
@@ -521,7 +521,7 @@ test("module resolution should not rewrite @NoResolution requires in library mod
                     function encode(this: void, data: unknown): string;
                     function decode(this: void, data: string): unknown;
                 }
-            `
+            `,
         )
         .setOptions({ buildMode: BuildMode.Library })
         .getLuaResult();
@@ -578,25 +578,25 @@ test("module resolution uses baseURL to resolve imported files", () => {
             "myproject/mydeps/dep1.ts",
             `
                 export function foo() { return "foo"; }
-            `
+            `,
         )
         .addExtraFile(
             "myproject/mydeps/dep2.ts",
             `
                 export function bar() { return "bar"; }
-            `
+            `,
         )
         .addExtraFile(
             "myproject/mydeps/luadep.d.ts",
             `
                 export function baz(): string;
-            `
+            `,
         )
         .addExtraFile(
             "myproject/mydeps/luadep.lua",
             `
                 return { baz = function() return "baz" end }
-            `
+            `,
         )
         .setOptions({ baseUrl: "./myproject/mydeps" })
         .expectToEqual({
@@ -615,7 +615,7 @@ test("includes lualib_bundle when external lua requests it", () => {
             "lualibuser.d.ts",
             `
                 export const foo: string[];
-            `
+            `,
         )
         .addExtraFile(
             "lualibuser.lua",
@@ -628,7 +628,7 @@ test("includes lualib_bundle when external lua requests it", () => {
                 __TS__ArrayPush(result, "bar")
 
                 return { foo = result }
-            `
+            `,
         )
         .expectToEqual({
             foo: ["foo", "bar"],

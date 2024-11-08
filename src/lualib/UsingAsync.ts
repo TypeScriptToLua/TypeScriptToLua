@@ -6,7 +6,7 @@ export async function __TS__UsingAsync<TArgs extends Array<Disposable | AsyncDis
     let thrownError;
     const [ok, result] = xpcall(
         () => cb(...args),
-        err => (thrownError = err)
+        err => (thrownError = err),
     );
 
     const argArray = [...args];

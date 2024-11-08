@@ -15,7 +15,7 @@ tableNewExtensions.forEach(kind => callExtensions.add(kind));
 export type LanguageExtensionCallTransformer = (
     context: TransformationContext,
     node: ts.CallExpression,
-    extensionKind: ExtensionKind
+    extensionKind: ExtensionKind,
 ) => lua.Expression;
 
 export type LanguageExtensionCallTransformerMap = {
@@ -23,7 +23,7 @@ export type LanguageExtensionCallTransformerMap = {
 };
 export function transformLanguageExtensionCallExpression(
     context: TransformationContext,
-    node: ts.CallExpression
+    node: ts.CallExpression,
 ): lua.Expression | undefined {
     const extensionKind = getExtensionKindForNode(context, node.expression);
     if (!extensionKind) return;

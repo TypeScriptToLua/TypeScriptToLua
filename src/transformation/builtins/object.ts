@@ -8,7 +8,7 @@ import { transformArguments } from "../visitors/call";
 export function transformObjectConstructorCall(
     context: TransformationContext,
     node: ts.CallExpression,
-    calledMethod: ts.PropertyAccessExpression
+    calledMethod: ts.PropertyAccessExpression,
 ): lua.Expression | undefined {
     const args = transformArguments(context, node.arguments);
     const methodName = calledMethod.name.text;
@@ -40,7 +40,7 @@ export function transformObjectConstructorCall(
 export function tryTransformObjectPrototypeCall(
     context: TransformationContext,
     node: ts.CallExpression,
-    calledMethod: ts.PropertyAccessExpression
+    calledMethod: ts.PropertyAccessExpression,
 ): lua.Expression | undefined {
     const name = calledMethod.name.text;
     switch (name) {
@@ -49,7 +49,7 @@ export function tryTransformObjectPrototypeCall(
             return lua.createCallExpression(
                 toStringIdentifier,
                 [context.transformExpression(calledMethod.expression)],
-                node
+                node,
             );
         case "hasOwnProperty":
             const expr = context.transformExpression(calledMethod.expression);
@@ -61,7 +61,7 @@ export function tryTransformObjectPrototypeCall(
                 rawGetCall,
                 lua.createNilLiteral(),
                 lua.SyntaxKind.InequalityOperator,
-                node
+                node,
             );
     }
 }

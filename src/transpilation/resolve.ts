@@ -36,7 +36,7 @@ class ResolutionContext {
         public readonly program: ts.Program,
         public readonly options: CompilerOptions,
         private readonly emitHost: EmitHost,
-        private readonly plugins: Plugin[]
+        private readonly plugins: Plugin[],
     ) {
         const unique = [...new Set(options.noResolvePaths)];
         const matchers = unique.map(x => picomatch(x));
@@ -76,7 +76,7 @@ class ResolutionContext {
         if (this.noResolvePaths.find(isMatch => isMatch(required.requirePath))) {
             if (this.options.tstlVerbose) {
                 console.log(
-                    `Skipping module resolution of ${required.requirePath} as it is in the tsconfig noResolvePaths.`
+                    `Skipping module resolution of ${required.requirePath} as it is in the tsconfig noResolvePaths.`,
                 );
             }
             return;
@@ -109,7 +109,7 @@ class ResolutionContext {
                     dependency,
                     requiringFile.fileName,
                     this.options,
-                    this.emitHost
+                    this.emitHost,
                 );
                 if (pluginResolvedPath !== undefined) {
                     // If resolved path is absolute no need to further resolve it
@@ -122,12 +122,12 @@ class ResolutionContext {
                         // If requiring file is in lua module, try to resolve sibling in that file first
                         const resolvedNodeModulesFile = this.resolveLuaDependencyPathFromNodeModules(
                             requiringFile,
-                            pluginResolvedPath
+                            pluginResolvedPath,
                         );
                         if (resolvedNodeModulesFile) {
                             if (this.options.tstlVerbose) {
                                 console.log(
-                                    `Resolved file path for module ${dependency} to path ${pluginResolvedPath} using plugin.`
+                                    `Resolved file path for module ${dependency} to path ${pluginResolvedPath} using plugin.`,
                                 );
                             }
                             return resolvedNodeModulesFile;
@@ -140,7 +140,7 @@ class ResolutionContext {
                     if (fileFromPath) {
                         if (this.options.tstlVerbose) {
                             console.log(
-                                `Resolved file path for module ${dependency} to path ${pluginResolvedPath} using plugin.`
+                                `Resolved file path for module ${dependency} to path ${pluginResolvedPath} using plugin.`,
                             );
                         }
                         return fileFromPath;
@@ -158,7 +158,7 @@ class ResolutionContext {
         // // If the import is relative, always resolve it relative to the requiring file
         // // If the import is not relative, resolve it relative to options.baseUrl if it is set
         const fileDirectory = path.dirname(required.fileName);
-        const relativeTo = isRelative ? fileDirectory : this.options.baseUrl ?? fileDirectory;
+        const relativeTo = isRelative ? fileDirectory : (this.options.baseUrl ?? fileDirectory);
 
         // // Check if file is a file in the project
         const resolvedPath = path.join(relativeTo, targetPath);
@@ -191,7 +191,7 @@ class ResolutionContext {
         replaceRequireInSourceMap(file, required, fallbackRequire, this.options.extension);
 
         this.diagnostics.push(
-            couldNotResolveRequire(required.requirePath, path.relative(getProjectRoot(this.program), file.fileName))
+            couldNotResolveRequire(required.requirePath, path.relative(getProjectRoot(this.program), file.fileName)),
         );
     }
 
@@ -220,7 +220,7 @@ class ResolutionContext {
             const fileFromPaths = this.tryGetModuleNameFromPaths(
                 dependencyPath,
                 this.options.paths,
-                this.options.baseUrl
+                this.options.baseUrl,
             );
             if (fileFromPaths) return fileFromPaths;
         }
@@ -242,7 +242,7 @@ class ResolutionContext {
 
     private resolveLuaDependencyPathFromNodeModules(
         requiringFile: ProcessedFile,
-        dependency: string
+        dependency: string,
     ): string | undefined {
         // We don't know for sure where the lua root is, so guess it is at package root
         const splitPath = path.normalize(requiringFile.fileName).split(path.sep);
@@ -345,7 +345,7 @@ export function resolveDependencies(
     program: ts.Program,
     files: ProcessedFile[],
     emitHost: EmitHost,
-    plugins: Plugin[]
+    plugins: Plugin[],
 ): ResolutionResult {
     const options = program.getCompilerOptions() as CompilerOptions;
 
@@ -383,7 +383,7 @@ function replaceRequireInCode(
     file: ProcessedFile,
     originalRequire: LuaRequire,
     newRequire: string,
-    extension: string | undefined
+    extension: string | undefined,
 ): void {
     const requirePath = requirePathForFile(newRequire, extension);
     file.code = file.code =
@@ -396,7 +396,7 @@ function replaceRequireInSourceMap(
     file: ProcessedFile,
     originalRequire: LuaRequire,
     newRequire: string,
-    extension?: string | undefined
+    extension?: string | undefined,
 ): void {
     const requirePath = requirePathForFile(newRequire, extension);
     if (file.sourceMapNode) {
@@ -404,7 +404,7 @@ function replaceRequireInSourceMap(
             file.sourceMapNode,
             file.sourceMapNode,
             `"${originalRequire.requirePath}"`,
-            `"${requirePath}"`
+            `"${requirePath}"`,
         );
     }
 }
@@ -464,7 +464,7 @@ function fallbackResolve(required: LuaRequire, sourceRootDir: string, fileDir: s
             .normalize(path.join(path.relative(sourceRootDir, fileDir), required.requirePath))
             .split(path.sep)
             .filter(s => s !== "." && s !== "..")
-            .join(path.sep)
+            .join(path.sep),
     );
 }
 

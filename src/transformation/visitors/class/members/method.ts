@@ -9,7 +9,7 @@ import { createClassMethodDecoratingExpression } from "../decorators";
 
 export function transformMemberExpressionOwnerName(
     node: ts.PropertyDeclaration | ts.MethodDeclaration | ts.AccessorDeclaration,
-    className: lua.Identifier
+    className: lua.Identifier,
 ): lua.Expression {
     return isStaticNode(node) ? lua.cloneIdentifier(className) : createPrototypeName(className);
 }
@@ -25,7 +25,7 @@ export function transformMethodName(context: TransformationContext, node: ts.Met
 export function transformMethodDeclaration(
     context: TransformationContext,
     node: ts.MethodDeclaration,
-    className: lua.Identifier
+    className: lua.Identifier,
 ): lua.Statement[] {
     // Don't transform methods without body (overload declarations)
     if (!node.body) return [];
@@ -43,10 +43,10 @@ export function transformMethodDeclaration(
             return [
                 lua.createAssignmentStatement(
                     lua.createTableIndexExpression(methodTable, methodName),
-                    functionExpression
+                    functionExpression,
                 ),
                 lua.createExpressionStatement(
-                    createClassMethodDecoratingExpression(context, node, functionExpression, className)
+                    createClassMethodDecoratingExpression(context, node, functionExpression, className),
                 ),
             ];
         } else {
@@ -54,7 +54,7 @@ export function transformMethodDeclaration(
                 lua.createAssignmentStatement(
                     lua.createTableIndexExpression(methodTable, methodName),
                     createClassMethodDecoratingExpression(context, node, functionExpression, className),
-                    node
+                    node,
                 ),
             ];
         }
@@ -63,7 +63,7 @@ export function transformMethodDeclaration(
             lua.createAssignmentStatement(
                 lua.createTableIndexExpression(methodTable, methodName),
                 functionExpression,
-                node
+                node,
             ),
         ];
     }

@@ -27,7 +27,7 @@ export function transformPropertyName(context: TransformationContext, node: ts.P
 export function createShorthandIdentifier(
     context: TransformationContext,
     valueSymbol: ts.Symbol | undefined,
-    propertyIdentifier: ts.Identifier
+    propertyIdentifier: ts.Identifier,
 ): lua.Expression {
     return transformIdentifierWithSymbol(context, propertyIdentifier, valueSymbol);
 }
@@ -97,7 +97,7 @@ const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpressi
                     context,
                     LuaLibFeature.ArrayToObject,
                     element.expression,
-                    context.transformExpression(element.expression)
+                    context.transformExpression(element.expression),
                 );
             } else {
                 tableExpression = context.transformExpression(element.expression);
@@ -180,7 +180,7 @@ const transformArrayLiteralExpression: FunctionVisitor<ts.ArrayLiteralExpression
     checkForUndefinedOrNullInArrayLiteral(expression, context);
 
     const filteredElements = expression.elements.map(e =>
-        ts.isOmittedExpression(e) ? ts.factory.createIdentifier("undefined") : e
+        ts.isOmittedExpression(e) ? ts.factory.createIdentifier("undefined") : e,
     );
     const values = transformExpressionList(context, filteredElements).map(e => lua.createTableFieldExpression(e));
 

@@ -24,7 +24,7 @@ function iteratorStringStep(this: string, index: number): LuaMultiReturn<[number
 
 export function __TS__Iterator<T>(
     this: void,
-    iterable: string | GeneratorIterator | Iterable<T> | readonly T[]
+    iterable: string | GeneratorIterator | Iterable<T> | readonly T[],
 ): LuaMultiReturn<[(...args: any[]) => [any, any] | [], ...any[]]> | LuaIterable<LuaMultiReturn<[number, T]>> {
     if (typeof iterable === "string") {
         return $multi(iteratorStringStep, iterable, 0);

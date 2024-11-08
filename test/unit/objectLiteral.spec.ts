@@ -4,7 +4,7 @@ test.each(['{ a: 3, b: "4" }', '{ "a": 3, b: "4" }', '{ ["a"]: 3, b: "4" }', '{ 
     "Object Literal (%p)",
     inp => {
         util.testExpression(inp).expectToMatchJsResult();
-    }
+    },
 );
 
 test("object literal with function call to get key", () => {
@@ -61,7 +61,7 @@ test.each(['{x: "foobar"}.x', '{x: "foobar"}["x"]', '{x: () => "foobar"}.x()', '
     "object literal property access (%p)",
     expression => {
         util.testExpression(expression).expectToMatchJsResult();
-    }
+    },
 );
 
 describe("noSelf in functions", () => {

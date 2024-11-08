@@ -9,7 +9,7 @@ export function getTransformers(
     program: ts.Program,
     diagnostics: ts.Diagnostic[],
     customTransformers: ts.CustomTransformers,
-    onSourceFile: (sourceFile: ts.SourceFile) => void
+    onSourceFile: (sourceFile: ts.SourceFile) => void,
 ): ts.CustomTransformers {
     const luaTransformer: ts.TransformerFactory<ts.SourceFile> = () => sourceFile => {
         onSourceFile(sourceFile);
@@ -69,7 +69,7 @@ export const stripParenthesisExpressionsTransformer: ts.TransformerFactory<ts.So
                 node,
                 unwrapParentheses(node.expression),
                 node.typeArguments,
-                node.arguments
+                node.arguments,
             );
         } else if (ts.isVoidExpression(node)) {
             return ts.factory.updateVoidExpression(node, unwrapParentheses(node.expression));
@@ -100,7 +100,7 @@ function loadTransformersFromOptions(program: ts.Program, diagnostics: ts.Diagno
                 `${optionName}.transform`,
                 getConfigDirectory(options),
                 transformerImport.transform,
-                transformerImport.import
+                transformerImport.import,
             );
 
             if (resolveError) diagnostics.push(resolveError);
@@ -144,7 +144,7 @@ type ProgramTransformerFactory = (program: ts.Program, options: Record<string, a
 type ConfigTransformerFactory = (options: Record<string, any>) => Transformer;
 type CompilerOptionsTransformerFactory = (
     compilerOptions: CompilerOptions,
-    options: Record<string, any>
+    options: Record<string, any>,
 ) => Transformer;
 type TypeCheckerTransformerFactory = (typeChecker: ts.TypeChecker, options: Record<string, any>) => Transformer;
 type RawTransformerFactory = Transformer;
@@ -160,7 +160,7 @@ function loadTransformer(
     optionPath: string,
     program: ts.Program,
     factory: unknown,
-    { transform, after = false, afterDeclarations = false, type = "program", ...extraOptions }: TransformerImport
+    { transform, after = false, afterDeclarations = false, type = "program", ...extraOptions }: TransformerImport,
 ): { error?: ts.Diagnostic; transformer?: GroupTransformer } {
     let transformer: Transformer;
     switch (type) {

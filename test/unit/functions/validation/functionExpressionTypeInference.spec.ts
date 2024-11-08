@@ -38,7 +38,7 @@ test.each(["(this: void, s: string) => string", "(this: any, s: string) => strin
         `
             .setTsHeader(header)
             .expectToMatchJsResult();
-    }
+    },
 );
 
 test.each(["s => s", "(s => s)", "function(s) { return s; }", "(function(s) { return s; })"])(
@@ -54,7 +54,7 @@ test.each(["s => s", "(s => s)", "function(s) { return s; }", "(function(s) { re
             const foo = new Foo();
             return foo.func("a") + foo.method("b") + Foo.staticFunc("c") + Foo.staticMethod("d");
         `.expectToMatchJsResult();
-    }
+    },
 );
 
 test.each([

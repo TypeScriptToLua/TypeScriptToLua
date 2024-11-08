@@ -11,7 +11,7 @@ test("should transpile", () => {
         .getLuaResult();
 
     expect(
-        transpiledFiles.map(f => ({ filePath: path.relative(projectDir, f.outPath), lua: f.lua }))
+        transpiledFiles.map(f => ({ filePath: path.relative(projectDir, f.outPath), lua: f.lua })),
     ).toMatchSnapshot();
 });
 

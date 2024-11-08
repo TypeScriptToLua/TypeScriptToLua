@@ -375,7 +375,7 @@ export const noSelfTestFunctionType = "(this: void, s: string) => string";
 type TestFunctionCast = [
     /* testFunction: */ TestFunction,
     /* castedFunction: */ string,
-    /* isSelfConversion?: */ boolean?
+    /* isSelfConversion?: */ boolean?,
 ];
 export const validTestMethodCasts: TestFunctionCast[] = [
     [selfTestFunctions[0], `<${anonTestFunctionType}>(${selfTestFunctions[0].value})`],
@@ -406,7 +406,7 @@ export const invalidTestFunctionCasts: TestFunctionCast[] = [
 export type TestFunctionAssignment = [
     /* testFunction: */ TestFunction,
     /* functionType: */ string,
-    /* isSelfConversion?: */ boolean?
+    /* isSelfConversion?: */ boolean?,
 ];
 export const validTestMethodAssignments: TestFunctionAssignment[] = [
     ...selfTestFunctions.map((f): TestFunctionAssignment => [f, anonTestFunctionType]),

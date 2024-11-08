@@ -50,7 +50,7 @@ test("map foreach", () => {
         `let mymap = new Map([["a", 2],["b", 3],["c", 4]]);
         let count = 0;
         mymap.forEach(i => count += i);
-        return count;`
+        return count;`,
     ).expectToMatchJsResult();
 });
 

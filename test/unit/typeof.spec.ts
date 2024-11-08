@@ -95,5 +95,5 @@ test.each([...equalityComparisonCases, ...relationalComparisonCases])(
         `
             .tap(expectTypeOfHelper)
             .expectToMatchJsResult();
-    }
+    },
 );

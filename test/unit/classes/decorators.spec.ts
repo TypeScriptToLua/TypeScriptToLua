@@ -159,7 +159,7 @@ test("exported class with decorator", () => {
                 foo() {
                     return "foo";
                 }
-            }`
+            }`,
         )
         .expectToEqual({ result: "overridden" });
 });
@@ -185,7 +185,7 @@ test("default exported class with decorator", () => {
                 foo() {
                     return "foo";
                 }
-            }`
+            }`,
         )
         .expectToEqual({ result: "overridden" });
 });
@@ -546,7 +546,7 @@ describe("legacy experimentalDecorators", () => {
                 `
                     .setOptions({ experimentalDecorators: true })
                     .expectToMatchJsResult();
-            }
+            },
         );
     });
 
@@ -572,7 +572,7 @@ describe("legacy experimentalDecorators", () => {
                     foo() {
                         return "foo";
                     }
-                }`
+                }`,
             )
             .setOptions({ experimentalDecorators: true })
             .expectToEqual({ result: "overridden" });
@@ -599,7 +599,7 @@ describe("legacy experimentalDecorators", () => {
                     foo() {
                         return "foo";
                     }
-                }`
+                }`,
             )
             .setOptions({ experimentalDecorators: true })
             .expectToEqual({ result: "overridden" });

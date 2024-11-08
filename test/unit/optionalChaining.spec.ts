@@ -36,7 +36,7 @@ test.each(["undefined", "{}", "{ foo: {} }", "{ foo: {bar: 'baz'}}"])(
         const obj: { foo?: { bar?: string } } | undefined = ${value};
         return obj?.foo?.bar ?? "not found";
     `.expectToMatchJsResult();
-    }
+    },
 );
 
 test.each(["[1, 2, 3, 4]", "undefined"])("optional array access (%p)", value => {
@@ -53,7 +53,7 @@ test.each(["[1, [2, [3, [4, 5]]]]", "[1, [2, [3, undefined]]] ", "[1, undefined]
         const arr: [number, [number, [number, [number, number] | undefined]]] | [number, undefined] = ${value};
         return arr[1]?.[1][1]?.[0];
     `.expectToMatchJsResult();
-    }
+    },
 );
 
 test.each(["{ }", "{ a: { } }", "{ a: { b: [{ c: 10 }] } }"])(
@@ -63,7 +63,7 @@ test.each(["{ }", "{ a: { } }", "{ a: { b: [{ c: 10 }] } }"])(
         const obj: {a?: {b?: Array<{c: number }> } } = ${value};
         return [obj["a"]?.["b"]?.[0]?.["c"] ?? "not found", obj["a"]?.["b"]?.[2]?.["c"] ?? "not found"];
     `.expectToMatchJsResult();
-    }
+    },
 );
 
 test("optional element function calls", () => {
@@ -132,7 +132,7 @@ test.each(["undefined", "{ foo(val) {return val} }"])(
             .expectToHaveNoDiagnostics()
             .expectLuaToMatchSnapshot();
         // should use if statement, as there are preceding statements
-    }
+    },
 );
 
 test.each(["undefined", "{ foo(v) { return v} }"])("with preceding statements on right side modifying left", value => {

@@ -19,7 +19,7 @@ import { isInAsyncFunction } from "../utils/typescript";
 function transformExpressionsInReturn(
     context: TransformationContext,
     node: ts.Expression,
-    insideTryCatch: boolean
+    insideTryCatch: boolean,
 ): lua.Expression[] {
     const expressionType = context.checker.getTypeAtLocation(node);
 
@@ -61,7 +61,7 @@ function transformExpressionsInReturn(
 
 export function transformExpressionBodyToReturnStatement(
     context: TransformationContext,
-    node: ts.Expression
+    node: ts.Expression,
 ): lua.Statement {
     const expressions = transformExpressionsInReturn(context, node, false);
     return createReturnStatement(context, expressions, node);
@@ -89,7 +89,7 @@ export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (st
 export function createReturnStatement(
     context: TransformationContext,
     values: lua.Expression[],
-    node: ts.Node
+    node: ts.Node,
 ): lua.ReturnStatement {
     if (isInAsyncFunction(node)) {
         return lua.createReturnStatement([

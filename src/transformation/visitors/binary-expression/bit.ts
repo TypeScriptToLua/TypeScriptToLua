@@ -23,20 +23,20 @@ function transformBinaryBitLibOperation(
     left: lua.Expression,
     right: lua.Expression,
     operator: BitOperator,
-    lib: string
+    lib: string,
 ): lua.Expression {
     const functionName = bitOperatorToLibOperation[operator];
     return lua.createCallExpression(
         lua.createTableIndexExpression(lua.createIdentifier(lib), lua.createStringLiteral(functionName)),
         [left, right],
-        node
+        node,
     );
 }
 
 function transformBitOperatorToLuaOperator(
     context: TransformationContext,
     node: ts.Node,
-    operator: BitOperator
+    operator: BitOperator,
 ): lua.BinaryOperator {
     switch (operator) {
         case ts.SyntaxKind.BarToken:
@@ -60,7 +60,7 @@ export function transformBinaryBitOperation(
     node: ts.Node,
     left: lua.Expression,
     right: lua.Expression,
-    operator: BitOperator
+    operator: BitOperator,
 ): lua.Expression {
     switch (context.luaTarget) {
         case LuaTarget.Universal:
@@ -84,7 +84,7 @@ function transformUnaryBitLibOperation(
     node: ts.Node,
     expression: lua.Expression,
     operator: lua.UnaryBitwiseOperator,
-    lib: string
+    lib: string,
 ): lua.Expression {
     let bitFunction: string;
     switch (operator) {
@@ -98,7 +98,7 @@ function transformUnaryBitLibOperation(
     return lua.createCallExpression(
         lua.createTableIndexExpression(lua.createIdentifier(lib), lua.createStringLiteral(bitFunction)),
         [expression],
-        node
+        node,
     );
 }
 
@@ -106,7 +106,7 @@ export function transformUnaryBitOperation(
     context: TransformationContext,
     node: ts.Node,
     expression: lua.Expression,
-    operator: lua.UnaryBitwiseOperator
+    operator: lua.UnaryBitwiseOperator,
 ): lua.Expression {
     switch (context.luaTarget) {
         case LuaTarget.Universal:

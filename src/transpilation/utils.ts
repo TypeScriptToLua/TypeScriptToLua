@@ -41,7 +41,7 @@ export function resolvePlugin(
     optionName: string,
     basedir: string,
     query: unknown,
-    importName = "default"
+    importName = "default",
 ): { error?: ts.Diagnostic; result?: unknown } {
     if (typeof query !== "string") {
         return { error: cliDiagnostics.compilerOptionRequiresAValueOfType(optionName, "string") };

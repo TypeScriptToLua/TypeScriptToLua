@@ -18,7 +18,7 @@ export function __TS__SetDescriptor(
     target: any,
     key: any,
     desc: PropertyDescriptor,
-    isPrototype = false
+    isPrototype = false,
 ): void {
     let metatable = isPrototype ? target : getmetatable(target);
     if (!metatable) {

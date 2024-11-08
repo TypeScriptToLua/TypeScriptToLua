@@ -64,7 +64,7 @@ test.each(validTestMethodCasts)(
         `
             .setTsHeader(testFunction.definition ?? "")
             .expectToMatchJsResult();
-    }
+    },
 );
 
 test.each(validTestFunctionAssignments)("Valid function argument (%p)", (testFunction, functionType) => {
@@ -244,7 +244,7 @@ test("Does not fail on union type signatures (#896)", () => {
             [key: string]: Function;
         }      
         declare function foo<T extends 'a' | 'b'>(callback: Events[T]): void;
-    `
+    `,
         )
         .expectToHaveNoDiagnostics();
 });

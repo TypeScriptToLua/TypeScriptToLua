@@ -335,7 +335,7 @@ test("loadstring sourceMapTraceback gives traceback", () => {
             return trace;
         }
         return bar();`,
-        { sourceMapTraceback: true, luaTarget: LuaTarget.Lua51 }
+        { sourceMapTraceback: true, luaTarget: LuaTarget.Lua51 },
     ).file?.lua;
 
     const builder = util.testModule`

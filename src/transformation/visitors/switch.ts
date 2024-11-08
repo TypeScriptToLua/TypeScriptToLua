@@ -29,7 +29,7 @@ const createOrExpression = (
     context: TransformationContext,
     left: lua.Expression,
     right: lua.Expression,
-    rightPrecedingStatements: lua.Statement[]
+    rightPrecedingStatements: lua.Statement[],
 ): WithPrecedingStatements<lua.Expression> => {
     if (rightPrecedingStatements.length > 0) {
         return createShortCircuitBinaryExpressionPrecedingStatements(
@@ -37,7 +37,7 @@ const createOrExpression = (
             left,
             right,
             rightPrecedingStatements,
-            ts.SyntaxKind.BarBarToken
+            ts.SyntaxKind.BarBarToken,
         );
     } else {
         return {
@@ -52,17 +52,17 @@ const coalesceCondition = (
     conditionPrecedingStatements: lua.Statement[],
     switchVariable: lua.Identifier,
     expression: ts.Expression,
-    context: TransformationContext
+    context: TransformationContext,
 ): WithPrecedingStatements<lua.Expression> => {
     const { precedingStatements, result: transformedExpression } = transformInPrecedingStatementScope(context, () =>
-        context.transformExpression(expression)
+        context.transformExpression(expression),
     );
 
     // Coalesce skipped statements
     const comparison = lua.createBinaryExpression(
         switchVariable,
         transformedExpression,
-        lua.SyntaxKind.EqualityOperator
+        lua.SyntaxKind.EqualityOperator,
     );
     if (condition) {
         return createOrExpression(context, condition, comparison, precedingStatements);
@@ -122,7 +122,7 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
                     conditionPrecedingStatements,
                     switchVariable,
                     clause.expression,
-                    context
+                    context,
                 );
                 conditionPrecedingStatements = precedingStatements;
                 condition = result;
@@ -134,21 +134,21 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
                 if (isInitialCondition) {
                     statements.push(
                         ...conditionPrecedingStatements,
-                        lua.createVariableDeclarationStatement(conditionVariable, condition)
+                        lua.createVariableDeclarationStatement(conditionVariable, condition),
                     );
                 } else {
                     const { precedingStatements, result } = createOrExpression(
                         context,
                         conditionVariable,
                         condition,
-                        conditionPrecedingStatements
+                        conditionPrecedingStatements,
                     );
                     conditionPrecedingStatements = precedingStatements;
                     condition = result;
 
                     statements.push(
                         ...conditionPrecedingStatements,
-                        lua.createAssignmentStatement(conditionVariable, condition)
+                        lua.createAssignmentStatement(conditionVariable, condition),
                     );
                 }
                 isInitialCondition = false;
@@ -159,8 +159,8 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
                         ...conditionPrecedingStatements,
                         lua.createVariableDeclarationStatement(
                             conditionVariable,
-                            condition ?? lua.createBooleanLiteral(false)
-                        )
+                            condition ?? lua.createBooleanLiteral(false),
+                        ),
                     );
 
                     // Clear condition ot ensure it is not evaluated twice
@@ -177,13 +177,13 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
                             context,
                             conditionVariable,
                             condition,
-                            conditionPrecedingStatements
+                            conditionPrecedingStatements,
                         );
                         conditionPrecedingStatements = precedingStatements;
                         condition = result;
                         statements.push(
                             ...conditionPrecedingStatements,
-                            lua.createAssignmentStatement(conditionVariable, condition)
+                            lua.createAssignmentStatement(conditionVariable, condition),
                         );
                     }
                     continue;
@@ -221,7 +221,7 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
         if (start >= 0) {
             // Find the last clause that we can fallthrough to
             const end = clauses.findIndex(
-                (clause, index) => index >= start && containsBreakOrReturn(clause.statements)
+                (clause, index) => index >= start && containsBreakOrReturn(clause.statements),
             );
 
             const {

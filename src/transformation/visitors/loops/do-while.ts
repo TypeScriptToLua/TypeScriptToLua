@@ -13,7 +13,7 @@ export const transformWhileStatement: FunctionVisitor<ts.WhileStatement> = (stat
 
     let { precedingStatements: conditionPrecedingStatements, result: condition } = transformInPrecedingStatementScope(
         context,
-        () => context.transformExpression(statement.expression)
+        () => context.transformExpression(statement.expression),
     );
 
     // If condition has preceding statements, ensure they are executed every iteration by using the form:
@@ -31,8 +31,8 @@ export const transformWhileStatement: FunctionVisitor<ts.WhileStatement> = (stat
                 invertCondition(condition),
                 lua.createBlock([lua.createBreakStatement()]),
                 undefined,
-                statement.expression
-            )
+                statement.expression,
+            ),
         );
         body.unshift(...conditionPrecedingStatements);
         condition = lua.createBooleanLiteral(true);
@@ -49,7 +49,7 @@ export const transformDoStatement: FunctionVisitor<ts.DoStatement> = (statement,
 
     let { precedingStatements: conditionPrecedingStatements, result: condition } = transformInPrecedingStatementScope(
         context,
-        () => invertCondition(context.transformExpression(statement.expression))
+        () => invertCondition(context.transformExpression(statement.expression)),
     );
 
     // If condition has preceding statements, ensure they are executed every iteration by using the form:
@@ -67,8 +67,8 @@ export const transformDoStatement: FunctionVisitor<ts.DoStatement> = (statement,
                 condition,
                 lua.createBlock([lua.createBreakStatement()]),
                 undefined,
-                statement.expression
-            )
+                statement.expression,
+            ),
         );
         condition = lua.createBooleanLiteral(false);
     }

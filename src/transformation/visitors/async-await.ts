@@ -22,7 +22,7 @@ export function isAsyncFunction(declaration: ts.FunctionLikeDeclaration): boolea
 export function wrapInAsyncAwaiter(
     context: TransformationContext,
     statements: lua.Statement[],
-    includeResolveParameter = true
+    includeResolveParameter = true,
 ): lua.CallExpression {
     importLuaLibFeature(context, LuaLibFeature.Await);
 

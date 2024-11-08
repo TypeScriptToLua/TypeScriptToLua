@@ -6,7 +6,7 @@ const plugin: tstl.Plugin = {
         program: ts.Program,
         options: tstl.CompilerOptions,
         emitHost: tstl.EmitHost,
-        result: tstl.ProcessedFile[]
+        result: tstl.ProcessedFile[],
     ) {
         void program;
         void options;

@@ -44,7 +44,7 @@ describe("luaLibImport", () => {
 local ____lualib = require("lualib_bundle")
 local __TS__ArrayIndexOf = ____lualib.__TS__ArrayIndexOf
 __TS__ArrayIndexOf({}, 1)
-            `
+            `,
             )
             // note: indent matters in above code, because searching for lualib checks for start & end of line
             .tap(testLualibOnlyHasArrayIndexOf)
@@ -63,7 +63,7 @@ test.each([
 
 test("lualib should not include tstl header", () => {
     util.testExpression`[0].indexOf(1)`.tap(builder =>
-        expect(builder.getMainLuaCodeChunk()).not.toContain("Generated with")
+        expect(builder.getMainLuaCodeChunk()).not.toContain("Generated with"),
     );
 });
 

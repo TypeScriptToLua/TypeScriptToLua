@@ -12,7 +12,7 @@ export const transformTypeOfExpression: FunctionVisitor<ts.TypeOfExpression> = (
 
 export function transformTypeOfBinaryExpression(
     context: TransformationContext,
-    node: ts.BinaryExpression
+    node: ts.BinaryExpression,
 ): lua.Expression | undefined {
     const operator = node.operatorToken.kind;
     if (
@@ -53,7 +53,7 @@ export function transformTypeOfBinaryExpression(
         comparedExpression,
         [],
         operator,
-        node
+        node,
     );
     context.addPrecedingStatements(precedingStatements);
     return result;

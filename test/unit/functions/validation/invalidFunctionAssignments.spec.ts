@@ -18,9 +18,9 @@ test.each(invalidTestFunctionAssignments)(
             const fn: ${functionType} = ${testFunction.value};
         `.expectDiagnosticsToMatchSnapshot(
             [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
-            true
+            true,
         );
-    }
+    },
 );
 
 test.each(invalidTestMethodAssignments)(
@@ -31,9 +31,9 @@ test.each(invalidTestMethodAssignments)(
             const obj: { fn: ${functionType} } = {fn: ${testFunction.value}};
         `.expectDiagnosticsToMatchSnapshot(
             [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
-            true
+            true,
         );
-    }
+    },
 );
 
 test.each(invalidTestFunctionAssignments)(
@@ -45,9 +45,9 @@ test.each(invalidTestFunctionAssignments)(
             fn = ${testFunction.value};
         `.expectDiagnosticsToMatchSnapshot(
             [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
-            true
+            true,
         );
-    }
+    },
 );
 
 test.each(invalidTestMethodAssignments)(
@@ -59,9 +59,9 @@ test.each(invalidTestMethodAssignments)(
             obj = {fn: ${testFunction.value}};
         `.expectDiagnosticsToMatchSnapshot(
             [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
-            true
+            true,
         );
-    }
+    },
 );
 
 test.each(invalidTestFunctionCasts)("Invalid function assignment with cast (%p)", (testFunction, castedFunction) => {
@@ -71,7 +71,7 @@ test.each(invalidTestFunctionCasts)("Invalid function assignment with cast (%p)"
         fn = ${castedFunction};
     `.expectDiagnosticsToMatchSnapshot(
         [unsupportedNoSelfFunctionConversion.code, unsupportedSelfFunctionConversion.code],
-        true
+        true,
     );
 });
 
@@ -86,9 +86,9 @@ test.each(invalidTestFunctionCasts)(
             isSelfConversion
                 ? [unsupportedSelfFunctionConversion.code, unsupportedNoSelfFunctionConversion.code]
                 : [unsupportedNoSelfFunctionConversion.code, unsupportedSelfFunctionConversion.code],
-            true
+            true,
         );
-    }
+    },
 );
 
 test.each(invalidTestFunctionAssignments)(
@@ -100,9 +100,9 @@ test.each(invalidTestFunctionAssignments)(
             takesFunction(${testFunction.value});
         `.expectDiagnosticsToMatchSnapshot(
             [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
-            true
+            true,
         );
-    }
+    },
 );
 
 test.each(invalidTestMethodAssignments)(
@@ -114,9 +114,9 @@ test.each(invalidTestMethodAssignments)(
             takesObjectWithMethod({fn: ${testFunction.value}});
         `.expectDiagnosticsToMatchSnapshot(
             [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
-            true
+            true,
         );
-    }
+    },
 );
 
 test("Invalid lua lib function argument", () => {
@@ -134,7 +134,7 @@ test.each(invalidTestFunctionCasts)("Invalid function argument with cast (%p)", 
         takesFunction(${castedFunction});
     `.expectDiagnosticsToMatchSnapshot(
         [unsupportedNoSelfFunctionConversion.code, unsupportedSelfFunctionConversion.code],
-        true
+        true,
     );
 });
 
@@ -147,9 +147,9 @@ test.each(invalidTestFunctionAssignments)(
             takesFunction(${testFunction.value});
         `.expectDiagnosticsToMatchSnapshot(
             [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
-            true
+            true,
         );
-    }
+    },
 );
 
 test.each(invalidTestFunctionAssignments)(
@@ -162,9 +162,9 @@ test.each(invalidTestFunctionAssignments)(
             }
         `.expectDiagnosticsToMatchSnapshot(
             [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
-            true
+            true,
         );
-    }
+    },
 );
 
 test.each(invalidTestFunctionCasts)(
@@ -179,9 +179,9 @@ test.each(invalidTestFunctionCasts)(
             isSelfConversion
                 ? [unsupportedSelfFunctionConversion.code, unsupportedNoSelfFunctionConversion.code]
                 : [unsupportedNoSelfFunctionConversion.code, unsupportedSelfFunctionConversion.code],
-            true
+            true,
         );
-    }
+    },
 );
 
 test("Invalid function tuple assignment", () => {
@@ -237,7 +237,7 @@ test("Does not fail on union type signatures (#896)", () => {
             [key: string]: (this: void) => void;
         }      
         declare function foo<T extends 'a' | 'b'>(callback: Events[T]): void;
-    `
+    `,
         )
         .expectToHaveDiagnostics([unsupportedOverloadAssignment.code]);
 });

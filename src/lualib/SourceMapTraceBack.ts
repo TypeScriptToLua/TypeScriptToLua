@@ -50,7 +50,7 @@ export function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap
             };
 
             let [result] = string.gsub(trace, "(%S+)%.lua:(%d+)", (file, line) =>
-                replacer(`${file}.lua`, `${file}.ts`, line)
+                replacer(`${file}.lua`, `${file}.ts`, line),
             );
 
             const stringReplacer = (file: string, line: string) => {

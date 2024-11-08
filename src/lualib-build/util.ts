@@ -14,7 +14,7 @@ export function isExportTableIndex(node: tstl.Node): node is ExportTableIndex {
 }
 
 export function isExportAlias(
-    node: tstl.Node
+    node: tstl.Node,
 ): node is tstl.VariableDeclarationStatement & { right: [ExportTableIndex] } {
     return tstl.isVariableDeclarationStatement(node) && node.right !== undefined && isExportTableIndex(node.right[0]);
 }

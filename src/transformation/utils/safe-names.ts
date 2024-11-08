@@ -80,7 +80,7 @@ function checkName(context: TransformationContext, name: string, node: ts.Node):
 export function hasUnsafeSymbolName(
     context: TransformationContext,
     symbol: ts.Symbol,
-    tsOriginal: ts.Identifier
+    tsOriginal: ts.Identifier,
 ): boolean {
     const isAmbient = symbol.declarations?.some(d => isAmbientNode(d)) ?? false;
 
@@ -96,7 +96,7 @@ export function hasUnsafeSymbolName(
 export function hasUnsafeIdentifierName(
     context: TransformationContext,
     identifier: ts.Identifier,
-    symbol: ts.Symbol | undefined
+    symbol: ts.Symbol | undefined,
 ): boolean {
     if (symbol) {
         return hasUnsafeSymbolName(context, symbol, identifier);

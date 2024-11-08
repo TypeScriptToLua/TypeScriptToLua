@@ -189,7 +189,7 @@ function getSourcePosition(sourceNode: ts.Node): TextRange | undefined {
     if (sourceFile !== undefined && parseTreeNode.pos >= 0) {
         const { line, character } = ts.getLineAndCharacterOfPosition(
             sourceFile,
-            parseTreeNode.pos + parseTreeNode.getLeadingTriviaWidth()
+            parseTreeNode.pos + parseTreeNode.getLeadingTriviaWidth(),
         );
 
         return { line, column: character };
@@ -220,7 +220,7 @@ export function createFile(
     statements: Statement[],
     luaLibFeatures: Set<LuaLibFeature>,
     trivia: string,
-    tsOriginal?: ts.Node
+    tsOriginal?: ts.Node,
 ): File {
     const file = createNode(SyntaxKind.File, tsOriginal) as File;
     file.statements = statements;
@@ -279,7 +279,7 @@ export function isVariableDeclarationStatement(node: Node): node is VariableDecl
 export function createVariableDeclarationStatement(
     left: Identifier | Identifier[],
     right?: Expression | Expression[],
-    tsOriginal?: ts.Node
+    tsOriginal?: ts.Node,
 ): VariableDeclarationStatement {
     const statement = createNode(SyntaxKind.VariableDeclarationStatement, tsOriginal) as VariableDeclarationStatement;
     statement.left = castArray(left);
@@ -301,7 +301,7 @@ export function isAssignmentStatement(node: Node): node is AssignmentStatement {
 export function createAssignmentStatement(
     left: AssignmentLeftHandSideExpression | AssignmentLeftHandSideExpression[],
     right?: Expression | Expression[],
-    tsOriginal?: ts.Node
+    tsOriginal?: ts.Node,
 ): AssignmentStatement {
     const statement = createNode(SyntaxKind.AssignmentStatement, tsOriginal) as AssignmentStatement;
     statement.left = castArray(left);
@@ -324,7 +324,7 @@ export function createIfStatement(
     condition: Expression,
     ifBlock: Block,
     elseBlock?: Block | IfStatement,
-    tsOriginal?: ts.Node
+    tsOriginal?: ts.Node,
 ): IfStatement {
     const statement = createNode(SyntaxKind.IfStatement, tsOriginal) as IfStatement;
     statement.condition = condition;
@@ -397,7 +397,7 @@ export function createForStatement(
     controlVariableInitializer: Expression,
     limitExpression: Expression,
     stepExpression?: Expression,
-    tsOriginal?: ts.Node
+    tsOriginal?: ts.Node,
 ): ForStatement {
     const statement = createNode(SyntaxKind.ForStatement, tsOriginal) as ForStatement;
     statement.body = body;
@@ -422,7 +422,7 @@ export function createForInStatement(
     body: Block,
     names: Identifier[],
     expressions: Expression[],
-    tsOriginal?: ts.Node
+    tsOriginal?: ts.Node,
 ): ForInStatement {
     const statement = createNode(SyntaxKind.ForInStatement, tsOriginal) as ForInStatement;
     statement.body = body;
@@ -594,7 +594,7 @@ export function createStringLiteral(value: string, tsOriginal?: ts.Node): String
 }
 
 export function isLiteral(
-    node: Node
+    node: Node,
 ): node is NilLiteral | DotsLiteral | ArgLiteral | BooleanLiteral | NumericLiteral | StringLiteral {
     return (
         isNilLiteral(node) ||
@@ -622,7 +622,7 @@ export function createFunctionExpression(
     params?: Identifier[],
     dots?: DotsLiteral,
     flags = NodeFlags.None,
-    tsOriginal?: ts.Node
+    tsOriginal?: ts.Node,
 ): FunctionExpression {
     const expression = createNode(SyntaxKind.FunctionExpression, tsOriginal) as FunctionExpression;
     expression.body = body;
@@ -645,7 +645,7 @@ export function isTableFieldExpression(node: Node): node is TableFieldExpression
 export function createTableFieldExpression(
     value: Expression,
     key?: Expression,
-    tsOriginal?: ts.Node
+    tsOriginal?: ts.Node,
 ): TableFieldExpression {
     const expression = createNode(SyntaxKind.TableFieldExpression, tsOriginal) as TableFieldExpression;
     expression.value = value;
@@ -681,7 +681,7 @@ export function isUnaryExpression(node: Node): node is UnaryExpression {
 export function createUnaryExpression(
     operand: Expression,
     operator: UnaryOperator,
-    tsOriginal?: ts.Node
+    tsOriginal?: ts.Node,
 ): UnaryExpression {
     const expression = createNode(SyntaxKind.UnaryExpression, tsOriginal) as UnaryExpression;
     expression.operand = operand;
@@ -704,7 +704,7 @@ export function createBinaryExpression(
     left: Expression,
     right: Expression,
     operator: BinaryOperator,
-    tsOriginal?: ts.Node
+    tsOriginal?: ts.Node,
 ): BinaryExpression {
     const expression = createNode(SyntaxKind.BinaryExpression, tsOriginal) as BinaryExpression;
     expression.left = left;
@@ -726,7 +726,7 @@ export function isCallExpression(node: Node): node is CallExpression {
 export function createCallExpression(
     expression: Expression,
     params: Expression[],
-    tsOriginal?: ts.Node
+    tsOriginal?: ts.Node,
 ): CallExpression {
     const callExpression = createNode(SyntaxKind.CallExpression, tsOriginal) as CallExpression;
     callExpression.expression = expression;
@@ -749,7 +749,7 @@ export function createMethodCallExpression(
     prefixExpression: Expression,
     name: Identifier,
     params: Expression[],
-    tsOriginal?: ts.Node
+    tsOriginal?: ts.Node,
 ): MethodCallExpression {
     const callExpression = createNode(SyntaxKind.MethodCallExpression, tsOriginal) as MethodCallExpression;
     callExpression.prefixExpression = prefixExpression;
@@ -774,7 +774,7 @@ export function createIdentifier(
     text: string,
     tsOriginal?: ts.Node,
     symbolId?: SymbolId,
-    originalName?: string
+    originalName?: string,
 ): Identifier {
     const expression = createNode(SyntaxKind.Identifier, tsOriginal) as Identifier;
     expression.exportable = true;
@@ -808,7 +808,7 @@ export function isTableIndexExpression(node: Node): node is TableIndexExpression
 export function createTableIndexExpression(
     table: Expression,
     index: Expression,
-    tsOriginal?: ts.Node
+    tsOriginal?: ts.Node,
 ): TableIndexExpression {
     const expression = createNode(SyntaxKind.TableIndexExpression, tsOriginal) as TableIndexExpression;
     expression.table = table;
@@ -827,7 +827,7 @@ export type FunctionDefinition = (VariableDeclarationStatement | AssignmentState
 };
 
 export function isFunctionDefinition(
-    statement: VariableDeclarationStatement | AssignmentStatement
+    statement: VariableDeclarationStatement | AssignmentStatement,
 ): statement is FunctionDefinition {
     return statement.left.length === 1 && statement.right?.length === 1 && isFunctionExpression(statement.right[0]);
 }
@@ -856,7 +856,7 @@ export function isParenthesizedExpression(node: Node): node is ParenthesizedExpr
 export function createParenthesizedExpression(expression: Expression, tsOriginal?: ts.Node): ParenthesizedExpression {
     const parenthesizedExpression = createNode(
         SyntaxKind.ParenthesizedExpression,
-        tsOriginal
+        tsOriginal,
     ) as ParenthesizedExpression;
     parenthesizedExpression.expression = expression;
     return parenthesizedExpression;

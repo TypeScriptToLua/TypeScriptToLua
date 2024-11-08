@@ -27,7 +27,7 @@ export const transformTemplateExpression: FunctionVisitor<ts.TemplateExpression>
 
     const transformedExpressions = transformOrderedExpressions(
         context,
-        node.templateSpans.map(s => s.expression)
+        node.templateSpans.map(s => s.expression),
     );
     for (let i = 0; i < node.templateSpans.length; ++i) {
         const span = node.templateSpans[i];
@@ -50,7 +50,7 @@ export const transformTemplateExpression: FunctionVisitor<ts.TemplateExpression>
 
 export const transformTaggedTemplateExpression: FunctionVisitor<ts.TaggedTemplateExpression> = (
     expression,
-    context
+    context,
 ) => {
     const strings: string[] = [];
     const rawStrings: string[] = [];
@@ -72,15 +72,15 @@ export const transformTaggedTemplateExpression: FunctionVisitor<ts.TaggedTemplat
     // Construct table with strings and literal strings
 
     const rawStringsArray = ts.factory.createArrayLiteralExpression(
-        rawStrings.map(text => ts.factory.createStringLiteral(text))
+        rawStrings.map(text => ts.factory.createStringLiteral(text)),
     );
 
     const stringObject = ts.factory.createObjectLiteralExpression([
         ...strings.map((partialString, i) =>
             ts.factory.createPropertyAssignment(
                 ts.factory.createNumericLiteral(i + 1),
-                ts.factory.createStringLiteral(partialString)
-            )
+                ts.factory.createStringLiteral(partialString),
+            ),
         ),
         ts.factory.createPropertyAssignment("raw", rawStringsArray),
     ]);

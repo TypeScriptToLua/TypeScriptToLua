@@ -56,7 +56,7 @@ export function isStandardLibraryDeclaration(context: TransformationContext, dec
 export function isStandardLibraryType(
     context: TransformationContext,
     type: ts.Type,
-    name: string | undefined
+    name: string | undefined,
 ): boolean {
     const symbol = type.getSymbol();
     if (!symbol || (name ? symbol.name !== name : symbol.name === "__type")) {
@@ -74,7 +74,7 @@ export function isStandardLibraryType(
 
 export function hasStandardLibrarySignature(
     context: TransformationContext,
-    callExpression: ts.CallExpression
+    callExpression: ts.CallExpression,
 ): boolean {
     const signature = context.checker.getResolvedSignature(callExpression);
     return signature?.declaration ? isStandardLibraryDeclaration(context, signature.declaration) : false;
@@ -118,6 +118,6 @@ export function isConstIdentifier(context: TransformationContext, node: ts.Node)
         return false;
     }
     return symbol.declarations.some(
-        d => ts.isVariableDeclarationList(d.parent) && (d.parent.flags & ts.NodeFlags.Const) !== 0
+        d => ts.isVariableDeclarationList(d.parent) && (d.parent.flags & ts.NodeFlags.Const) !== 0,
     );
 }

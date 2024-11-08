@@ -23,7 +23,7 @@ export const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, 
             return lua.createCallExpression(
                 lua.createIdentifier(customConstructorAnnotation.args[0]),
                 transformArguments(context, node.arguments ?? []),
-                node
+                node,
             );
         } else {
             context.diagnostics.push(
@@ -31,8 +31,8 @@ export const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, 
                     node,
                     AnnotationKind.CustomConstructor,
                     customConstructorAnnotation.args.length,
-                    1
-                )
+                    1,
+                ),
             );
         }
     }

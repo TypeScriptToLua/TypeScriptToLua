@@ -572,7 +572,7 @@ test.each([{ array: [1, 2, 3] }, { array: [1, 2, 3, 4] }, { array: [1] }, { arra
             array.reverse();
             return array;
         `.expectToMatchJsResult();
-    }
+    },
 );
 
 test.each([{ array: [1, 2, 3] }, { array: [1] }, { array: [] }])("array.shift (%p)", ({ array }) => {
@@ -679,7 +679,7 @@ test.each([{ array: [] }, { array: ["a", "b", "c"] }, { array: [{ foo: "foo" }, 
             }
             return result;
         `.expectToMatchJsResult();
-    }
+    },
 );
 
 test("array.entries indirect use", () => {
@@ -733,7 +733,7 @@ test.each(["[]", '"hello"', "42", "[1, 2, 3]", '{ a: "foo", b: "bar" }'])(
     "Array.isArray matches JavaScript (%p)",
     valueString => {
         util.testExpression`Array.isArray(${valueString})`.expectToMatchJsResult();
-    }
+    },
 );
 
 test("Array.isArray returns true for empty objects", () => {
@@ -775,7 +775,7 @@ test.each(["[1, undefined, 3]", "[1, null, 3]", "[1, undefined, 2, null]"])(
     "not allowed to use null or undefined in array literals (%p)",
     literal => {
         util.testExpression(literal).expectToHaveDiagnostics([undefinedInArrayLiteral.code]);
-    }
+    },
 );
 
 test("not allowed to use null or undefined in array literals ([undefined, null, 1])", () => {

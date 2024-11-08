@@ -65,7 +65,7 @@ export function getNumberLiteralValue(expression?: lua.Expression) {
 export function createUnpackCall(
     context: TransformationContext,
     expression: lua.Expression,
-    tsOriginal?: ts.Node
+    tsOriginal?: ts.Node,
 ): lua.Expression {
     if (context.luaTarget === LuaTarget.Universal) {
         return transformLuaLibFunction(context, LuaLibFeature.Unpack, tsOriginal, expression);
@@ -106,7 +106,7 @@ export function createHoistableVariableDeclarationStatement(
     context: TransformationContext,
     identifier: lua.Identifier,
     initializer?: lua.Expression,
-    tsOriginal?: ts.Node
+    tsOriginal?: ts.Node,
 ): lua.AssignmentStatement | lua.VariableDeclarationStatement {
     const declaration = lua.createVariableDeclarationStatement(identifier, initializer, tsOriginal);
     if (identifier.symbolId !== undefined) {
@@ -134,7 +134,7 @@ export function createLocalOrExportedOrGlobalDeclaration(
     lhs: lua.Identifier | lua.Identifier[],
     rhs?: lua.Expression | lua.Expression[],
     tsOriginal?: ts.Node,
-    overrideExportScope?: ts.SourceFile | ts.ModuleDeclaration
+    overrideExportScope?: ts.SourceFile | ts.ModuleDeclaration,
 ): lua.Statement[] {
     let declaration: lua.VariableDeclarationStatement | undefined;
     let assignment: lua.AssignmentStatement | undefined;
@@ -157,7 +157,7 @@ export function createLocalOrExportedOrGlobalDeclaration(
             assignment = lua.createAssignmentStatement(
                 identifiers.map(identifier => createExportedIdentifier(context, identifier, exportScope)),
                 rhs,
-                tsOriginal
+                tsOriginal,
             );
         }
     } else {
@@ -227,7 +227,7 @@ function setJSDocComments(
     context: TransformationContext,
     tsOriginal: ts.Node | undefined,
     declaration: lua.VariableDeclarationStatement | undefined,
-    assignment: lua.AssignmentStatement | undefined
+    assignment: lua.AssignmentStatement | undefined,
 ) {
     // Respect the vanilla TypeScript option of "removeComments":
     // https://www.typescriptlang.org/tsconfig#removeComments
@@ -251,7 +251,7 @@ function setJSDocComments(
 
 function getJSDocCommentFromTSNode(
     context: TransformationContext,
-    tsOriginal: ts.Node | undefined
+    tsOriginal: ts.Node | undefined,
 ): string[] | undefined {
     if (tsOriginal === undefined) {
         return undefined;
@@ -323,5 +323,5 @@ export const createNaN = (tsOriginal?: ts.Node) =>
         lua.createNumericLiteral(0),
         lua.createNumericLiteral(0),
         lua.SyntaxKind.DivisionOperator,
-        tsOriginal
+        tsOriginal,
     );

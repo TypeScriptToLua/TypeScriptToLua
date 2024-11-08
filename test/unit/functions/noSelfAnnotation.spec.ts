@@ -97,7 +97,7 @@ test("respect noSelfInFile over noImplicitSelf (func declared in other file)", (
             /** @noSelfInFile **/
             export const func: Function = () => 1;
             export const result = func(2);
-            `
+            `,
         )
         .expectToMatchJsResult()
         .getLuaResult();

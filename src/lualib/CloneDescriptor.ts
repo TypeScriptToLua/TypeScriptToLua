@@ -1,6 +1,6 @@
 export function __TS__CloneDescriptor(
     this: void,
-    { enumerable, configurable, get, set, writable, value }: PropertyDescriptor
+    { enumerable, configurable, get, set, writable, value }: PropertyDescriptor,
 ): PropertyDescriptor {
     const descriptor: PropertyDescriptor = {
         enumerable: enumerable === true,

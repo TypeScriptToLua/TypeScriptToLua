@@ -50,7 +50,7 @@ export function __TS__PromiseAny<T>(this: void, iterable: Iterable<T | PromiseLi
                             errors: rejections,
                         });
                     }
-                }
+                },
             );
         }
     });

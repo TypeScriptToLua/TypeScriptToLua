@@ -34,7 +34,7 @@ test.each(["b => a = b", "b => a += b", "b => a -= b", "b => a *= b", "b => a /=
             lambda(5);
             return a;
         `.expectToMatchJsResult();
-    }
+    },
 );
 
 test.each([{ args: [] }, { args: [1] }, { args: [1, 2] }])("Arrow default values (%p)", ({ args }) => {
@@ -71,7 +71,7 @@ test.each([{ inp: [] }, { inp: [5] }, { inp: [1, 2] }])("Function Default Values
 
     util.testFunction(
         `let add = function(a: number = 3, b: number = 4) { return a+b; };
-        return add(${callArgs});`
+        return add(${callArgs});`,
     ).expectToMatchJsResult();
 });
 
@@ -275,7 +275,7 @@ test.each([tstl.LuaTarget.Lua50, tstl.LuaTarget.Lua51, tstl.LuaTarget.Universal]
         `
             .setOptions({ luaTarget })
             .expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]);
-    }
+    },
 );
 
 test("Recursive function definition", () => {

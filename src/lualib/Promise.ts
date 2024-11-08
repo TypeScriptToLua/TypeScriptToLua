@@ -77,7 +77,7 @@ export class __TS__Promise<T> implements Promise<T> {
             executor,
             undefined,
             v => this.resolve(v),
-            err => this.reject(err)
+            err => this.reject(err),
         );
         if (!success) {
             // When a promise executor throws, the promise should be rejected with the thrown object as reason
@@ -88,7 +88,7 @@ export class __TS__Promise<T> implements Promise<T> {
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/then
     public then<TResult1 = T, TResult2 = never>(
         onFulfilled?: PromiseResolveCallback<T, TResult1>,
-        onRejected?: PromiseRejectCallback<TResult2>
+        onRejected?: PromiseRejectCallback<TResult2>,
     ): Promise<TResult1 | TResult2> {
         const [promise, resolve, reject] = makeDeferredPromise<T | TResult1 | TResult2>();
 
@@ -96,7 +96,7 @@ export class __TS__Promise<T> implements Promise<T> {
             // We always want to resolve our child promise if this promise is resolved, even if we have no handler
             onFulfilled ? this.createPromiseResolvingCallback(onFulfilled, resolve, reject) : resolve,
             // We always want to reject our child promise if this promise is rejected, even if we have no handler
-            onRejected ? this.createPromiseResolvingCallback(onRejected, resolve, reject) : reject
+            onRejected ? this.createPromiseResolvingCallback(onRejected, resolve, reject) : reject,
         );
 
         return promise as Promise<TResult1 | TResult2>;
@@ -141,7 +141,7 @@ export class __TS__Promise<T> implements Promise<T> {
             // Tail call return is important!
             return (value as __TS__Promise<T>).addCallbacks(
                 v => this.resolve(v),
-                err => this.reject(err)
+                err => this.reject(err),
             );
         }
 
@@ -193,7 +193,7 @@ export class __TS__Promise<T> implements Promise<T> {
     private createPromiseResolvingCallback<TResult1, TResult2>(
         f: PromiseResolveCallback<T, TResult1> | PromiseRejectCallback<TResult2>,
         resolve: (data: TResult1 | TResult2) => void,
-        reject: (reason: any) => void
+        reject: (reason: any) => void,
     ) {
         return (value: T): void => {
             const [success, resultOrError] = pcall<
@@ -213,7 +213,7 @@ export class __TS__Promise<T> implements Promise<T> {
     private handleCallbackValue<TResult1, TResult2, TResult extends TResult1 | TResult2>(
         value: TResult | PromiseLike<TResult>,
         resolve: (data: TResult1 | TResult2) => void,
-        reject: (reason: any) => void
+        reject: (reason: any) => void,
     ): void {
         if (isPromiseLike<TResult>(value)) {
             const nextpromise = value as __TS__Promise<TResult>;

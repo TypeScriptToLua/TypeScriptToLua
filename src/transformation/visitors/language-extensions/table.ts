@@ -35,7 +35,7 @@ export const tableExtensionTransformers: LanguageExtensionCallTransformerMap = {
 function transformTableDeleteExpression(
     context: TransformationContext,
     node: ts.CallExpression,
-    extensionKind: ExtensionKind
+    extensionKind: ExtensionKind,
 ): lua.Expression {
     const args = getBinaryCallExtensionArgs(context, node, extensionKind);
     if (!args) {
@@ -45,7 +45,7 @@ function transformTableDeleteExpression(
     const [table, key] = transformOrderedExpressions(context, args);
     // arg0[arg1] = nil
     context.addPrecedingStatements(
-        lua.createAssignmentStatement(lua.createTableIndexExpression(table, key), lua.createNilLiteral(), node)
+        lua.createAssignmentStatement(lua.createTableIndexExpression(table, key), lua.createNilLiteral(), node),
     );
     return lua.createBooleanLiteral(true);
 }
@@ -53,7 +53,7 @@ function transformTableDeleteExpression(
 function transformTableGetExpression(
     context: TransformationContext,
     node: ts.CallExpression,
-    extensionKind: ExtensionKind
+    extensionKind: ExtensionKind,
 ): lua.Expression {
     const args = getBinaryCallExtensionArgs(context, node, extensionKind);
     if (!args) {
@@ -68,7 +68,7 @@ function transformTableGetExpression(
 function transformTableHasExpression(
     context: TransformationContext,
     node: ts.CallExpression,
-    extensionKind: ExtensionKind
+    extensionKind: ExtensionKind,
 ): lua.Expression {
     const args = getBinaryCallExtensionArgs(context, node, extensionKind);
     if (!args) {
@@ -84,14 +84,14 @@ function transformTableHasExpression(
         tableIndexExpression,
         lua.createNilLiteral(),
         lua.SyntaxKind.InequalityOperator,
-        node
+        node,
     );
 }
 
 function transformTableSetExpression(
     context: TransformationContext,
     node: ts.CallExpression,
-    extensionKind: ExtensionKind
+    extensionKind: ExtensionKind,
 ): lua.Expression {
     const args = getNaryCallExtensionArgs(context, node, extensionKind, 3);
     if (!args) {
@@ -101,7 +101,7 @@ function transformTableSetExpression(
     const [table, key, value] = transformOrderedExpressions(context, args);
     // arg0[arg1] = arg2
     context.addPrecedingStatements(
-        lua.createAssignmentStatement(lua.createTableIndexExpression(table, key), value, node)
+        lua.createAssignmentStatement(lua.createTableIndexExpression(table, key), value, node),
     );
     return lua.createNilLiteral();
 }
@@ -109,7 +109,7 @@ function transformTableSetExpression(
 function transformTableAddKeyExpression(
     context: TransformationContext,
     node: ts.CallExpression,
-    extensionKind: ExtensionKind
+    extensionKind: ExtensionKind,
 ): lua.Expression {
     const args = getNaryCallExtensionArgs(context, node, extensionKind, 2);
     if (!args) {
@@ -119,7 +119,7 @@ function transformTableAddKeyExpression(
     const [table, key] = transformOrderedExpressions(context, args);
     // arg0[arg1] = true
     context.addPrecedingStatements(
-        lua.createAssignmentStatement(lua.createTableIndexExpression(table, key), lua.createBooleanLiteral(true), node)
+        lua.createAssignmentStatement(lua.createTableIndexExpression(table, key), lua.createBooleanLiteral(true), node),
     );
     return lua.createNilLiteral();
 }
@@ -127,7 +127,7 @@ function transformTableAddKeyExpression(
 function transformTableIsEmptyExpression(
     context: TransformationContext,
     node: ts.CallExpression,
-    extensionKind: ExtensionKind
+    extensionKind: ExtensionKind,
 ): lua.Expression {
     const args = getUnaryCallExtensionArg(context, node, extensionKind);
     if (!args) {
@@ -140,6 +140,6 @@ function transformTableIsEmptyExpression(
         lua.createCallExpression(lua.createIdentifier("next"), [table], node),
         lua.createNilLiteral(),
         lua.SyntaxKind.EqualityOperator,
-        node
+        node,
     );
 }

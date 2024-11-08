@@ -15,7 +15,7 @@ function transformForOfMultiIterableStatement(
     statement: ts.ForOfStatement,
     block: lua.Block,
     luaIterator: lua.Expression,
-    invalidMultiUseDiagnostic: (node: ts.Node) => ts.Diagnostic
+    invalidMultiUseDiagnostic: (node: ts.Node) => ts.Diagnostic,
 ): lua.Statement {
     context.pushPrecedingStatements();
     let identifiers: lua.Identifier[] = [];
@@ -38,10 +38,10 @@ function transformForOfMultiIterableStatement(
             block.statements.unshift(
                 lua.createAssignmentStatement(
                     statement.initializer.elements.map(e =>
-                        cast(context.transformExpression(e), lua.isAssignmentLeftHandSideExpression)
+                        cast(context.transformExpression(e), lua.isAssignmentLeftHandSideExpression),
                     ),
-                    identifiers
-                )
+                    identifiers,
+                ),
             );
         }
     } else {
@@ -60,7 +60,7 @@ function transformForOfMultiIterableStatement(
 export function transformForOfIterableStatement(
     context: TransformationContext,
     statement: ts.ForOfStatement,
-    block: lua.Block
+    block: lua.Block,
 ): lua.Statement {
     const type = context.checker.getTypeAtLocation(statement.expression);
     if (type.aliasTypeArguments?.length === 2 && isMultiReturnType(type.aliasTypeArguments[0])) {
@@ -70,7 +70,7 @@ export function transformForOfIterableStatement(
             statement,
             block,
             luaIterator,
-            invalidMultiIterableWithoutDestructuring
+            invalidMultiIterableWithoutDestructuring,
         );
     }
 
@@ -82,7 +82,7 @@ export function transformForOfIterableStatement(
 export function transformForOfPairsIterableStatement(
     context: TransformationContext,
     statement: ts.ForOfStatement,
-    block: lua.Block
+    block: lua.Block,
 ): lua.Statement {
     const pairsCall = lua.createCallExpression(lua.createIdentifier("pairs"), [
         context.transformExpression(statement.expression),
@@ -92,14 +92,14 @@ export function transformForOfPairsIterableStatement(
         statement,
         block,
         pairsCall,
-        invalidPairsIterableWithoutDestructuring
+        invalidPairsIterableWithoutDestructuring,
     );
 }
 
 export function transformForOfPairsKeyIterableStatement(
     context: TransformationContext,
     statement: ts.ForOfStatement,
-    block: lua.Block
+    block: lua.Block,
 ): lua.Statement {
     const pairsCall = lua.createCallExpression(lua.createIdentifier("pairs"), [
         context.transformExpression(statement.expression),

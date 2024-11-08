@@ -4,7 +4,7 @@ import { __TS__Promise, PromiseState } from "./Promise";
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 export function __TS__PromiseAllSettled<T>(
     this: void,
-    iterable: Iterable<T>
+    iterable: Iterable<T>,
 ): Promise<Array<PromiseSettledResult<T extends PromiseLike<infer U> ? U : T>>> {
     const results: Array<PromiseSettledResult<T extends PromiseLike<infer U> ? U : T>> = [];
 
@@ -57,7 +57,7 @@ export function __TS__PromiseAllSettled<T>(
                         // If there are no more promises to resolve, resolve with our filled results array
                         resolve(results);
                     }
-                }
+                },
             );
         }
     });

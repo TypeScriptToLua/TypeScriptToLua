@@ -10,7 +10,7 @@ import { LuaTarget } from "../../CompilerOptions";
 export function transformNumberPrototypeCall(
     context: TransformationContext,
     node: ts.CallExpression,
-    calledMethod: ts.PropertyAccessExpression
+    calledMethod: ts.PropertyAccessExpression,
 ): lua.Expression | undefined {
     const signature = context.checker.getResolvedSignature(node);
     const params = transformArguments(context, node.arguments, signature);
@@ -31,7 +31,7 @@ export function transformNumberPrototypeCall(
 
 export function transformNumberProperty(
     context: TransformationContext,
-    node: ts.PropertyAccessExpression
+    node: ts.PropertyAccessExpression,
 ): lua.Expression | undefined {
     const name = node.name.text;
 
@@ -57,14 +57,14 @@ export function transformNumberProperty(
                 const zero = lua.createNumericLiteral(0);
                 return lua.createUnaryExpression(
                     lua.createBinaryExpression(one, zero, lua.SyntaxKind.DivisionOperator),
-                    lua.SyntaxKind.NegationOperator
+                    lua.SyntaxKind.NegationOperator,
                 );
             } else {
                 const math = lua.createIdentifier("math");
                 const huge = lua.createStringLiteral("huge");
                 return lua.createUnaryExpression(
                     lua.createTableIndexExpression(math, huge, node),
-                    lua.SyntaxKind.NegationOperator
+                    lua.SyntaxKind.NegationOperator,
                 );
             }
         case "NaN":
@@ -74,35 +74,35 @@ export function transformNumberProperty(
                 lua.createNumericLiteral(2),
                 lua.createNumericLiteral(-52),
                 lua.SyntaxKind.PowerOperator,
-                node
+                node,
             );
         case "MIN_VALUE":
             return lua.createBinaryExpression(
                 lua.createNumericLiteral(-2),
                 lua.createNumericLiteral(1074),
                 lua.SyntaxKind.PowerOperator,
-                node
+                node,
             );
         case "MIN_SAFE_INTEGER":
             return lua.createBinaryExpression(
                 lua.createNumericLiteral(-2),
                 lua.createNumericLiteral(1074),
                 lua.SyntaxKind.PowerOperator,
-                node
+                node,
             );
         case "MAX_SAFE_INTEGER":
             return lua.createBinaryExpression(
                 lua.createNumericLiteral(2),
                 lua.createNumericLiteral(1024),
                 lua.SyntaxKind.PowerOperator,
-                node
+                node,
             );
         case "MAX_VALUE":
             return lua.createBinaryExpression(
                 lua.createNumericLiteral(2),
                 lua.createNumericLiteral(1024),
                 lua.SyntaxKind.PowerOperator,
-                node
+                node,
             );
 
         default:
@@ -113,7 +113,7 @@ export function transformNumberProperty(
 export function transformNumberConstructorCall(
     context: TransformationContext,
     node: ts.CallExpression,
-    calledMethod: ts.PropertyAccessExpression
+    calledMethod: ts.PropertyAccessExpression,
 ): lua.CallExpression | undefined {
     const parameters = transformArguments(context, node.arguments);
     const methodName = calledMethod.name.text;

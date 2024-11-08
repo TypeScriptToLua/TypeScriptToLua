@@ -32,7 +32,7 @@ export function getExportedSymbolDeclaration(symbol: ts.Symbol): ts.Declaration 
 
 export function getSymbolFromIdentifier(
     context: TransformationContext,
-    identifier: lua.Identifier
+    identifier: lua.Identifier,
 ): ts.Symbol | undefined {
     if (identifier.symbolId !== undefined) {
         const symbolInfo = getSymbolInfo(context, identifier.symbolId);
@@ -44,7 +44,7 @@ export function getSymbolFromIdentifier(
 
 export function getIdentifierExportScope(
     context: TransformationContext,
-    identifier: lua.Identifier
+    identifier: lua.Identifier,
 ): ts.SourceFile | ts.ModuleDeclaration | undefined {
     const symbol = getSymbolFromIdentifier(context, identifier);
     if (!symbol) {
@@ -60,7 +60,7 @@ function isGlobalAugmentation(module: ts.ModuleDeclaration): boolean {
 
 export function getSymbolExportScope(
     context: TransformationContext,
-    symbol: ts.Symbol
+    symbol: ts.Symbol,
 ): ts.SourceFile | ts.ModuleDeclaration | undefined {
     const exportedDeclaration = getExportedSymbolDeclaration(symbol);
     if (!exportedDeclaration) {
@@ -69,7 +69,7 @@ export function getSymbolExportScope(
 
     const scope = findFirstNodeAbove(
         exportedDeclaration,
-        (n): n is ts.SourceFile | ts.ModuleDeclaration => ts.isSourceFile(n) || ts.isModuleDeclaration(n)
+        (n): n is ts.SourceFile | ts.ModuleDeclaration => ts.isSourceFile(n) || ts.isModuleDeclaration(n),
     );
     if (!scope) {
         return undefined;
@@ -88,7 +88,7 @@ export function getSymbolExportScope(
 
 export function getExportedSymbolsFromScope(
     context: TransformationContext,
-    scope: ts.SourceFile | ts.ModuleDeclaration
+    scope: ts.SourceFile | ts.ModuleDeclaration,
 ): ts.Symbol[] {
     const scopeSymbol = context.checker.getSymbolAtLocation(ts.isSourceFile(scope) ? scope : scope.name);
     if (scopeSymbol?.exports === undefined) {
@@ -105,7 +105,7 @@ export function getDependenciesOfSymbol(context: TransformationContext, original
         exportSymbol.declarations
             ?.filter(ts.isExportSpecifier)
             .map(context.checker.getExportSpecifierLocalTargetSymbol)
-            .includes(originalSymbol)
+            .includes(originalSymbol),
     );
 }
 
@@ -120,14 +120,14 @@ export function isSymbolExported(context: TransformationContext, symbol: ts.Symb
 export function isSymbolExportedFromScope(
     context: TransformationContext,
     symbol: ts.Symbol,
-    scope: ts.SourceFile | ts.ModuleDeclaration
+    scope: ts.SourceFile | ts.ModuleDeclaration,
 ): boolean {
     return getExportedSymbolsFromScope(context, scope).includes(symbol);
 }
 
 export function addExportToIdentifier(
     context: TransformationContext,
-    identifier: lua.Identifier
+    identifier: lua.Identifier,
 ): lua.AssignmentLeftHandSideExpression {
     const exportScope = getIdentifierExportScope(context, identifier);
     return exportScope ? createExportedIdentifier(context, identifier, exportScope) : identifier;
@@ -136,7 +136,7 @@ export function addExportToIdentifier(
 export function createExportedIdentifier(
     context: TransformationContext,
     identifier: lua.Identifier,
-    exportScope?: ts.SourceFile | ts.ModuleDeclaration
+    exportScope?: ts.SourceFile | ts.ModuleDeclaration,
 ): lua.AssignmentLeftHandSideExpression {
     if (!identifier.exportable) {
         return identifier;

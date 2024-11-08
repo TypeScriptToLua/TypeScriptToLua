@@ -39,7 +39,7 @@ function getControlVariable(context: TransformationContext, statement: ts.ForOfS
 export function transformRangeStatement(
     context: TransformationContext,
     statement: ts.ForOfStatement,
-    block: lua.Block
+    block: lua.Block,
 ): lua.Statement {
     assert(ts.isCallExpression(statement.expression));
     const controlVariable =
@@ -47,7 +47,7 @@ export function transformRangeStatement(
     const [start = lua.createNumericLiteral(0), limit = lua.createNumericLiteral(0), step] = transformArguments(
         context,
         statement.expression.arguments,
-        context.checker.getResolvedSignature(statement.expression)
+        context.checker.getResolvedSignature(statement.expression),
     );
     return lua.createForStatement(block, controlVariable, start, limit, step, statement);
 }

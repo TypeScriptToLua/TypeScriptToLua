@@ -23,7 +23,7 @@ export function createModuleLocalName(context: TransformationContext, module: ts
 
 export function createModuleLocalNameIdentifier(
     context: TransformationContext,
-    declaration: ts.ModuleDeclaration
+    declaration: ts.ModuleDeclaration,
 ): lua.Identifier {
     const moduleSymbol = context.checker.getSymbolAtLocation(declaration.name);
     if (moduleSymbol !== undefined && isUnsafeName(moduleSymbol.name, context.options)) {
@@ -31,7 +31,7 @@ export function createModuleLocalNameIdentifier(
             createSafeName(declaration.name.text),
             declaration.name,
             moduleSymbol && getSymbolIdOfSymbol(context, moduleSymbol),
-            declaration.name.text
+            declaration.name.text,
         );
     }
 
@@ -40,7 +40,7 @@ export function createModuleLocalNameIdentifier(
 
 // TODO: Do it based on transform result?
 function moduleHasEmittedBody(
-    node: ts.ModuleDeclaration
+    node: ts.ModuleDeclaration,
 ): node is ts.ModuleDeclaration & { body: ts.ModuleBlock | ts.ModuleDeclaration } {
     if (node.body) {
         if (ts.isModuleBlock(node.body)) {
@@ -84,8 +84,8 @@ export const transformModuleDeclaration: FunctionVisitor<ts.ModuleDeclaration> =
             lua.createBinaryExpression(
                 addExportToIdentifier(context, nameIdentifier),
                 lua.createTableExpression(),
-                lua.SyntaxKind.OrOperator
-            )
+                lua.SyntaxKind.OrOperator,
+            ),
         );
 
         result.push(...localDeclaration);
@@ -94,7 +94,7 @@ export const transformModuleDeclaration: FunctionVisitor<ts.ModuleDeclaration> =
         const localDeclaration = createLocalOrExportedOrGlobalDeclaration(
             context,
             nameIdentifier,
-            lua.createTableExpression()
+            lua.createTableExpression(),
         );
 
         result.push(...localDeclaration);
@@ -105,7 +105,7 @@ export const transformModuleDeclaration: FunctionVisitor<ts.ModuleDeclaration> =
         const localDeclaration = createHoistableVariableDeclarationStatement(
             context,
             createModuleLocalNameIdentifier(context, node),
-            createExportedIdentifier(context, nameIdentifier, exportScope)
+            createExportedIdentifier(context, nameIdentifier, exportScope),
         );
 
         result.push(localDeclaration);
@@ -121,7 +121,7 @@ export const transformModuleDeclaration: FunctionVisitor<ts.ModuleDeclaration> =
         context.pushScope(ScopeType.Block);
         const statements = performHoisting(
             context,
-            context.transformStatements(ts.isModuleBlock(node.body) ? node.body.statements : node.body)
+            context.transformStatements(ts.isModuleBlock(node.body) ? node.body.statements : node.body),
         );
         context.popScope();
         result.push(lua.createDoStatement(statements));

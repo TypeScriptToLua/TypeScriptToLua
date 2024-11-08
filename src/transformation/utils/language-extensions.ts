@@ -90,7 +90,7 @@ export function getExtensionKindForNode(context: TransformationContext, node: ts
 
 export function getExtensionKindForSymbol(
     context: TransformationContext,
-    symbol: ts.Symbol
+    symbol: ts.Symbol,
 ): ExtensionKind | undefined {
     const type = context.checker.getTypeOfSymbolAtLocation(symbol, context.sourceFile);
     return getExtensionKindForType(context, type);
@@ -108,7 +108,7 @@ export function isLuaIterable(context: TransformationContext, type: ts.Type): bo
 
 export function getIterableExtensionTypeForType(
     context: TransformationContext,
-    type: ts.Type
+    type: ts.Type,
 ): IterableExtensionKind | undefined {
     const value = getPropertyValue(context, type, "__tstlIterable");
     if (value && value in IterableExtensionKind) {
@@ -118,21 +118,21 @@ export function getIterableExtensionTypeForType(
 
 export function getIterableExtensionKindForNode(
     context: TransformationContext,
-    node: ts.Node
+    node: ts.Node,
 ): IterableExtensionKind | undefined {
     const type = context.checker.getTypeAtLocation(node);
     return getIterableExtensionTypeForType(context, type);
 }
 
 export const methodExtensionKinds: ReadonlySet<ExtensionKind> = new Set<ExtensionKind>(
-    Object.values(ExtensionKind).filter(key => key.endsWith("Method"))
+    Object.values(ExtensionKind).filter(key => key.endsWith("Method")),
 );
 
 export function getNaryCallExtensionArgs(
     context: TransformationContext,
     node: ts.CallExpression,
     kind: ExtensionKind,
-    numArgs: number
+    numArgs: number,
 ): readonly ts.Expression[] | undefined {
     let expressions: readonly ts.Expression[];
     if (node.arguments.some(ts.isSpreadElement)) {
@@ -162,7 +162,7 @@ export function getNaryCallExtensionArgs(
 export function getUnaryCallExtensionArg(
     context: TransformationContext,
     node: ts.CallExpression,
-    kind: ExtensionKind
+    kind: ExtensionKind,
 ): ts.Expression | undefined {
     return getNaryCallExtensionArgs(context, node, kind, 1)?.[0];
 }
@@ -170,7 +170,7 @@ export function getUnaryCallExtensionArg(
 export function getBinaryCallExtensionArgs(
     context: TransformationContext,
     node: ts.CallExpression,
-    kind: ExtensionKind
+    kind: ExtensionKind,
 ): readonly [ts.Expression, ts.Expression] | undefined {
     const expressions = getNaryCallExtensionArgs(context, node, kind, 2);
     if (expressions === undefined) return undefined;

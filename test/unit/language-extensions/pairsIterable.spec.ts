@@ -116,7 +116,7 @@ test.each(["for (const s of testIterable) {}", "let s; for (s of testIterable) {
     `
             .withLanguageExtensions()
             .expectDiagnosticsToMatchSnapshot([invalidPairsIterableWithoutDestructuring.code]);
-    }
+    },
 );
 
 const testKeyIterable = `

@@ -10,7 +10,7 @@ import { transformPropertyName } from "./literal";
 
 export function tryGetConstEnumValue(
     context: TransformationContext,
-    node: ts.EnumMember | ts.PropertyAccessExpression | ts.ElementAccessExpression
+    node: ts.EnumMember | ts.PropertyAccessExpression | ts.ElementAccessExpression,
 ): lua.Expression | undefined {
     const value = context.checker.getConstantValue(node);
     if (typeof value === "string") {
@@ -34,7 +34,7 @@ export const transformEnumDeclaration: FunctionVisitor<ts.EnumDeclaration> = (no
         const table = lua.createBinaryExpression(
             lua.cloneIdentifier(name),
             lua.createTableExpression(),
-            lua.SyntaxKind.OrOperator
+            lua.SyntaxKind.OrOperator,
         );
         result.push(...createLocalOrExportedOrGlobalDeclaration(context, name, table, node));
     }
@@ -79,8 +79,8 @@ export const transformEnumDeclaration: FunctionVisitor<ts.EnumDeclaration> = (no
                         : lua.createIdentifier(member.name.getText(), member.name),
                     valueExpression,
                     node,
-                    exportScope
-                )
+                    exportScope,
+                ),
             );
         } else {
             const memberAccessor = lua.createTableIndexExpression(enumReference, memberName);

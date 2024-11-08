@@ -20,7 +20,7 @@ import { getCustomNameFromSymbol } from "./identifier";
 export function validateArguments(
     context: TransformationContext,
     params: readonly ts.Expression[],
-    signature?: ts.Signature
+    signature?: ts.Signature,
 ) {
     if (!signature || signature.parameters.length < params.length) {
         return;
@@ -39,7 +39,7 @@ export function transformArguments(
     context: TransformationContext,
     params: readonly ts.Expression[],
     signature?: ts.Signature,
-    callContext?: ts.Expression
+    callContext?: ts.Expression,
 ): lua.Expression[] {
     validateArguments(context, params, signature);
     return transformExpressionList(context, callContext ? [callContext, ...params] : params);
@@ -50,7 +50,7 @@ function transformCallWithArguments(
     callExpression: ts.Expression,
     transformedArguments: lua.Expression[],
     argPrecedingStatements: lua.Statement[],
-    callContext?: ts.Expression
+    callContext?: ts.Expression,
 ): [lua.Expression, lua.Expression[]] {
     let call = context.transformExpression(callExpression);
 
@@ -79,7 +79,7 @@ export function transformCallAndArguments(
     callExpression: ts.Expression,
     params: readonly ts.Expression[],
     signature?: ts.Signature,
-    callContext?: ts.Expression
+    callContext?: ts.Expression,
 ): [lua.Expression, lua.Expression[]] {
     const { precedingStatements: argPrecedingStatements, result: transformedArguments } =
         transformInPrecedingStatementScope(context, () => transformArguments(context, params, signature, callContext));
@@ -90,7 +90,7 @@ function transformElementAccessCall(
     context: TransformationContext,
     left: ts.PropertyAccessExpression | ts.ElementAccessExpression,
     transformedArguments: lua.Expression[],
-    argPrecedingStatements: lua.Statement[]
+    argPrecedingStatements: lua.Statement[],
 ) {
     // Cache left-side if it has effects
     // local ____self = context; return ____self[argument](parameters);
@@ -117,7 +117,7 @@ function transformElementAccessCall(
 export function transformContextualCallExpression(
     context: TransformationContext,
     node: ts.CallExpression | ts.TaggedTemplateExpression,
-    args: ts.Expression[] | ts.NodeArray<ts.Expression>
+    args: ts.Expression[] | ts.NodeArray<ts.Expression>,
 ): lua.Expression {
     if (ts.isOptionalChain(node)) {
         return transformOptionalChain(context, node);
@@ -155,7 +155,7 @@ export function transformContextualCallExpression(
                 left,
                 transformedArguments,
                 argPrecedingStatements,
-                left.expression
+                left.expression,
             );
             return lua.createCallExpression(expression, transformedArguments, node);
         }
@@ -167,7 +167,7 @@ export function transformContextualCallExpression(
             left,
             transformedArguments,
             argPrecedingStatements,
-            callContext
+            callContext,
         );
         return lua.createCallExpression(expression, transformedArguments, node);
     } else {
@@ -178,7 +178,7 @@ export function transformContextualCallExpression(
 function transformPropertyCall(
     context: TransformationContext,
     node: ts.CallExpression,
-    calledMethod: ts.PropertyAccessExpression
+    calledMethod: ts.PropertyAccessExpression,
 ): lua.Expression {
     const signature = context.checker.getResolvedSignature(node);
 
@@ -254,10 +254,10 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
         return lua.createCallExpression(
             lua.createTableIndexExpression(
                 context.transformExpression(ts.factory.createSuper()),
-                lua.createStringLiteral("____constructor")
+                lua.createStringLiteral("____constructor"),
             ),
             parameters,
-            node
+            node,
         );
     }
 
@@ -277,7 +277,7 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
             calledExpression,
             node.arguments,
             signature,
-            callContext
+            callContext,
         );
     }
 

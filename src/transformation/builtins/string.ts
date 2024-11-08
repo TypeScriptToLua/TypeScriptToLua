@@ -12,14 +12,14 @@ function createStringCall(methodName: string, tsOriginal: ts.Node, ...params: lu
     return lua.createCallExpression(
         lua.createTableIndexExpression(stringIdentifier, lua.createStringLiteral(methodName)),
         params,
-        tsOriginal
+        tsOriginal,
     );
 }
 
 export function transformStringPrototypeCall(
     context: TransformationContext,
     node: ts.CallExpression,
-    calledMethod: ts.PropertyAccessExpression
+    calledMethod: ts.PropertyAccessExpression,
 ): lua.Expression | undefined {
     const signature = context.checker.getResolvedSignature(node);
     const [caller, params] = transformCallAndArguments(context, calledMethod.expression, node.arguments, signature);
@@ -34,7 +34,7 @@ export function transformStringPrototypeCall(
             return lua.createCallExpression(
                 lua.createTableIndexExpression(lua.createIdentifier("table"), lua.createStringLiteral("concat")),
                 [wrapInTable(caller, ...params)],
-                node
+                node,
             );
 
         case "indexOf": {
@@ -47,17 +47,17 @@ export function transformStringPrototypeCall(
                     ? // string.find handles negative indexes by making it relative to string end, but for indexOf it's the same as 0
                       lua.createCallExpression(
                           lua.createTableIndexExpression(lua.createIdentifier("math"), lua.createStringLiteral("max")),
-                          [addToNumericExpression(params[1], 1), lua.createNumericLiteral(1)]
+                          [addToNumericExpression(params[1], 1), lua.createNumericLiteral(1)],
                       )
                     : lua.createNilLiteral(),
-                lua.createBooleanLiteral(true)
+                lua.createBooleanLiteral(true),
             );
 
             return lua.createBinaryExpression(
                 lua.createBinaryExpression(stringExpression, lua.createNumericLiteral(0), lua.SyntaxKind.OrOperator),
                 lua.createNumericLiteral(1),
                 lua.SyntaxKind.SubtractionOperator,
-                node
+                node,
             );
         }
 
@@ -126,10 +126,10 @@ export function transformStringPrototypeCall(
                         "byte",
                         node,
                         caller,
-                        addToNumericExpression(params[0] ?? lua.createNilLiteral(), 1)
+                        addToNumericExpression(params[0] ?? lua.createNilLiteral(), 1),
                     ),
                     createNaN(),
-                    lua.SyntaxKind.OrOperator
+                    lua.SyntaxKind.OrOperator,
                 );
             }
 
@@ -163,7 +163,7 @@ export function transformStringPrototypeCall(
 export function transformStringConstructorCall(
     context: TransformationContext,
     node: ts.CallExpression,
-    calledMethod: ts.PropertyAccessExpression
+    calledMethod: ts.PropertyAccessExpression,
 ): lua.Expression | undefined {
     const signature = context.checker.getResolvedSignature(node);
     const params = transformArguments(context, node.arguments, signature);
@@ -174,7 +174,7 @@ export function transformStringConstructorCall(
             return lua.createCallExpression(
                 lua.createTableIndexExpression(lua.createIdentifier("string"), lua.createStringLiteral("char")),
                 params,
-                node
+                node,
             );
 
         default:
@@ -184,7 +184,7 @@ export function transformStringConstructorCall(
 
 export function transformStringProperty(
     context: TransformationContext,
-    node: ts.PropertyAccessExpression
+    node: ts.PropertyAccessExpression,
 ): lua.Expression | undefined {
     switch (node.name.text) {
         case "length":
@@ -192,7 +192,7 @@ export function transformStringProperty(
             if (context.luaTarget === LuaTarget.Lua50) {
                 const stringLen = lua.createTableIndexExpression(
                     lua.createIdentifier("string"),
-                    lua.createStringLiteral("len")
+                    lua.createStringLiteral("len"),
                 );
                 return lua.createCallExpression(stringLen, [expression], node);
             } else {

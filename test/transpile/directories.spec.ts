@@ -23,7 +23,7 @@ test.each<DirectoryTestCase>([
     };
 
     const { fileNames, options } = tstl.updateParsedConfigFile(
-        ts.parseJsonConfigFileContent(config, ts.sys, projectPath)
+        ts.parseJsonConfigFileContent(config, ts.sys, projectPath),
     );
 
     const { diagnostics, emittedFiles } = transpileFilesResult(fileNames, options);

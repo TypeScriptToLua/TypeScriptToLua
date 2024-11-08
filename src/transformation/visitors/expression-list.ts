@@ -24,7 +24,7 @@ export function shouldMoveToTemp(context: TransformationContext, expression: lua
 export function moveToPrecedingTemp(
     context: TransformationContext,
     expression: lua.Expression,
-    tsOriginal?: ts.Node
+    tsOriginal?: ts.Node,
 ): lua.Expression {
     if (!shouldMoveToTemp(context, expression, tsOriginal)) {
         return expression;
@@ -37,7 +37,7 @@ export function moveToPrecedingTemp(
 
 function transformExpressions(
     context: TransformationContext,
-    expressions: readonly ts.Expression[]
+    expressions: readonly ts.Expression[],
 ): {
     transformedExpressions: lua.Expression[];
     precedingStatements: lua.Statement[][];
@@ -63,7 +63,7 @@ function transformExpressionsUsingTemps(
     expressions: readonly ts.Expression[],
     transformedExpressions: lua.Expression[],
     precedingStatements: lua.Statement[][],
-    lastPrecedingStatementsIndex: number
+    lastPrecedingStatementsIndex: number,
 ) {
     for (let i = 0; i < transformedExpressions.length; ++i) {
         context.addPrecedingStatements(precedingStatements[i]);
@@ -77,7 +77,7 @@ function transformExpressionsUsingTemps(
 function pushToSparseArray(
     context: TransformationContext,
     arrayIdentifier: lua.Identifier | undefined,
-    expressions: lua.Expression[]
+    expressions: lua.Expression[],
 ) {
     if (!arrayIdentifier) {
         arrayIdentifier = lua.createIdentifier(context.createTempName("array"));
@@ -90,7 +90,7 @@ function pushToSparseArray(
             LuaLibFeature.SparseArrayPush,
             undefined,
             arrayIdentifier,
-            ...expressions
+            ...expressions,
         );
         context.addPrecedingStatements(lua.createExpressionStatement(libCall));
     }
@@ -101,7 +101,7 @@ function transformExpressionsUsingSparseArray(
     context: TransformationContext,
     expressions: readonly ts.Expression[],
     transformedExpressions: lua.Expression[],
-    precedingStatements: lua.Statement[][]
+    precedingStatements: lua.Statement[][],
 ) {
     let arrayIdentifier: lua.Identifier | undefined;
 
@@ -135,7 +135,7 @@ function countNeededTemps(
     context: TransformationContext,
     expressions: readonly ts.Expression[],
     transformedExpressions: lua.Expression[],
-    lastPrecedingStatementsIndex: number
+    lastPrecedingStatementsIndex: number,
 ) {
     if (lastPrecedingStatementsIndex < 0) {
         return 0;
@@ -148,11 +148,11 @@ function countNeededTemps(
 // Transforms a list of expressions while flattening spreads and maintaining execution order
 export function transformExpressionList(
     context: TransformationContext,
-    expressions: readonly ts.Expression[]
+    expressions: readonly ts.Expression[],
 ): lua.Expression[] {
     const { transformedExpressions, precedingStatements, lastPrecedingStatementsIndex } = transformExpressions(
         context,
-        expressions
+        expressions,
     );
 
     // If more than this number of temps are required to preserve execution order, we'll fall back to using the
@@ -173,7 +173,7 @@ export function transformExpressionList(
             expressions,
             transformedExpressions,
             precedingStatements,
-            lastPrecedingStatementsIndex
+            lastPrecedingStatementsIndex,
         );
     }
 }
@@ -181,17 +181,17 @@ export function transformExpressionList(
 // Transforms a series of expressions while maintaining execution order
 export function transformOrderedExpressions(
     context: TransformationContext,
-    expressions: readonly ts.Expression[]
+    expressions: readonly ts.Expression[],
 ): lua.Expression[] {
     const { transformedExpressions, precedingStatements, lastPrecedingStatementsIndex } = transformExpressions(
         context,
-        expressions
+        expressions,
     );
     return transformExpressionsUsingTemps(
         context,
         expressions,
         transformedExpressions,
         precedingStatements,
-        lastPrecedingStatementsIndex
+        lastPrecedingStatementsIndex,
     );
 }

@@ -4,7 +4,7 @@ export function __TS__StringReplaceAll(
     this: void,
     source: string,
     searchValue: string,
-    replaceValue: string | ((match: string, offset: number, string: string) => string)
+    replaceValue: string | ((match: string, offset: number, string: string) => string),
 ): string {
     if (typeof replaceValue === "string") {
         const concat = table.concat(source.split(searchValue), replaceValue);

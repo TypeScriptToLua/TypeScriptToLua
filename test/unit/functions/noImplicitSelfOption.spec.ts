@@ -24,7 +24,7 @@ test.each(["\\", "/"])("transpileFiles handles paths with noImplicitSelf and %s 
             `${projectDir}${separator}otherFile.ts`,
         ],
         { noImplicitSelf: true },
-        (fileName, text) => (emittedFiles[fileName] = text)
+        (fileName, text) => (emittedFiles[fileName] = text),
     );
     expect(diagnostics).toHaveLength(0);
     expect(Object.keys(emittedFiles)).not.toHaveLength(0);

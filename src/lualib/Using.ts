@@ -6,7 +6,7 @@ export function __TS__Using<TArgs extends Disposable[], TReturn>(
     let thrownError;
     const [ok, result] = xpcall(
         () => cb(...args),
-        err => (thrownError = err)
+        err => (thrownError = err),
     );
 
     const argArray = [...args];

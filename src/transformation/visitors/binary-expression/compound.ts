@@ -15,7 +15,7 @@ function isLuaExpressionWithSideEffect(expression: lua.Expression) {
 
 function shouldCacheTableIndexExpressions(
     expression: lua.TableIndexExpression,
-    rightPrecedingStatements: lua.Statement[]
+    rightPrecedingStatements: lua.Statement[],
 ) {
     return (
         isLuaExpressionWithSideEffect(expression.table) ||
@@ -72,7 +72,7 @@ function transformCompoundAssignment(
     lhs: ts.Expression,
     rhs: ts.Expression,
     operator: CompoundAssignmentToken,
-    isPostfix: boolean
+    isPostfix: boolean,
 ): WithPrecedingStatements<lua.Expression> {
     if (isArrayLength(context, lhs)) {
         const { precedingStatements, result: lengthSetterStatement } = transformCompoundLengthSetter(
@@ -80,7 +80,7 @@ function transformCompoundAssignment(
             expression,
             lhs,
             rhs,
-            operator
+            operator,
         );
 
         return { precedingStatements, result: lengthSetterStatement.expression };
@@ -94,7 +94,7 @@ function transformCompoundAssignment(
 
     const { precedingStatements: rightPrecedingStatements, result: right } = transformInPrecedingStatementScope(
         context,
-        () => context.transformExpression(rhs)
+        () => context.transformExpression(rhs),
     );
 
     if (lua.isTableIndexExpression(left)) {
@@ -118,7 +118,7 @@ function transformCompoundAssignment(
                 right,
                 rightPrecedingStatements,
                 operator,
-                expression
+                expression,
             );
             const assignStatement = lua.createAssignmentStatement(accessExpression, operatorExpression);
             return {
@@ -134,7 +134,7 @@ function transformCompoundAssignment(
                             accessExpression,
                             operator,
                             right,
-                            rightPrecedingStatements
+                            rightPrecedingStatements,
                         ),
                     ],
                     result: left,
@@ -149,7 +149,7 @@ function transformCompoundAssignment(
                 right,
                 rightPrecedingStatements,
                 operator,
-                expression
+                expression,
             );
             const tmpDeclaration = lua.createVariableDeclarationStatement(tmp, operatorExpression);
             const assignStatement = lua.createAssignmentStatement(accessExpression, tmp);
@@ -171,13 +171,13 @@ function transformCompoundAssignment(
             right,
             rightPrecedingStatements,
             operator,
-            expression
+            expression,
         );
         const assignStatements = transformAssignmentWithRightPrecedingStatements(
             context,
             lhs,
             operatorExpression,
-            rightPrecedingStatements
+            rightPrecedingStatements,
         );
         return {
             precedingStatements: [tmpDeclaration, ...precedingStatements, ...assignStatements],
@@ -190,7 +190,7 @@ function transformCompoundAssignment(
                     left,
                     operator,
                     right,
-                    rightPrecedingStatements
+                    rightPrecedingStatements,
                 ),
                 result: left,
             };
@@ -204,13 +204,13 @@ function transformCompoundAssignment(
             right,
             rightPrecedingStatements,
             operator,
-            expression
+            expression,
         );
         const statements = transformAssignmentWithRightPrecedingStatements(
             context,
             lhs,
             operatorExpression,
-            precedingStatements
+            precedingStatements,
         );
         return { precedingStatements: statements, result: left };
     }
@@ -223,7 +223,7 @@ export function transformCompoundAssignmentExpression(
     lhs: ts.Expression,
     rhs: ts.Expression,
     operator: CompoundAssignmentToken,
-    isPostfix: boolean
+    isPostfix: boolean,
 ): lua.Expression {
     const { precedingStatements, result } = transformCompoundAssignment(
         context,
@@ -231,7 +231,7 @@ export function transformCompoundAssignmentExpression(
         lhs,
         rhs,
         operator,
-        isPostfix
+        isPostfix,
     );
     context.addPrecedingStatements(precedingStatements);
     return result;
@@ -242,7 +242,7 @@ export function transformCompoundAssignmentStatement(
     node: ts.Node,
     lhs: ts.Expression,
     rhs: ts.Expression,
-    operator: CompoundAssignmentToken
+    operator: CompoundAssignmentToken,
 ): lua.Statement[] {
     if (isArrayLength(context, lhs)) {
         const { precedingStatements, result: lengthSetterStatement } = transformCompoundLengthSetter(
@@ -250,7 +250,7 @@ export function transformCompoundAssignmentStatement(
             node,
             lhs,
             rhs,
-            operator
+            operator,
         );
 
         return [...precedingStatements, lengthSetterStatement];
@@ -264,7 +264,7 @@ export function transformCompoundAssignmentStatement(
 
     const { precedingStatements: rightPrecedingStatements, result: right } = transformInPrecedingStatementScope(
         context,
-        () => context.transformExpression(rhs)
+        () => context.transformExpression(rhs),
     );
 
     if (lua.isTableIndexExpression(left) && shouldCacheTableIndexExpressions(left, rightPrecedingStatements)) {
@@ -285,7 +285,7 @@ export function transformCompoundAssignmentStatement(
                     operator,
                     right,
                     rightPrecedingStatements,
-                    node
+                    node,
                 ),
             ];
         }
@@ -296,7 +296,7 @@ export function transformCompoundAssignmentStatement(
             right,
             rightPrecedingStatements,
             operator,
-            node
+            node,
         );
         const assignStatement = lua.createAssignmentStatement(accessExpression, operatorExpression);
         return [objAndIndexDeclaration, ...rightPrecedingStatements2, assignStatement];
@@ -313,13 +313,13 @@ export function transformCompoundAssignmentStatement(
             right,
             rightPrecedingStatements,
             operator,
-            node
+            node,
         );
         return transformAssignmentWithRightPrecedingStatements(
             context,
             lhs,
             operatorExpression,
-            rightPrecedingStatements2
+            rightPrecedingStatements2,
         );
     }
 }
@@ -332,7 +332,7 @@ export function transformCompoundAssignmentStatement(
 type SetterSkippingCompoundAssignmentOperator = ts.LogicalOperator | ts.SyntaxKind.QuestionQuestionToken;
 
 function isSetterSkippingCompoundAssignmentOperator(
-    operator: ts.BinaryOperator
+    operator: ts.BinaryOperator,
 ): operator is SetterSkippingCompoundAssignmentOperator {
     return (
         operator === ts.SyntaxKind.AmpersandAmpersandToken ||
@@ -346,7 +346,7 @@ function transformSetterSkippingCompoundAssignment(
     operator: SetterSkippingCompoundAssignmentOperator,
     right: lua.Expression,
     rightPrecedingStatements: lua.Statement[],
-    node?: ts.Node
+    node?: ts.Node,
 ): lua.Statement[] {
     // These assignments have the form 'if x then y = z', figure out what condition x is first.
     let condition: lua.Expression;
@@ -367,7 +367,7 @@ function transformSetterSkippingCompoundAssignment(
             condition,
             lua.createBlock([...rightPrecedingStatements, lua.createAssignmentStatement(lhs, right, node)]),
             undefined,
-            node
+            node,
         ),
     ];
 }
@@ -377,11 +377,11 @@ function transformCompoundLengthSetter(
     node: ts.Node,
     lhs: ts.PropertyAccessExpression | ts.ElementAccessExpression,
     rhs: ts.Expression,
-    operator: CompoundAssignmentToken
+    operator: CompoundAssignmentToken,
 ): WithPrecedingStatements<lua.ExpressionStatement> {
     const { precedingStatements: rightPrecedingStatements, result: right } = transformInPrecedingStatementScope(
         context,
-        () => context.transformExpression(rhs)
+        () => context.transformExpression(rhs),
     );
     const table = context.transformExpression(lhs.expression);
     const lengthExpression = lua.createUnaryExpression(table, lua.SyntaxKind.LengthOperator, lhs);
@@ -391,11 +391,11 @@ function transformCompoundLengthSetter(
         right,
         rightPrecedingStatements,
         operator,
-        node
+        node,
     );
 
     const arrayLengthAssignment = lua.createExpressionStatement(
-        transformLuaLibFunction(context, LuaLibFeature.ArraySetLength, node, table, operatorExpression)
+        transformLuaLibFunction(context, LuaLibFeature.ArraySetLength, node, table, operatorExpression),
     );
 
     return { precedingStatements, result: arrayLengthAssignment };

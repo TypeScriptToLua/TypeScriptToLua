@@ -142,10 +142,10 @@ export type StatementLikeNode = ts.Statement;
 export type VisitorResult<T extends ts.Node> = T extends ExpressionLikeNode
     ? lua.Expression
     : T extends StatementLikeNode
-    ? OneToManyVisitorResult<lua.Statement>
-    : T extends ts.SourceFile
-    ? lua.File
-    : OneToManyVisitorResult<lua.Node>;
+      ? OneToManyVisitorResult<lua.Statement>
+      : T extends ts.SourceFile
+        ? lua.File
+        : OneToManyVisitorResult<lua.Node>;
 
 export type Visitor<T extends ts.Node> = FunctionVisitor<T> | ObjectVisitor<T>;
 export type FunctionVisitor<T extends ts.Node> = (node: T, context: TransformationContext) => VisitorResult<T>;

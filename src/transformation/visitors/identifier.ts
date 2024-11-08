@@ -47,7 +47,7 @@ export function getCustomNameFromSymbol(symbol?: ts.Symbol): undefined | string 
 function transformNonValueIdentifier(
     context: TransformationContext,
     identifier: ts.Identifier,
-    symbol: ts.Symbol | undefined
+    symbol: ts.Symbol | undefined,
 ) {
     if (isOptionalContinuation(identifier)) {
         const result = lua.createIdentifier(identifier.text, undefined, tempSymbolId);
@@ -92,7 +92,7 @@ function transformNonValueIdentifier(
 export function transformIdentifierWithSymbol(
     context: TransformationContext,
     node: ts.Identifier,
-    symbol: ts.Symbol | undefined
+    symbol: ts.Symbol | undefined,
 ): lua.Expression {
     if (symbol) {
         const exportScope = getSymbolExportScope(context, symbol);

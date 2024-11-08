@@ -23,7 +23,7 @@ function isNoResolutionPath(context: TransformationContext, moduleSpecifier: ts.
 export function createModuleRequire(
     context: TransformationContext,
     moduleSpecifier: ts.Expression,
-    tsOriginal: ts.Node = moduleSpecifier
+    tsOriginal: ts.Node = moduleSpecifier,
 ): lua.CallExpression {
     const params: lua.Expression[] = [];
     if (ts.isStringLiteral(moduleSpecifier)) {
@@ -44,18 +44,18 @@ function shouldBeImported(context: TransformationContext, importNode: ts.ImportC
 function transformImportSpecifier(
     context: TransformationContext,
     importSpecifier: ts.ImportSpecifier,
-    moduleTableName: lua.Identifier
+    moduleTableName: lua.Identifier,
 ): lua.VariableDeclarationStatement {
     const leftIdentifier = transformIdentifier(context, importSpecifier.name);
     const propertyName = transformPropertyName(
         context,
-        importSpecifier.propertyName ? importSpecifier.propertyName : importSpecifier.name
+        importSpecifier.propertyName ? importSpecifier.propertyName : importSpecifier.name,
     );
 
     return lua.createVariableDeclarationStatement(
         leftIdentifier,
         lua.createTableIndexExpression(moduleTableName, propertyName),
-        importSpecifier
+        importSpecifier,
     );
 }
 
@@ -96,7 +96,7 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
             const defaultImportAssignmentStatement = lua.createVariableDeclarationStatement(
                 transformIdentifier(context, statement.importClause.name),
                 lua.createTableIndexExpression(importUniqueName, propertyName),
-                statement.importClause.name
+                statement.importClause.name,
             );
 
             result.push(defaultImportAssignmentStatement);
@@ -111,7 +111,7 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
             const requireStatement = lua.createVariableDeclarationStatement(
                 transformIdentifier(context, statement.importClause.namedBindings.name),
                 requireCall,
-                statement
+                statement,
             );
 
             result.push(requireStatement);

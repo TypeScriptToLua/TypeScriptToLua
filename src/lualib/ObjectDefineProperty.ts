@@ -6,7 +6,7 @@ export function __TS__ObjectDefineProperty<T extends object>(
     this: void,
     target: T,
     key: any,
-    desc: PropertyDescriptor
+    desc: PropertyDescriptor,
 ): T {
     const luaKey = typeof key === "number" ? key + 1 : key;
     const value = rawget(target, luaKey);

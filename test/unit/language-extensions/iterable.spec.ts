@@ -456,7 +456,7 @@ describe("LuaIterable with LuaMultiReturn value type", () => {
         `
                 .withLanguageExtensions()
                 .expectDiagnosticsToMatchSnapshot([invalidMultiIterableWithoutDestructuring.code]);
-        }
+        },
     );
 });
 

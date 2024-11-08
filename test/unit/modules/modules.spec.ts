@@ -61,7 +61,7 @@ test.each(["ke-bab", "dollar$", "singlequote'", "hash#", "s p a c e", "ɥɣɎɌ�
             .addExtraFile(`${name}.ts`, 'export const foo = "bar";')
             .setReturnExport("foo")
             .expectToEqual("bar");
-    }
+    },
 );
 
 test.each(["export default value;", "export { value as default };"])("Export Default From (%p)", exportStatement => {
@@ -73,7 +73,7 @@ test.each(["export default value;", "export { value as default };"])("Export Def
             `
                 export const value = true;
                 ${exportStatement};
-            `
+            `,
         )
         .expectToMatchJsResult();
 });
@@ -87,7 +87,7 @@ test("Default Import and Export Expression", () => {
             "module.ts",
             `
                 export default 1 + 2 + 3;
-            `
+            `,
         )
         .expectToMatchJsResult();
 });
@@ -103,7 +103,7 @@ test("Import and Export Assignment", () => {
             "module.ts",
             `
                 export = true;
-            `
+            `,
         )
         .expectToMatchJsResult();
 });
@@ -120,7 +120,7 @@ test("Mixed Exports, Default and Named Imports", () => {
                 export const b = 2;
                 export const c = 3;
                 export default a;
-            `
+            `,
         )
         .expectToMatchJsResult();
 });
@@ -137,7 +137,7 @@ test("Mixed Exports, Default and Namespace Import", () => {
                 export const b = 2;
                 export const c = 3;
                 export default a;
-            `
+            `,
         )
         .expectToMatchJsResult();
 });
@@ -154,7 +154,7 @@ test("Export Default Function", () => {
                 export default function() {
                     return true;
                 }
-            `
+            `,
         )
         .expectToMatchJsResult();
 });
@@ -309,7 +309,7 @@ test("correctly exports @compileMembersOnly enums (#1572)", () => {
             C = 2
         }
         export const val = MyEnum.B | MyEnum.C;
-    `
+    `,
         )
         .expectToEqual({ val: 3 });
 });

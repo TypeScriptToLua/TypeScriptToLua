@@ -15,7 +15,7 @@ export function isIdentifierExtensionValue(symbol: ts.Symbol | undefined, extens
 export function reportInvalidExtensionValue(
     context: TransformationContext,
     identifier: ts.Identifier,
-    extensionKind: ExtensionKind
+    extensionKind: ExtensionKind,
 ): void {
     if (extensionKind === ExtensionKind.MultiFunction) {
         context.diagnostics.push(invalidMultiFunctionUse(identifier));

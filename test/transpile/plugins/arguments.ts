@@ -14,11 +14,11 @@ export default function plugin(options: Options): tstl.Plugin {
                     tstl.createTableExpression([
                         tstl.createTableFieldExpression(
                             tstl.createStringLiteral(options.name),
-                            tstl.createStringLiteral("name")
+                            tstl.createStringLiteral("name"),
                         ),
                         tstl.createTableFieldExpression(
                             tstl.createBooleanLiteral(options.option),
-                            tstl.createStringLiteral("option")
+                            tstl.createStringLiteral("option"),
                         ),
                     ]),
                 ]),

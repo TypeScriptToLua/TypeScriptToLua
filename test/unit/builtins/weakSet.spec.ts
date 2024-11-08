@@ -66,5 +66,5 @@ test.each(["clear()", "keys()", "values()", "entries()", "forEach(() => {})"])(
         const testBuilder = util.testFunction(`(new WeakSet() as any).${call}`);
         const luaResult = testBuilder.getLuaExecutionResult();
         expect(luaResult.message).toContain("attempt to call a nil value");
-    }
+    },
 );

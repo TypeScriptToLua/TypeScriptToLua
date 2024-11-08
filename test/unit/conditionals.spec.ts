@@ -154,7 +154,7 @@ test.each(["string", "number", "string | number"])(
             .setTsHeader(`declare var condition: ${type};`)
             .setOptions({ strict: true })
             .expectToHaveDiagnostics([truthyOnlyConditionalValue.code]);
-    }
+    },
 );
 
 test.each(["string", "number", "string | number"])("Warning can be disabled when strict is true (%p)", type => {
@@ -175,7 +175,7 @@ test.each(["string", "number", "string | number"])(
             .setTsHeader(`declare var condition: ${type};`)
             .setOptions({ strict: true })
             .expectToHaveDiagnostics([truthyOnlyConditionalValue.code]);
-    }
+    },
 );
 
 test.each(["string", "number", "string | number"])(
@@ -187,7 +187,7 @@ test.each(["string", "number", "string | number"])(
             .setTsHeader(`declare var condition: ${type};`)
             .setOptions({ strict: true })
             .expectToHaveDiagnostics([truthyOnlyConditionalValue.code]);
-    }
+    },
 );
 
 test.each(["string", "number", "string | number"])(
@@ -197,7 +197,7 @@ test.each(["string", "number", "string | number"])(
             .setTsHeader(`declare var condition: ${type};`)
             .setOptions({ strict: true })
             .expectToHaveDiagnostics([truthyOnlyConditionalValue.code]);
-    }
+    },
 );
 
 test.each(["string", "number", "string | number"])("No warning when using element index in condition (%p)", type => {

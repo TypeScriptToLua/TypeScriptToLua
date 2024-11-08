@@ -8,7 +8,7 @@ import { transformArguments } from "../visitors/call";
 export function tryTransformBuiltinGlobalCall(
     context: TransformationContext,
     node: ts.CallExpression,
-    expressionType: ts.Type
+    expressionType: ts.Type,
 ): lua.Expression | undefined {
     function getParameters() {
         const signature = context.checker.getResolvedSignature(node);
@@ -31,7 +31,7 @@ export function tryTransformBuiltinGlobalCall(
                 context,
                 name === "isNaN" ? LuaLibFeature.NumberIsNaN : LuaLibFeature.NumberIsFinite,
                 node,
-                ...numberParameters
+                ...numberParameters,
             );
         case "parseFloat":
             return transformLuaLibFunction(context, LuaLibFeature.ParseFloat, node, ...getParameters());

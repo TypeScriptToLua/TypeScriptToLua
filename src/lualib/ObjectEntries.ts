@@ -1,6 +1,6 @@
 export function __TS__ObjectEntries<TKey extends string | number, TValue>(
     this: void,
-    obj: Record<TKey, TValue>
+    obj: Record<TKey, TValue>,
 ): Array<[TKey, TValue]> {
     const result: Array<[TKey, TValue]> = [];
     let len = 0;

@@ -52,7 +52,7 @@ declare module "typescript" {
     export function nodeNextJsonConfigResolver(
         moduleName: string,
         containingFile: string,
-        host: ModuleResolutionHost
+        host: ModuleResolutionHost,
     ): ResolvedModuleWithFailedLookupLocations;
 
     export function pathIsAbsolute(path: string): boolean;

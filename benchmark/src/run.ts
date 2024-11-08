@@ -52,7 +52,7 @@ function sortByName({ benchmarkName: a }: BenchmarkResult, { benchmarkName: b }:
 
 function compareBenchmarks(
     oldResults: BenchmarkResult[],
-    newResults: BenchmarkResult[]
+    newResults: BenchmarkResult[],
 ): Record<BenchmarkKind, ComparisonInfo> {
     const oldResultsMemory = oldResults.filter(isMemoryBenchmarkResult);
     const newResultsMemory = newResults.filter(isMemoryBenchmarkResult);

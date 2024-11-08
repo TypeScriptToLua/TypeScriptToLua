@@ -37,7 +37,7 @@ export interface ExpressionWithThisValue {
 function transformExpressionWithThisValueCapture(
     context: TransformationContext,
     node: ts.Expression,
-    thisValueCapture: lua.Identifier
+    thisValueCapture: lua.Identifier,
 ): ExpressionWithThisValue {
     if (ts.isParenthesizedExpression(node)) {
         return transformExpressionWithThisValueCapture(context, node.expression, thisValueCapture);
@@ -56,7 +56,7 @@ export function captureThisValue(
     context: TransformationContext,
     expression: lua.Expression,
     thisValueCapture: lua.Identifier,
-    tsOriginal: ts.Node
+    tsOriginal: ts.Node,
 ): lua.Expression {
     if (!shouldMoveToTemp(context, expression, tsOriginal)) {
         return expression;
@@ -99,7 +99,7 @@ export function transformOptionalChainWithCapture(
     context: TransformationContext,
     tsNode: ts.OptionalChain,
     thisValueCapture: lua.Identifier | undefined,
-    isDelete?: ts.DeleteExpression
+    isDelete?: ts.DeleteExpression,
 ): ExpressionWithThisValue {
     const luaTempName = context.createTempName("opt");
 
@@ -137,7 +137,7 @@ export function transformOptionalChainWithCapture(
             const { expression: result, thisValue } = transformExpressionWithThisValueCapture(
                 context,
                 tsRightExpression,
-                thisValueCapture
+                thisValueCapture,
             );
             returnThisValue = thisValue;
             return result;
@@ -158,13 +158,13 @@ export function transformOptionalChainWithCapture(
                 ({ expression: result, thisValue: capturedThisValue } = transformExpressionWithThisValueCapture(
                     context,
                     tsLeftExpression,
-                    leftThisValueTemp
+                    leftThisValueTemp,
                 ));
             } else {
                 result = context.transformExpression(tsLeftExpression);
             }
             return result;
-        }
+        },
     );
 
     // handle super calls by passing self as context
@@ -236,8 +236,8 @@ export function transformOptionalChainWithCapture(
         context.addPrecedingStatements(
             lua.createIfStatement(
                 lua.createBinaryExpression(leftIdentifier, lua.createNilLiteral(), lua.SyntaxKind.InequalityOperator),
-                lua.createBlock(innerStatements)
-            )
+                lua.createBlock(innerStatements),
+            ),
         );
         return { expression: lua.createNilLiteral(), thisValue: returnThisValue };
     } else if (
@@ -269,8 +269,8 @@ export function transformOptionalChainWithCapture(
                 lua.createBlock([
                     ...rightPrecedingStatements,
                     lua.createAssignmentStatement(resultIdentifier, rightExpression),
-                ])
-            )
+                ]),
+            ),
         );
         return { expression: resultIdentifier, thisValue: returnThisValue };
     }
@@ -279,7 +279,7 @@ export function transformOptionalChainWithCapture(
 export function transformOptionalDeleteExpression(
     context: TransformationContext,
     node: ts.DeleteExpression,
-    innerExpression: ts.OptionalChain
+    innerExpression: ts.OptionalChain,
 ) {
     transformOptionalChainWithCapture(context, innerExpression, undefined, node);
     return lua.createBooleanLiteral(true, node);

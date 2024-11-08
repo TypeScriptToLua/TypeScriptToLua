@@ -8,7 +8,7 @@ import { transformArguments } from "../visitors/call";
 
 export function transformMathProperty(
     context: TransformationContext,
-    node: ts.PropertyAccessExpression
+    node: ts.PropertyAccessExpression,
 ): lua.Expression | undefined {
     const name = node.name.text;
     switch (name) {
@@ -34,7 +34,7 @@ export function transformMathProperty(
 export function transformMathCall(
     context: TransformationContext,
     node: ts.CallExpression,
-    calledMethod: ts.PropertyAccessExpression
+    calledMethod: ts.PropertyAccessExpression,
 ): lua.Expression | undefined {
     const signature = context.checker.getResolvedSignature(node);
     const params = transformArguments(context, node.arguments, signature);
@@ -69,7 +69,7 @@ export function transformMathCall(
             const add = lua.createBinaryExpression(
                 one,
                 params[0] ?? lua.createNilLiteral(),
-                lua.SyntaxKind.AdditionOperator
+                lua.SyntaxKind.AdditionOperator,
             );
             return lua.createCallExpression(lua.createTableIndexExpression(math, log), [add], node);
         }
@@ -80,7 +80,7 @@ export function transformMathCall(
                 params[0] ?? lua.createNilLiteral(),
                 params[1] ?? lua.createNilLiteral(),
                 lua.SyntaxKind.PowerOperator,
-                node
+                node,
             );
         }
 
@@ -91,7 +91,7 @@ export function transformMathCall(
             const add = lua.createBinaryExpression(
                 params[0] ?? lua.createNilLiteral(),
                 half,
-                lua.SyntaxKind.AdditionOperator
+                lua.SyntaxKind.AdditionOperator,
             );
             return lua.createCallExpression(lua.createTableIndexExpression(math, floor), [add], node);
         }

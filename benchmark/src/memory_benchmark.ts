@@ -46,7 +46,7 @@ const formatMemory = (memInKB: number) => toFixed(memInKB / 1024, 3);
 
 export function compareMemoryBenchmarks(
     oldResults: MemoryBenchmarkResult[],
-    newResults: MemoryBenchmarkResult[]
+    newResults: MemoryBenchmarkResult[],
 ): ComparisonInfo {
     // Can not use Object.values because we want a fixed order.
     const categories = [MemoryBenchmarkCategory.TotalMemory, MemoryBenchmarkCategory.Garbage];
@@ -56,7 +56,7 @@ export function compareMemoryBenchmarks(
         .join("\n");
 
     const text = `### master:\n\`\`\`json\n${json.encode(oldResults)}\n\`\`\`\n### commit:\n\`\`\`json\n${json.encode(
-        newResults
+        newResults,
     )}\n\`\`\``;
 
     return { summary, text };
@@ -65,7 +65,7 @@ export function compareMemoryBenchmarks(
 function compareCategory(
     newResults: MemoryBenchmarkResult[],
     oldResults: MemoryBenchmarkResult[],
-    category: MemoryBenchmarkCategory
+    category: MemoryBenchmarkCategory,
 ): string {
     return compareNumericBenchmarks(newResults, oldResults, "mb", result => result.categories[category], formatMemory);
 }

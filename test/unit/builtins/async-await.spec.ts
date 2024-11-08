@@ -143,7 +143,7 @@ test.each(["async function abc() {", "const abc = async () => {"])(
                 "resolving awaiting promise",
                 "abc return data",
             ]);
-    }
+    },
 );
 
 test.each(["async function abc() {", "const abc = async () => {"])(
@@ -185,7 +185,7 @@ test.each(["async function abc() {", "const abc = async () => {"])(
                 "resolving awaiting promise",
                 ["data1", "data2", "data3"],
             ]);
-    }
+    },
 );
 
 test("can make inline async functions", () => {
@@ -509,7 +509,7 @@ test.each(["async function abc() {", "const abc = async () => {"])(
     `
             .setTsHeader(promiseTestLib)
             .expectToEqual(["resolving first promise", "resolved data", "run abc", "caught error", "test throw"]);
-    }
+    },
 );
 
 test.each(["async function abc() {", "const abc = async () => {"])(
@@ -543,7 +543,7 @@ test.each(["async function abc() {", "const abc = async () => {"])(
                     stack: expect.stringContaining("stack traceback"),
                 },
             ]);
-    }
+    },
 );
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1105
@@ -570,7 +570,7 @@ describe("try/catch in async function", () => {
                 builder.expectToHaveDiagnostics([unsupportedForTargetButOverrideAvailable.code]),
             [LuaTarget.Lua51]: builder =>
                 builder.expectToHaveDiagnostics([unsupportedForTargetButOverrideAvailable.code]),
-        }
+        },
     );
 
     util.testEachVersion(
@@ -590,13 +590,13 @@ describe("try/catch in async function", () => {
         `,
         {
             ...util.expectEachVersionExceptJit(builder =>
-                builder.expectToEqual({ reason: "an error occurred in the async function: test error" })
+                builder.expectToEqual({ reason: "an error occurred in the async function: test error" }),
             ),
             [LuaTarget.Lua50]: builder =>
                 builder.expectToHaveDiagnostics([unsupportedForTargetButOverrideAvailable.code]),
             [LuaTarget.Lua51]: builder =>
                 builder.expectToHaveDiagnostics([unsupportedForTargetButOverrideAvailable.code]),
-        }
+        },
     );
 
     util.testEachVersion(
@@ -620,13 +620,13 @@ describe("try/catch in async function", () => {
         `,
         {
             ...util.expectEachVersionExceptJit(builder =>
-                builder.expectToEqual({ reason: "an error occurred in the async function: test error" })
+                builder.expectToEqual({ reason: "an error occurred in the async function: test error" }),
             ),
             [LuaTarget.Lua50]: builder =>
                 builder.expectToHaveDiagnostics([unsupportedForTargetButOverrideAvailable.code]),
             [LuaTarget.Lua51]: builder =>
                 builder.expectToHaveDiagnostics([unsupportedForTargetButOverrideAvailable.code]),
-        }
+        },
     );
 
     test("try/finally in async function", () => {

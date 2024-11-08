@@ -16,7 +16,7 @@ import { moveToPrecedingTemp } from "./expression-list";
 
 export function transformArrayBindingElement(
     context: TransformationContext,
-    name: ts.ArrayBindingElement
+    name: ts.ArrayBindingElement,
 ): lua.Identifier {
     if (ts.isOmittedExpression(name)) {
         return lua.createAnonymousIdentifier(name);
@@ -40,7 +40,7 @@ export function transformBindingPattern(
     context: TransformationContext,
     pattern: ts.BindingPattern,
     table: lua.Expression,
-    propertyAccessStack: ts.PropertyName[] = []
+    propertyAccessStack: ts.PropertyName[] = [],
 ): lua.Statement[] {
     const result: lua.Statement[] = [];
 
@@ -64,7 +64,7 @@ export function transformBindingPattern(
         // Build the path to the table
         const tableExpression = propertyAccessStack.reduce<lua.Expression>(
             (path, property) => lua.createTableIndexExpression(path, transformPropertyName(context, property)),
-            table
+            table,
         );
 
         // The identifier of the new variable
@@ -72,7 +72,7 @@ export function transformBindingPattern(
         // The field to extract
         const elementName = element.propertyName ?? element.name;
         const { precedingStatements, result: propertyName } = transformInPrecedingStatementScope(context, () =>
-            transformPropertyName(context, elementName)
+            transformPropertyName(context, elementName),
         );
         result.push(...precedingStatements); // Keep property's preceding statements in order
 
@@ -105,7 +105,7 @@ export function transformBindingPattern(
                 }
 
                 const excludedPropertiesTable = excludedProperties.map(e =>
-                    lua.createTableFieldExpression(lua.createBooleanLiteral(true), lua.createStringLiteral(e.text, e))
+                    lua.createTableFieldExpression(lua.createBooleanLiteral(true), lua.createStringLiteral(e.text, e)),
                 );
 
                 expression = transformLuaLibFunction(
@@ -113,7 +113,7 @@ export function transformBindingPattern(
                     LuaLibFeature.ObjectRest,
                     undefined,
                     tableExpression,
-                    lua.createTableExpression(excludedPropertiesTable)
+                    lua.createTableExpression(excludedPropertiesTable),
                 );
             } else {
                 expression = transformLuaLibFunction(
@@ -121,13 +121,13 @@ export function transformBindingPattern(
                     LuaLibFeature.ArraySlice,
                     undefined,
                     tableExpression,
-                    lua.createNumericLiteral(index)
+                    lua.createNumericLiteral(index),
                 );
             }
         } else {
             expression = lua.createTableIndexExpression(
                 tableExpression,
-                ts.isObjectBindingPattern(pattern) ? propertyName : lua.createNumericLiteral(index + 1)
+                ts.isObjectBindingPattern(pattern) ? propertyName : lua.createNumericLiteral(index + 1),
             );
         }
 
@@ -143,8 +143,8 @@ export function transformBindingPattern(
                     lua.createBlock([
                         ...initializerPrecedingStatements,
                         lua.createAssignmentStatement(identifier, initializer),
-                    ])
-                )
+                    ]),
+                ),
             );
         }
     }
@@ -156,7 +156,7 @@ export function transformBindingPattern(
 export function transformBindingVariableDeclaration(
     context: TransformationContext,
     bindingPattern: ts.BindingPattern,
-    initializer?: ts.Expression
+    initializer?: ts.Expression,
 ): lua.Statement[] {
     const statements: lua.Statement[] = [];
 
@@ -174,7 +174,7 @@ export function transformBindingVariableDeclaration(
             }
             const { precedingStatements: moveStatements, result: movedExpr } = transformInPrecedingStatementScope(
                 context,
-                () => moveToPrecedingTemp(context, expression, initializer)
+                () => moveToPrecedingTemp(context, expression, initializer),
             );
             statements.push(...moveStatements);
             table = movedExpr;
@@ -198,8 +198,8 @@ export function transformBindingVariableDeclaration(
                     context,
                     vars,
                     context.transformExpression(initializer),
-                    initializer
-                )
+                    initializer,
+                ),
             );
         } else if (ts.isArrayLiteralExpression(initializer)) {
             // Don't unpack array literals
@@ -213,15 +213,15 @@ export function transformBindingVariableDeclaration(
             const unpackedInitializer = createUnpackCall(
                 context,
                 context.transformExpression(initializer),
-                initializer
+                initializer,
             );
             statements.push(
-                ...createLocalOrExportedOrGlobalDeclaration(context, vars, unpackedInitializer, initializer)
+                ...createLocalOrExportedOrGlobalDeclaration(context, vars, unpackedInitializer, initializer),
             );
         }
     } else {
         statements.push(
-            ...createLocalOrExportedOrGlobalDeclaration(context, vars, lua.createNilLiteral(), initializer)
+            ...createLocalOrExportedOrGlobalDeclaration(context, vars, lua.createNilLiteral(), initializer),
         );
     }
 
@@ -234,8 +234,8 @@ export function transformBindingVariableDeclaration(
                     lua.createBinaryExpression(identifier, lua.createNilLiteral(), lua.SyntaxKind.EqualityOperator),
                     lua.createBlock([
                         lua.createAssignmentStatement(identifier, context.transformExpression(element.initializer)),
-                    ])
-                )
+                    ]),
+                ),
             );
         }
     }
@@ -246,7 +246,7 @@ export function transformBindingVariableDeclaration(
 // TODO: FunctionVisitor<ts.VariableDeclaration>
 export function transformVariableDeclaration(
     context: TransformationContext,
-    statement: ts.VariableDeclaration
+    statement: ts.VariableDeclaration,
 ): lua.Statement[] {
     if (statement.initializer && statement.type) {
         const initializerType = context.checker.getTypeAtLocation(statement.initializer);

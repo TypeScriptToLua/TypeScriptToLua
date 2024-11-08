@@ -101,11 +101,11 @@ util.testEachVersion("Math.atan2", () => util.testExpression`Math.atan2(4, 5)`, 
 util.testEachVersion(
     "Math.atan2(4, 5)",
     () => util.testExpression`Math.atan2(4, 5)`,
-    util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
 );
 
 util.testEachVersion(
     "Math.pow(3, 5)",
     () => util.testExpression`Math.pow(3, 5)`,
-    util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
 );

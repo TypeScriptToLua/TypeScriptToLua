@@ -1,7 +1,7 @@
 export function __TS__LuaIteratorSpread<TKey, TValue, TState>(
     this: (this: void, state: TState, key: TKey) => LuaMultiReturn<[TKey, TValue]>,
     state: TState,
-    firstKey: TKey
+    firstKey: TKey,
 ): LuaMultiReturn<Array<[TKey, TValue]>> {
     const results = [];
     let [key, value] = this(state, firstKey);

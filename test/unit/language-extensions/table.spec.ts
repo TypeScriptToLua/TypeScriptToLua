@@ -180,7 +180,7 @@ describe("LuaTableHas extension", () => {
             `
                 .withLanguageExtensions()
                 .expectDiagnosticsToMatchSnapshot([invalidCallExtensionUse.code]);
-        }
+        },
     );
 
     test.each(["LuaTable<string, number>", "LuaMap<string, number>", "LuaSet<string>"])(
@@ -192,7 +192,7 @@ describe("LuaTableHas extension", () => {
             `
                 .withLanguageExtensions()
                 .expectDiagnosticsToMatchSnapshot([invalidCallExtensionUse.code]);
-        }
+        },
     );
 });
 
@@ -400,7 +400,7 @@ describe("LuaTable extension interface", () => {
                 .setOptions({ strict: true })
                 .expectToHaveDiagnostics()
                 .expectDiagnosticsToMatchSnapshot();
-        }
+        },
     );
 
     test("object keyed table", () => {
@@ -477,7 +477,7 @@ describe("LuaTable extension interface", () => {
         "table immediate access (%p)",
         statement => {
             util.testFunction(statement).withLanguageExtensions().expectToHaveNoDiagnostics();
-        }
+        },
     );
 
     test("table pairs iterate", () => {

@@ -81,7 +81,7 @@ describe("in function call", () => {
             [tstl.LuaTarget.Lua52]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
             [tstl.LuaTarget.Lua53]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
             [tstl.LuaTarget.Lua54]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
-        }
+        },
     );
 });
 
@@ -143,7 +143,7 @@ describe("vararg spread optimization", () => {
                 return pick(...args);
             }
             return test("a", "b", "c");`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 
     util.testEachVersion(
@@ -152,7 +152,7 @@ describe("vararg spread optimization", () => {
             function pick(...args: string[]) { return args[1]; }
             const test = (...args: string[]) => pick(...args);
             return test("a", "b", "c");`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 
     util.testEachVersion(
@@ -165,7 +165,7 @@ describe("vararg spread optimization", () => {
                 }
             }
             return test("a", "b", "c");`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 
     util.testEachVersion(
@@ -178,7 +178,7 @@ describe("vararg spread optimization", () => {
                 } while (false);
             }
             return test("a", "b", "c");`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 
     util.testEachVersion(
@@ -193,7 +193,7 @@ describe("vararg spread optimization", () => {
                 return result;
             }
             return test("a", "b", "c");`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 
     util.testEachVersion(
@@ -209,7 +209,7 @@ describe("vararg spread optimization", () => {
                 }
             }
             return test("a" ,"b", "c");`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 
     test("$multi", () => {
@@ -234,7 +234,7 @@ describe("vararg spread optimization", () => {
                 return fn(...args);
             }
             return test((arg: string) => arg, "foobar");`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 
     util.testEachVersion(
@@ -245,7 +245,7 @@ describe("vararg spread optimization", () => {
                 return fn(...args);
             }
             return test({fn: (arg: string) => arg}, "foobar");`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 
     util.testEachVersion(
@@ -256,7 +256,7 @@ describe("vararg spread optimization", () => {
                 return fn(...args);
             }
             test("foobar");`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 
     util.testEachVersion(
@@ -267,7 +267,7 @@ describe("vararg spread optimization", () => {
                 return pick(...(args as any[]));
             }
             return test<(...args: string[])=>void>("a", "b", "c");`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 });
 
@@ -281,7 +281,7 @@ describe("vararg spread de-optimization", () => {
                 return pick(...args);
             }
             return test("a", "b", "c");`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 
     util.testEachVersion(
@@ -295,7 +295,7 @@ describe("vararg spread de-optimization", () => {
                 return result;
             }
             return test("a", "b", "c");`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 
     util.testEachVersion(
@@ -310,7 +310,7 @@ describe("vararg spread de-optimization", () => {
                 return result;
             }
             return test("a", "b", "c");`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 });
 
@@ -324,7 +324,7 @@ describe("vararg spread in IIFE", () => {
                 return (dummy(), pick(...args));
             }
             return test("a", "b", "c");`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 
     util.testEachVersion(
@@ -336,7 +336,7 @@ describe("vararg spread in IIFE", () => {
                 return (x = pick(...args));
             }
             return test("a", "b", "c");`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 
     util.testEachVersion(
@@ -348,7 +348,7 @@ describe("vararg spread in IIFE", () => {
                 return ([x] = pick(...args));
             }
             return test("a", "b", "c");`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 
     util.testEachVersion(
@@ -360,7 +360,7 @@ describe("vararg spread in IIFE", () => {
                 return (x.val = pick(...args));
             }
             return test("a", "b", "c");`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 
     util.testEachVersion(
@@ -372,7 +372,7 @@ describe("vararg spread in IIFE", () => {
                 return x += pick(...args);
             }
             return test(1, 2, 3);`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 
     util.testEachVersion(
@@ -384,7 +384,7 @@ describe("vararg spread in IIFE", () => {
                 return x[pick(...args)]++;
             }
             return test(1, 2, 3);`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 
     util.testEachVersion(
@@ -396,7 +396,7 @@ describe("vararg spread in IIFE", () => {
                 return ++x[pick(...args)];
             }
             return test(1, 2, 3);`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 
     util.testEachVersion(
@@ -409,7 +409,7 @@ describe("vararg spread in IIFE", () => {
                 } catch {}
             }
             return test("a" ,"b", "c");`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 
     util.testEachVersion(
@@ -424,7 +424,7 @@ describe("vararg spread in IIFE", () => {
                 }
             }
             return test("a" ,"b", "c");`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 
     util.testEachVersion(
@@ -436,7 +436,7 @@ describe("vararg spread in IIFE", () => {
                 return new fooClass().foo;
             }
             return test("a" ,"b", "c");`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 
     util.testEachVersion(
@@ -447,7 +447,7 @@ describe("vararg spread in IIFE", () => {
                 return \`\${typeof testName}:\${pick(...args)}\`;
             }
             return test("a" ,"b", "c");`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 
     util.testEachVersion(
@@ -459,7 +459,7 @@ describe("vararg spread in IIFE", () => {
                 return getObj(...args).$method();
             }
             return test("a" ,"b", "c");`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 
     util.testEachVersion(
@@ -471,7 +471,7 @@ describe("vararg spread in IIFE", () => {
                 return getObj().$pick(...args);
             }
             return test("a" ,"b", "c");`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 
     util.testEachVersion(
@@ -484,7 +484,7 @@ describe("vararg spread in IIFE", () => {
                 return getObj().$tag\`FOO\${pick(...args)}BAR\`;
             }
             return test("a" ,"b", "c");`,
-        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult()),
     );
 });
 
@@ -499,7 +499,7 @@ test.each(["pairs", "ipairs"])("can spread %s (#1244)", func => {
             `
             declare function ipairs<T>(this: void, t: T): LuaIterable<LuaMultiReturn<[number, NonNullable<T[keyof T]>]>>;
             declare function pairs<T>(this: void, t: T): LuaIterable<LuaMultiReturn<[keyof T, NonNullable<T[keyof T]>]>>;
-            `
+            `,
         )
         .expectToEqual([
             [1, "a"],
@@ -518,7 +518,7 @@ test.each(["LuaTable", "LuaMap"])("can spread %s with pairs (#1244)", type => {
     `
         .withLanguageExtensions()
         .setTsHeader(
-            "declare function pairs<T>(this: void, t: T): LuaIterable<LuaMultiReturn<[keyof T, NonNullable<T[keyof T]>]>>;"
+            "declare function pairs<T>(this: void, t: T): LuaIterable<LuaMultiReturn<[keyof T, NonNullable<T[keyof T]>]>>;",
         )
         .getLuaExecutionResult();
 

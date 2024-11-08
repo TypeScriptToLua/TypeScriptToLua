@@ -14,7 +14,7 @@ export const transformSourceFileNode: FunctionVisitor<ts.SourceFile> = (node, co
         if (statement) {
             assert(ts.isExpressionStatement(statement));
             const { precedingStatements, result: expression } = transformInPrecedingStatementScope(context, () =>
-                context.transformExpression(statement.expression)
+                context.transformExpression(statement.expression),
             );
             statements.push(...precedingStatements);
             statements.push(lua.createReturnStatement([expression]));
@@ -36,7 +36,7 @@ export const transformSourceFileNode: FunctionVisitor<ts.SourceFile> = (node, co
             // local ____exports = {}
             if (!hasExportEquals(node)) {
                 statements.unshift(
-                    lua.createVariableDeclarationStatement(createExportsIdentifier(), lua.createTableExpression())
+                    lua.createVariableDeclarationStatement(createExportsIdentifier(), lua.createTableExpression()),
                 );
             }
 

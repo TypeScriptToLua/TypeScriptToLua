@@ -10,7 +10,7 @@ import {
 
 export function transformUnaryExpressionStatement(
     context: TransformationContext,
-    node: ts.ExpressionStatement
+    node: ts.ExpressionStatement,
 ): lua.Statement[] | undefined {
     const expression = ts.isExpressionStatement(node) ? node.expression : node;
     if (
@@ -26,7 +26,7 @@ export function transformUnaryExpressionStatement(
             expression,
             expression.operand,
             ts.factory.createNumericLiteral(1),
-            replacementOperator
+            replacementOperator,
         );
     } else if (ts.isPostfixUnaryExpression(expression)) {
         // i++, i--
@@ -38,7 +38,7 @@ export function transformUnaryExpressionStatement(
             expression,
             expression.operand,
             ts.factory.createNumericLiteral(1),
-            replacementOperator
+            replacementOperator,
         );
     }
 }
@@ -52,7 +52,7 @@ export const transformPostfixUnaryExpression: FunctionVisitor<ts.PostfixUnaryExp
                 expression.operand,
                 ts.factory.createNumericLiteral(1),
                 ts.SyntaxKind.PlusToken,
-                true
+                true,
             );
 
         case ts.SyntaxKind.MinusMinusToken:
@@ -62,7 +62,7 @@ export const transformPostfixUnaryExpression: FunctionVisitor<ts.PostfixUnaryExp
                 expression.operand,
                 ts.factory.createNumericLiteral(1),
                 ts.SyntaxKind.MinusToken,
-                true
+                true,
             );
 
         default:
@@ -79,7 +79,7 @@ export const transformPrefixUnaryExpression: FunctionVisitor<ts.PrefixUnaryExpre
                 expression.operand,
                 ts.factory.createNumericLiteral(1),
                 ts.SyntaxKind.PlusToken,
-                false
+                false,
             );
 
         case ts.SyntaxKind.MinusMinusToken:
@@ -89,7 +89,7 @@ export const transformPrefixUnaryExpression: FunctionVisitor<ts.PrefixUnaryExpre
                 expression.operand,
                 ts.factory.createNumericLiteral(1),
                 ts.SyntaxKind.MinusToken,
-                false
+                false,
             );
 
         case ts.SyntaxKind.PlusToken:
@@ -99,13 +99,13 @@ export const transformPrefixUnaryExpression: FunctionVisitor<ts.PrefixUnaryExpre
         case ts.SyntaxKind.MinusToken:
             return lua.createUnaryExpression(
                 context.transformExpression(expression.operand),
-                lua.SyntaxKind.NegationOperator
+                lua.SyntaxKind.NegationOperator,
             );
 
         case ts.SyntaxKind.ExclamationToken:
             return lua.createUnaryExpression(
                 context.transformExpression(expression.operand),
-                lua.SyntaxKind.NotOperator
+                lua.SyntaxKind.NotOperator,
             );
 
         case ts.SyntaxKind.TildeToken:
@@ -113,7 +113,7 @@ export const transformPrefixUnaryExpression: FunctionVisitor<ts.PrefixUnaryExpre
                 context,
                 expression,
                 context.transformExpression(expression.operand),
-                lua.SyntaxKind.BitwiseNotOperator
+                lua.SyntaxKind.BitwiseNotOperator,
             );
 
         default:

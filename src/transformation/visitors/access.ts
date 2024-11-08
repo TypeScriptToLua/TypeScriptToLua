@@ -29,7 +29,7 @@ import { getSymbolExportScope, isSymbolExported } from "../utils/export";
 function addOneToArrayAccessArgument(
     context: TransformationContext,
     node: ts.ElementAccessExpression,
-    index: lua.Expression
+    index: lua.Expression,
 ): lua.Expression {
     const type = context.checker.getTypeAtLocation(node.expression);
     const argumentType = context.checker.getTypeAtLocation(node.argumentExpression);
@@ -41,7 +41,7 @@ function addOneToArrayAccessArgument(
 
 export function transformElementAccessArgument(
     context: TransformationContext,
-    node: ts.ElementAccessExpression
+    node: ts.ElementAccessExpression,
 ): lua.Expression {
     const index = context.transformExpression(node.argumentExpression);
     return addOneToArrayAccessArgument(context, node, index);
@@ -52,7 +52,7 @@ export const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessE
 export function transformElementAccessExpressionWithCapture(
     context: TransformationContext,
     node: ts.ElementAccessExpression,
-    thisValueCapture: lua.Identifier | undefined
+    thisValueCapture: lua.Identifier | undefined,
 ): ExpressionWithThisValue {
     const constEnumValue = tryGetConstEnumValue(context, node);
     if (constEnumValue) {
@@ -108,7 +108,7 @@ export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAcces
 export function transformPropertyAccessExpressionWithCapture(
     context: TransformationContext,
     node: ts.PropertyAccessExpression,
-    thisValueCapture: lua.Identifier | undefined
+    thisValueCapture: lua.Identifier | undefined,
 ): ExpressionWithThisValue {
     const type = context.checker.getTypeAtLocation(node.expression);
     const isOptionalLeft = isOptionalContinuation(node.expression);
@@ -145,7 +145,7 @@ export function transformPropertyAccessExpressionWithCapture(
             const expression = lua.createTableIndexExpression(
                 context.transformExpression(node.expression.expression),
                 lua.createStringLiteral(property),
-                node
+                node,
             );
             return { expression };
         } else {
@@ -158,7 +158,7 @@ export function transformPropertyAccessExpressionWithCapture(
                     expression: lua.createTableIndexExpression(
                         createExportsIdentifier(),
                         lua.createStringLiteral(property),
-                        node
+                        node,
                     ),
                 };
             } else {
@@ -207,7 +207,7 @@ export function transformPropertyAccessExpressionWithCapture(
                     node,
                     lua.createIdentifier("self"),
                     table,
-                    lua.createStringLiteral(property)
+                    lua.createStringLiteral(property),
                 ),
             };
         }

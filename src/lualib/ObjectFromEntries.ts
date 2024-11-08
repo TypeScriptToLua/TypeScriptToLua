@@ -1,6 +1,6 @@
 export function __TS__ObjectFromEntries<T>(
     this: void,
-    entries: ReadonlyArray<[string, T]> | Iterable<[string, T]>
+    entries: ReadonlyArray<[string, T]> | Iterable<[string, T]>,
 ): Record<string, T> {
     const obj: Record<string, T> = {};
 

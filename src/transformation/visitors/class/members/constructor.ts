@@ -20,7 +20,7 @@ export function transformConstructorDeclaration(
     statement: ts.ConstructorDeclaration,
     className: lua.Identifier,
     instanceFields: ts.PropertyDeclaration[],
-    classDeclaration: ts.ClassLikeDeclaration
+    classDeclaration: ts.ClassLikeDeclaration,
 ): lua.Statement | undefined {
     // Don't transform methods without body (overload declarations)
     if (!statement.body) {
@@ -34,7 +34,7 @@ export function transformConstructorDeclaration(
     const [params, dotsLiteral, restParamName] = transformParameters(
         context,
         statement.parameters,
-        createSelfIdentifier()
+        createSelfIdentifier(),
     );
 
     // Make sure default parameters are assigned before fields are initialized
@@ -56,7 +56,7 @@ export function transformConstructorDeclaration(
             s =>
                 ts.isExpressionStatement(s) &&
                 ts.isCallExpression(s.expression) &&
-                s.expression.expression.kind === ts.SyntaxKind.SuperKeyword
+                s.expression.expression.kind === ts.SyntaxKind.SuperKeyword,
         );
 
         if (superIndex !== -1) {
@@ -70,7 +70,7 @@ export function transformConstructorDeclaration(
             // self.declarationName = declarationName
             const assignment = lua.createAssignmentStatement(
                 lua.createTableIndexExpression(createSelfIdentifier(), lua.createStringLiteral(declaration.name.text)),
-                transformIdentifier(context, declaration.name)
+                transformIdentifier(context, declaration.name),
             );
             bodyWithFieldInitializers.push(assignment);
         }
@@ -90,6 +90,6 @@ export function transformConstructorDeclaration(
     return lua.createAssignmentStatement(
         createConstructorName(className),
         lua.createFunctionExpression(block, params, dotsLiteral, lua.NodeFlags.Declaration),
-        constructorWasGenerated ? classDeclaration : statement
+        constructorWasGenerated ? classDeclaration : statement,
     );
 }

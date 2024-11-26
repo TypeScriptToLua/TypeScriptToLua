@@ -372,6 +372,21 @@ test("string intersected method", () => {
     `.expectToMatchJsResult();
 });
 
+test("tostring number with String constructor", () => {
+    util.testFunction`
+        const n = 123
+        return "abc:" + String(n);
+    `.expectToEqual("abc:123");
+});
+
+test("tostring table with String constructor", () => {
+    const result = util.testFunction`
+        const t = {}
+        return "abc:" + String(t);
+    `.getLuaExecutionResult();
+    expect(result).toContain("abc:table: 0x");
+});
+
 // Issue #1218: https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1218
 test.each(['"foo"', "undefined"])("prototype call on nullable string (%p)", value => {
     util.testFunction`

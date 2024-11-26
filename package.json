@@ -42,7 +42,7 @@
         "node": ">=16.10.0"
     },
     "peerDependencies": {
-        "typescript": "5.6.2"
+        "typescript": "5.7.2"
     },
     "dependencies": {
         "@typescript-to-lua/language-extensions": "1.19.0",
@@ -53,9 +53,9 @@
     },
     "devDependencies": {
         "@types/fs-extra": "^8.1.0",
-        "@types/glob": "^7.1.1",
+        "@types/glob": "^7.2.0",
         "@types/jest": "^27.5.2",
-        "@types/node": "^13.7.7",
+        "@types/node": "^22.10.0",
         "@types/picomatch": "^2.3.0",
         "@types/resolve": "1.14.0",
         "eslint": "^9.11.0",
@@ -63,13 +63,13 @@
         "fs-extra": "^8.1.0",
         "javascript-stringify": "^2.0.1",
         "jest": "^29.5.0",
-        "jest-circus": "^29.5.0",
+        "jest-circus": "^29.7.0",
         "lua-types": "^2.13.0",
         "lua-wasm-bindings": "^0.3.1",
         "prettier": "^2.8.8",
-        "ts-jest": "^29.1.0",
-        "ts-node": "^10.9.1",
-        "typescript": "^5.6.2",
-        "typescript-eslint": "^8.7.0"
+        "ts-jest": "^29.2.5",
+        "ts-node": "^10.9.2",
+        "typescript": "5.7.2",
+        "typescript-eslint": "^8.16.0"
     }
 }

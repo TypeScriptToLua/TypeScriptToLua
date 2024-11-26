@@ -160,7 +160,7 @@ export function transformStringPrototypeCall(
     }
 }
 
-export function transformStringConstructorCall(
+export function transformStringConstructorMethodCall(
     context: TransformationContext,
     node: ts.CallExpression,
     calledMethod: ts.PropertyAccessExpression
@@ -201,4 +201,12 @@ export function transformStringProperty(
         default:
             context.diagnostics.push(unsupportedProperty(node.name, "string", node.name.text));
     }
+}
+
+export function transformStringConstructorCall(
+    originalNode: ts.CallExpression,
+    ...args: lua.Expression[]
+): lua.Expression | undefined {
+    const tostring = lua.createIdentifier("tostring", originalNode.expression);
+    return lua.createCallExpression(tostring, args, originalNode);
 }

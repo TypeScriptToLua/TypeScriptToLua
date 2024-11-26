@@ -14,7 +14,7 @@ import { transformMathCall, transformMathProperty } from "./math";
 import { transformNumberConstructorCall, transformNumberPrototypeCall, transformNumberProperty } from "./number";
 import { transformObjectConstructorCall, tryTransformObjectPrototypeCall } from "./object";
 import { transformPromiseConstructorCall } from "./promise";
-import { transformStringConstructorCall, transformStringProperty, transformStringPrototypeCall } from "./string";
+import { transformStringConstructorMethodCall, transformStringProperty, transformStringPrototypeCall } from "./string";
 import { transformSymbolConstructorCall } from "./symbol";
 import { unsupportedBuiltinOptionalCall } from "../utils/diagnostics";
 import { LuaTarget } from "../../CompilerOptions";
@@ -101,7 +101,7 @@ function tryTransformBuiltinGlobalMethodCall(
             result = transformMathCall(context, node, calledMethod);
             break;
         case "StringConstructor":
-            result = transformStringConstructorCall(context, node, calledMethod);
+            result = transformStringConstructorMethodCall(context, node, calledMethod);
             break;
         case "ObjectConstructor":
             result = transformObjectConstructorCall(context, node, calledMethod);

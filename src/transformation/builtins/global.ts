@@ -4,6 +4,7 @@ import { TransformationContext } from "../context";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isNumberType } from "../utils/typescript";
 import { transformArguments } from "../visitors/call";
+import { transformStringConstructorCall } from "./string";
 
 export function tryTransformBuiltinGlobalCall(
     context: TransformationContext,
@@ -21,6 +22,8 @@ export function tryTransformBuiltinGlobalCall(
             return transformLuaLibFunction(context, LuaLibFeature.Symbol, node, ...getParameters());
         case "NumberConstructor":
             return transformLuaLibFunction(context, LuaLibFeature.Number, node, ...getParameters());
+        case "StringConstructor":
+            return transformStringConstructorCall(node, ...getParameters());
         case "isNaN":
         case "isFinite":
             const numberParameters = isNumberType(context, expressionType)

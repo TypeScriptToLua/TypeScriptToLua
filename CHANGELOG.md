@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.28.0
+
+- Upgraded TypeScript to 5.7.2
+- Support `String(x)` transforming it to `tostring(x)`.
+- Fixed statements before class super call
+- Fixed some bugs with `LuaMultiReturn` used in iterables
+
 ## 1.27.0
 
 - Upgraded TypeScript to 5.6.2

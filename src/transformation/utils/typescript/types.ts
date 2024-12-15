@@ -56,15 +56,25 @@ export function isNumberType(context: TransformationContext, type: ts.Type): boo
 
 function isExplicitArrayType(context: TransformationContext, type: ts.Type): boolean {
     if (context.checker.isArrayType(type) || context.checker.isTupleType(type)) return true;
+
+    if (type.isUnionOrIntersection()) {
+        if (type.types.some(t => isExplicitArrayType(context, t))) {
+            return true;
+        }
+    }
+
+    const baseTypes = type.getBaseTypes();
+    if (baseTypes) {
+        if (baseTypes.some(t => isExplicitArrayType(context, t))) {
+            return true;
+        }
+    }
+
     if (type.symbol) {
         const baseConstraint = context.checker.getBaseConstraintOfType(type);
         if (baseConstraint && baseConstraint !== type) {
             return isExplicitArrayType(context, baseConstraint);
         }
-    }
-
-    if (type.isUnionOrIntersection()) {
-        return type.types.some(t => isExplicitArrayType(context, t));
     }
 
     return false;

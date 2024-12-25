@@ -6,6 +6,7 @@ import { performHoisting, ScopeType } from "../utils/scope";
 import { transformBlockOrStatement } from "./block";
 import { canBeFalsy } from "../utils/typescript";
 import { truthyOnlyConditionalValue } from "../utils/diagnostics";
+import { LuaTarget } from "../../CompilerOptions";
 
 function transformProtectedConditionalExpression(
     context: TransformationContext,
@@ -38,6 +39,16 @@ function transformProtectedConditionalExpression(
 }
 
 export const transformConditionalExpression: FunctionVisitor<ts.ConditionalExpression> = (expression, context) => {
+    if (context.luaTarget === LuaTarget.Luau) {
+        // Luau's ternary operator doesn't have these issues
+        return lua.createConditionalExpression(
+            context.transformExpression(expression.condition),
+            context.transformExpression(expression.whenTrue),
+            context.transformExpression(expression.whenFalse),
+            expression
+        );
+    }
+
     // Check if we need to add diagnostic about Lua truthiness
     checkOnlyTruthyCondition(expression.condition, context);
 

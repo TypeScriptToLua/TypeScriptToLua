@@ -12,9 +12,12 @@ const fixtures = fs
     .sort()
     .map(f => [path.parse(f).name, fs.readFileSync(path.join(fixturesPath, f), "utf8")]);
 
-test.each(fixtures)("Transformation (%s)", (_name, content) => {
+test.each(fixtures)("Transformation (%s)", (name, content) => {
     util.testModule(content)
-        .setOptions({ luaLibImport: tstl.LuaLibImportKind.Require })
+        .setOptions({
+            luaLibImport: tstl.LuaLibImportKind.Require,
+            luaTarget: name.includes("luau") ? tstl.LuaTarget.Luau : undefined,
+        })
         .ignoreDiagnostics([annotationDeprecated.code, couldNotResolveRequire.code])
         .disableSemanticCheck()
         .expectLuaToMatchSnapshot();

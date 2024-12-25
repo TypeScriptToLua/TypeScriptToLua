@@ -25,6 +25,7 @@ export enum SyntaxKind {
     LabelStatement,
     ReturnStatement,
     BreakStatement,
+    ContinueStatement, // Luau only.
     ExpressionStatement,
 
     // Expression
@@ -45,6 +46,7 @@ export enum SyntaxKind {
     Identifier,
     TableIndexExpression,
     ParenthesizedExpression,
+    ConditionalExpression, // Luau only
 
     // Operators
 
@@ -488,6 +490,18 @@ export function createBreakStatement(tsOriginal?: ts.Node): BreakStatement {
     return createNode(SyntaxKind.BreakStatement, tsOriginal) as BreakStatement;
 }
 
+export interface ContinueStatement extends Statement {
+    kind: SyntaxKind.ContinueStatement;
+}
+
+export function isContinueStatement(node: Node): node is ContinueStatement {
+    return node.kind === SyntaxKind.ContinueStatement;
+}
+
+export function createContinueStatement(tsOriginal?: ts.Node): ContinueStatement {
+    return createNode(SyntaxKind.ContinueStatement, tsOriginal) as ContinueStatement;
+}
+
 export interface ExpressionStatement extends Statement {
     kind: SyntaxKind.ExpressionStatement;
     expression: Expression;
@@ -860,4 +874,27 @@ export function createParenthesizedExpression(expression: Expression, tsOriginal
     ) as ParenthesizedExpression;
     parenthesizedExpression.expression = expression;
     return parenthesizedExpression;
+}
+
+export type ConditionalExpression = Expression & {
+    condition: Expression;
+    whenTrue: Expression;
+    whenFalse: Expression;
+};
+
+export function isConditionalExpression(node: Node): node is ConditionalExpression {
+    return node.kind === SyntaxKind.ConditionalExpression;
+}
+
+export function createConditionalExpression(
+    condition: Expression,
+    whenTrue: Expression,
+    whenFalse: Expression,
+    tsOriginal?: ts.Node
+): ConditionalExpression {
+    const conditionalExpression = createNode(SyntaxKind.ConditionalExpression, tsOriginal) as ConditionalExpression;
+    conditionalExpression.condition = condition;
+    conditionalExpression.whenTrue = whenTrue;
+    conditionalExpression.whenFalse = whenFalse;
+    return conditionalExpression;
 }

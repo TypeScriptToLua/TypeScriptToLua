@@ -25,6 +25,7 @@ interface FunctionDefinitionInfo {
 export enum LoopContinued {
     WithGoto,
     WithRepeatBreak,
+    WithContinue,
 }
 
 export interface Scope {

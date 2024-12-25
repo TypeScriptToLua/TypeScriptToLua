@@ -21,6 +21,7 @@ export function transformLoopBody(
 
     switch (scope.loopContinued) {
         case undefined:
+        case LoopContinued.WithContinue:
             return body;
 
         case LoopContinued.WithGoto:

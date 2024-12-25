@@ -6,10 +6,17 @@ import { annotationInvalidArgumentCount } from "../../utils/diagnostics";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { transformArguments, transformCallAndArguments } from "../call";
 import { isTableNewCall } from "../language-extensions/table";
+import { tryGetStandardLibrarySymbolOfType } from "../../builtins";
 
 export const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, context) => {
     if (isTableNewCall(context, node)) {
         return lua.createTableExpression(undefined, node);
+    }
+
+    const constructorType = context.checker.getTypeAtLocation(node.expression);
+    if (tryGetStandardLibrarySymbolOfType(context, constructorType)?.name === "ArrayConstructor") {
+        // turn new Array<>() into a simple {}
+        return lua.createTableExpression([], node);
     }
 
     const signature = context.checker.getResolvedSignature(node);

@@ -898,3 +898,21 @@ test("array indexing in optional chain (#1605)", () => {
         .setOptions({ strict: true }) // crucial to reproducing for some reason
         .expectToMatchJsResult();
 });
+
+test("new Array()", () => {
+    util.testFunction`
+        const arr = new Array();
+        arr.push(1,2,3);
+        return arr;
+    `
+        .debug()
+        .expectToMatchJsResult();
+});
+
+test("new Array<T>()", () => {
+    util.testFunction`
+        const arr = new Array<number>();
+        arr.push(1,2,3);
+        return arr;
+    `.expectToMatchJsResult();
+});

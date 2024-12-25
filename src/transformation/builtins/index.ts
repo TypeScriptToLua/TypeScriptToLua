@@ -221,7 +221,10 @@ export function checkForLuaLibType(context: TransformationContext, type: ts.Type
     }
 }
 
-function tryGetStandardLibrarySymbolOfType(context: TransformationContext, type: ts.Type): ts.Symbol | undefined {
+export function tryGetStandardLibrarySymbolOfType(
+    context: TransformationContext,
+    type: ts.Type
+): ts.Symbol | undefined {
     if (type.isUnionOrIntersection()) {
         for (const subType of type.types) {
             const symbol = tryGetStandardLibrarySymbolOfType(context, subType);

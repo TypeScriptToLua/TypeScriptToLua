@@ -884,3 +884,17 @@ describe("copying array methods", () => {
         });
     });
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1605
+test("array indexing in optional chain (#1605)", () => {
+    util.testModule`
+        interface Foo extends Array<number> {}
+        const b: {arr?: Foo} = {arr:[1,2]};
+        export const t = b.arr?.[1];
+
+        const c: Foo | undefined = b.arr;
+        export const u = c?.[1];
+    `
+        .setOptions({ strict: true }) // crucial to reproducing for some reason
+        .expectToMatchJsResult();
+});

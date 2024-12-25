@@ -64,6 +64,18 @@ exports[`Transformation (globalAugmentation) 1`] = `
 return ____exports"
 `;
 
+exports[`Transformation (luauSpecificTransformations) 1`] = `
+"t = if true then "is true" else "is false"
+while false do
+    continue
+end
+repeat
+    do
+        continue
+    end
+until not false"
+`;
+
 exports[`Transformation (methodRestArguments) 1`] = `
 "local ____lualib = require("lualib_bundle")
 local __TS__Class = ____lualib.__TS__Class

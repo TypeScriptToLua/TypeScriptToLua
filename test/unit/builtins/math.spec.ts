@@ -96,6 +96,7 @@ util.testEachVersion("Math.atan2", () => util.testExpression`Math.atan2(4, 5)`, 
     [tstl.LuaTarget.Lua52]: builder => builder.tap(expectMathAtan2),
     [tstl.LuaTarget.Lua53]: builder => builder.tap(expectMathAtan),
     [tstl.LuaTarget.Lua54]: builder => builder.tap(expectMathAtan2),
+    [tstl.LuaTarget.Luau]: builder => builder.tap(expectMathAtan2),
 });
 
 util.testEachVersion(

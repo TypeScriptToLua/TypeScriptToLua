@@ -553,7 +553,7 @@ for (const testCase of [
         [tstl.LuaTarget.Lua53]: expectContinueGotoLabel,
         [tstl.LuaTarget.Lua54]: expectContinueGotoLabel,
         [tstl.LuaTarget.LuaJIT]: expectContinueGotoLabel,
-        [tstl.LuaTarget.Luau]: () => {} // TODO: This is N/A.
+        [tstl.LuaTarget.Luau]: () => undefined, // TODO: This is N/A.
     });
 }
 

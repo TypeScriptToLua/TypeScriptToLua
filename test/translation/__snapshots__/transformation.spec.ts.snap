@@ -1,5 +1,17 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`Luau Transformation (luauSpecificTransformations) 1`] = `
+"t = if true then "is true" else "is false"
+while false do
+    continue
+end
+repeat
+    do
+        continue
+    end
+until not false"
+`;
+
 exports[`Transformation (blockScopeVariables) 1`] = `
 "do
     local a = 1
@@ -62,18 +74,6 @@ return ____exports"
 exports[`Transformation (globalAugmentation) 1`] = `
 "local ____exports = globalVariable
 return ____exports"
-`;
-
-exports[`Transformation (luauSpecificTransformations) 1`] = `
-"t = if true then "is true" else "is false"
-while false do
-    continue
-end
-repeat
-    do
-        continue
-    end
-until not false"
 `;
 
 exports[`Transformation (methodRestArguments) 1`] = `

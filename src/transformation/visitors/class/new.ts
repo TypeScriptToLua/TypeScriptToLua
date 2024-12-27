@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { FunctionVisitor } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
-import { annotationInvalidArgumentCount } from "../../utils/diagnostics";
+import { annotationInvalidArgumentCount, unsupportedArrayWithLengthConstructor } from "../../utils/diagnostics";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { transformArguments, transformCallAndArguments } from "../call";
 import { isTableNewCall } from "../language-extensions/table";
@@ -15,8 +15,27 @@ export const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, 
 
     const constructorType = context.checker.getTypeAtLocation(node.expression);
     if (tryGetStandardLibrarySymbolOfType(context, constructorType)?.name === "ArrayConstructor") {
-        // turn new Array<>() into a simple {}
-        return lua.createTableExpression([], node);
+        if (node.arguments === undefined || node.arguments.length === 0) {
+            // turn new Array<>() into a simple {}
+            return lua.createTableExpression([], node);
+        } else {
+            // More than one argument, check if items constructor
+            const signature = context.checker.getResolvedSignature(node);
+            const signatureDeclaration = signature?.getDeclaration();
+            if (
+                signatureDeclaration?.parameters.length === 1 &&
+                signatureDeclaration.parameters[0].dotDotDotToken === undefined
+            ) {
+                context.diagnostics.push(unsupportedArrayWithLengthConstructor(node));
+                return lua.createTableExpression([], node);
+            } else {
+                const callArguments = transformArguments(context, node.arguments, signature);
+                return lua.createTableExpression(
+                    callArguments.map(e => lua.createTableFieldExpression(e)),
+                    node
+                );
+            }
+        }
     }
 
     const signature = context.checker.getResolvedSignature(node);

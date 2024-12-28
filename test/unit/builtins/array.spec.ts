@@ -1,4 +1,7 @@
-import { undefinedInArrayLiteral } from "../../../src/transformation/utils/diagnostics";
+import {
+    undefinedInArrayLiteral,
+    unsupportedArrayWithLengthConstructor,
+} from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
 test("omitted expression", () => {
@@ -897,4 +900,32 @@ test("array indexing in optional chain (#1605)", () => {
     `
         .setOptions({ strict: true }) // crucial to reproducing for some reason
         .expectToMatchJsResult();
+});
+
+test("new Array()", () => {
+    util.testFunction`
+        const arr = new Array();
+        arr.push(1,2,3);
+        return arr;
+    `
+        .debug()
+        .expectToMatchJsResult();
+});
+
+test("new Array<T>()", () => {
+    util.testFunction`
+        const arr = new Array<number>();
+        arr.push(1,2,3);
+        return arr;
+    `.expectToMatchJsResult();
+});
+
+test("new Array<T>(length)", () => {
+    util.testFunction`
+        const arr = new Array<string>(10);
+    `.expectToHaveDiagnostics([unsupportedArrayWithLengthConstructor.code]);
+});
+
+test("new Array<T>(...items)", () => {
+    util.testExpression`new Array(1,2,3,4,5) `.expectToMatchJsResult();
 });

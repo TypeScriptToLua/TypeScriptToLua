@@ -87,6 +87,7 @@ export function expectEachVersionExceptJit<T>(
         [tstl.LuaTarget.Lua53]: expectation,
         [tstl.LuaTarget.Lua54]: expectation,
         [tstl.LuaTarget.LuaJIT]: false, // Exclude JIT
+        [tstl.LuaTarget.Luau]: false,
     };
 }
 

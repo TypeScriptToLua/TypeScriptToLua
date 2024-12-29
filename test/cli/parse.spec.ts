@@ -248,6 +248,7 @@ describe("tsconfig", () => {
             ["luaTarget", "5.3", { luaTarget: tstl.LuaTarget.Lua53 }],
             ["luaTarget", "5.4", { luaTarget: tstl.LuaTarget.Lua54 }],
             ["luaTarget", "jit", { luaTarget: tstl.LuaTarget.LuaJIT }],
+            ["luaTarget", "luau", { luaTarget: tstl.LuaTarget.Luau }],
 
             ["luaBundle", "foo", { luaBundle: "foo" }],
             ["luaBundleEntry", "bar", { luaBundleEntry: "bar" }],

@@ -81,6 +81,7 @@ describe("in function call", () => {
             [tstl.LuaTarget.Lua52]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
             [tstl.LuaTarget.Lua53]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
             [tstl.LuaTarget.Lua54]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
+            [tstl.LuaTarget.Luau]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
         }
     );
 });
@@ -94,6 +95,7 @@ describe("in array literal", () => {
         [tstl.LuaTarget.Lua52]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
         [tstl.LuaTarget.Lua53]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
         [tstl.LuaTarget.Lua54]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
+        [tstl.LuaTarget.Luau]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
     });
 
     test("of array literal /w OmittedExpression", () => {

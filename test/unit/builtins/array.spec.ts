@@ -907,9 +907,7 @@ test("new Array()", () => {
         const arr = new Array();
         arr.push(1,2,3);
         return arr;
-    `
-        .debug()
-        .expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test("new Array<T>()", () => {

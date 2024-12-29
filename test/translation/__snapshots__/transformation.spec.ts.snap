@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Luau Transformation (luauSpecificTransformations) 1`] = `
+exports[`Luau-specific Transformation (luauSpecificTransformations) 1`] = `
 "t = if true then "is true" else "is false"
 while false do
     continue

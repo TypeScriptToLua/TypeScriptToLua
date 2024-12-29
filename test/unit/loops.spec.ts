@@ -545,6 +545,9 @@ for (const testCase of [
     const expectContinueGotoLabel: util.TapCallback = builder =>
         expect(builder.getMainLuaCodeChunk()).toMatch("::__continue2::");
 
+    const expectContinueStatement: util.TapCallback = builder =>
+        expect(builder.getMainLuaCodeChunk()).toMatch("continue;");
+
     util.testEachVersion(`loop continue (${testCase})`, () => util.testModule(testCase), {
         [tstl.LuaTarget.Universal]: expectContinueVariable,
         [tstl.LuaTarget.Lua50]: expectContinueVariable,
@@ -553,7 +556,7 @@ for (const testCase of [
         [tstl.LuaTarget.Lua53]: expectContinueGotoLabel,
         [tstl.LuaTarget.Lua54]: expectContinueGotoLabel,
         [tstl.LuaTarget.LuaJIT]: expectContinueGotoLabel,
-        [tstl.LuaTarget.Luau]: () => undefined, // TODO: This is N/A.
+        [tstl.LuaTarget.Luau]: () => expectContinueStatement,
     });
 }
 

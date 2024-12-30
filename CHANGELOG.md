@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.29.0
+
+- Added support for the `Luau` luaTarget. This will use Luau's `continue` statement and ternary conditional expression `if ... then ... else ...` where appropriate.
+- Added support for `new Array<T>()` syntax to construct arrays (constructing with a length argument is not allowed).
+- Fixed a bug causing arrays to sometimes be indexed with a wrong index.
+
 ## 1.28.0
 
 - Upgraded TypeScript to 5.7.2

@@ -1,4 +1,5 @@
 import * as util from "../util";
+import * as tstl from "../../src";
 
 test("throwString", () => {
     util.testFunction`
@@ -343,3 +344,25 @@ test("still works without debug module", () => {
             stack: undefined,
         });
 });
+
+util.testEachVersion(
+    "error stacktrace omits constructor and __TS_New",
+    () => util.testFunction`
+        const e = new Error();
+        return e.stack;
+    `,
+    {
+        ...util.expectEachVersionExceptJit(builder => {
+            builder.expectToHaveNoDiagnostics();
+            const luaResult = builder.getLuaExecutionResult();
+            expect(luaResult.split('\n').length).toBe(4);
+        }),
+        
+        // 5.0 debug.traceback doesn't support levels
+        [tstl.LuaTarget.Lua50]: builder => {
+            builder.expectToHaveNoDiagnostics();
+            const luaResult = builder.getLuaExecutionResult();
+            expect(luaResult).toContain("Level 4");
+        }, 
+    }
+);

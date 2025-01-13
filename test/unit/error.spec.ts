@@ -355,13 +355,15 @@ util.testEachVersion(
         ...util.expectEachVersionExceptJit(builder => {
             builder.expectToHaveNoDiagnostics();
             const luaResult = builder.getLuaExecutionResult();
-            expect(luaResult.split('\n').length).toBe(4);
+            // eslint-disable-next-line jest/no-standalone-expect
+            expect(luaResult.split('\n')).toHaveLength(4);
         }),
         
         // 5.0 debug.traceback doesn't support levels
-        [tstl.LuaTarget.Lua50]: builder => {
+        [tstl.LuaTarget.Lua50](builder) {
             builder.expectToHaveNoDiagnostics();
             const luaResult = builder.getLuaExecutionResult();
+            // eslint-disable-next-line jest/no-standalone-expect
             expect(luaResult).toContain("Level 4");
         }, 
     }

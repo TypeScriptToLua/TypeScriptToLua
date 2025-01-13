@@ -24,6 +24,7 @@ function getErrorStack(constructor: () => any): string | undefined {
 
     if (_VERSION.includes("Lua 5.0")) {
         return debug.traceback(`[Level ${level}]`);
+        // @ts-ignore Fails when compiled with Lua 5.0 types
     } else if (_VERSION === "Lua 5.1") {
         // Lua 5.1 and LuaJIT have a bug where it's not possible to specify the level without a message.
         // @ts-ignore Fails when compiled with Lua 5.0 types

@@ -1,3 +1,5 @@
+import { __TS__New } from "./New";
+
 interface ErrorType {
     name: string;
     new (...args: any[]): Error;
@@ -22,6 +24,11 @@ function getErrorStack(constructor: () => any): string | undefined {
 
     if (_VERSION.includes("Lua 5.0")) {
         return debug.traceback(`[Level ${level}]`);
+        // @ts-ignore Fails when compiled with Lua 5.0 types
+    } else if (_VERSION === "Lua 5.1") {
+        // Lua 5.1 and LuaJIT have a bug where it's not possible to specify the level without a message.
+        // @ts-ignore Fails when compiled with Lua 5.0 types
+        return string.sub(debug.traceback("", level), 2);
     } else {
         // @ts-ignore Fails when compiled with Lua 5.0 types
         return debug.traceback(undefined, level);
@@ -33,7 +40,7 @@ function wrapErrorToString<T extends Error>(getDescription: (this: T) => string)
         const description = getDescription.call(this as T);
         const caller = debug.getinfo(3, "f");
         // @ts-ignore Fails when compiled with Lua 5.0 types
-        const isClassicLua = _VERSION.includes("Lua 5.0") || _VERSION === "Lua 5.1";
+        const isClassicLua = _VERSION.includes("Lua 5.0");
         if (isClassicLua || (caller && caller.func !== error)) {
             return description;
         } else {
@@ -55,7 +62,7 @@ export const Error: ErrorConstructor = initErrorClass(
         public stack?: string;
 
         constructor(public message = "") {
-            this.stack = getErrorStack((this.constructor as any).new);
+            this.stack = getErrorStack(__TS__New as any);
             const metatable = getmetatable(this);
             if (metatable && !metatable.__errorToStringPatched) {
                 metatable.__errorToStringPatched = true;

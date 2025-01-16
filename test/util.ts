@@ -43,7 +43,7 @@ function getLuaBindingsForVersion(target: tstl.LuaTarget): { lauxlib: LauxLib; l
         return { lauxlib, lua, lualib };
     }
     if (target === tstl.LuaTarget.LuaJIT) {
-        throw Error("Can't use executeLua() or expectToMatchJsResult() wit LuaJIT as target!");
+        throw Error("Can't use executeLua() or expectToMatchJsResult() with LuaJIT as target!");
     }
 
     const { lauxlib, lua, lualib } = require("lua-wasm-bindings/dist/lua.54");
@@ -63,7 +63,7 @@ export function testEachVersion<T extends TestBuilder>(
 ): void {
     for (const version of Object.values(tstl.LuaTarget) as tstl.LuaTarget[]) {
         const specialBuilder = special?.[version];
-        if (specialBuilder === false) return;
+        if (specialBuilder === false) continue;
 
         const testName = name === undefined ? version : `${name} [${version}]`;
         defineTest(testName, () => {

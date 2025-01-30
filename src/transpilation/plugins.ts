@@ -77,15 +77,23 @@ export function getPlugins(program: ts.Program): { diagnostics: ts.Diagnostic[];
     for (const [index, pluginOption] of (options.luaPlugins ?? []).entries()) {
         const optionName = `tstl.luaPlugins[${index}]`;
 
-        const { error: resolveError, result: factory } = resolvePlugin(
-            "plugin",
-            `${optionName}.name`,
-            getConfigDirectory(options),
-            pluginOption.name,
-            pluginOption.import
-        );
+        const factory = (() => {
+            if ("plugin" in pluginOption) {
+                return pluginOption.plugin;
+            } else {
+                const { error: resolveError, result: factory } = resolvePlugin(
+                    "plugin",
+                    `${optionName}.name`,
+                    getConfigDirectory(options),
+                    pluginOption.name,
+                    pluginOption.import
+                );
 
-        if (resolveError) diagnostics.push(resolveError);
+                if (resolveError) diagnostics.push(resolveError);
+                return factory;
+            }
+        })();
+
         if (factory === undefined) continue;
 
         const plugin = typeof factory === "function" ? factory(pluginOption) : factory;

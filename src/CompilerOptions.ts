@@ -1,6 +1,7 @@
 import * as ts from "typescript";
 import { JsxEmit } from "typescript";
 import * as diagnosticFactories from "./transpilation/diagnostics";
+import { Plugin } from "./transpilation/plugins";
 
 type OmitIndexSignature<T> = {
     [K in keyof T as string extends K ? never : number extends K ? never : K]: T[K];
@@ -23,6 +24,11 @@ export interface LuaPluginImport {
     [option: string]: any;
 }
 
+export interface InMemoryLuaPlugin {
+    plugin: Plugin | ((options: Record<string, any>) => Plugin);
+    [option: string]: any;
+}
+
 export interface TypeScriptToLuaOptions {
     buildMode?: BuildMode;
     extension?: string;
@@ -30,7 +36,7 @@ export interface TypeScriptToLuaOptions {
     luaBundleEntry?: string;
     luaTarget?: LuaTarget;
     luaLibImport?: LuaLibImportKind;
-    luaPlugins?: LuaPluginImport[];
+    luaPlugins?: Array<LuaPluginImport | InMemoryLuaPlugin>;
     noImplicitGlobalVariables?: boolean;
     noImplicitSelf?: boolean;
     noHeader?: boolean;

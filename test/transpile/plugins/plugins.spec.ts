@@ -1,5 +1,6 @@
 import * as path from "path";
 import * as util from "../../util";
+import { Plugin } from "../../../src/transpilation/plugins";
 import * as ts from "typescript";
 
 test("printer", () => {
@@ -181,4 +182,62 @@ test("afterEmit plugin", () => {
     expect(diagnostic).toBeDefined();
     expect(diagnostic?.category).toBe(ts.DiagnosticCategory.Message);
     expect(diagnostic?.messageText).toContain("After emit");
+});
+
+test("in memory plugin", () => {
+    const { diagnostics } = util.testModule``
+        .setOptions({
+            luaPlugins: [
+                {
+                    plugin: {
+                        afterEmit(program: ts.Program) {
+                            return [
+                                {
+                                    category: ts.DiagnosticCategory.Message,
+                                    messageText: "In memory plugin diagnostic message!",
+                                    code: 1234,
+                                    file: program.getSourceFiles()[0],
+                                    start: undefined,
+                                    length: undefined,
+                                } satisfies ts.Diagnostic,
+                            ];
+                        },
+                    } satisfies Plugin,
+                },
+            ],
+        })
+        .getLuaResult();
+
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0].code).toBe(1234);
+});
+
+test("in memory plugin with factory", () => {
+    const { diagnostics } = util.testModule``
+        .setOptions({
+            luaPlugins: [
+                {
+                    code: 1234,
+                    plugin: options =>
+                        ({
+                            afterEmit(program: ts.Program) {
+                                return [
+                                    {
+                                        category: ts.DiagnosticCategory.Message,
+                                        messageText: "In memory plugin diagnostic message!",
+                                        code: options.code,
+                                        file: program.getSourceFiles()[0],
+                                        start: undefined,
+                                        length: undefined,
+                                    } satisfies ts.Diagnostic,
+                                ];
+                            },
+                        } satisfies Plugin),
+                },
+            ],
+        })
+        .getLuaResult();
+
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0].code).toBe(1234);
 });

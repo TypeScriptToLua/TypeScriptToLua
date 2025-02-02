@@ -10,10 +10,10 @@ export function usingTransformer(context: TransformationContext): ts.Transformer
                 if (hasUsings) {
                     // Recurse visitor into updated block to find further usings
                     const updatedBlock = ts.factory.updateBlock(node, newStatements);
-                    const result = ts.visitEachChild(updatedBlock, visit, ctx);
+                    const visitedBlock = ts.visitEachChild(updatedBlock, visit, ctx);
 
                     // Set all the synthetic node parents to something that makes sense
-                    const parent: ts.Node[] = [updatedBlock];
+                    const parent: ts.Node[] = [];
                     function setParent(node2: ts.Node): ts.Node {
                         ts.setParent(node2, parent[parent.length - 1]);
                         parent.push(node2);
@@ -21,10 +21,11 @@ export function usingTransformer(context: TransformationContext): ts.Transformer
                         parent.pop();
                         return node2;
                     }
-                    ts.visitEachChild(updatedBlock, setParent, ctx);
-                    ts.setParent(updatedBlock, node.parent);
+                    parent.push(visitedBlock);
+                    ts.visitEachChild(visitedBlock, setParent, ctx);
+                    ts.setParent(visitedBlock, node.parent);
 
-                    return result;
+                    return visitedBlock;
                 }
             }
             return ts.visitEachChild(node, visit, ctx);

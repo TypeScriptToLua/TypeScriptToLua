@@ -3,7 +3,7 @@
 ## 1.30.0
 
 - Allow passing in-memory plugins when using the tstl API, for more flexible integration into scripts
-- Changed how stracktraces are handled for `Error` in Lua 5.1 and LuaJIT
+- Changed how stacktraces are handled for `Error` in Lua 5.1 and LuaJIT
 
 ## 1.29.0
 

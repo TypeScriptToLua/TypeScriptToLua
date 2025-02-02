@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.30.0
+
+- Allow passing in-memory plugins when using the tstl API, for more flexible integration into scripts
+- Changed how stracktraces are handled for `Error` in Lua 5.1 and LuaJIT
+
 ## 1.29.0
 
 - Added support for the `Luau` luaTarget. This will use Luau's `continue` statement and ternary conditional expression `if ... then ... else ...` where appropriate.

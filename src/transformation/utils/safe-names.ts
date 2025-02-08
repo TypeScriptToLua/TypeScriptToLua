@@ -16,6 +16,8 @@ export const isValidLuaIdentifier = (name: string, options: CompilerOptions) =>
 
 export const luaKeywords: ReadonlySet<string> = new Set([
     "and",
+    "bit",
+    "bit32",
     "break",
     "do",
     "else",

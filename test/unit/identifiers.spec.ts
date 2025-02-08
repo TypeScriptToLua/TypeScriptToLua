@@ -577,6 +577,15 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
         expect(luaResult).toBe("foobar");
     });
 
+    test("variable (bit32)", () => {
+        util.testFunction`
+        const bit32 = 1;
+        return bit32 << 1;
+        `
+            .setOptions({ luaTarget: LuaTarget.Lua52 })
+            .expectToMatchJsResult();
+    });
+
     test("variable (_G)", () => {
         util.testFunction`
             const _G = "bar";

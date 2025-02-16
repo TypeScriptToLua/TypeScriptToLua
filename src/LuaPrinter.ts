@@ -157,7 +157,7 @@ export class LuaPrinter {
     };
     private static rightAssociativeOperators = new Set([lua.SyntaxKind.ConcatOperator, lua.SyntaxKind.PowerOperator]);
 
-    private currentIndent = "";
+    protected currentIndent = "";
     protected luaFile: string;
     protected relativeSourcePath: string;
     protected options: CompilerOptions;

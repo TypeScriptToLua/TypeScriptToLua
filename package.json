@@ -42,7 +42,7 @@
         "node": ">=16.10.0"
     },
     "peerDependencies": {
-        "typescript": "5.7.2"
+        "typescript": "5.8.2"
     },
     "dependencies": {
         "@typescript-to-lua/language-extensions": "1.19.0",
@@ -58,7 +58,7 @@
         "@types/node": "^22.10.0",
         "@types/picomatch": "^2.3.0",
         "@types/resolve": "1.14.0",
-        "eslint": "^9.11.0",
+        "eslint": "^9.22.0",
         "eslint-plugin-jest": "^28.8.3",
         "fs-extra": "^8.1.0",
         "javascript-stringify": "^2.0.1",
@@ -69,7 +69,7 @@
         "prettier": "^2.8.8",
         "ts-jest": "^29.2.5",
         "ts-node": "^10.9.2",
-        "typescript": "5.7.2",
-        "typescript-eslint": "^8.16.0"
+        "typescript": "5.8.2",
+        "typescript-eslint": "^8.26.0"
     }
 }

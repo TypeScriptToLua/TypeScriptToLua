@@ -47,10 +47,7 @@ function transformImportSpecifier(
     moduleTableName: lua.Identifier
 ): lua.VariableDeclarationStatement {
     const leftIdentifier = transformIdentifier(context, importSpecifier.name);
-    const propertyName = transformPropertyName(
-        context,
-        importSpecifier.propertyName ? importSpecifier.propertyName : importSpecifier.name
-    );
+    const propertyName = transformPropertyName(context, importSpecifier.propertyName ?? importSpecifier.name);
 
     return lua.createVariableDeclarationStatement(
         leftIdentifier,

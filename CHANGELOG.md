@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.31.0
+
+- Upgraded TypeScript to 5.8.2
+- Changed `currentIndent` from private to protected in the `LuaPrinter` to allow custom printers with alternate indentation
+- Added `bit` and `bit32` as reserved Lua keywords to avoid accidental naming clashes.
+
 ## 1.30.0
 
 - Allow passing in-memory plugins when using the tstl API, for more flexible integration into scripts

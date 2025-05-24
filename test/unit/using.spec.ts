@@ -217,3 +217,19 @@ test("works with disposable classes (#1584)", () => {
         return log;
     `.expectToEqual(["action", "cleanup"]);
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1632
+test("works on root level (#1632)", () => {
+    util.testModule`
+        export let disposed = false;
+
+        class A {
+            [Symbol.dispose] = function (this: A) {
+                disposed = true;
+            }
+        }
+        using a = new A();        
+    `.expectToEqual({
+        disposed: true,
+    });
+});

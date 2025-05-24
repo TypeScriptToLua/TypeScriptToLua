@@ -5,11 +5,13 @@ import { LuaLibFeature, importLuaLibFeature } from "../utils/lualib";
 export function usingTransformer(context: TransformationContext): ts.TransformerFactory<ts.SourceFile> {
     return ctx => sourceFile => {
         function visit(node: ts.Node): ts.Node {
-            if (ts.isBlock(node)) {
+            if (ts.isBlock(node) || ts.isSourceFile(node)) {
                 const [hasUsings, newStatements] = transformBlockWithUsing(context, node.statements, node);
                 if (hasUsings) {
                     // Recurse visitor into updated block to find further usings
-                    const updatedBlock = ts.factory.updateBlock(node, newStatements);
+                    const updatedBlock = ts.isBlock(node)
+                        ? ts.factory.updateBlock(node, newStatements)
+                        : ts.factory.updateSourceFile(node, newStatements);
                     const result = ts.visitEachChild(updatedBlock, visit, ctx);
 
                     // Set all the synthetic node parents to something that makes sense
@@ -29,7 +31,8 @@ export function usingTransformer(context: TransformationContext): ts.Transformer
             }
             return ts.visitEachChild(node, visit, ctx);
         }
-        return ts.visitEachChild(sourceFile, visit, ctx);
+        const transformedSourceFile = ts.visitEachChild(sourceFile, visit, ctx);
+        return visit(transformedSourceFile) as ts.SourceFile;
     };
 }
 
@@ -40,7 +43,7 @@ function isUsingDeclarationList(node: ts.Node): node is ts.VariableStatement {
 function transformBlockWithUsing(
     context: TransformationContext,
     statements: ts.NodeArray<ts.Statement> | ts.Statement[],
-    block: ts.Block
+    block: ts.Block | ts.SourceFile
 ): [true, ts.Statement[]] | [false] {
     const newStatements: ts.Statement[] = [];
 
@@ -102,7 +105,14 @@ function transformBlockWithUsing(
                 call = ts.factory.createAwaitExpression(call);
             }
 
-            if (ts.isBlock(block.parent) && block.parent.statements[block.parent.statements.length - 1] !== block) {
+            if (ts.isSourceFile(block)) {
+                // If block is a sourcefile, don't insert a return statement into root code
+                newStatements.push(ts.factory.createExpressionStatement(call));
+            } else if (
+                block.parent &&
+                ts.isBlock(block.parent) &&
+                block.parent.statements[block.parent.statements.length - 1] !== block
+            ) {
                 // If this is a free-standing block in a function (not the last statement), dont return the value
                 newStatements.push(ts.factory.createExpressionStatement(call));
             } else {

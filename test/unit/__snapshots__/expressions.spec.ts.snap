@@ -589,9 +589,11 @@ return ____exports"
 `;
 
 exports[`Unary expressions basic ("+a") 1`] = `
-"local ____exports = {}
+"local ____lualib = require("lualib_bundle")
+local __TS__Number = ____lualib.__TS__Number
+local ____exports = {}
 function ____exports.__main(self)
-    local ____ = a
+    __TS__Number(a)
 end
 return ____exports"
 `;
@@ -605,9 +607,11 @@ return ____exports"
 `;
 
 exports[`Unary expressions basic ("-a") 1`] = `
-"local ____exports = {}
+"local ____lualib = require("lualib_bundle")
+local __TS__Number = ____lualib.__TS__Number
+local ____exports = {}
 function ____exports.__main(self)
-    local ____ = -a
+    __TS__Number(-a)
 end
 return ____exports"
 `;

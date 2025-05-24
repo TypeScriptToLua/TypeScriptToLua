@@ -224,3 +224,18 @@ test.each([
 ])("Numer constants have correct relative sizes (%p)", comparison => {
     util.testExpression(comparison).expectToEqual(true);
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1629
+test("unary + casting to number (#1629)", () => {
+    util.testFunction`
+        let abc = "123";
+        return [+abc, +"456"];
+    `.expectToEqual([123, 456]);
+});
+
+test("unary - casting to number", () => {
+    util.testFunction`
+        let abc = "123";
+        return [-abc, -"456"];
+    `.expectToEqual([-123, -456]);
+});

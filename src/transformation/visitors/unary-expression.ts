@@ -7,6 +7,8 @@ import {
     transformCompoundAssignmentExpression,
     transformCompoundAssignmentStatement,
 } from "./binary-expression/compound";
+import { isNumberType } from "../utils/typescript";
+import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 
 export function transformUnaryExpressionStatement(
     context: TransformationContext,
@@ -92,16 +94,29 @@ export const transformPrefixUnaryExpression: FunctionVisitor<ts.PrefixUnaryExpre
                 false
             );
 
-        case ts.SyntaxKind.PlusToken:
-            // TODO: Wrap with `Number`
-            return context.transformExpression(expression.operand);
-
-        case ts.SyntaxKind.MinusToken:
-            return lua.createUnaryExpression(
-                context.transformExpression(expression.operand),
-                lua.SyntaxKind.NegationOperator
-            );
-
+        case ts.SyntaxKind.PlusToken: {
+            const operand = context.transformExpression(expression.operand);
+            const type = context.checker.getTypeAtLocation(expression.operand);
+            if (isNumberType(context, type)) {
+                return operand;
+            } else {
+                return transformLuaLibFunction(context, LuaLibFeature.Number, expression, operand);
+            }
+        }
+        case ts.SyntaxKind.MinusToken: {
+            const operand = context.transformExpression(expression.operand);
+            const type = context.checker.getTypeAtLocation(expression.operand);
+            if (isNumberType(context, type)) {
+                return lua.createUnaryExpression(operand, lua.SyntaxKind.NegationOperator);
+            } else {
+                return transformLuaLibFunction(
+                    context,
+                    LuaLibFeature.Number,
+                    expression,
+                    lua.createUnaryExpression(operand, lua.SyntaxKind.NegationOperator)
+                );
+            }
+        }
         case ts.SyntaxKind.ExclamationToken:
             return lua.createUnaryExpression(
                 context.transformExpression(expression.operand),

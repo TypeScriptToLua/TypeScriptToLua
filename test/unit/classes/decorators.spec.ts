@@ -138,7 +138,7 @@ test("Exported class decorator", () => {
 });
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1149
-test("exported class with decorator", () => {
+test("exported class with decorator (#1149)", () => {
     util.testModule`
         import { MyClass } from "./other";
         const inst = new MyClass();
@@ -162,6 +162,28 @@ test("exported class with decorator", () => {
             }`
         )
         .expectToEqual({ result: "overridden" });
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1634
+test("namespaced exported class with decorator (#1634)", () => {
+    util.testModule`
+        function myDecorator(target: {new(): any}, context: ClassDecoratorContext) {
+            return class extends target {
+                foo() {
+                    return "overridden";
+                }
+            }
+        }
+
+        namespace ns {
+            @myDecorator
+            export class MyClass {
+                foo() {
+                    return "foo";
+                }
+            }
+        }
+    `.expectNoExecutionError();
 });
 
 test("default exported class with decorator", () => {

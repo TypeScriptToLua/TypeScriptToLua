@@ -20,6 +20,14 @@ export function hasExportModifier(node: ts.Node): boolean {
     );
 }
 
+export function shouldBeExported(node: ts.Node): boolean {
+    if (hasExportModifier(node)) {
+        // Don't export if we're inside a namespace (module declaration)
+        return ts.findAncestor(node, ts.isModuleDeclaration) === undefined;
+    }
+    return false;
+}
+
 export const createDefaultExportStringLiteral = (original?: ts.Node): lua.StringLiteral =>
     lua.createStringLiteral("default", original);
 

@@ -83,3 +83,26 @@ test.each(["string", "'string literal type'", "string & unknown"])(
             .expectToMatchJsResult();
     }
 );
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1637
+test("tagged template literal returned from function call (#1637)", () => {
+    util.testModule`
+        function templateFactory() {
+            return (template: TemplateStringsArray) => {
+                return "bar";
+            }
+        }
+        export let result = templateFactory()\`foo\`;
+    `.expectToEqual({ result: "bar" });
+});
+
+test("tagged template literal returned from function call, explicit no context (#1637)", () => {
+    util.testModule`
+        function templateFactory() {
+            return function(this: void, template: TemplateStringsArray) {
+                return "bar";
+            }
+        }
+        export let result = templateFactory()\`foo\`;
+    `.expectToEqual({ result: "bar" });
+});

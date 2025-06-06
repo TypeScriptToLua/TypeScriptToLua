@@ -560,6 +560,20 @@ for (const testCase of [
     });
 }
 
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1638
+test.each([tstl.LuaTarget.Universal, tstl.LuaTarget.Lua50, tstl.LuaTarget.Lua51])(
+    "no unreachable code when  using continue for target %s (#1638)",
+    target => {
+        util.testFunction`
+            let i = 0;
+            while(++i < 10) continue;
+            return i;
+        `
+            .setOptions({ luaTarget: target })
+            .expectToMatchJsResult();
+    }
+);
+
 test("do...while", () => {
     util.testFunction`
         let result = 0;

@@ -4,9 +4,12 @@ import { FunctionVisitor } from "../../context";
 import { transformInPrecedingStatementScope } from "../../utils/preceding-statements";
 import { checkVariableDeclarationList, transformVariableDeclaration } from "../variable-declaration";
 import { invertCondition, transformLoopBody } from "./utils";
+import { ScopeType } from "../../utils/scope";
 
 export const transformForStatement: FunctionVisitor<ts.ForStatement> = (statement, context) => {
     const result: lua.Statement[] = [];
+
+    context.pushScope(ScopeType.Loop);
 
     if (statement.initializer) {
         if (ts.isVariableDeclarationList(statement.initializer)) {
@@ -60,6 +63,8 @@ export const transformForStatement: FunctionVisitor<ts.ForStatement> = (statemen
 
     // while (condition) do ... end
     result.push(lua.createWhileStatement(lua.createBlock(body), condition, statement));
+
+    context.popScope();
 
     return lua.createDoStatement(result, statement);
 };

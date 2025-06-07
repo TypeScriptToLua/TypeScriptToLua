@@ -540,10 +540,10 @@ for (const testCase of [
     "for (const a of []) { continue; }",
 ]) {
     const expectContinueVariable: util.TapCallback = builder =>
-        expect(builder.getMainLuaCodeChunk()).toMatch("local __continue2");
+        expect(builder.getMainLuaCodeChunk()).toMatch(/local __continue\d+/);
 
     const expectContinueGotoLabel: util.TapCallback = builder =>
-        expect(builder.getMainLuaCodeChunk()).toMatch("::__continue2::");
+        expect(builder.getMainLuaCodeChunk()).toMatch(/::__continue\d+::/);
 
     const expectContinueStatement: util.TapCallback = builder =>
         expect(builder.getMainLuaCodeChunk()).toMatch("continue;");
@@ -623,4 +623,13 @@ test("for...in with pre-defined variable keeps last value", () => {
     `.getLuaExecutionResult();
     // Need custom matcher because order is not guaranteed in neither JS nor Lua
     expect([keyX, keyFoo]).toContain(result);
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1631
+test("loop variables should not be global (#1631)", () => {
+    const code = util.testModule`
+        for (let val = 0; val < 2; ++val) {}
+    `.getMainLuaCodeChunk();
+
+    expect(code).toContain("local val");
 });

@@ -159,7 +159,7 @@ export function transformContextualCallExpression(
             );
             return lua.createCallExpression(expression, transformedArguments, node);
         }
-    } else if (ts.isIdentifier(left)) {
+    } else if (ts.isIdentifier(left) || ts.isCallExpression(left)) {
         const callContext = context.isStrict ? ts.factory.createNull() : ts.factory.createIdentifier("_G");
         let expression: lua.Expression;
         [expression, transformedArguments] = transformCallWithArguments(

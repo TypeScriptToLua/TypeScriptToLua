@@ -31,13 +31,25 @@ export function transformLoopBody(
             const identifier = lua.createIdentifier(`__continue${scopeId}`);
             const literalTrue = lua.createBooleanLiteral(true);
 
+            // If there is a break in the body statements, do not include any code afterwards
+            const transformedBodyStatements = [];
+            let bodyBroken = false;
+            for (const statement of body) {
+                transformedBodyStatements.push(statement);
+                if (lua.isBreakStatement(statement)) {
+                    bodyBroken = true;
+                    break;
+                }
+            }
+            if (!bodyBroken) {
+                // Tell loop to continue if not broken
+                transformedBodyStatements.push(lua.createAssignmentStatement(identifier, literalTrue));
+            }
+
             return [
                 lua.createDoStatement([
                     lua.createVariableDeclarationStatement(identifier),
-                    lua.createRepeatStatement(
-                        lua.createBlock([...body, lua.createAssignmentStatement(identifier, literalTrue)]),
-                        literalTrue
-                    ),
+                    lua.createRepeatStatement(lua.createBlock(transformedBodyStatements), literalTrue),
                     lua.createIfStatement(
                         lua.createUnaryExpression(identifier, lua.SyntaxKind.NotOperator),
                         lua.createBlock([lua.createBreakStatement()])

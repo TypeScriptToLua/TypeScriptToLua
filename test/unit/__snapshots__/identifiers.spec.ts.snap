@@ -427,3 +427,18 @@ function ____exports.__main(self)
 end
 return ____exports"
 `;
+
+exports[`unicode static initialization block (#1645) 1`] = `
+"local ____lualib = require("lualib_bundle")
+local __TS__Class = ____lualib.__TS__Class
+local ____exports = {}
+____exports.default = __TS__Class()
+local _____81EA_5B9A_4E49_5F02_80FD = ____exports.default
+_____81EA_5B9A_4E49_5F02_80FD.name = "自定义异能"
+function _____81EA_5B9A_4E49_5F02_80FD.prototype.____constructor(self)
+end;
+(function(self)
+    local a = 1
+end)(_____81EA_5B9A_4E49_5F02_80FD)
+return ____exports"
+`;

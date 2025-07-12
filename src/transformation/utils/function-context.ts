@@ -124,7 +124,8 @@ function computeDeclarationContextType(context: TransformationContext, signature
         ts.isConstructSignatureDeclaration(signatureDeclaration) ||
         ts.isConstructorDeclaration(signatureDeclaration) ||
         (signatureDeclaration.parent && ts.isPropertyDeclaration(signatureDeclaration.parent)) ||
-        (signatureDeclaration.parent && ts.isPropertySignature(signatureDeclaration.parent))
+        (signatureDeclaration.parent && ts.isPropertySignature(signatureDeclaration.parent)) ||
+        (signatureDeclaration.parent && ts.isIndexSignatureDeclaration(signatureDeclaration.parent))
     ) {
         // Class/interface methods only respect @noSelf on their parent
         const scopeDeclaration = findFirstNodeAbove(

@@ -13,3 +13,8 @@ exports[`@noSelf on parent class declaration removes context argument 1`] = `"ho
 exports[`@noSelf on parent interface declaration removes context argument 1`] = `"holder.myMethod()"`;
 
 exports[`@noSelf on parent namespace declaration removes context argument 1`] = `"MyNamespace.myMethod()"`;
+
+exports[`@noSelf on static class methods with string key access 1`] = `
+"TestClass.myMethod()
+TestClass.myKey()"
+`;

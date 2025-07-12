@@ -52,6 +52,19 @@ test("@noSelf on parent namespace declaration removes context argument", () => {
     `.expectLuaToMatchSnapshot();
 });
 
+test("@noSelf on static class methods with string key access", () => {
+    util.testModule`
+        /** @noSelf */
+        declare class TestClass {
+            static [key: string]: () => void;
+            static myMethod(): void;
+        }
+
+        TestClass.myMethod();
+        TestClass.myKey();
+    `.expectLuaToMatchSnapshot();
+});
+
 // additional coverage for https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1292
 test("explicit this parameter respected over @noSelf", () => {
     util.testModule`

@@ -202,7 +202,7 @@ function transformClassLikeDeclaration(
                 const iif = lua.createFunctionExpression(lua.createBlock(bodyStatements), [
                     lua.createIdentifier("self"),
                 ]);
-                const iife = lua.createCallExpression(iif, [className]);
+                const iife = lua.createCallExpression(iif, [localClassName]);
                 result.push(lua.createExpressionStatement(iife, member));
             }
         }
@@ -217,7 +217,7 @@ function transformClassLikeDeclaration(
         if (shouldBeExported(classDeclaration)) {
             const exportExpression = hasDefaultExportModifier(classDeclaration)
                 ? createDefaultExportExpression(classDeclaration)
-                : createExportedIdentifier(context, className);
+                : createExportedIdentifier(context, localClassName);
 
             const classAssignment = lua.createAssignmentStatement(exportExpression, localClassName);
             result.push(classAssignment);

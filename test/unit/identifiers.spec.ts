@@ -317,6 +317,17 @@ test("unicode export default class", () => {
         .expectToEqual({ result: "你好" });
 });
 
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1645
+test("unicode static initialization block (#1645)", () => {
+    util.testModule`
+        export default class 自定义异能 {
+            static {
+                let a = 1;
+            }
+        }
+    `.expectLuaToMatchSnapshot();
+});
+
 describe("lua keyword as identifier doesn't interfere with lua's value", () => {
     test("variable (nil)", () => {
         util.testFunction`

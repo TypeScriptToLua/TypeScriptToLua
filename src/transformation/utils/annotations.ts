@@ -105,7 +105,8 @@ export function getFileAnnotations(sourceFile: ts.SourceFile): AnnotationsMap {
 function getTagArgsFromComment(tag: ts.JSDocTag): string[] {
     if (tag.comment) {
         if (typeof tag.comment === "string") {
-            return tag.comment.split(" ");
+            const firstLine = tag.comment.split("\n")[0];
+            return firstLine.trim().split(" ");
         } else {
             return tag.comment.map(part => part.text);
         }

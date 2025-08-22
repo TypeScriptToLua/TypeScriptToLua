@@ -115,7 +115,7 @@ export function transformPropertyAccessExpressionWithCapture(
 
     let property = node.name.text;
     const symbol = context.checker.getSymbolAtLocation(node.name);
-    const customName = getCustomNameFromSymbol(symbol);
+    const customName = getCustomNameFromSymbol(context, symbol);
     if (customName) {
         property = customName;
     }

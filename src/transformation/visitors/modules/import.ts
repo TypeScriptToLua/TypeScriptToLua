@@ -9,7 +9,7 @@ import { createHoistableVariableDeclarationStatement } from "../../utils/lua-ast
 import { importLuaLibFeature, LuaLibFeature } from "../../utils/lualib";
 import { createSafeName } from "../../utils/safe-names";
 import { peekScope } from "../../utils/scope";
-import { transformIdentifier } from "../identifier";
+import { getCustomNameFromSymbol, transformIdentifier } from "../identifier";
 import { transformPropertyName } from "../literal";
 
 function isNoResolutionPath(context: TransformationContext, moduleSpecifier: ts.Expression): boolean {
@@ -46,8 +46,15 @@ function transformImportSpecifier(
     importSpecifier: ts.ImportSpecifier,
     moduleTableName: lua.Identifier
 ): lua.VariableDeclarationStatement {
+    const type = context.checker.getTypeAtLocation(importSpecifier.name);
+
     const leftIdentifier = transformIdentifier(context, importSpecifier.name);
-    const propertyName = transformPropertyName(context, importSpecifier.propertyName ?? importSpecifier.name);
+
+    // If imported value has a customName annotation use that, otherwise use regular property
+    const customName = getCustomNameFromSymbol(context, type.getSymbol());
+    const propertyName = customName
+        ? lua.createStringLiteral(customName, importSpecifier.propertyName ?? importSpecifier.name)
+        : transformPropertyName(context, importSpecifier.propertyName ?? importSpecifier.name);
 
     return lua.createVariableDeclarationStatement(
         leftIdentifier,

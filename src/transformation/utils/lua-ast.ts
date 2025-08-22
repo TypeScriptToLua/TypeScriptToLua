@@ -81,6 +81,35 @@ export function createUnpackCall(
     return lua.setNodeFlags(lua.createCallExpression(unpack, [expression], tsOriginal), lua.NodeFlags.TableUnpackCall);
 }
 
+export function createBoundedUnpackCall(
+    context: TransformationContext,
+    expression: lua.Expression,
+    maxUnpackItem: number,
+    tsOriginal?: ts.Node
+): lua.Expression {
+    if (context.luaTarget === LuaTarget.Universal) {
+        return transformLuaLibFunction(context, LuaLibFeature.Unpack, tsOriginal, expression);
+    }
+
+    // Lua 5.0 does not support this signature, so don't add the arguments there
+    const extraArgs =
+        context.luaTarget === LuaTarget.Lua50
+            ? []
+            : [lua.createNumericLiteral(1), lua.createNumericLiteral(maxUnpackItem)];
+
+    const unpack =
+        context.luaTarget === LuaTarget.Lua50 ||
+        context.luaTarget === LuaTarget.Lua51 ||
+        context.luaTarget === LuaTarget.LuaJIT
+            ? lua.createIdentifier("unpack")
+            : lua.createTableIndexExpression(lua.createIdentifier("table"), lua.createStringLiteral("unpack"));
+
+    return lua.setNodeFlags(
+        lua.createCallExpression(unpack, [expression, ...extraArgs], tsOriginal),
+        lua.NodeFlags.TableUnpackCall
+    );
+}
+
 export function isUnpackCall(node: lua.Node): boolean {
     return lua.isCallExpression(node) && (node.flags & lua.NodeFlags.TableUnpackCall) !== 0;
 }

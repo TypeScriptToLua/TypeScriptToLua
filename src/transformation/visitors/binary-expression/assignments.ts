@@ -4,7 +4,7 @@ import * as lua from "../../../LuaAST";
 import { TransformationContext } from "../../context";
 import { validateAssignment } from "../../utils/assignment-validation";
 import { createExportedIdentifier, getDependenciesOfSymbol, isSymbolExported } from "../../utils/export";
-import { createUnpackCall, wrapInTable } from "../../utils/lua-ast";
+import { createBoundedUnpackCall, wrapInTable } from "../../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isDestructuringAssignment } from "../../utils/typescript";
 import { isArrayLength, transformDestructuringAssignment } from "./destructuring-assignments";
@@ -252,7 +252,7 @@ export function transformAssignmentStatement(
             } else {
                 right = context.transformExpression(expression.right);
                 if (!isMultiReturnCall(context, expression.right) && isArrayType(context, rightType)) {
-                    right = createUnpackCall(context, right, expression.right);
+                    right = createBoundedUnpackCall(context, right, expression.left.elements.length, expression.right);
                 }
             }
 

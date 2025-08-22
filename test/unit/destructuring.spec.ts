@@ -195,6 +195,17 @@ describe("array destructuring optimization", () => {
             .expectToMatchJsResult();
     });
 
+    util.testEachVersion(
+        "array versions",
+        () =>
+            util.testFunction`
+            const array = [3, 5, 1];
+            const [a, b, c] = array;
+            return { a, b, c };
+        `,
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
+
     test("array literal", () => {
         util.testFunction`
             const [a, b, c] = [3, 5, 1];

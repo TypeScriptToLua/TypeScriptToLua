@@ -5,7 +5,7 @@ import { FunctionVisitor, TransformationContext } from "../context";
 import { validateAssignment } from "../utils/assignment-validation";
 import { unsupportedVarDeclaration } from "../utils/diagnostics";
 import { addExportToIdentifier } from "../utils/export";
-import { createLocalOrExportedOrGlobalDeclaration, createUnpackCall, wrapInTable } from "../utils/lua-ast";
+import { createBoundedUnpackCall, createLocalOrExportedOrGlobalDeclaration, wrapInTable } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
 import { createCallableTable, isFunctionTypeWithProperties } from "./function";
@@ -209,10 +209,11 @@ export function transformBindingVariableDeclaration(
                     : lua.createNilLiteral();
             statements.push(...createLocalOrExportedOrGlobalDeclaration(context, vars, values, initializer));
         } else {
-            // local vars = this.transpileDestructingAssignmentValue(node.initializer);
-            const unpackedInitializer = createUnpackCall(
+            // use unpack(thing, 1, #bindingItems) to unpack
+            const unpackedInitializer = createBoundedUnpackCall(
                 context,
                 context.transformExpression(initializer),
+                bindingPattern.elements.length,
                 initializer
             );
             statements.push(

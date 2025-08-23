@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.32.0
+
+- Fixed a broken `@customName` interation with import statements
+- Use `(table.)unpack(expression, from, to)` when using array destructing syntax `const [a,b] = array;` to avoid having to unpack the entire array
+- Fixed compiler annotations also considering the next line as part of any possible arguments
+- Fixed a bug with unicode classnames not being properly escaped in static initializer blocks
+- Fixed a bug where `@noSelf` still was not respected for index signature methods
+- Fixed a case where loop variables were incorrectly missing `local`
+- Removed dead code that was sometimes generated using `continue` in a loop
+- Fixed a bug with tagged template literals when the tag is a function call
+- Fixed a bug with class decorators leading to invalid Lua code being generated
+- A `-` or `+` prefix now converts expressions to numbers with `Number()`
+- Fixed a bug with root level `using` statements not properly disposing objects
+
 ## 1.31.0
 
 - Upgraded TypeScript to 5.8.2

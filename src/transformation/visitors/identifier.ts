@@ -18,7 +18,7 @@ export function transformIdentifier(context: TransformationContext, identifier: 
     return transformNonValueIdentifier(context, identifier, context.checker.getSymbolAtLocation(identifier));
 }
 
-export function getCustomNameFromSymbol(symbol?: ts.Symbol): undefined | string {
+export function getCustomNameFromSymbol(context: TransformationContext, symbol?: ts.Symbol): undefined | string {
     let retVal: undefined | string;
 
     if (symbol) {
@@ -32,6 +32,18 @@ export function getCustomNameFromSymbol(symbol?: ts.Symbol): undefined | string 
                 if (foundAnnotation) {
                     customNameAnnotation = foundAnnotation;
                     break;
+                }
+
+                // If the symbol is an imported value, check the original declaration
+                // beware of declaration.propertyName, this is the import name alias and should not be renamed!
+                if (ts.isImportSpecifier(declaration) && !declaration.propertyName) {
+                    const importedType = context.checker.getTypeAtLocation(declaration);
+                    if (importedType.symbol) {
+                        const importedCustomName = getCustomNameFromSymbol(context, importedType.symbol);
+                        if (importedCustomName) {
+                            return importedCustomName;
+                        }
+                    }
                 }
             }
 
@@ -82,7 +94,7 @@ function transformNonValueIdentifier(
 
     let text = hasUnsafeIdentifierName(context, identifier, symbol) ? createSafeName(identifier.text) : identifier.text;
 
-    const customName = getCustomNameFromSymbol(symbol);
+    const customName = getCustomNameFromSymbol(context, symbol);
     if (customName) text = customName;
 
     const symbolId = getIdentifierSymbolId(context, identifier, symbol);

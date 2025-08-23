@@ -138,7 +138,7 @@ export function transformContextualCallExpression(
         let name = left.name.text;
 
         const symbol = context.checker.getSymbolAtLocation(left);
-        const customName = getCustomNameFromSymbol(symbol);
+        const customName = getCustomNameFromSymbol(context, symbol);
 
         if (customName) {
             name = customName;

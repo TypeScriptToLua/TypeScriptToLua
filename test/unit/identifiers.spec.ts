@@ -991,3 +991,67 @@ test("customName rename declared function", () => {
     expect(mainFile.lua).toContain("Test2(");
     expect(mainFile.lua).not.toContain("Test(");
 });
+
+test("customName rename import specifier", () => {
+    const testModule = util.testModule`
+        import { Test } from "./myimport";
+        import { Test as Aliased } from "./myimport";
+        Test();
+        Aliased();
+    `.addExtraFile(
+        "myimport.ts",
+        `
+        /** @customName Test2 **/
+        export function Test(this: void): void {}
+    `
+    );
+
+    testModule.expectToHaveNoDiagnostics();
+    const result = testModule.getLuaResult();
+    expect(result.transpiledFiles).not.toHaveLength(0);
+
+    const mainFile = result.transpiledFiles.find(f => f.outPath === "main.lua");
+    expect(mainFile).toBeDefined();
+
+    // avoid ts error "not defined", even though toBeDefined is being checked above
+    if (!mainFile) return;
+
+    expect(mainFile.lua).toBeDefined();
+    expect(mainFile.lua).toContain("Test2(");
+    expect(mainFile.lua).toContain("myimport.Test2");
+    expect(mainFile.lua).not.toContain("Test(");
+
+    testModule.expectNoExecutionError();
+});
+
+test("customName import specifier from declarations", () => {
+    const testModule = util.testModule`
+        import { Test } from "./myimport";
+        import { Test as Aliased } from "./myimport";
+        Test();
+        Aliased();
+    `
+        .addExtraFile(
+            "myimport.d.ts",
+            `
+            /** @customName Test2 **/
+            export declare function Test(this: void): void;
+        `
+        )
+        .setOptions({ noResolvePaths: ["./myimport"] });
+
+    testModule.expectToHaveNoDiagnostics();
+    const result = testModule.getLuaResult();
+    expect(result.transpiledFiles).not.toHaveLength(0);
+
+    const mainFile = result.transpiledFiles.find(f => f.outPath === "main.lua");
+    expect(mainFile).toBeDefined();
+
+    // avoid ts error "not defined", even though toBeDefined is being checked above
+    if (!mainFile) return;
+
+    expect(mainFile.lua).toBeDefined();
+    expect(mainFile.lua).toContain("Test2(");
+    expect(mainFile.lua).toContain("myimport.Test2");
+    expect(mainFile.lua).not.toContain("Test(");
+});

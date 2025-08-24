@@ -285,8 +285,8 @@ function recompileLuaLibFiles(sourceOptions: CompilerOptions, emitHost: EmitHost
     if (!transpiledFiles) {
         const tsconfigPath =
             sourceOptions.luaTarget === LuaTarget.Lua50
-                ? path.join(__dirname, "./lualib/tsconfig.lua50.json")
-                : path.join(__dirname, "./lualib/tsconfig.json");
+                ? path.join(__dirname, "../src/lualib/tsconfig.lua50.json")
+                : path.join(__dirname, "../src/lualib/tsconfig.json");
         const config = parseConfigFileWithSystem(tsconfigPath);
         const options = config.options;
         options.luaPlugins = [...(options.luaPlugins ?? []), ...(sourceOptions.luaPlugins ?? [])];

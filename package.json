@@ -21,6 +21,7 @@
         "dist/lualib/**/*.json",
         "src/lualib/**/*.ts",
         "src/lualib/**/*.json",
+        "src/lualib-build/**/*.ts",
         "language-extensions/index.d.ts"
     ],
     "main": "dist/index.js",

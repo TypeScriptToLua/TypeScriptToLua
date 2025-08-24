@@ -289,7 +289,8 @@ function recompileLuaLibFiles(sourceOptions: CompilerOptions, emitHost: EmitHost
                 : path.join(__dirname, "../src/lualib/tsconfig.json");
         const config = parseConfigFileWithSystem(tsconfigPath);
         const options = config.options;
-        options.luaPlugins = [...(options.luaPlugins ?? []), ...(sourceOptions.luaPlugins ?? [])];
+        const sourcePlugins = (sourceOptions.luaPlugins ?? []).filter(p => !p.skipRecompileLuaLib);
+        options.luaPlugins = [...(options.luaPlugins ?? []), ...sourcePlugins];
 
         const collector = createEmitOutputCollector(options.extension);
         const reportDiagnostic = createDiagnosticReporter(false);

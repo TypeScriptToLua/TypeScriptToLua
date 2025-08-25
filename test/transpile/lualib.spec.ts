@@ -31,7 +31,7 @@ test("Lualib bundle does not assign globals", () => {
         .expectNoExecutionError();
 });
 
-test("Lualib bundle recompile", () => {
+test("Lualib recompile with import kind require", () => {
     const { transpiledFiles } = util.testExpression`Array.isArray({})`
         .setOptions({
             recompileLuaLib: true,
@@ -39,14 +39,17 @@ test("Lualib bundle recompile", () => {
         })
         .expectToHaveNoDiagnostics()
         .getLuaResult();
-    const lualubBundle = transpiledFiles.find(f => path.basename(f.outPath) === "lualib_bundle.lua");
-    expect(lualubBundle?.lua).toContain(
+    const lualibBundle = transpiledFiles.find(f => f.outPath === "lualib_bundle.lua");
+    expect(lualibBundle).toBeDefined();
+
+    // plugin apply twice: main compilation and lualib recompile
+    expect(lualibBundle?.lua).toContain(
         "-- Comment added by beforeEmit plugin\n-- Comment added by beforeEmit plugin\n"
     );
 });
 
-test("Lualib require minimal recompile", () => {
-    util.testExpression`Array.isArray(123)`
+test("Lualib recompile with import kind require minimal", () => {
+    const builder = util.testExpression`Array.isArray(123)`
         .setOptions({
             luaLibImport: LuaLibImportKind.RequireMinimal,
             recompileLuaLib: true,
@@ -54,12 +57,28 @@ test("Lualib require minimal recompile", () => {
         })
         .expectToHaveNoDiagnostics()
         .expectToEqual(true);
+    const transpiledFiles = builder.getLuaResult().transpiledFiles;
+    const lualibBundle = transpiledFiles.find(f => f.outPath === "lualib_bundle.lua");
+    expect(lualibBundle).toBeDefined();
 });
 
-test("Lualib inline recompile", () => {
+test("Lualib recompile with import kind inline", () => {
     util.testExpression`Array.isArray(123)`
         .setOptions({
             luaLibImport: LuaLibImportKind.Inline,
+            recompileLuaLib: true,
+            luaPlugins: [{ name: path.join(__dirname, "./plugins/visitor.ts") }],
+        })
+        .expectToHaveNoDiagnostics()
+        .expectToEqual(true);
+});
+
+test("Lualib recompile with bundling", () => {
+    util.testExpression`Array.isArray(123)`
+        .setOptions({
+            luaBundle: "bundle.lua",
+            luaBundleEntry: "main.ts",
+            luaLibImport: LuaLibImportKind.RequireMinimal,
             recompileLuaLib: true,
             luaPlugins: [{ name: path.join(__dirname, "./plugins/visitor.ts") }],
         })

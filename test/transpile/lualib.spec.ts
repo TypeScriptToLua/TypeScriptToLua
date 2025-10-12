@@ -29,3 +29,22 @@ test("Lualib bundle does not assign globals", () => {
         .withLanguageExtensions()
         .expectNoExecutionError();
 });
+
+test("Lualib bundle can be renamed", () => {
+    const result = util
+        .testExpression("[1, 2, 3, 4].map(n => n*n).join(' ')")
+        .setOptions({ luaLibName: "typescript" })
+        .expectNoExecutionError()
+        .getLuaResult();
+    expect(result.transpiledFiles.some(file => file.outPath.match(/lualib_bundle.lua$/))).toBeFalsy();
+    expect(result.transpiledFiles.some(file => file.outPath.match(/typescript.lua$/))).toBeTruthy();
+});
+
+test("Lualib bundle emission can be disabled", () => {
+    const result = util
+        .testExpression("[1, 2, 3, 4].map(n => n*n).join(' ')")
+        .setOptions({ luaLibEmit: false })
+        .expectNoTranspileException()
+        .getLuaResult();
+    expect(result.transpiledFiles.some(file => file.outPath.match(/lualib_bundle.lua$/))).toBeFalsy();
+});

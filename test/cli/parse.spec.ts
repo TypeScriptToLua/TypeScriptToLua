@@ -121,6 +121,8 @@ describe("command line", () => {
             ["luaLibImport", "none", { luaLibImport: tstl.LuaLibImportKind.None }],
             ["luaLibImport", "inline", { luaLibImport: tstl.LuaLibImportKind.Inline }],
             ["luaLibImport", "require", { luaLibImport: tstl.LuaLibImportKind.Require }],
+            ["luaLibName", "typescript", { luaLibName: "typescript" }],
+            ["luaLibEmit", "false", { luaLibEmit: false }],
 
             ["luaTarget", "universal", { luaTarget: tstl.LuaTarget.Universal }],
             ["luaTarget", "5.1", { luaTarget: tstl.LuaTarget.Lua51 }],
@@ -240,6 +242,8 @@ describe("tsconfig", () => {
             ["luaLibImport", "none", { luaLibImport: tstl.LuaLibImportKind.None }],
             ["luaLibImport", "inline", { luaLibImport: tstl.LuaLibImportKind.Inline }],
             ["luaLibImport", "require", { luaLibImport: tstl.LuaLibImportKind.Require }],
+            ["luaLibName", "typescript", { luaLibName: "typescript" }],
+            ["luaLibEmit", false, { luaLibEmit: false }],
 
             ["luaTarget", "universal", { luaTarget: tstl.LuaTarget.Universal }],
             ["luaTarget", "5.0", { luaTarget: tstl.LuaTarget.Lua50 }],

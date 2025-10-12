@@ -58,7 +58,8 @@ export const optionDeclarations: CommandLineOption[] = [
     },
     {
         name: "luaLibEmit",
-        description: "Whether the Lua library file is emitted with the code. Only effective when luaLibImport is require.",
+        description:
+            "Whether the Lua library file is emitted with the code. Only effective when luaLibImport is require.",
         type: "boolean",
     },
     {

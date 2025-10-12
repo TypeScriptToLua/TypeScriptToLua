@@ -51,6 +51,11 @@
                     "type": "string",
                     "default": "lualib_bundle"
                 },
+                "luaLibEmit": {
+                    "description": "Whether the Lua library file is emitted with the code. Only effective when luaLibImport is require.",
+                    "type": "boolean",
+                    "default": true
+                },
                 "luaTarget": {
                     "description": "Specifies the Lua version you want to generate code for.",
                     "type": "string",

@@ -132,9 +132,11 @@ export class Transpiler {
                 console.log("Including lualib bundle");
             }
             // Add lualib bundle to source dir 'virtually', will be moved to correct output dir in emitPlan
-            const fileName = normalizeSlashes(path.resolve(getSourceDir(program), (options.luaLibName ?? "lualib_bundle") + ".lua"));
-            const code = this.getLuaLibBundleContent(options, resolutionResult.resolvedFiles);
-            resolutionResult.resolvedFiles.unshift({ fileName, code });
+            if (options.luaLibEmit !== false) {
+                const fileName = normalizeSlashes(path.resolve(getSourceDir(program), (options.luaLibName ?? "lualib_bundle") + ".lua"));
+                const code = this.getLuaLibBundleContent(options, resolutionResult.resolvedFiles);
+                resolutionResult.resolvedFiles.unshift({ fileName, code });
+            }
         }
 
         let emitPlan: EmitFile[];

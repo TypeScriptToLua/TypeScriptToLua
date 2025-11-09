@@ -60,9 +60,7 @@ export const transformEnumDeclaration: FunctionVisitor<ts.EnumDeclaration> = (no
                 }
             }
 
-            if (!valueExpression) {
-                valueExpression = context.transformExpression(member.initializer);
-            }
+            valueExpression ??= context.transformExpression(member.initializer);
         } else {
             valueExpression = lua.createNilLiteral();
         }

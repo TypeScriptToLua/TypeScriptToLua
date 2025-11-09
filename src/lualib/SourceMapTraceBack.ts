@@ -9,7 +9,6 @@ interface SourceMap {
 
 declare global {
     function __TS__originalTraceback(this: void, thread?: LuaThread, message?: string, level?: number): void;
-    // eslint-disable-next-line no-var
     var __TS__sourcemap: Record<string, SourceMap>;
 }
 

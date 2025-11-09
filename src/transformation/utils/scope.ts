@@ -60,9 +60,7 @@ export function markSymbolAsReferencedInCurrentScopes(
     identifier: ts.Identifier
 ): void {
     for (const scope of context.scopeStack) {
-        if (!scope.referencedSymbols) {
-            scope.referencedSymbols = new Map();
-        }
+        scope.referencedSymbols ??= new Map();
 
         const references = getOrUpdate(scope.referencedSymbols, symbolId, () => []);
         references.push(identifier);
@@ -87,9 +85,8 @@ export function findScope(context: TransformationContext, scopeTypes: ScopeType)
 }
 
 export function addScopeVariableDeclaration(scope: Scope, declaration: lua.VariableDeclarationStatement) {
-    if (!scope.variableDeclarations) {
-        scope.variableDeclarations = [];
-    }
+    scope.variableDeclarations ??= [];
+
     scope.variableDeclarations.push(declaration);
 }
 

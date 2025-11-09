@@ -42,7 +42,7 @@
         "node": ">=16.10.0"
     },
     "peerDependencies": {
-        "typescript": "5.8.2"
+        "typescript": "5.9.3"
     },
     "dependencies": {
         "@typescript-to-lua/language-extensions": "1.19.0",
@@ -69,7 +69,7 @@
         "prettier": "^2.8.8",
         "ts-jest": "^29.2.5",
         "ts-node": "^10.9.2",
-        "typescript": "5.8.2",
-        "typescript-eslint": "^8.26.0"
+        "typescript": "5.9.3",
+        "typescript-eslint": "^8.46.3"
     }
 }

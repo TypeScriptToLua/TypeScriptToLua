@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.33.0
+
+- Upgraded TypeScript to 5.9.3
+
 ## 1.32.0
 
 - Fixed a broken `@customName` interation with import statements

@@ -1,9 +1,7 @@
 const sub = string.sub;
 const find = string.find;
 export function __TS__StringSplit(this: void, source: string, separator?: string, limit?: number): string[] {
-    if (limit === undefined) {
-        limit = 4294967295;
-    }
+    limit ??= 4294967295;
 
     if (limit === 0) {
         return [];

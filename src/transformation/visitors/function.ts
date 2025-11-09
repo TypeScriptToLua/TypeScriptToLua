@@ -343,9 +343,7 @@ export const transformFunctionDeclaration: FunctionVisitor<ts.FunctionDeclaratio
     // Remember symbols referenced in this function for hoisting later
     if (name.symbolId !== undefined) {
         const scope = peekScope(context);
-        if (!scope.functionDefinitions) {
-            scope.functionDefinitions = new Map();
-        }
+        scope.functionDefinitions ??= new Map();
 
         const functionInfo = { referencedSymbols: functionScope.referencedSymbols ?? new Map() };
         scope.functionDefinitions.set(name.symbolId, functionInfo);

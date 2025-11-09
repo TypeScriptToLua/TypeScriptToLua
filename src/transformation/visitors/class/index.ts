@@ -272,10 +272,8 @@ export const transformSuperExpression: FunctionVisitor<ts.SuperExpression> = (ex
         }
     }
 
-    if (!baseClassName) {
-        // Use "className.____super" if the base is not a simple identifier
-        baseClassName = lua.createTableIndexExpression(className, lua.createStringLiteral("____super"), expression);
-    }
+    // Use "className.____super" if the base is not a simple identifier
+    baseClassName ??= lua.createTableIndexExpression(className, lua.createStringLiteral("____super"), expression);
 
     const f = findFirstNodeAbove(expression, ts.isFunctionLike);
     if (f && ts.canHaveModifiers(f) && isStaticNode(f)) {

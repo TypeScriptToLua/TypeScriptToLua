@@ -235,13 +235,14 @@ export class LuaPrinter {
 
         const luaTarget = this.options.luaTarget ?? LuaTarget.Universal;
         const luaLibImport = this.options.luaLibImport ?? LuaLibImportKind.Require;
+        const luaLibName = this.options.luaLibName ?? "lualib_bundle";
         if (
             (luaLibImport === LuaLibImportKind.Require || luaLibImport === LuaLibImportKind.RequireMinimal) &&
             file.luaLibFeatures.size > 0
         ) {
             // Import lualib features
             sourceChunks = this.printStatementArray(
-                loadImportedLualibFeatures(file.luaLibFeatures, luaTarget, this.emitHost)
+                loadImportedLualibFeatures(file.luaLibFeatures, luaTarget, this.emitHost, luaLibName)
             );
         } else if (luaLibImport === LuaLibImportKind.Inline && file.luaLibFeatures.size > 0) {
             // Inline lualib features

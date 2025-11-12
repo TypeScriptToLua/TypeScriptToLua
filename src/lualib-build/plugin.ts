@@ -70,7 +70,7 @@ class LuaLibPlugin implements tstl.Plugin {
         let lualibBundle = orderedFeatures.map(f => exportedLualibFeatures.get(LuaLibFeature[f])).join("\n");
         const exports = allFeatures.flatMap(feature => luaLibModuleInfo[feature].exports);
         lualibBundle += getLualibBundleReturn(exports);
-        result.push({ fileName: "lualib_bundle.lua", code: lualibBundle });
+        result.push({ fileName: (options.luaLibName ?? "lualib_bundle") + ".lua", code: lualibBundle });
 
         return diagnostics;
     }

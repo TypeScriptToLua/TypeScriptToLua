@@ -18,7 +18,8 @@ import {
     isImport,
     isRequire,
 } from "./util";
-import { createDiagnosticFactoryWithCode } from "../utils";
+import { createDiagnosticFactoryWithCode, normalizeSlashes } from "../utils";
+import type { CompilerOptions } from "..";
 
 export const lualibDiagnostic = createDiagnosticFactoryWithCode(200000, (message: string, file?: ts.SourceFile) => ({
     messageText: message,
@@ -167,6 +168,27 @@ class LuaLibPlugin implements tstl.Plugin {
             };
         }
         return { result: result as LuaLibModulesInfo, diagnostics };
+    }
+
+    public moduleResolution(
+        moduleIdentifier: string,
+        requiringFile: string,
+        _options: CompilerOptions,
+        emitHost: EmitHost
+    ): string | undefined {
+        const tstlRoot = path.resolve(__dirname, "../..");
+        const relativeRequiringFile = normalizeSlashes(path.relative(tstlRoot, requiringFile));
+        if (!relativeRequiringFile.startsWith("src/lualib/")) {
+            return;
+        }
+
+        const tryingPaths = ["./", "./universal/"];
+        for (const tryingPath of tryingPaths) {
+            const possiblePath = path.join(tstlRoot, "src", "lualib", tryingPath, `${moduleIdentifier}.ts`);
+            if (emitHost.fileExists(possiblePath)) {
+                return possiblePath;
+            }
+        }
     }
 }
 

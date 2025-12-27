@@ -76,7 +76,7 @@ export const transformConditionalExpression: FunctionVisitor<ts.ConditionalExpre
 };
 
 export function transformIfStatement(statement: ts.IfStatement, context: TransformationContext): lua.IfStatement {
-    context.pushScope(ScopeType.Conditional);
+    context.pushScope(ScopeType.Conditional, statement);
 
     // Check if we need to add diagnostic about Lua truthiness
     checkOnlyTruthyCondition(statement.expression, context);
@@ -107,7 +107,7 @@ export function transformIfStatement(statement: ts.IfStatement, context: Transfo
                 return lua.createIfStatement(condition, ifBlock, elseStatement);
             }
         } else {
-            context.pushScope(ScopeType.Conditional);
+            context.pushScope(ScopeType.Conditional, statement);
             const elseStatements = performHoisting(
                 context,
                 transformBlockOrStatement(context, statement.elseStatement)

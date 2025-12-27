@@ -73,7 +73,7 @@ const coalesceCondition = (
 };
 
 export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (statement, context) => {
-    const scope = context.pushScope(ScopeType.Switch);
+    const scope = context.pushScope(ScopeType.Switch, statement);
 
     // Give the switch and condition accumulator a unique name to prevent nested switches from acting up.
     const switchName = `____switch${scope.id}`;

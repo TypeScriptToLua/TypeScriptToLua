@@ -31,7 +31,7 @@ export enum LoopContinued {
 export interface Scope {
     type: ScopeType;
     id: number;
-    node?: ts.Node;
+    node: ts.Node;
     referencedSymbols?: Map<lua.SymbolId, ts.Node[]>;
     variableDeclarations?: lua.VariableDeclarationStatement[];
     functionDefinitions?: Map<lua.SymbolId, FunctionDefinitionInfo>;
@@ -99,7 +99,7 @@ function isHoistableFunctionDeclaredInScope(symbol: ts.Symbol, scopeNode: ts.Nod
 // Checks for references to local functions which haven't been defined yet,
 // and thus will be hoisted above the current position.
 export function hasReferencedUndefinedLocalFunction(context: TransformationContext, scope: Scope) {
-    if (!scope.referencedSymbols || !scope.node) {
+    if (!scope.referencedSymbols) {
         return false;
     }
     for (const [symbolId, nodes] of scope.referencedSymbols) {
@@ -125,10 +125,6 @@ export function hasReferencedSymbol(context: TransformationContext, scope: Scope
         }
     }
     return false;
-}
-
-export function isFunctionScopeWithDefinition(scope: Scope): scope is Scope & { node: ts.SignatureDeclaration } {
-    return scope.node !== undefined && ts.isFunctionLike(scope.node);
 }
 
 export function separateHoistedStatements(context: TransformationContext, statements: lua.Statement[]): HoistingResult {

@@ -26,7 +26,7 @@ export const transformSourceFileNode: FunctionVisitor<ts.SourceFile> = (node, co
             statements.push(lua.createExpressionStatement(errorCall));
         }
     } else {
-        context.pushScope(ScopeType.File);
+        context.pushScope(ScopeType.File, node);
 
         statements = performHoisting(context, context.transformStatements(node.statements));
         context.popScope();

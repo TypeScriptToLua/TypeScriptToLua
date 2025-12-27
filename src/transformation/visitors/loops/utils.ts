@@ -14,7 +14,7 @@ export function transformLoopBody(
     context: TransformationContext,
     loop: ts.WhileStatement | ts.DoStatement | ts.ForStatement | ts.ForOfStatement | ts.ForInOrOfStatement
 ): lua.Statement[] {
-    context.pushScope(ScopeType.Loop);
+    context.pushScope(ScopeType.Loop, loop);
     const body = performHoisting(context, transformBlockOrStatement(context, loop.statement));
     const scope = context.popScope();
     const scopeId = scope.id;
@@ -79,7 +79,7 @@ export function transformForInitializer(
 ): lua.Identifier {
     const valueVariable = lua.createIdentifier("____value");
 
-    context.pushScope(ScopeType.LoopInitializer);
+    context.pushScope(ScopeType.LoopInitializer, initializer);
 
     if (ts.isVariableDeclarationList(initializer)) {
         // Declaration of new variable

@@ -6,13 +6,7 @@ import { FunctionVisitor, TransformationContext } from "../context";
 import { getIterableExtensionKindForNode, IterableExtensionKind } from "../utils/language-extensions";
 import { createUnpackCall } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
-import {
-    findScope,
-    hasReferencedSymbol,
-    hasReferencedUndefinedLocalFunction,
-    isFunctionScopeWithDefinition,
-    ScopeType,
-} from "../utils/scope";
+import { findScope, hasReferencedSymbol, hasReferencedUndefinedLocalFunction, ScopeType } from "../utils/scope";
 import { findFirstNonOuterParent, isAlwaysArrayType } from "../utils/typescript";
 import { isMultiReturnCall } from "./language-extensions/multi";
 import { isGlobalVarargConstant } from "./language-extensions/vararg";
@@ -34,7 +28,7 @@ export function isOptimizedVarArgSpread(context: TransformationContext, symbol: 
     }
 
     // Scope must be a function scope associated with a real ts function
-    if (!isFunctionScopeWithDefinition(scope)) {
+    if (!ts.isFunctionLike(scope.node)) {
         return false;
     }
 

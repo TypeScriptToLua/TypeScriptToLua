@@ -118,7 +118,7 @@ export const transformModuleDeclaration: FunctionVisitor<ts.ModuleDeclaration> =
 
     // Transform moduleblock to block and visit it
     if (moduleHasEmittedBody(node)) {
-        context.pushScope(ScopeType.Block);
+        context.pushScope(ScopeType.Block, node);
         const statements = performHoisting(
             context,
             context.transformStatements(ts.isModuleBlock(node.body) ? node.body.statements : node.body)

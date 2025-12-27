@@ -15,7 +15,7 @@ function transformAccessor(
     className: lua.Identifier
 ): lua.Expression {
     const [params, dot, restParam] = transformParameters(context, node.parameters, createSelfIdentifier());
-    const body = node.body ? transformFunctionBody(context, node.parameters, node.body, restParam)[0] : [];
+    const body = node.body ? transformFunctionBody(context, node.parameters, node.body, node, restParam)[0] : [];
     const accessorFunction = lua.createFunctionExpression(
         lua.createBlock(body),
         params,

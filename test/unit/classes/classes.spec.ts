@@ -909,3 +909,17 @@ test("get inherted __index member from super (DotA 2 inheritance) (#1537)", () =
         )
         .expectToEqual("foo");
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1673
+test("varag spread optimization in class constructor (#1673)", () => {
+    const lua = util.testModule`
+        class C {
+            constructor(...args: any[]) {
+                console.log(...args);
+            }
+        }`
+        .debug()
+        .getMainLuaCodeChunk();
+
+    expect(lua).not.toContain("table.unpack");
+});

@@ -247,8 +247,8 @@ export class TransformationContext {
     public readonly scopeStack: Scope[] = [];
     private lastScopeId = 0;
 
-    public pushScope(type: ScopeType): Scope {
-        const scope = { type, id: ++this.lastScopeId };
+    public pushScope(type: ScopeType, node: ts.Node): Scope {
+        const scope: Scope = { type, id: ++this.lastScopeId, node };
         this.scopeStack.push(scope);
         return scope;
     }

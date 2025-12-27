@@ -9,7 +9,7 @@ import { ScopeType } from "../../utils/scope";
 export const transformForStatement: FunctionVisitor<ts.ForStatement> = (statement, context) => {
     const result: lua.Statement[] = [];
 
-    context.pushScope(ScopeType.Loop);
+    context.pushScope(ScopeType.Loop, statement);
 
     if (statement.initializer) {
         if (ts.isVariableDeclarationList(statement.initializer)) {

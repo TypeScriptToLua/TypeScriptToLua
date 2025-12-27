@@ -164,11 +164,10 @@ export function transformFunctionBody(
     context: TransformationContext,
     parameters: ts.NodeArray<ts.ParameterDeclaration>,
     body: ts.ConciseBody,
-    spreadIdentifier?: lua.Identifier,
-    node?: ts.FunctionLikeDeclaration
+    node: ts.FunctionLikeDeclaration,
+    spreadIdentifier?: lua.Identifier
 ): [lua.Statement[], Scope] {
-    const scope = context.pushScope(ScopeType.Function);
-    scope.node = node;
+    const scope = context.pushScope(ScopeType.Function, node);
     let bodyStatements = transformFunctionBodyContent(context, body);
     if (node && isAsyncFunction(node)) {
         bodyStatements = [lua.createReturnStatement([wrapInAsyncAwaiter(context, bodyStatements)])];
@@ -258,8 +257,8 @@ export function transformFunctionToExpression(
         context,
         node.parameters,
         node.body,
-        spreadIdentifier,
-        node
+        node,
+        spreadIdentifier
     );
 
     const functionExpression = lua.createFunctionExpression(

@@ -12,14 +12,14 @@ export function transformScopeBlock(
     node: ts.Block,
     scopeType: ScopeType
 ): [lua.Block, Scope] {
-    context.pushScope(scopeType);
+    context.pushScope(scopeType, node);
     const statements = performHoisting(context, context.transformStatements(node.statements));
     const scope = context.popScope();
     return [lua.createBlock(statements, node), scope];
 }
 
 export const transformBlock: FunctionVisitor<ts.Block> = (node, context) => {
-    context.pushScope(ScopeType.Block);
+    context.pushScope(ScopeType.Block, node);
     const statements = performHoisting(context, context.transformStatements(node.statements));
     context.popScope();
     return lua.createDoStatement(statements, node);

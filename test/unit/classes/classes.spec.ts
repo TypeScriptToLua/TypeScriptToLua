@@ -917,9 +917,7 @@ test("varag spread optimization in class constructor (#1673)", () => {
             constructor(...args: any[]) {
                 console.log(...args);
             }
-        }`
-        .debug()
-        .getMainLuaCodeChunk();
+        }`.getMainLuaCodeChunk();
 
     expect(lua).not.toContain("table.unpack");
 });

@@ -110,7 +110,9 @@ export function getBundleResult(program: ts.Program, files: ProcessedFile[]): [t
 
     // return require("<entry module path>")
     const args = options.luaTarget === LuaTarget.Lua50 ? "unpack(arg == nil and {} or arg)" : "...";
-    const entryPoint = `return require(${createModulePath(entryModuleFilePath ?? entryModule, program)}, ${args})\n`;
+    // Avoid producing a tail-call (which removes the bundle's stack frame) by assigning the `require` result to a local and returning it.
+    const entryPath = createModulePath(entryModuleFilePath ?? entryModule, program);
+    const entryPoint = `local ____entry = require(${entryPath}, ${args})\nreturn ____entry\n`;
 
     const footers: string[] = [];
     if (options.sourceMapTraceback) {

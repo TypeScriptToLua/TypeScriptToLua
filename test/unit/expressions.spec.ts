@@ -96,6 +96,13 @@ test.each(supportedInAll)("Bitop [5.4] (%p)", input => {
         .expectLuaToMatchSnapshot();
 });
 
+test.each(supportedInAll)("Bitop [5.5] (%p)", input => {
+    util.testExpression(input)
+        .setOptions({ luaTarget: tstl.LuaTarget.Lua55, luaLibImport: tstl.LuaLibImportKind.None })
+        .disableSemanticCheck()
+        .expectLuaToMatchSnapshot();
+});
+
 test.each(unsupportedIn53And54)("Unsupported bitop 5.3 (%p)", input => {
     util.testExpression(input)
         .setOptions({ luaTarget: tstl.LuaTarget.Lua53, luaLibImport: tstl.LuaLibImportKind.None })

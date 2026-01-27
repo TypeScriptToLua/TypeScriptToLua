@@ -86,6 +86,7 @@ export function expectEachVersionExceptJit<T>(
         [tstl.LuaTarget.Lua52]: expectation,
         [tstl.LuaTarget.Lua53]: expectation,
         [tstl.LuaTarget.Lua54]: expectation,
+        [tstl.LuaTarget.Lua55]: expectation,
         [tstl.LuaTarget.LuaJIT]: false, // Exclude JIT
         [tstl.LuaTarget.Luau]: false,
     };
@@ -157,7 +158,7 @@ export abstract class TestBuilder {
     }
 
     protected options: tstl.CompilerOptions = {
-        luaTarget: tstl.LuaTarget.Lua54,
+        luaTarget: tstl.LuaTarget.Lua55,
         noHeader: true,
         skipLibCheck: true,
         target: ts.ScriptTarget.ES2017,
@@ -444,7 +445,7 @@ export abstract class TestBuilder {
         // Main file
         const mainFile = this.getMainLuaCodeChunk();
 
-        const luaTarget = this.options.luaTarget ?? tstl.LuaTarget.Lua54;
+        const luaTarget = this.options.luaTarget ?? tstl.LuaTarget.Lua55;
         const { lauxlib, lua, lualib } = getLuaBindingsForVersion(luaTarget);
 
         const L = lauxlib.luaL_newstate();

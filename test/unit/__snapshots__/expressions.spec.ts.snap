@@ -482,6 +482,77 @@ ____exports.__result = a | b
 return ____exports"
 `;
 
+exports[`Bitop [5.5] ("~a") 1`] = `
+"local ____exports = {}
+____exports.__result = ~a
+return ____exports"
+`;
+
+exports[`Bitop [5.5] ("a&=b") 1`] = `
+"local ____exports = {}
+a = a & b
+____exports.__result = a
+return ____exports"
+`;
+
+exports[`Bitop [5.5] ("a&b") 1`] = `
+"local ____exports = {}
+____exports.__result = a & b
+return ____exports"
+`;
+
+exports[`Bitop [5.5] ("a<<=b") 1`] = `
+"local ____exports = {}
+a = a << b
+____exports.__result = a
+return ____exports"
+`;
+
+exports[`Bitop [5.5] ("a<<b") 1`] = `
+"local ____exports = {}
+____exports.__result = a << b
+return ____exports"
+`;
+
+exports[`Bitop [5.5] ("a>>>=b") 1`] = `
+"local ____exports = {}
+a = a >> b
+____exports.__result = a
+return ____exports"
+`;
+
+exports[`Bitop [5.5] ("a>>>b") 1`] = `
+"local ____exports = {}
+____exports.__result = a >> b
+return ____exports"
+`;
+
+exports[`Bitop [5.5] ("a^=b") 1`] = `
+"local ____exports = {}
+a = a ~ b
+____exports.__result = a
+return ____exports"
+`;
+
+exports[`Bitop [5.5] ("a^b") 1`] = `
+"local ____exports = {}
+____exports.__result = a ~ b
+return ____exports"
+`;
+
+exports[`Bitop [5.5] ("a|=b") 1`] = `
+"local ____exports = {}
+a = a | b
+____exports.__result = a
+return ____exports"
+`;
+
+exports[`Bitop [5.5] ("a|b") 1`] = `
+"local ____exports = {}
+____exports.__result = a | b
+return ____exports"
+`;
+
 exports[`Bitop [JIT] ("~a") 1`] = `
 "local ____exports = {}
 ____exports.__result = bit.bnot(a)

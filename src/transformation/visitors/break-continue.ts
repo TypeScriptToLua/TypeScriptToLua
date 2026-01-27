@@ -19,6 +19,7 @@ export const transformContinueStatement: FunctionVisitor<ts.ContinueStatement> =
         [LuaTarget.Lua52]: LoopContinued.WithGoto,
         [LuaTarget.Lua53]: LoopContinued.WithGoto,
         [LuaTarget.Lua54]: LoopContinued.WithGoto,
+        [LuaTarget.Lua55]: LoopContinued.WithGoto,
         [LuaTarget.LuaJIT]: LoopContinued.WithGoto,
         [LuaTarget.Luau]: LoopContinued.WithContinue,
     }[context.luaTarget];

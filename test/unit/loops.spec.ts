@@ -555,6 +555,7 @@ for (const testCase of [
         [tstl.LuaTarget.Lua52]: expectContinueGotoLabel,
         [tstl.LuaTarget.Lua53]: expectContinueGotoLabel,
         [tstl.LuaTarget.Lua54]: expectContinueGotoLabel,
+        [tstl.LuaTarget.Lua55]: expectContinueGotoLabel,
         [tstl.LuaTarget.LuaJIT]: expectContinueGotoLabel,
         [tstl.LuaTarget.Luau]: () => expectContinueStatement,
     });

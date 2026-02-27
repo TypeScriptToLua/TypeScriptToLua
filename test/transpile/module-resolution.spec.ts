@@ -1,4 +1,5 @@
 import * as path from "path";
+import * as fs from "fs";
 import * as tstl from "../../src";
 import * as util from "../util";
 import * as ts from "typescript";
@@ -380,6 +381,50 @@ describe("dependency with complicated inner structure", () => {
     // Test fix for https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1054
     test("should be able to resolve dependency files in subdirectories", () => {
         util.testProject(tsConfigPath).setMainFileName(mainFilePath).expectToEqual(expectedResult);
+    });
+});
+
+describe("symlinked dependency deduplication", () => {
+    const projectPath = path.resolve(__dirname, "module-resolution", "project-with-symlinked-dependency");
+    const tsConfigPath = path.join(projectPath, "tsconfig.json");
+    const mainFilePath = path.join(projectPath, "main.ts");
+    const symlinkPath = path.join(projectPath, "node_modules", "shared-lib");
+
+    beforeAll(() => {
+        // Dynamically create symlink to avoid git symlink portability issues
+        const symlinkDir = path.dirname(symlinkPath);
+        if (!fs.existsSync(symlinkDir)) {
+            fs.mkdirSync(symlinkDir, { recursive: true });
+        }
+        if (!fs.existsSync(symlinkPath)) {
+            fs.symlinkSync(path.join(projectPath, "shared-lib"), symlinkPath, "junction");
+        }
+    });
+
+    afterAll(() => {
+        if (fs.existsSync(symlinkPath) && fs.lstatSync(symlinkPath).isSymbolicLink()) {
+            fs.unlinkSync(symlinkPath);
+        }
+    });
+
+    test("bundle should not contain duplicate files from symlinked dependencies", () => {
+        const mainFile = path.join(projectPath, "main.ts");
+        const { transpiledFiles } = util
+            .testProject(tsConfigPath)
+            .setMainFileName(mainFilePath)
+            .setOptions({ luaBundle: "bundle.lua", luaBundleEntry: mainFile })
+            .expectToEqual({
+                directResult: "Hello, World",
+                indirectResult: "Hello, World, welcome!",
+            })
+            .getLuaResult();
+
+        expect(transpiledFiles).toHaveLength(1);
+        const lua = transpiledFiles[0].lua!;
+        // shared-lib is used by both main.ts (directly) and consumer (indirectly via symlink),
+        // but should only appear once in the bundle
+        const moduleEntries = (lua.match(/\["[^"]*shared-lib[^"]*"\]\s*=\s*function/g) ?? []).length;
+        expect(moduleEntries).toBe(1);
     });
 });
 

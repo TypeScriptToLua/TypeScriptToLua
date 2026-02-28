@@ -162,9 +162,9 @@ export class Transpiler {
                 this.emitHost,
                 resolvedFiles.map(f => f.code)
             );
-            return buildMinimalLualibBundle(usedFeatures, luaTarget, this.emitHost);
+            return buildMinimalLualibBundle(usedFeatures, options, this.emitHost);
         } else {
-            return getLuaLibBundle(luaTarget, this.emitHost);
+            return getLuaLibBundle(luaTarget, this.emitHost, options);
         }
     }
 }

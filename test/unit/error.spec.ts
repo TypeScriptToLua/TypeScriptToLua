@@ -345,6 +345,56 @@ test("still works without debug module", () => {
         });
 });
 
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1665
+test("sourceMapTraceback maps anonymous function locations in .lua files (#1665)", () => {
+    // Nested IIFEs produce <file.lua:N> anonymous function notation in traceback.
+    // Old pattern (%S+)%.lua:(%d+) captures "<main" from "<main.lua:4>",
+    // failing the sourcemap lookup. Fix: ([^%s<]+) excludes "<".
+
+    // mapping is copied from the emitted Lua, not invented.
+    const mapping = `{["5"] = 1,["6"] = 2,["7"] = 3,["8"] = 4,["9"] = 3,["10"] = 2,["11"] = 1}`;
+
+    // Test harness executes via luaL_dostring (chunk names are [string "..."]), so we mock a file-based traceback.
+    const fakeTraceback = [
+        "stack traceback:",
+        "\tmain.lua:8: in function <main.lua:7>",
+        "\tmain.lua:7: in function <main.lua:6>",
+        "\t[C]: in ?",
+    ].join("\n");
+
+    // Inject sourcemap for "main.lua" and mock debug.traceback to return file-based frames.
+    const header = `
+        __TS__sourcemap = { ["main.lua"] = ${mapping} };
+        local __real_tb = debug.traceback
+        debug.traceback = function() return ${JSON.stringify(fakeTraceback)} end
+    `;
+
+    const builder = util.testFunction`
+        return (() => {
+            return (() => {
+                return (debug.traceback as (this: void) => string)();
+            })();
+        })();
+    `
+        .setLuaHeader(header)
+        .setOptions({ sourceMapTraceback: true });
+
+    const lua = builder.getMainLuaCodeChunk();
+    // Sanity check: emitted code registers the same mapping literal we inject above.
+    expect(lua).toContain(`__TS__SourceMapTraceBack(debug.getinfo(1).short_src, ${mapping});`);
+
+    const result = builder.getLuaExecutionResult();
+    expect(result).toEqual(expect.any(String));
+    // Both `main.lua:N` and `<main.lua:N>` frames should be rewritten using the sourcemap.
+    expect(result).not.toContain("main.lua");
+    // Regular line references
+    expect(result).toContain("\tmain.ts:4:");
+    expect(result).toContain("\tmain.ts:3:");
+    // Anonymous function references must keep <> format
+    expect(result).toContain("<main.ts:3>");
+    expect(result).toContain("<main.ts:2>");
+});
+
 util.testEachVersion(
     "error stacktrace omits constructor and __TS_New",
     () => util.testFunction`

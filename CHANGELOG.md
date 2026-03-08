@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.34.0
+
+- Added support for the Lua 5.5 target (it mostly does the same as the 5.4 target for now)
+- Fixed a bug where enums in namespaces were not merged correctly
+- Fixed an issue with sourcemap traceback that caused lines from anonymous functions not to be translated correctly.
+- Fixed a small bug relating to the stacktraces produced by bundled lua
+
 ## 1.33.0
 
 - Upgraded TypeScript to 5.9.3

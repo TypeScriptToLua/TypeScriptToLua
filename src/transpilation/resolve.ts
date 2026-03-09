@@ -31,6 +31,7 @@ class ResolutionContext {
 
     public diagnostics: ts.Diagnostic[] = [];
     public resolvedFiles = new Map<string, ProcessedFile>();
+    private realPathMap = new Map<string, string>();
 
     constructor(
         public readonly program: ts.Program,
@@ -88,17 +89,40 @@ class ResolutionContext {
 
         if (!dependencyPath) return this.couldNotResolveImport(required, file);
 
+        // Canonicalize symlink paths to avoid bundling the same physical file multiple times
+        const canonicalPath = this.canonicalizeDependencyPath(dependencyPath);
+
         if (this.options.tstlVerbose) {
-            console.log(`Resolved ${required.requirePath} to ${normalizeSlashes(dependencyPath)}`);
+            console.log(`Resolved ${required.requirePath} to ${normalizeSlashes(canonicalPath)}`);
         }
 
-        this.processDependency(dependencyPath);
+        this.processDependency(canonicalPath);
         // Figure out resolved require path and dependency output path
-        if (shouldRewriteRequires(dependencyPath, this.program)) {
-            const resolvedRequire = getEmitPathRelativeToOutDir(dependencyPath, this.program);
+        if (shouldRewriteRequires(canonicalPath, this.program)) {
+            const resolvedRequire = getEmitPathRelativeToOutDir(canonicalPath, this.program);
             replaceRequireInCode(file, required, resolvedRequire, this.options.extension);
             replaceRequireInSourceMap(file, required, resolvedRequire, this.options.extension);
         }
+    }
+
+    /**
+     * Canonicalize dependency path by resolving symlinks.
+     * If the same physical file was already seen under a different path,
+     * return the first-seen path to ensure consistent module keys in bundles.
+     */
+    private canonicalizeDependencyPath(dependencyPath: string): string {
+        let realPath: string;
+        try {
+            realPath = fs.realpathSync(dependencyPath);
+        } catch {
+            return dependencyPath;
+        }
+
+        const existing = this.realPathMap.get(realPath);
+        if (existing !== undefined) return existing;
+
+        this.realPathMap.set(realPath, dependencyPath);
+        return dependencyPath;
     }
 
     private resolveDependencyPathsWithPlugins(requiringFile: ProcessedFile, dependency: string) {

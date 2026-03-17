@@ -102,46 +102,64 @@ export class Set<T extends AnyNotNil> {
     }
 
     public entries(): IterableIterator<[T, T]> {
+        const getFirstKey = () => this.firstKey;
         const nextKey = this.nextKey;
-        let key: T = this.firstKey!;
+        let key: T | undefined;
+        let started = false;
         return {
             [Symbol.iterator](): IterableIterator<[T, T]> {
                 return this;
             },
             next(): IteratorResult<[T, T]> {
-                const result = { done: !key, value: [key, key] as [T, T] };
-                key = nextKey.get(key);
-                return result;
+                if (!started) {
+                    started = true;
+                    key = getFirstKey();
+                } else {
+                    key = nextKey.get(key!);
+                }
+                return { done: !key, value: [key!, key!] as [T, T] };
             },
         };
     }
 
     public keys(): IterableIterator<T> {
+        const getFirstKey = () => this.firstKey;
         const nextKey = this.nextKey;
-        let key: T = this.firstKey!;
+        let key: T | undefined;
+        let started = false;
         return {
             [Symbol.iterator](): IterableIterator<T> {
                 return this;
             },
             next(): IteratorResult<T> {
-                const result = { done: !key, value: key };
-                key = nextKey.get(key);
-                return result;
+                if (!started) {
+                    started = true;
+                    key = getFirstKey();
+                } else {
+                    key = nextKey.get(key!);
+                }
+                return { done: !key, value: key! };
             },
         };
     }
 
     public values(): IterableIterator<T> {
+        const getFirstKey = () => this.firstKey;
         const nextKey = this.nextKey;
-        let key: T = this.firstKey!;
+        let key: T | undefined;
+        let started = false;
         return {
             [Symbol.iterator](): IterableIterator<T> {
                 return this;
             },
             next(): IteratorResult<T> {
-                const result = { done: !key, value: key };
-                key = nextKey.get(key);
-                return result;
+                if (!started) {
+                    started = true;
+                    key = getFirstKey();
+                } else {
+                    key = nextKey.get(key!);
+                }
+                return { done: !key, value: key! };
             },
         };
     }

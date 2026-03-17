@@ -195,6 +195,19 @@ describe.each(iterationMethods)("set.%s() preserves insertion order", iterationM
     });
 });
 
+test("set iterator persists after delete", () => {
+    util.testFunction`
+        const set1 = new Set<string | number>();
+        set1.add(42);
+        set1.add("forty two");
+
+        const iterator1 = set1.values();
+        set1.delete(42);
+
+        return iterator1.next().value;
+    `.expectToMatchJsResult();
+});
+
 test("instanceof Set without creating set", () => {
     util.testFunction`
         const myset = 3 as any;

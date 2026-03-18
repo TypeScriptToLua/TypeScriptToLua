@@ -258,20 +258,23 @@ test("multi return from catch->finally", () => {
 
 test("throw propagates through finally to outer catch", () => {
     util.testFunction`
-        function test() {
+        function thrower() {
             try {
-                throw "Test error";
+                throw "Error";
             } finally {
             }
         }
 
-        let result = 0;
-        try {
-            test();
-        } catch (e) {
-            result += 1;
+        function caller() {
+            try {
+                thrower();
+                return "NoCatch";
+            } catch (e) {
+                return e;
+            }
         }
-        return result;
+
+        return caller();
     `.expectToMatchJsResult();
 });
 

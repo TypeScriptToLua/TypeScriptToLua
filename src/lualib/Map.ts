@@ -113,46 +113,64 @@ export class Map<K extends AnyNotNil, V> {
     }
 
     public entries(): IterableIterator<[K, V]> {
+        const getFirstKey = () => this.firstKey;
         const { items, nextKey } = this;
-        let key = this.firstKey;
+        let key: K | undefined;
+        let started = false;
         return {
             [Symbol.iterator](): IterableIterator<[K, V]> {
                 return this;
             },
             next(): IteratorResult<[K, V]> {
-                const result = { done: !key, value: [key, items.get(key!)] as [K, V] };
-                key = nextKey.get(key!);
-                return result;
+                if (!started) {
+                    started = true;
+                    key = getFirstKey();
+                } else {
+                    key = nextKey.get(key!);
+                }
+                return { done: !key, value: [key!, items.get(key!)] as [K, V] };
             },
         };
     }
 
     public keys(): IterableIterator<K> {
+        const getFirstKey = () => this.firstKey;
         const nextKey = this.nextKey;
-        let key = this.firstKey;
+        let key: K | undefined;
+        let started = false;
         return {
             [Symbol.iterator](): IterableIterator<K> {
                 return this;
             },
             next(): IteratorResult<K> {
-                const result = { done: !key, value: key };
-                key = nextKey.get(key!);
-                return result as IteratorResult<K>;
+                if (!started) {
+                    started = true;
+                    key = getFirstKey();
+                } else {
+                    key = nextKey.get(key!);
+                }
+                return { done: !key, value: key! };
             },
         };
     }
 
     public values(): IterableIterator<V> {
+        const getFirstKey = () => this.firstKey;
         const { items, nextKey } = this;
-        let key = this.firstKey;
+        let key: K | undefined;
+        let started = false;
         return {
             [Symbol.iterator](): IterableIterator<V> {
                 return this;
             },
             next(): IteratorResult<V> {
-                const result = { done: !key, value: items.get(key!) };
-                key = nextKey.get(key!);
-                return result;
+                if (!started) {
+                    started = true;
+                    key = getFirstKey();
+                } else {
+                    key = nextKey.get(key!);
+                }
+                return { done: !key, value: items.get(key!) };
             },
         };
     }

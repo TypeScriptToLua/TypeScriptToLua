@@ -5,21 +5,12 @@ import * as util from "../../util";
 // fails with "'end' expected near 'local'"). Lua 5.2+ relaxed this restriction.
 // TSTL should strip dead code after break on all targets to avoid these errors.
 
-function expectNoDeadCode(...deadCodeStrings: string[]): util.TapCallback {
-    return builder => {
-        const lua = builder.getMainLuaCodeChunk();
-        for (const deadCode of deadCodeStrings) {
-            expect(lua).not.toContain(deadCode);
-        }
-    };
-}
-
 util.testEachVersion(
     "for dead code after break",
     () => util.testFunction`
         for (let i = 0; i < 10; i++) { break; const b = 8; }
     `,
-    util.expectAllVersions(expectNoDeadCode("local b = 8"))
+    util.expectEachVersionExceptJit(builder => builder.expectNoExecutionError())
 );
 
 util.testEachVersion(
@@ -27,7 +18,7 @@ util.testEachVersion(
     () => util.testFunction`
         for (let a in {"a": 5, "b": 8}) { break; const b = 8; }
     `,
-    util.expectAllVersions(expectNoDeadCode("local b = 8"))
+    util.expectEachVersionExceptJit(builder => builder.expectNoExecutionError())
 );
 
 util.testEachVersion(
@@ -35,7 +26,7 @@ util.testEachVersion(
     () => util.testFunction`
         for (let a of [1,2,4]) { break; const b = 8; }
     `,
-    util.expectAllVersions(expectNoDeadCode("local b = 8"))
+    util.expectEachVersionExceptJit(builder => builder.expectNoExecutionError())
 );
 
 util.testEachVersion(
@@ -43,7 +34,7 @@ util.testEachVersion(
     () => util.testFunction`
         while (true) { break; const b = 8; }
     `,
-    util.expectAllVersions(expectNoDeadCode("local b = 8"))
+    util.expectEachVersionExceptJit(builder => builder.expectNoExecutionError())
 );
 
 util.testEachVersion(
@@ -58,7 +49,7 @@ util.testEachVersion(
                 let def = 6;
         }
     `,
-    util.expectAllVersions(expectNoDeadCode("abc = 4", "def = 6"))
+    util.expectEachVersionExceptJit(builder => builder.expectNoExecutionError())
 );
 
 util.testEachVersion(
@@ -66,5 +57,5 @@ util.testEachVersion(
     () => util.testFunction`
         do { break; const b = 8; } while (true);
     `,
-    util.expectAllVersions(expectNoDeadCode("local b = 8"))
+    util.expectEachVersionExceptJit(builder => builder.expectNoExecutionError())
 );

@@ -210,6 +210,44 @@ describe.each(iterationMethods)("map.%s() preserves insertion order", iterationM
     });
 });
 
+describe.each(iterationMethods)("map.%s() handles mutation", iterationMethod => {
+    test("iterator persists after delete", () => {
+        util.testFunction`
+            const map = new Map<number, string>([[1, "a"], [2, "b"]]);
+            const iter = map.${iterationMethod}();
+            map.delete(1);
+            return iter.next().value;
+        `.expectToMatchJsResult();
+    });
+
+    test("iterator with delete and add between iterations", () => {
+        util.testFunction`
+            const map = new Map<number, string>([[1, "a"], [2, "b"], [3, "c"]]);
+            const iter = map.${iterationMethod}();
+            iter.next(); // 1
+            map.delete(2);
+            map.set(4, "d");
+            const results: IteratorResult<any>[] = [];
+            let r = iter.next();
+            while (!r.done) { results.push({ done: r.done, value: r.value }); r = iter.next(); }
+            return results;
+        `.expectToMatchJsResult();
+    });
+
+    test("iterator does not restart after exhaustion", () => {
+        util.testFunction`
+            const map = new Map<number, string>([[1, "a"], [2, "b"]]);
+            const iter = map.${iterationMethod}();
+            const results: boolean[] = [];
+            results.push(iter.next().done!);
+            results.push(iter.next().done!);
+            results.push(iter.next().done!); // should be done
+            results.push(iter.next().done!); // should still be done, not restart
+            return results;
+        `.expectToMatchJsResult();
+    });
+});
+
 describe("Map.groupBy", () => {
     test("empty", () => {
         util.testFunction`

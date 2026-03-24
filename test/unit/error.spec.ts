@@ -256,6 +256,28 @@ test("multi return from catch->finally", () => {
         .expectToMatchJsResult();
 });
 
+test("throw propagates through finally to outer catch", () => {
+    util.testFunction`
+        function thrower() {
+            try {
+                throw "Error";
+            } finally {
+            }
+        }
+
+        function caller() {
+            try {
+                thrower();
+                return "NoCatch";
+            } catch (e) {
+                return e;
+            }
+        }
+
+        return caller();
+    `.expectToMatchJsResult();
+});
+
 test("return from nested finally", () => {
     util.testFunction`
         let x = "";

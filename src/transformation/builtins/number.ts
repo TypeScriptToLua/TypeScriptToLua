@@ -77,31 +77,62 @@ export function transformNumberProperty(
                 node
             );
         case "MIN_VALUE":
+            // 2 ^ -1074 = 5e-324 (smallest positive double)
             return lua.createBinaryExpression(
-                lua.createNumericLiteral(-2),
-                lua.createNumericLiteral(1074),
+                lua.createNumericLiteral(2),
+                lua.createNumericLiteral(-1074),
                 lua.SyntaxKind.PowerOperator,
                 node
             );
         case "MIN_SAFE_INTEGER":
-            return lua.createBinaryExpression(
-                lua.createNumericLiteral(-2),
-                lua.createNumericLiteral(1074),
-                lua.SyntaxKind.PowerOperator,
+            // -(2 ^ 53 - 1) = -9007199254740991
+            return lua.createUnaryExpression(
+                lua.createParenthesizedExpression(
+                    lua.createBinaryExpression(
+                        lua.createBinaryExpression(
+                            lua.createNumericLiteral(2),
+                            lua.createNumericLiteral(53),
+                            lua.SyntaxKind.PowerOperator
+                        ),
+                        lua.createNumericLiteral(1),
+                        lua.SyntaxKind.SubtractionOperator
+                    )
+                ),
+                lua.SyntaxKind.NegationOperator,
                 node
             );
         case "MAX_SAFE_INTEGER":
+            // 2 ^ 53 - 1 = 9007199254740991
             return lua.createBinaryExpression(
-                lua.createNumericLiteral(2),
-                lua.createNumericLiteral(1024),
-                lua.SyntaxKind.PowerOperator,
+                lua.createBinaryExpression(
+                    lua.createNumericLiteral(2),
+                    lua.createNumericLiteral(53),
+                    lua.SyntaxKind.PowerOperator
+                ),
+                lua.createNumericLiteral(1),
+                lua.SyntaxKind.SubtractionOperator,
                 node
             );
         case "MAX_VALUE":
+            // (2 - 2 ^ -52) * 2 ^ 1023 = 1.7976931348623157e+308
             return lua.createBinaryExpression(
-                lua.createNumericLiteral(2),
-                lua.createNumericLiteral(1024),
-                lua.SyntaxKind.PowerOperator,
+                lua.createParenthesizedExpression(
+                    lua.createBinaryExpression(
+                        lua.createNumericLiteral(2),
+                        lua.createBinaryExpression(
+                            lua.createNumericLiteral(2),
+                            lua.createNumericLiteral(-52),
+                            lua.SyntaxKind.PowerOperator
+                        ),
+                        lua.SyntaxKind.SubtractionOperator
+                    )
+                ),
+                lua.createBinaryExpression(
+                    lua.createNumericLiteral(2),
+                    lua.createNumericLiteral(1023),
+                    lua.SyntaxKind.PowerOperator
+                ),
+                lua.SyntaxKind.MultiplicationOperator,
                 node
             );
 

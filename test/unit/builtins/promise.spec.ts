@@ -1323,3 +1323,42 @@ describe("Promise.race", () => {
             });
     });
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1659
+describe("Promise.finally returns new promise", () => {
+    test("finally returns a different promise instance", () => {
+        util.testFunction`
+            const p1 = new Promise(() => {});
+            const p2 = p1.finally();
+            return p1 === p2;
+        `.expectToEqual(false);
+    });
+
+    test("finally preserves fulfillment value", () => {
+        util.testFunction`
+            let result: any;
+            Promise.resolve(42).finally(() => {}).then(v => { result = v; });
+            return result;
+        `.expectToEqual(42);
+    });
+
+    test("finally preserves rejection reason", () => {
+        util.testFunction`
+            let result: any;
+            Promise.reject("error").finally(() => {}).catch(r => { result = r; });
+            return result;
+        `.expectToEqual("error");
+    });
+
+    test("finally on deferred rejection preserves reason", () => {
+        util.testFunction`
+            const { promise, reject } = defer<string>();
+            let result: any;
+            promise.finally(() => {}).catch(r => { result = r; });
+            reject("deferred error");
+            return result;
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual("deferred error");
+    });
+});

@@ -196,6 +196,21 @@ describe("Object.defineProperty", () => {
             return { prop: foo.bar, err };
         `.expectToMatchJsResult();
     });
+
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1625
+    test("instance isolation", () => {
+        util.testFunction`
+            class Test {
+                declare obj: object;
+                constructor() {
+                    Object.defineProperty(this, "obj", { value: {}, writable: true, configurable: true });
+                }
+            }
+            const t1 = new Test();
+            const t2 = new Test();
+            return t1.obj === t2.obj;
+        `.expectToMatchJsResult();
+    });
 });
 
 describe("Object.getOwnPropertyDescriptor", () => {

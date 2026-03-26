@@ -26,6 +26,19 @@ export function __TS__SetDescriptor(
         setmetatable(target, metatable);
     }
 
+    // When setting a descriptor on an instance (not a prototype), ensure it has
+    // its own metatable so descriptors are not shared across instances.
+    // See: https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1625
+    if (!isPrototype && rawget(metatable, "_descriptors")) {
+        // The metatable already has descriptors from a previous defineProperty
+        // call (likely on a different instance sharing the same class metatable).
+        // Create a per-instance metatable that chains to the original.
+        const instanceMetatable: any = {};
+        setmetatable(instanceMetatable, metatable);
+        setmetatable(target, instanceMetatable);
+        metatable = instanceMetatable;
+    }
+
     const value = rawget(target, key);
     if (value !== undefined) rawset(target, key, undefined);
 

@@ -211,6 +211,66 @@ describe("Object.defineProperty", () => {
             return t1.obj === t2.obj;
         `.expectToMatchJsResult();
     });
+
+    test("instance isolation with three instances", () => {
+        util.testFunction`
+            class Test {
+                declare obj: object;
+                constructor() {
+                    Object.defineProperty(this, "obj", { value: {}, writable: true, configurable: true });
+                }
+            }
+            const t1 = new Test();
+            const t2 = new Test();
+            const t3 = new Test();
+            return [t1.obj === t2.obj, t1.obj === t3.obj, t2.obj === t3.obj];
+        `.expectToMatchJsResult();
+    });
+
+    test("instance isolation with mutation", () => {
+        util.testFunction`
+            class Test {
+                declare value: number;
+                constructor(v: number) {
+                    Object.defineProperty(this, "value", { value: v, writable: true, configurable: true });
+                }
+            }
+            const t1 = new Test(1);
+            const t2 = new Test(2);
+            return [t1.value, t2.value];
+        `.expectToMatchJsResult();
+    });
+
+    test("instance isolation with multiple properties", () => {
+        util.testFunction`
+            class Test {
+                declare a: string;
+                declare b: string;
+                constructor(a: string, b: string) {
+                    Object.defineProperty(this, "a", { value: a, writable: true, configurable: true });
+                    Object.defineProperty(this, "b", { value: b, writable: true, configurable: true });
+                }
+            }
+            const t1 = new Test("x", "y");
+            const t2 = new Test("p", "q");
+            return [t1.a, t1.b, t2.a, t2.b];
+        `.expectToMatchJsResult();
+    });
+
+    test("instance isolation preserves prototype methods", () => {
+        util.testFunction`
+            class Test {
+                declare val: number;
+                constructor(v: number) {
+                    Object.defineProperty(this, "val", { value: v, writable: true, configurable: true });
+                }
+                getVal() { return this.val; }
+            }
+            const t1 = new Test(10);
+            const t2 = new Test(20);
+            return [t1.getVal(), t2.getVal()];
+        `.expectToMatchJsResult();
+    });
 });
 
 describe("Object.getOwnPropertyDescriptor", () => {

@@ -417,6 +417,61 @@ test("sourceMapTraceback maps anonymous function locations in .lua files (#1665)
     expect(result).toContain("<main.ts:2>");
 });
 
+test("try/finally rethrow preserves error value", () => {
+    util.testFunction`
+        function foo() {
+            try {
+                throw "oops";
+            } finally {
+            }
+        }
+        try { foo(); return "no error"; } catch(e) { return e; }
+    `.expectToMatchJsResult();
+});
+
+test("try/finally with return and throw paths", () => {
+    util.testFunction`
+        function foo(shouldReturn: boolean) {
+            try {
+                if (shouldReturn) return "returned";
+                throw "thrown";
+            } finally {
+            }
+        }
+        const results: any[] = [];
+        results.push(foo(true));
+        try { foo(false); } catch(e) { results.push(e); }
+        return results;
+    `.expectToMatchJsResult();
+});
+
+test("try/finally runs finally side effect before rethrow", () => {
+    util.testFunction`
+        let sideEffect = false;
+        function foo() {
+            try {
+                throw "err";
+            } finally {
+                sideEffect = true;
+            }
+        }
+        try { foo(); } catch(e) {}
+        return sideEffect;
+    `.expectToMatchJsResult();
+});
+
+test("try/finally rethrow with non-string error", () => {
+    util.testFunction`
+        function foo() {
+            try {
+                throw 42;
+            } finally {
+            }
+        }
+        try { foo(); return "no error"; } catch(e) { return e; }
+    `.expectToMatchJsResult();
+});
+
 util.testEachVersion(
     "error stacktrace omits constructor and __TS_New",
     () => util.testFunction`

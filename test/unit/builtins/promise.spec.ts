@@ -1324,11 +1324,50 @@ describe("Promise.race", () => {
     });
 });
 
-// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1659
-test("finally returns a different promise instance", () => {
-    util.testFunction`
-        const p1 = new Promise(() => {});
-        const p2 = p1.finally();
-        return p1 === p2;
-    `.expectToMatchJsResult();
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1660
+describe("Promise.finally", () => {
+    test("returns a different promise instance", () => {
+        util.testFunction`
+            const p1 = new Promise(() => {});
+            const p2 = p1.finally();
+            return p1 === p2;
+        `.expectToMatchJsResult();
+    });
+
+    test("preserves fulfillment value", () => {
+        util.testFunction`
+            const result = Promise.resolve(42).finally(() => {}) as any;
+            return result.value;
+        `.expectToEqual(42);
+    });
+
+    test("preserves rejection reason", () => {
+        util.testFunction`
+            const result = Promise.reject("err").finally(() => {}) as any;
+            return result.rejectionReason;
+        `.expectToEqual("err");
+    });
+
+    test("callback executes on fulfillment", () => {
+        util.testFunction`
+            let called = false;
+            Promise.resolve(1).finally(() => { called = true; });
+            return called;
+        `.expectToEqual(true);
+    });
+
+    test("callback executes on rejection", () => {
+        util.testFunction`
+            let called = false;
+            Promise.reject("err").finally(() => { called = true; });
+            return called;
+        `.expectToEqual(true);
+    });
+
+    test("finally with undefined callback", () => {
+        util.testFunction`
+            const result = Promise.resolve(99).finally(undefined) as any;
+            return result.value;
+        `.expectToEqual(99);
+    });
 });

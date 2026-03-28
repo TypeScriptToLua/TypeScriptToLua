@@ -45,7 +45,6 @@ export class __TS__Promise<T> implements Promise<T> {
 
     private fulfilledCallbacks: Array<PromiseResolve<T>> = [];
     private rejectedCallbacks: PromiseReject[] = [];
-    private finallyCallbacks: Array<() => void> = [];
 
     // @ts-ignore
     public [Symbol.toStringTag]: string; // Required to implement interface, no output Lua
@@ -124,16 +123,23 @@ export class __TS__Promise<T> implements Promise<T> {
     }
 
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/finally
+    // Delegates to .then() so that a new Promise is returned (per ES spec §27.2.5.3)
+    // and the original fulfillment value / rejection reason is preserved.
     public finally(onFinally?: () => void): Promise<T> {
-        if (onFinally) {
-            this.finallyCallbacks.push(onFinally);
-
-            if (this.state !== PromiseState.Pending) {
-                // If promise already resolved or rejected, immediately fire finally callback
-                onFinally();
-            }
-        }
-        return this;
+        return this.then(
+            onFinally
+                ? (value: T): T => {
+                      onFinally();
+                      return value;
+                  }
+                : undefined,
+            onFinally
+                ? (reason: any): never => {
+                      onFinally();
+                      throw reason;
+                  }
+                : undefined
+        );
     }
 
     private resolve(value: T | PromiseLike<T>): void {
@@ -168,25 +174,13 @@ export class __TS__Promise<T> implements Promise<T> {
 
     private invokeCallbacks<T>(callbacks: ReadonlyArray<(value: T) => void>, value: T): void {
         const callbacksLength = callbacks.length;
-        const finallyCallbacks = this.finallyCallbacks;
-        const finallyCallbacksLength = finallyCallbacks.length;
 
         if (callbacksLength !== 0) {
             for (const i of $range(1, callbacksLength - 1)) {
                 callbacks[i - 1](value);
             }
             // Tail call optimization for a common case.
-            if (finallyCallbacksLength === 0) {
-                return callbacks[callbacksLength - 1](value);
-            }
-            callbacks[callbacksLength - 1](value);
-        }
-
-        if (finallyCallbacksLength !== 0) {
-            for (const i of $range(1, finallyCallbacksLength - 1)) {
-                finallyCallbacks[i - 1]();
-            }
-            return finallyCallbacks[finallyCallbacksLength - 1]();
+            return callbacks[callbacksLength - 1](value);
         }
     }
 

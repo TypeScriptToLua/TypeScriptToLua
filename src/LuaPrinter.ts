@@ -328,7 +328,7 @@ export class LuaPrinter {
 
             statementNodes.push(node);
 
-            if (lua.isReturnStatement(statement)) break;
+            if (lua.isReturnStatement(statement) || lua.isBreakStatement(statement)) break;
         }
 
         return statementNodes.length > 0 ? [...intersperse<SourceChunk>(statementNodes, "\n"), "\n"] : [];

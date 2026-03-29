@@ -460,6 +460,27 @@ test("try/finally runs finally side effect before rethrow", () => {
     `.expectToMatchJsResult();
 });
 
+test("try/finally with return and throw paths and non-empty finally body", () => {
+    util.testFunction`
+        let sideEffect = false;
+        function foo(shouldReturn: boolean) {
+            try {
+                if (shouldReturn) return "ok";
+                throw "err";
+            } finally {
+                sideEffect = true;
+            }
+        }
+        const results: any[] = [];
+        results.push(foo(true));
+        results.push(sideEffect);
+        sideEffect = false;
+        try { foo(false); } catch(e) { results.push(e); }
+        results.push(sideEffect);
+        return results;
+    `.expectToMatchJsResult();
+});
+
 test("try/finally rethrow with non-string error", () => {
     util.testFunction`
         function foo() {

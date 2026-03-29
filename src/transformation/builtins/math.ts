@@ -42,14 +42,18 @@ export function transformMathCall(
 
     const expressionName = calledMethod.name.text;
     switch (expressionName) {
-        // Lua 5.3: math.atan(y, x)
+        // Lua 5.3+: math.atan(y, x)
         // Otherwise: math.atan2(y, x)
         case "atan2": {
             if (context.luaTarget === LuaTarget.Universal) {
                 return transformLuaLibFunction(context, LuaLibFeature.MathAtan2, node, ...params);
             }
 
-            const method = lua.createStringLiteral(context.luaTarget === LuaTarget.Lua53 ? "atan" : "atan2");
+            const useAtan =
+                context.luaTarget === LuaTarget.Lua53 ||
+                context.luaTarget === LuaTarget.Lua54 ||
+                context.luaTarget === LuaTarget.Lua55;
+            const method = lua.createStringLiteral(useAtan ? "atan" : "atan2");
             return lua.createCallExpression(lua.createTableIndexExpression(math, method), params, node);
         }
 

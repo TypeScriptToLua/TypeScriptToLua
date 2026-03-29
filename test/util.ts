@@ -51,7 +51,7 @@ function getLuaBindingsForVersion(target: tstl.LuaTarget): { lauxlib: LauxLib; l
 }
 
 export function assert(value: any, message?: string | Error): asserts value {
-    nativeAssert(value, message);
+    nativeAssert.ok(value, message);
 }
 
 export const formatCode = (...values: unknown[]) => values.map(e => stringify(e)).join(", ");
@@ -92,17 +92,15 @@ export function expectEachVersionExceptJit<T>(
     };
 }
 
-const memoize: MethodDecorator = (_target, _propertyKey, descriptor) => {
-    const originalFunction = descriptor.value as any;
+const memoize = (originalFunction: any) => {
     const memoized = new WeakMap();
-    descriptor.value = function (this: any, ...args: any[]): any {
+    return function (this: any, ...args: any[]): any {
         if (!memoized.has(this)) {
             memoized.set(this, originalFunction.apply(this, args));
         }
 
         return memoized.get(this);
-    } as any;
-    return descriptor;
+    };
 };
 
 export class ExecutionError extends Error {
@@ -158,12 +156,13 @@ export abstract class TestBuilder {
     }
 
     protected options: tstl.CompilerOptions = {
+        strict: false,
         luaTarget: tstl.LuaTarget.Lua55,
         noHeader: true,
         skipLibCheck: true,
         target: ts.ScriptTarget.ES2017,
         lib: ["lib.esnext.d.ts"],
-        moduleResolution: ts.ModuleResolutionKind.Node10,
+        moduleResolution: ts.ModuleResolutionKind.Bundler,
         resolveJsonModule: true,
         sourceMap: true,
     };

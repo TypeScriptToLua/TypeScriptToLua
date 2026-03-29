@@ -27,7 +27,7 @@ interface ResolutionResult {
 }
 
 class ResolutionContext {
-    private noResolvePaths: picomatch.Matcher[];
+    private noResolvePaths: RegExp[];
 
     public diagnostics: ts.Diagnostic[] = [];
     public resolvedFiles = new Map<string, ProcessedFile>();
@@ -39,7 +39,7 @@ class ResolutionContext {
         private readonly plugins: Plugin[]
     ) {
         const unique = [...new Set(options.noResolvePaths)];
-        const matchers = unique.map(x => picomatch(x));
+        const matchers = unique.map(x => picomatch.makeRe(x));
         this.noResolvePaths = matchers;
     }
 
@@ -73,7 +73,7 @@ class ResolutionContext {
             return;
         }
 
-        if (this.noResolvePaths.find(isMatch => isMatch(required.requirePath))) {
+        if (this.noResolvePaths.find(isMatch => isMatch.test(required.requirePath))) {
             if (this.options.tstlVerbose) {
                 console.log(
                     `Skipping module resolution of ${required.requirePath} as it is in the tsconfig noResolvePaths.`

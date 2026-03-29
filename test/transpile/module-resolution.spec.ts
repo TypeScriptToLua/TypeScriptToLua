@@ -598,7 +598,7 @@ test("module resolution uses baseURL to resolve imported files", () => {
                 return { baz = function() return "baz" end }
             `
         )
-        .setOptions({ baseUrl: "./myproject/mydeps" })
+        .setOptions({ baseUrl: "./myproject/mydeps", ignoreDeprecations: "6.0" })
         .expectToEqual({
             fooResult: "foo",
             barResult: "bar",

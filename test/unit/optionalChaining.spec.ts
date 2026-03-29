@@ -342,7 +342,6 @@ describe("optional chaining function calls", () => {
         `
             .setOptions({
                 strict,
-                target: ScriptTarget.ES5,
             })
             .expectToMatchJsResult();
     });

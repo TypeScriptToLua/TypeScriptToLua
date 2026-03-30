@@ -49,11 +49,13 @@ export function transformMathCall(
                 return transformLuaLibFunction(context, LuaLibFeature.MathAtan2, node, ...params);
             }
 
-            const useAtan =
-                context.luaTarget === LuaTarget.Lua53 ||
-                context.luaTarget === LuaTarget.Lua54 ||
-                context.luaTarget === LuaTarget.Lua55;
-            const method = lua.createStringLiteral(useAtan ? "atan" : "atan2");
+            const useAtan2 =
+                context.luaTarget === LuaTarget.Lua50 ||
+                context.luaTarget === LuaTarget.Lua51 ||
+                context.luaTarget === LuaTarget.Lua52 ||
+                context.luaTarget === LuaTarget.LuaJIT ||
+                context.luaTarget === LuaTarget.Luau;
+            const method = lua.createStringLiteral(useAtan2 ? "atan2" : "atan");
             return lua.createCallExpression(lua.createTableIndexExpression(math, method), params, node);
         }
 

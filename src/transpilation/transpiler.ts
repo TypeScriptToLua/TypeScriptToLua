@@ -4,6 +4,7 @@ import { CompilerOptions, isBundleEnabled, LuaLibImportKind, LuaTarget } from ".
 import { buildMinimalLualibBundle, findUsedLualibFeatures, getLuaLibBundle } from "../LuaLib";
 import { normalizeSlashes, trimExtension } from "../utils";
 import { getBundleResult } from "./bundle";
+import { emitPathCollision } from "./diagnostics";
 import { getPlugins, Plugin } from "./plugins";
 import { resolveDependencies } from "./resolve";
 import { getProgramTranspileResult, TranspileOptions } from "./transpile";
@@ -143,10 +144,18 @@ export class Transpiler {
             diagnostics.push(...bundleDiagnostics);
             emitPlan = [bundleFile];
         } else {
-            emitPlan = resolutionResult.resolvedFiles.map(file => ({
-                ...file,
-                outputPath: getEmitPath(file.fileName, program),
-            }));
+            // Check for output path collisions caused by dot expansion
+            const outputPathMap = new Map<string, string>();
+            emitPlan = resolutionResult.resolvedFiles.map(file => {
+                const outputPath = getEmitPath(file.fileName, program);
+                const existing = outputPathMap.get(outputPath);
+                if (existing) {
+                    diagnostics.push(emitPathCollision(outputPath, existing, file.fileName));
+                } else {
+                    outputPathMap.set(outputPath, file.fileName);
+                }
+                return { ...file, outputPath };
+            });
         }
 
         performance.endSection("getEmitPlan");
@@ -189,11 +198,18 @@ export function getEmitPathRelativeToOutDir(fileName: string, program: ts.Progra
         emitPathSplits[0] = "lua_modules";
     }
 
+    // Expand dots in path segments into nested directories so that Lua's require()
+    // resolves correctly (e.g. "Foo.Bar/index.ts" -> "Foo/Bar/index.lua").
+    // Dots are path separators in Lua's module system, so a file at "Foo.Bar/index.lua"
+    // would be unreachable via require("Foo.Bar.index") since Lua looks for "Foo/Bar/index.lua".
+    // Strip the source extension first, split all dots, then re-add the output extension.
+    emitPathSplits[emitPathSplits.length - 1] = trimExtension(emitPathSplits[emitPathSplits.length - 1]);
+    emitPathSplits = emitPathSplits.flatMap(segment => segment.split("."));
+
     // Set extension
     const extension = ((program.getCompilerOptions() as CompilerOptions).extension ?? "lua").trim();
     const trimmedExtension = extension.startsWith(".") ? extension.substring(1) : extension;
-    emitPathSplits[emitPathSplits.length - 1] =
-        trimExtension(emitPathSplits[emitPathSplits.length - 1]) + "." + trimmedExtension;
+    emitPathSplits[emitPathSplits.length - 1] += "." + trimmedExtension;
 
     return path.join(...emitPathSplits);
 }

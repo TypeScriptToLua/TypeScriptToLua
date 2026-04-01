@@ -55,7 +55,3 @@ export const cannotBundleLibrary = createDiagnosticFactory(
 );
 
 export const unsupportedJsxEmit = createDiagnosticFactory(() => 'JSX is only supported with "react" jsx option.');
-
-export const pathsWithoutBaseUrl = createDiagnosticFactory(
-    () => "When configuring 'paths' in tsconfig.json, the option 'baseUrl' must also be provided."
-);

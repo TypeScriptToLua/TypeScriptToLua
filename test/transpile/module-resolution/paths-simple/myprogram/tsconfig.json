@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "baseUrl": ".",
+        "rootDir": "..",
         "outDir": "dist",
         "paths": {
             "myOtherPackage": ["../mypackage"],

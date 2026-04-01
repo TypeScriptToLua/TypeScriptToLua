@@ -222,11 +222,7 @@ class ResolutionContext {
                 this.options.baseUrl ??
                 (this.options.configFilePath ? path.dirname(this.options.configFilePath) : undefined);
             if (pathsBase) {
-                const fileFromPaths = this.tryGetModuleNameFromPaths(
-                    dependencyPath,
-                    this.options.paths,
-                    pathsBase
-                );
+                const fileFromPaths = this.tryGetModuleNameFromPaths(dependencyPath, this.options.paths, pathsBase);
                 if (fileFromPaths) return fileFromPaths;
             }
         }

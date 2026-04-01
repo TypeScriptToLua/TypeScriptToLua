@@ -36,7 +36,7 @@ export const compilerOptions =
     (options: tstl.CompilerOptions): ts.TransformerFactory<ts.SourceFile> =>
     context =>
     file => {
-        assert(options.plugins?.length === 1);
+        assert.ok(options.plugins?.length === 1);
         return visitAndReplace(context, file, node => {
             if (!ts.isReturnStatement(node)) return;
             return ts.factory.updateReturnStatement(node, ts.factory.createTrue());

@@ -75,6 +75,22 @@ export function transformBinaryBitOperation(
         case LuaTarget.Lua52:
             return transformBinaryBitLibOperation(node, left, right, operator, "bit32");
         default:
+            // Lua 5.3+ `>>` is arithmetic (sign-extending), but TS `>>>` is logical (zero-fill).
+            // Emit `(left & 0xFFFFFFFF) >> right` to convert to unsigned 32-bit first.
+            if (operator === ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken) {
+                const mask = lua.createBinaryExpression(
+                    left,
+                    lua.createNumericLiteral(0xffffffff, node),
+                    lua.SyntaxKind.BitwiseAndOperator,
+                    node
+                );
+                return lua.createBinaryExpression(
+                    lua.createParenthesizedExpression(mask, node),
+                    right,
+                    lua.SyntaxKind.BitwiseRightShiftOperator,
+                    node
+                );
+            }
             const luaOperator = transformBitOperatorToLuaOperator(context, node, operator);
             return lua.createBinaryExpression(left, right, luaOperator, node);
     }

@@ -28,6 +28,7 @@ interface ResolutionResult {
 
 class ResolutionContext {
     private noResolvePaths: picomatch.Matcher[];
+    private pathsBase: string | undefined;
 
     public diagnostics: ts.Diagnostic[] = [];
     public resolvedFiles = new Map<string, ProcessedFile>();
@@ -40,6 +41,8 @@ class ResolutionContext {
     ) {
         const unique = [...new Set(options.noResolvePaths)];
         this.noResolvePaths = unique.map(x => picomatch(x));
+        this.pathsBase =
+            options.baseUrl ?? (options.configFilePath ? path.dirname(options.configFilePath) : undefined);
     }
 
     public addAndResolveDependencies(file: ProcessedFile): void {
@@ -209,35 +212,17 @@ class ResolutionContext {
             if (resolvedNodeModulesFile) return resolvedNodeModulesFile;
         }
 
-        const isRelativeDependency = ts.isExternalModuleNameRelative(dependencyPath);
-
-        if (!isRelativeDependency && this.options.paths) {
-            // Bare specifiers: check paths mappings first, matching TypeScript's resolution order.
-            // When baseUrl is not set, resolve paths relative to the tsconfig directory (TS 6.0+ behavior)
-            const pathsBase =
-                this.options.baseUrl ??
-                (this.options.configFilePath ? path.dirname(this.options.configFilePath) : undefined);
-            if (pathsBase) {
-                const fileFromPaths = this.tryGetModuleNameFromPaths(dependencyPath, this.options.paths, pathsBase);
-                if (fileFromPaths) return fileFromPaths;
-            }
+        // Bare specifiers: check paths mappings first, matching TypeScript's resolution order.
+        // TS never applies paths to relative imports, so skip for those.
+        if (!ts.isExternalModuleNameRelative(dependencyPath) && this.options.paths && this.pathsBase) {
+            const fileFromPaths = this.tryGetModuleNameFromPaths(dependencyPath, this.options.paths, this.pathsBase);
+            if (fileFromPaths) return fileFromPaths;
         }
 
         // Check if file is a file in the project
         const resolvedPath = this.formatPathToFile(dependencyPath, requiringFile);
         const fileFromPath = this.getFileFromPath(resolvedPath);
         if (fileFromPath) return fileFromPath;
-
-        if (isRelativeDependency && this.options.paths) {
-            // Relative imports are still file-relative first; fall back to paths afterwards.
-            const pathsBase =
-                this.options.baseUrl ??
-                (this.options.configFilePath ? path.dirname(this.options.configFilePath) : undefined);
-            if (pathsBase) {
-                const fileFromPaths = this.tryGetModuleNameFromPaths(dependencyPath, this.options.paths, pathsBase);
-                if (fileFromPaths) return fileFromPaths;
-            }
-        }
 
         // Not a TS file in our project sources, use resolver to check if we can find dependency
         try {

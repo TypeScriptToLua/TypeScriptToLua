@@ -41,8 +41,7 @@ class ResolutionContext {
     ) {
         const unique = [...new Set(options.noResolvePaths)];
         this.noResolvePaths = unique.map(x => picomatch(x));
-        this.pathsBase =
-            options.baseUrl ?? (options.configFilePath ? path.dirname(options.configFilePath) : undefined);
+        this.pathsBase = options.baseUrl ?? (options.configFilePath ? path.dirname(options.configFilePath) : undefined);
     }
 
     public addAndResolveDependencies(file: ProcessedFile): void {

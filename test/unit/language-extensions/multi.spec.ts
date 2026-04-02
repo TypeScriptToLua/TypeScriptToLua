@@ -41,7 +41,7 @@ test("Destructuring assignment of LuaMultiReturn returning nil", () => {
         const [a, ...b] = multiReturn();
         export {a, b};
     `
-        .ignoreDiagnostics([2322, 2461])
+        .ignoreDiagnostics([2322, 2461]) // TS2322: bare return not assignable to LuaMultiReturn; TS2461: not iterable
         .withLanguageExtensions()
         .expectToEqual({ a: undefined, b: [] });
 });

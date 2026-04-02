@@ -108,6 +108,7 @@ describe("execution order", () => {
             );
             return result;
         `
+            // TS2783: duplicate property in spread — intentional, testing execution order
             .ignoreDiagnostics([2783])
             .expectToMatchJsResult();
     });

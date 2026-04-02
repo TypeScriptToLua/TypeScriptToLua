@@ -174,3 +174,20 @@ test("import = require", () => {
         .setOptions({ module: ts.ModuleKind.CommonJS })
         .tap(expectToRequire("foo.bar"));
 });
+
+test("paths without baseUrl resolves bare imports before sibling files", () => {
+    util.testModule`
+        import * as pkg from "pkg";
+        pkg;
+    `
+        .setMainFileName("/virtual/app/main.ts")
+        .addExtraFile("/virtual/app/pkg.ts", "export const sibling = true;")
+        .addExtraFile("/virtual/shared/pkg.ts", "export const mapped = true;")
+        .setOptions({
+            baseUrl: undefined,
+            configFilePath: "/virtual/tsconfig.json",
+            paths: { pkg: ["./shared/pkg"] },
+            rootDir: "/virtual",
+        })
+        .tap(expectToRequire("shared.pkg"));
+});

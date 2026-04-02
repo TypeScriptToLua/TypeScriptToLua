@@ -1,5 +1,7 @@
 {
     "compilerOptions": {
+        "baseUrl": ".",
+        "ignoreDeprecations": "6.0",
         "rootDir": "..",
         "outDir": "dist",
         "paths": {

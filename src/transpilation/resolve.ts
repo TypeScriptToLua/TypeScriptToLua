@@ -209,14 +209,27 @@ class ResolutionContext {
             if (resolvedNodeModulesFile) return resolvedNodeModulesFile;
         }
 
+        const isRelativeDependency = ts.isExternalModuleNameRelative(dependencyPath);
+
+        if (!isRelativeDependency && this.options.paths) {
+            // Bare specifiers: check paths mappings first, matching TypeScript's resolution order.
+            // When baseUrl is not set, resolve paths relative to the tsconfig directory (TS 6.0+ behavior)
+            const pathsBase =
+                this.options.baseUrl ??
+                (this.options.configFilePath ? path.dirname(this.options.configFilePath) : undefined);
+            if (pathsBase) {
+                const fileFromPaths = this.tryGetModuleNameFromPaths(dependencyPath, this.options.paths, pathsBase);
+                if (fileFromPaths) return fileFromPaths;
+            }
+        }
+
         // Check if file is a file in the project
         const resolvedPath = this.formatPathToFile(dependencyPath, requiringFile);
         const fileFromPath = this.getFileFromPath(resolvedPath);
         if (fileFromPath) return fileFromPath;
 
-        if (this.options.paths) {
-            // If no file found yet and paths are present, try to find project file via paths mappings
-            // When baseUrl is not set, resolve paths relative to the tsconfig directory (TS 6.0+ behavior)
+        if (isRelativeDependency && this.options.paths) {
+            // Relative imports are still file-relative first; fall back to paths afterwards.
             const pathsBase =
                 this.options.baseUrl ??
                 (this.options.configFilePath ? path.dirname(this.options.configFilePath) : undefined);

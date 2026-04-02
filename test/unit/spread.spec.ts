@@ -116,6 +116,7 @@ describe("in object literal", () => {
         "{ ...{ x: false }, x: true }",
         "{ ...{ x: false }, x: false, ...{ x: true } }",
     ])("of object literal (%p)", expression => {
+        // TS2783: duplicate property in spread — intentional, testing spread override behavior
         util.testExpression(expression).ignoreDiagnostics([2783]).expectToMatchJsResult();
     });
 

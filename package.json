@@ -67,7 +67,7 @@
         "lua-types": "^2.14.1",
         "lua-wasm-bindings": "^0.5.3",
         "prettier": "^2.8.8",
-        "ts-jest": "^29.2.5",
+        "ts-jest": "^29.4.9",
         "ts-node": "^10.9.2",
         "typescript": "6.0.2",
         "typescript-eslint": "^8.58.0"

@@ -11,8 +11,8 @@ test("CustomCreate", () => {
     const tsHeader = `
         /** @customConstructor Point2DCreate */
         class Point2D {
-            public x: number;
-            public y: number;
+            public x!: number;
+            public y!: number;
             constructor(x: number, y: number) {
                 // No values assigned
             }

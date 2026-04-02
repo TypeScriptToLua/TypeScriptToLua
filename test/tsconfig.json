@@ -2,8 +2,7 @@
     "extends": "../tsconfig.json",
     "compilerOptions": {
         "rootDir": "..",
-        "types": ["node", "jest"],
-        "baseUrl": "."
+        "types": ["node", "jest"]
     },
     "include": [".", "../src"],
     "exclude": [

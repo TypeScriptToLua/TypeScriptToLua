@@ -99,9 +99,7 @@ export function validateOptions(options: CompilerOptions): ts.Diagnostic[] {
         diagnostics.push(diagnosticFactories.unsupportedJsxEmit());
     }
 
-    if (options.paths && !options.baseUrl) {
-        diagnostics.push(diagnosticFactories.pathsWithoutBaseUrl());
-    }
+    // paths without baseUrl is now supported (TS 6.0+ resolves paths relative to tsconfig location)
 
     return diagnostics;
 }

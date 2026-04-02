@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "strict": true,
-        "moduleResolution": "Node",
+        "moduleResolution": "Bundler",
         "target": "esnext",
         "lib": ["esnext"],
         "types": [],

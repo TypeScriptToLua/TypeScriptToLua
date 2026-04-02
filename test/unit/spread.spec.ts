@@ -116,7 +116,7 @@ describe("in object literal", () => {
         "{ ...{ x: false }, x: true }",
         "{ ...{ x: false }, x: false, ...{ x: true } }",
     ])("of object literal (%p)", expression => {
-        util.testExpression(expression).expectToMatchJsResult();
+        util.testExpression(expression).ignoreDiagnostics([2783]).expectToMatchJsResult();
     });
 
     test("of object reference", () => {

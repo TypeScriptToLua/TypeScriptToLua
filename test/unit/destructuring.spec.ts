@@ -29,11 +29,21 @@ const testCases = [
     { binding: "{ x: [{ y }] }", value: { x: [{ y: "y" }] } },
 ].map(({ binding, value }) => ({ binding, value: util.formatCode(value) }));
 
+test.each([...testCases])("in function parameter (%p)", ({ binding, value }) => {
+    util.testFunction`
+        let ${allBindings};
+        function test(${binding}: any) {
+            return { ${allBindings} };
+        }
+
+        return test(${value});
+    `.expectToMatchJsResult();
+});
+
 test.each([
-    ...testCases,
-    { binding: "{ x, y }, z", value: "{ x: false, y: false }, true" },
-    { binding: "{ x, y }, { z }", value: "{ x: false, y: false }, { z: true }" },
-])("in function parameter (%p)", ({ binding, value }) => {
+    { binding: "{ x, y }: any, z: any", value: "{ x: false, y: false }, true" },
+    { binding: "{ x, y }: any, { z }: any", value: "{ x: false, y: false }, { z: true }" },
+])("in function parameter with multiple params (%p)", ({ binding, value }) => {
     util.testFunction`
         let ${allBindings};
         function test(${binding}) {

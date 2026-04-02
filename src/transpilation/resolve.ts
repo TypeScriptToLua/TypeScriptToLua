@@ -10,7 +10,7 @@ import { couldNotReadDependency, couldNotResolveRequire } from "./diagnostics";
 import { BuildMode, CompilerOptions } from "../CompilerOptions";
 import { findLuaRequires, LuaRequire } from "./find-lua-requires";
 import { Plugin } from "./plugins";
-import * as picomatch from "picomatch";
+import picomatch from "picomatch";
 
 const resolver = resolve.ResolverFactory.createResolver({
     extensions: [".lua"],
@@ -39,8 +39,7 @@ class ResolutionContext {
         private readonly plugins: Plugin[]
     ) {
         const unique = [...new Set(options.noResolvePaths)];
-        const matchers = unique.map(x => picomatch(x));
-        this.noResolvePaths = matchers;
+        this.noResolvePaths = unique.map(x => picomatch(x));
     }
 
     public addAndResolveDependencies(file: ProcessedFile): void {
@@ -215,14 +214,16 @@ class ResolutionContext {
         const fileFromPath = this.getFileFromPath(resolvedPath);
         if (fileFromPath) return fileFromPath;
 
-        if (this.options.paths && this.options.baseUrl) {
+        if (this.options.paths) {
             // If no file found yet and paths are present, try to find project file via paths mappings
-            const fileFromPaths = this.tryGetModuleNameFromPaths(
-                dependencyPath,
-                this.options.paths,
-                this.options.baseUrl
-            );
-            if (fileFromPaths) return fileFromPaths;
+            // When baseUrl is not set, resolve paths relative to the tsconfig directory (TS 6.0+ behavior)
+            const pathsBase =
+                this.options.baseUrl ??
+                (this.options.configFilePath ? path.dirname(this.options.configFilePath) : undefined);
+            if (pathsBase) {
+                const fileFromPaths = this.tryGetModuleNameFromPaths(dependencyPath, this.options.paths, pathsBase);
+                if (fileFromPaths) return fileFromPaths;
+            }
         }
 
         // Not a TS file in our project sources, use resolver to check if we can find dependency

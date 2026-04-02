@@ -93,9 +93,8 @@ test.each([
     "const foo: any, bar: any, $$$: any;",
     "class $$$ {}",
     "namespace $$$ { export const bar: any; }",
-    "module $$$ { export const bar: any; }",
     "enum $$$ {}",
-    "function $$$();",
+    "function $$$(): void;",
 ])("ambient identifier must be a valid lua identifier (%p)", statement => {
     util.testModule`
         declare ${statement}

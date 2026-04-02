@@ -214,6 +214,7 @@ export default tseslint.config(
     {
         ignores: [
             ".github/scripts/create_benchmark_check.js",
+            "coverage/",
             "dist/",
             "eslint.config.mjs",
             "jest.config.js",

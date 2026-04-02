@@ -894,7 +894,7 @@ test("get inherted __index member from super (DotA 2 inheritance) (#1537)", () =
             interface Connected extends I {}
             class Connected {}
 
-            declare function setmetatable(this: void, t: any, mt: any);
+            declare function setmetatable(this: void, t: any, mt: any): any;
             
             const A = {
                 foo() {

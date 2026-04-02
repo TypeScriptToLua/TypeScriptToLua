@@ -41,6 +41,7 @@ test("Destructuring assignment of LuaMultiReturn returning nil", () => {
         const [a, ...b] = multiReturn();
         export {a, b};
     `
+        .ignoreDiagnostics([2322, 2461])
         .withLanguageExtensions()
         .expectToEqual({ a: undefined, b: [] });
 });
@@ -58,7 +59,7 @@ test.each<[string, any]>([
 });
 
 const multiFunction = `
-function multi(...args) {
+function multi(...args: any[]) {
     return $multi(...args);
 }
 `;
@@ -272,7 +273,7 @@ test("return $multi from try", () => {
             } catch {
             }
         }
-        const [_, a] = multiTest();
+        const [_, a] = multiTest()!;
         return a;
     `
         .withLanguageExtensions()
@@ -304,7 +305,7 @@ test("return LuaMultiReturn from try", () => {
             } catch {
             }
         }
-        const [_, a] = multiTest();
+        const [_, a] = multiTest()!;
         return a;
     `
         .withLanguageExtensions()

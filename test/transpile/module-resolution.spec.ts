@@ -4,7 +4,6 @@ import * as util from "../util";
 import * as ts from "typescript";
 import { BuildMode } from "../../src";
 import { normalizeSlashes } from "../../src/utils";
-import { pathsWithoutBaseUrl } from "../../src/transpilation/diagnostics";
 
 describe("basic module resolution", () => {
     const projectPath = path.resolve(__dirname, "module-resolution", "project-with-node-modules");
@@ -471,6 +470,7 @@ describe("module resolution should not try to resolve modules in noResolvePaths"
                     export function foo(): void;
                 }`
             )
+            .addExtraFile("preload.d.ts", `declare module "preload" {}`)
             .setOptions({ noResolvePaths: ["ignore*"] })
             .expectToHaveNoDiagnostics()
             .expectToEqual({ result: "foo" });
@@ -598,7 +598,7 @@ test("module resolution uses baseURL to resolve imported files", () => {
                 return { baz = function() return "baz" end }
             `
         )
-        .setOptions({ baseUrl: "./myproject/mydeps" })
+        .setOptions({ baseUrl: "./myproject/mydeps", ignoreDeprecations: "6.0" })
         .expectToEqual({
             fooResult: "foo",
             barResult: "bar",
@@ -707,8 +707,21 @@ test("supports complicated paths configuration", () => {
         .expectToEqual({ foo: 314, bar: 271 });
 });
 
-test("paths without baseUrl is error", () => {
-    util.testFunction``.setOptions({ paths: {} }).expectToHaveDiagnostics([pathsWithoutBaseUrl.code]);
+test("paths without baseUrl is not an error", () => {
+    util.testFunction``.setOptions({ paths: {} }).expectToHaveNoDiagnostics();
+});
+
+test("supports paths configuration without baseUrl", () => {
+    const baseProjectPath = path.resolve(__dirname, "module-resolution", "paths-no-baseurl");
+    const projectPath = path.join(baseProjectPath, "myprogram");
+    const projectTsConfig = path.join(projectPath, "tsconfig.json");
+    const mainFile = path.join(projectPath, "main.ts");
+
+    // Bundle to have all files required to execute and check result
+    util.testProject(projectTsConfig)
+        .setMainFileName(mainFile)
+        .setOptions({ luaBundle: "bundle.lua", luaBundleEntry: mainFile })
+        .expectToEqual({ foo: 314, bar: 271 });
 });
 
 test("module resolution using plugin", () => {

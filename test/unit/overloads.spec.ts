@@ -67,8 +67,8 @@ test("overload method2", () => {
 test("constructor1", () => {
     util.testFunction`
         class myclass {
-            num: number;
-            str: string;
+            num!: number;
+            str!: string;
 
             constructor(def: number);
             constructor(def: string);
@@ -88,8 +88,8 @@ test("constructor1", () => {
 test("constructor2", () => {
     util.testFunction`
         class myclass {
-            num: number;
-            str: string;
+            num!: number;
+            str!: string;
 
             constructor(def: number);
             constructor(def: string);

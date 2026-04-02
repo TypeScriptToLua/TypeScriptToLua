@@ -88,7 +88,7 @@ test("multi return from try", () => {
             } catch {
             }
         }
-        const [foo, bar] = foobar();
+        const [foo, bar] = foobar()!;
         return foo + bar;
     `.withLanguageExtensions();
     expect(testBuilder.getMainLuaCodeChunk()).not.toMatch("unpack(foobar");
@@ -129,7 +129,7 @@ test("multi return from catch", () => {
         function foobar(): LuaMultiReturn<[string, string]> {
             try {
                 throw "foobar";
-            } catch (e) {
+            } catch (e: any) {
                 return $multi(e.toString(), " catch");
             }
         }
@@ -243,8 +243,8 @@ test("multi return from catch->finally", () => {
         function foobar() {
             try {
                 throw "foo";
-            } catch (e) {
-                return $multi(evaluate(e), "bar");
+            } catch (e: any) {
+                return $multi(evaluate(e as string), "bar");
             } finally {
                 return $multi("final", "ly");
             }

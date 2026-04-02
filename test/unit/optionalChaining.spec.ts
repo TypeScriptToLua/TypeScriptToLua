@@ -1,10 +1,9 @@
 import { notAllowedOptionalAssignment } from "../../src/transformation/utils/diagnostics";
 import * as util from "../util";
-import { ScriptTarget } from "typescript";
 
 test.each(["null", "undefined", '{ foo: "foo" }'])("optional chaining (%p)", value => {
     util.testFunction`
-        const obj: {foo: string} | null | undefined = ${value};
+        const obj = ${value} as {foo: string} | null | undefined;
         return obj?.foo;
     `
         .expectToMatchJsResult()
@@ -24,7 +23,7 @@ test("long optional chain", () => {
 
 test.each(["undefined", "{}", "{ foo: {} }", "{ foo: {bar: 'baz'}}"])("nested optional chaining (%p)", value => {
     util.testFunction`
-        const obj: { foo?: { bar?: string } } | undefined = ${value};
+        const obj = ${value} as { foo?: { bar?: string } } | undefined;
         return obj?.foo?.bar;
     `.expectToMatchJsResult();
 });
@@ -33,7 +32,7 @@ test.each(["undefined", "{}", "{ foo: {} }", "{ foo: {bar: 'baz'}}"])(
     "nested optional chaining combined with coalescing (%p)",
     value => {
         util.testFunction`
-        const obj: { foo?: { bar?: string } } | undefined = ${value};
+        const obj = ${value} as { foo?: { bar?: string } } | undefined;
         return obj?.foo?.bar ?? "not found";
     `.expectToMatchJsResult();
     }
@@ -108,7 +107,7 @@ test("unused call", () => {
     // should use if statement, as result is not used
 });
 
-test.each(["undefined", "{ foo: v=>v }"])("with preceding statements on right side", value => {
+test.each(["undefined", "{ foo: (v: any)=>v }"])("with preceding statements on right side", value => {
     util.testFunction`
         let i = 0
         const obj: any = ${value};
@@ -120,12 +119,12 @@ test.each(["undefined", "{ foo: v=>v }"])("with preceding statements on right si
 });
 
 // unused, with preceding statements on right side
-test.each(["undefined", "{ foo(val) {return val} }"])(
+test.each(["undefined", "{ foo(val: any) {return val} }"])(
     "unused result with preceding statements on right side",
     value => {
         util.testFunction`
         let i = 0
-        const obj = ${value};
+        const obj = ${value} as { foo(val: any): any } | undefined;
         obj?.foo(i++);
         return i
     `
@@ -135,8 +134,10 @@ test.each(["undefined", "{ foo(val) {return val} }"])(
     }
 );
 
-test.each(["undefined", "{ foo(v) { return v} }"])("with preceding statements on right side modifying left", value => {
-    util.testFunction`
+test.each(["undefined", "{ foo(v: any) { return v} }"])(
+    "with preceding statements on right side modifying left",
+    value => {
+        util.testFunction`
         let i = 0
         let obj: any = ${value};
         function bar() {
@@ -147,10 +148,11 @@ test.each(["undefined", "{ foo(v) { return v} }"])("with preceding statements on
 
         return {result: obj?.foo(bar(), i++), obj, i}
   `
-        .expectToMatchJsResult()
-        .expectLuaToMatchSnapshot();
-    // should use if statement, as there are preceding statements
-});
+            .expectToMatchJsResult()
+            .expectLuaToMatchSnapshot();
+        // should use if statement, as there are preceding statements
+    }
+);
 
 test("does not suppress error if left side is false", () => {
     const result = util.testFunction`
@@ -233,7 +235,7 @@ test("does not crash when incorrectly used in assignment (#1044)", () => {
 describe("optional chaining function calls", () => {
     test.each(["() => 4", "undefined"])("stand-alone optional function (%p)", value => {
         util.testFunction`
-            const f: (() => number) | undefined = ${value};
+            const f = (${value}) as (() => number) | undefined;
             return f?.();
         `.expectToMatchJsResult();
     });
@@ -255,7 +257,7 @@ describe("optional chaining function calls", () => {
 
     test("object with method can be undefined", () => {
         util.testFunction`
-            const objWithMethods: { foo: () => number, bar: (this: void) => number } | undefined = undefined;
+            const objWithMethods = undefined as { foo: () => number, bar: (this: void) => number } | undefined;
             return [objWithMethods?.foo() ?? "no foo", objWithMethods?.bar() ?? "no bar"];
         `.expectToMatchJsResult();
     });
@@ -326,8 +328,8 @@ describe("optional chaining function calls", () => {
 
         test.each([undefined, "[1, 2, 3, 4]"])("Array: %p", expr => {
             util.testFunction`
-            const value: any[] | undefined = ${expr}
-            return value?.map(x=>x+1)
+            const value = ${expr} as any[] | undefined
+            return value?.map((x: any)=>x+1)
         `.expectToMatchJsResult();
         });
     });
@@ -342,7 +344,6 @@ describe("optional chaining function calls", () => {
         `
             .setOptions({
                 strict,
-                target: ScriptTarget.ES5,
             })
             .expectToMatchJsResult();
     });
@@ -397,7 +398,7 @@ describe("Unsupported optional chains", () => {
 describe("optional delete", () => {
     test("successful", () => {
         util.testFunction`
-            const table = {
+            const table: { bar?: number } = {
                 bar: 3
             }
             return [delete table?.bar, table]
@@ -415,9 +416,9 @@ describe("optional delete", () => {
 
     test("delete on undefined", () => {
         util.testFunction`
-            const table : {
-                bar: number
-            } | undefined = undefined
+            const table = undefined as {
+                bar?: number
+            } | undefined
             return [delete table?.bar, table ?? "nil"]
         `.expectToMatchJsResult();
     });

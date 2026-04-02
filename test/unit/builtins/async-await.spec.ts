@@ -38,7 +38,7 @@ test("high amount of chained awaits doesn't cause stack overflow", () => {
                     await delay();
                 }
                 result = "success";
-            } catch (e) {
+            } catch (e: any) {
                 result = e;
             }
         }
@@ -51,7 +51,7 @@ test("high amount of chained awaits doesn't cause stack overflow", () => {
 
 test("can await already resolved promise", () => {
     util.testFunction`
-        const result = [];
+        const result: number[] = [];
         async function abc() {
             return await Promise.resolve(30);
         }
@@ -63,7 +63,7 @@ test("can await already resolved promise", () => {
 
 test("can await already rejected promise", () => {
     util.testFunction`
-        const result = [];
+        const result: string[] = [];
         async function abc() {
             return await Promise.reject("test rejection");
         }
@@ -604,7 +604,7 @@ describe("try/catch in async function", () => {
         () =>
             util.testModule`
             export let reason = "";
-            let reject: (reason: string) => void;
+            let reject: (reason: string) => void = () => {};
 
             async function foo(): Promise<number> {
                 try {
@@ -675,6 +675,7 @@ describe("try/catch in async function", () => {
                 }
                 catch
                 {
+                    return "" as string;
                 }
             }
 

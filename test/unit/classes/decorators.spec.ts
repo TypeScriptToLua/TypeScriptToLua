@@ -6,7 +6,7 @@ import * as util from "../../util";
 
 test("Class decorator with no parameters", () => {
     util.testFunction`
-        let classDecoratorContext;
+        let classDecoratorContext: ClassDecoratorContext | undefined;
 
         function classDecorator<T extends new (...args: any[]) => {}>(constructor: T, context: ClassDecoratorContext) {
             classDecoratorContext = context;
@@ -22,8 +22,8 @@ test("Class decorator with no parameters", () => {
         }
 
         return { decoratedClass: new TestClass(), context: {
-            kind: classDecoratorContext.kind,
-            name: classDecoratorContext.name,
+            kind: classDecoratorContext!.kind,
+            name: classDecoratorContext!.name,
         } };
     `.expectToMatchJsResult();
 });
@@ -40,7 +40,7 @@ test("Class decorator with parameters", () => {
 
         @setNum(420)
         class TestClass {
-            public decoratorNum;
+            public decoratorNum: any;
         }
 
         return new TestClass();
@@ -64,8 +64,8 @@ test("Multiple class decorators", () => {
         @setTen
         @setNum
         class TestClass {
-            public decoratorTen;
-            public decoratorNum;
+            public decoratorTen: any;
+            public decoratorNum: any;
         }
 
         return new TestClass();
@@ -95,7 +95,7 @@ test("Class decorator with inheritance", () => {
 
 test("Class decorators are applied in order and executed in reverse order", () => {
     util.testFunction`
-        const order = [];
+        const order: string[] = [];
 
         function pushOrder(index: number) {
             order.push("eval " + index);
@@ -214,7 +214,7 @@ test("default exported class with decorator", () => {
 
 test("class method decorator", () => {
     util.testFunction`
-        let methodDecoratorContext;
+        let methodDecoratorContext: ClassMethodDecoratorContext | undefined;
 
         function methodDecorator(method: (v: number) => number, context: ClassMethodDecoratorContext) {
             methodDecoratorContext = context;
@@ -232,10 +232,10 @@ test("class method decorator", () => {
         }
 
         return { result: new TestClass().myMethod(4), context: {
-            kind: methodDecoratorContext.kind,
-            name: methodDecoratorContext.name,
-            private: methodDecoratorContext.private,
-            static: methodDecoratorContext.static
+            kind: methodDecoratorContext!.kind,
+            name: methodDecoratorContext!.name,
+            private: methodDecoratorContext!.private,
+            static: methodDecoratorContext!.static
         } };
     `.expectToMatchJsResult();
 });
@@ -243,7 +243,7 @@ test("class method decorator", () => {
 test("this in decorator points to class being decorated", () => {
     util.testFunction`
         function methodDecorator(method: (v: number) => number, context: ClassMethodDecoratorContext) {
-            return function() {
+            return function(this: any) {
                 const thisCallTime = this.myInstanceVariable;
                 return thisCallTime;
             };
@@ -264,7 +264,7 @@ test("this in decorator points to class being decorated", () => {
 
 test("class getter decorator", () => {
     util.testFunction`
-        let getterDecoratorContext;
+        let getterDecoratorContext: ClassGetterDecoratorContext | undefined;
 
         function getterDecorator(getter: () => number, context: ClassGetterDecoratorContext) {
             getterDecoratorContext = context;
@@ -280,28 +280,28 @@ test("class getter decorator", () => {
         }
 
         return { result: new TestClass().getterValue, context: {
-            kind: getterDecoratorContext.kind,
-            name: getterDecoratorContext.name,
-            private: getterDecoratorContext.private,
-            static: getterDecoratorContext.static
+            kind: getterDecoratorContext!.kind,
+            name: getterDecoratorContext!.name,
+            private: getterDecoratorContext!.private,
+            static: getterDecoratorContext!.static
         } };
     `.expectToMatchJsResult();
 });
 
 test("class setter decorator", () => {
     util.testFunction`
-        let setterDecoratorContext;
+        let setterDecoratorContext: ClassSetterDecoratorContext | undefined;
 
         function setterDecorator(setter: (v: number) => void, context: ClassSetterDecoratorContext) {
             setterDecoratorContext = context;
 
-            return function(v: number) {
+            return function(this: any, v: number) {
                 setter.call(this, v + 15);
             };
         }
 
         class TestClass {
-            public value: number;
+            public value!: number;
 
             @setterDecorator
             set valueSetter(v: number) { this.value = v; }
@@ -310,17 +310,17 @@ test("class setter decorator", () => {
         const instance = new TestClass();
         instance.valueSetter = 23;
         return { result: instance.value, context: {
-            kind: setterDecoratorContext.kind,
-            name: setterDecoratorContext.name,
-            private: setterDecoratorContext.private,
-            static: setterDecoratorContext.static
+            kind: setterDecoratorContext!.kind,
+            name: setterDecoratorContext!.name,
+            private: setterDecoratorContext!.private,
+            static: setterDecoratorContext!.static
         } };
     `.expectToMatchJsResult();
 });
 
 test("class field decorator", () => {
     util.testFunction`
-        let fieldDecoratorContext;
+        let fieldDecoratorContext: ClassFieldDecoratorContext | undefined;
 
         function fieldDecorator(_: undefined, context: ClassFieldDecoratorContext) {
             fieldDecoratorContext = context;
@@ -331,11 +331,11 @@ test("class field decorator", () => {
             public value: number = 22;
         }
 
-        return { result: new TestClass(), context: { 
-            kind: fieldDecoratorContext.kind,
-            name: fieldDecoratorContext.name,
-            private: fieldDecoratorContext.private,
-            static: fieldDecoratorContext.static,
+        return { result: new TestClass(), context: {
+            kind: fieldDecoratorContext!.kind,
+            name: fieldDecoratorContext!.name,
+            private: fieldDecoratorContext!.private,
+            static: fieldDecoratorContext!.static,
         } };
     `.expectToEqual({
         result: {
@@ -352,7 +352,7 @@ test("class field decorator", () => {
 
 test("class field decorator warns the return value is ignored", () => {
     util.testFunction`
-        let fieldDecoratorContext;
+        let fieldDecoratorContext: ClassFieldDecoratorContext | undefined;
 
         function fieldDecorator(_: undefined, context: ClassFieldDecoratorContext) {
             fieldDecoratorContext = context;
@@ -399,7 +399,7 @@ describe("legacy experimentalDecorators", () => {
 
             @setNum(420)
             class TestClass {
-                public decoratorNum;
+                public decoratorNum: any;
             }
 
             return new TestClass();
@@ -425,8 +425,8 @@ describe("legacy experimentalDecorators", () => {
             @setTen
             @setNum
             class TestClass {
-                public decoratorTen;
-                public decoratorNum;
+                public decoratorTen: any;
+                public decoratorNum: any;
             }
 
             return new TestClass();
@@ -460,7 +460,7 @@ describe("legacy experimentalDecorators", () => {
 
     test("Class decorators are applied in order and executed in reverse order", () => {
         util.testFunction`
-            const order = [];
+            const order: string[] = [];
 
             function pushOrder(index: number) {
                 order.push("eval " + index);
@@ -509,25 +509,25 @@ describe("legacy experimentalDecorators", () => {
 
     test.each([
         ["@decorator method() {}"],
-        ["@decorator property;"],
+        ["@decorator property: any;"],
         ["@decorator propertyWithInitializer = () => {};"],
-        ["@decorator ['evaluated property'];"],
+        ["@decorator ['evaluated property']: any;"],
         ["@decorator get getter() { return 5 }"],
-        ["@decorator set setter(value) {}"],
+        ["@decorator set setter(value: any) {}"],
         ["@decorator static method() {}"],
-        ["@decorator static property;"],
+        ["@decorator static property: any;"],
         ["@decorator static propertyWithInitializer = () => {}"],
         ["@decorator static get getter() { return 5 }"],
-        ["@decorator static set setter(value) {}"],
-        ["@decorator static ['evaluated property'];"],
-        ["method(@decorator a) {}"],
-        ["static method(@decorator a) {}"],
-        ["constructor(@decorator a) {}"],
+        ["@decorator static set setter(value: any) {}"],
+        ["@decorator static ['evaluated property']: any;"],
+        ["method(@decorator a: any) {}"],
+        ["static method(@decorator a: any) {}"],
+        ["constructor(@decorator a: any) {}"],
     ])("Decorate class member (%p)", classMember => {
         util.testFunction`
             let decoratorParameters: any;
 
-            const decorator = (target, key, index?) => {
+            const decorator = (target: any, key: any, index?: any) => {
                 const targetKind = target === Foo ? "Foo" : target === Foo.prototype ? "Foo.prototype" : "unknown";
                 decoratorParameters = { targetKind, key, index: typeof index };
             };
@@ -548,10 +548,10 @@ describe("legacy experimentalDecorators", () => {
             ["desc.writable = true", "return { configurable: true }"],
         ])("Combine decorators (%p + %p)", (decorateA, decorateB) => {
             util.testFunction`
-                const A = (target, key, desc): any => { ${decorateA} };
-                const B = (target, key, desc): any => { ${decorateB} };
+                const A = (target: any, key: any, desc: any): any => { ${decorateA} };
+                const B = (target: any, key: any, desc: any): any => { ${decorateB} };
                 class Foo { @A @B static method() {} }
-                const { value, ...rest } = Object.getOwnPropertyDescriptor(Foo, "method");
+                const { value, ...rest } = Object.getOwnPropertyDescriptor(Foo, "method")!;
                 return rest;
             `
                 .setOptions({ experimentalDecorators: true })
@@ -562,7 +562,7 @@ describe("legacy experimentalDecorators", () => {
             "Use decorator to override method value %s",
             overrideStatement => {
                 util.testFunction`
-                    const decorator = (target, key, desc): any => { ${overrideStatement} };
+                    const decorator = (target: any, key: any, desc: any): any => { ${overrideStatement} };
                     class Foo { @decorator static method() {} }
                     return Foo.method;
                 `

@@ -342,7 +342,7 @@ test.each([
 
 test("local variable declaration referencing self indirectly", () => {
     util.testFunction`
-        let cb: () => void;
+        let cb!: () => void;
 
         function foo(newCb: () => void) {
             cb = newCb;
@@ -360,7 +360,7 @@ test("local variable declaration referencing self indirectly", () => {
 
 test("local multiple variable declaration referencing self indirectly", () => {
     util.testFunction`
-        let cb: () => void;
+        let cb!: () => void;
 
         function foo(newCb: () => void) {
             cb = newCb;
@@ -395,7 +395,7 @@ describe.each(["x &&= y", "x ||= y"])("boolean compound assignment (%p)", assign
 
 test.each([undefined, 3])("nullish coalescing compound assignment", initialValue => {
     util.testFunction`
-        let x: number = ${util.formatCode(initialValue)};
+        let x: number | undefined = ${util.formatCode(initialValue)};
         x ??= 5;
         return x;
     `.expectToMatchJsResult();

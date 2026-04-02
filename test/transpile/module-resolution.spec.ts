@@ -470,6 +470,7 @@ describe("module resolution should not try to resolve modules in noResolvePaths"
                     export function foo(): void;
                 }`
             )
+            // TS 6.0 noUncheckedSideEffectImports requires declaration for "preload" module
             .addExtraFile("preload.d.ts", `declare module "preload" {}`)
             .setOptions({ noResolvePaths: ["ignore*"] })
             .expectToHaveNoDiagnostics()

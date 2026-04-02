@@ -108,9 +108,7 @@ function computeDeclarationContextType(context: TransformationContext, signature
     const thisParameter = getExplicitThisParameter(signatureDeclaration);
     if (thisParameter) {
         // Explicit 'this'
-        return thisParameter.type && thisParameter.type.kind === ts.SyntaxKind.VoidKeyword
-            ? ContextType.Void
-            : ContextType.NonVoid;
+        return thisParameter.type?.kind === ts.SyntaxKind.VoidKeyword ? ContextType.Void : ContextType.NonVoid;
     }
 
     // noSelf declaration on function signature

@@ -62,7 +62,7 @@ export function transformBindingPattern(
         }
 
         // Build the path to the table
-        const tableExpression = propertyAccessStack.reduce<lua.Expression>(
+        const tableExpression = propertyAccessStack.reduce(
             (path, property) => lua.createTableIndexExpression(path, transformPropertyName(context, property)),
             table
         );

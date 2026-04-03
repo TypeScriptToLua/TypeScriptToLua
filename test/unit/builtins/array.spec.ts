@@ -810,9 +810,12 @@ test.each([
 });
 
 describe("array.fill", () => {
-    test.each(["([] as number[])", "[1]", "[1,2,3,4]"])("Fills full length of array without other parameters (%p)", arr => {
-        util.testExpression`${arr}.fill(5)`.expectToMatchJsResult();
-    });
+    test.each(["([] as number[])", "[1]", "[1,2,3,4]"])(
+        "Fills full length of array without other parameters (%p)",
+        arr => {
+            util.testExpression`${arr}.fill(5)`.expectToMatchJsResult();
+        }
+    );
 
     test.each(["[1,2,3]", "[1,2,3,4,5,6]"])("Fills starting from start parameter (%p)", arr => {
         util.testExpression`${arr}.fill(5, 3)`.expectToMatchJsResult();

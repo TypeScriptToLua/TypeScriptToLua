@@ -374,14 +374,14 @@ return ____exports"
 
 exports[`Bitop [5.3] ("a>>>=b") 1`] = `
 "local ____exports = {}
-a = a >> b
+a = (a & 4294967295) >> b
 ____exports.__result = a
 return ____exports"
 `;
 
 exports[`Bitop [5.3] ("a>>>b") 1`] = `
 "local ____exports = {}
-____exports.__result = a >> b
+____exports.__result = (a & 4294967295) >> b
 return ____exports"
 `;
 
@@ -445,14 +445,14 @@ return ____exports"
 
 exports[`Bitop [5.4] ("a>>>=b") 1`] = `
 "local ____exports = {}
-a = a >> b
+a = (a & 4294967295) >> b
 ____exports.__result = a
 return ____exports"
 `;
 
 exports[`Bitop [5.4] ("a>>>b") 1`] = `
 "local ____exports = {}
-____exports.__result = a >> b
+____exports.__result = (a & 4294967295) >> b
 return ____exports"
 `;
 
@@ -516,14 +516,14 @@ return ____exports"
 
 exports[`Bitop [5.5] ("a>>>=b") 1`] = `
 "local ____exports = {}
-a = a >> b
+a = (a & 4294967295) >> b
 ____exports.__result = a
 return ____exports"
 `;
 
 exports[`Bitop [5.5] ("a>>>b") 1`] = `
 "local ____exports = {}
-____exports.__result = a >> b
+____exports.__result = (a & 4294967295) >> b
 return ____exports"
 `;
 

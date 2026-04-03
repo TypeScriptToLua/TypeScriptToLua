@@ -5,7 +5,7 @@ import { unsupportedForTarget } from "../../../src/transformation/utils/diagnost
 
 test("Arrow Function Expression", () => {
     util.testFunction`
-        const add = (a, b) => a + b;
+        const add = (a: number, b: number) => a + b;
         return add(1, 2);
     `.expectToMatchJsResult();
 });
@@ -25,17 +25,22 @@ test.each(["i++", "i--", "++i", "--i"])("Arrow function unary expression (%p)", 
     `.expectToMatchJsResult();
 });
 
-test.each(["b => a = b", "b => a += b", "b => a -= b", "b => a *= b", "b => a /= b", "b => a **= b", "b => a %= b"])(
-    "Arrow function assignment (%p)",
-    lambda => {
-        util.testFunction`
+test.each([
+    "(b: number) => a = b",
+    "(b: number) => a += b",
+    "(b: number) => a -= b",
+    "(b: number) => a *= b",
+    "(b: number) => a /= b",
+    "(b: number) => a **= b",
+    "(b: number) => a %= b",
+])("Arrow function assignment (%p)", lambda => {
+    util.testFunction`
             let a = 10;
             let lambda = ${lambda};
             lambda(5);
             return a;
         `.expectToMatchJsResult();
-    }
-);
+});
 
 test.each([{ args: [] }, { args: [1] }, { args: [1, 2] }])("Arrow default values (%p)", ({ args }) => {
     util.testFunction`
@@ -46,7 +51,7 @@ test.each([{ args: [] }, { args: [1] }, { args: [1, 2] }])("Arrow default values
 
 test("Function Expression", () => {
     util.testFunction`
-        let add = function(a, b) {return a+b};
+        let add = function(a: number, b: number) {return a+b};
         return add(1,2);
     `.expectToMatchJsResult();
 });
@@ -251,13 +256,13 @@ test.each(functionTypeDeclarations)("Function call (%s)", (_, type) => {
 });
 
 test.each([
-    "function fn() {}",
-    "function fn(x, y, z) {}",
-    "function fn(x, y, z, ...args) {}",
-    "function fn(...args) {}",
-    "function fn(this: void) {}",
-    "function fn(this: void, x, y, z) {}",
-    "function fnReference(x, y, z) {} const fn = fnReference;",
+    "function fn(): void {}",
+    "function fn(x: any, y: any, z: any): void {}",
+    "function fn(x: any, y: any, z: any, ...args: any[]): void {}",
+    "function fn(...args: any[]): void {}",
+    "function fn(this: void): void {}",
+    "function fn(this: void, x: any, y: any, z: any): void {}",
+    "function fnReference(x: any, y: any, z: any): void {} const fn = fnReference;",
     "const wrap = (fn: (...args: any[]) => any) => (...args: any[]) => fn(...args); const fn = wrap((x, y, z) => {});",
 ])("function.length (%p)", declaration => {
     util.testFunction`
@@ -432,7 +437,7 @@ test("Complex element access call no args", () => {
 
 test("Complex element access call statement", () => {
     util.testFunction`
-        let foo: string;
+        let foo: string | undefined;
         class C {
             prop = "bar";
             method(s: string) { foo = s + this.prop; }

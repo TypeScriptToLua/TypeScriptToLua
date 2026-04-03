@@ -254,7 +254,7 @@ test("Hoisting variable without initializer", () => {
         function foo() {
             return x;
         }
-        let x: number;
+        let x: number | undefined;
         return foo();
     `.expectToMatchJsResult();
 });

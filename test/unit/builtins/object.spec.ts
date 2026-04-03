@@ -147,7 +147,7 @@ describe("Object.defineProperty", () => {
 
     test.each(trueFalseTests)("configurable (%p)", value => {
         util.testFunction`
-            const foo = { bar: true };
+            const foo: { bar?: boolean } = { bar: true };
             Object.defineProperty(foo, "bar", { configurable: ${value} });
             try { delete foo.bar } catch {};
             return foo.bar;
@@ -296,7 +296,7 @@ describe("Object.getOwnPropertyDescriptors", () => {
 describe("delete from object", () => {
     test("delete from object", () => {
         util.testFunction`
-            const obj = { foo: "bar", bar: "baz" };
+            const obj: { foo?: string, bar: string } = { foo: "bar", bar: "baz" };
             return [delete obj["foo"], obj];
         `.expectToMatchJsResult();
     });
@@ -311,7 +311,7 @@ describe("delete from object", () => {
     // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/993
     test("delete from object with metatable", () => {
         util.testFunction`
-        const obj = { foo: "bar", bar: "baz" };
+        const obj: { foo?: string, bar: string } = { foo: "bar", bar: "baz" };
         setmetatable(obj, {});
         return [delete obj["foo"], obj];
     `
@@ -343,7 +343,7 @@ describe("delete from object", () => {
 describe("Object.groupBy", () => {
     test("empty", () => {
         util.testFunction`
-            const array = [];
+            const array: number[] = [];
 
             return Object.groupBy(array, (num, index) => {
                 return num % 2 === 0 ? "even": "odd";

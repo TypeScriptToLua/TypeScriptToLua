@@ -352,20 +352,20 @@ const noSelfInFileTestFunctions: TestFunction[] = [
 ];
 
 export const anonTestFunctionExpressions: TestFunction[] = [
-    { value: "s => s" },
-    { value: "(s => s)" },
-    { value: "function(s) { return s; }" },
-    { value: "(function(s) { return s; })" },
+    { value: "(s: string) => s" },
+    { value: "((s: string) => s)" },
+    { value: "function(s: string) { return s; }" },
+    { value: "(function(s: string) { return s; })" },
 ];
 
 export const selfTestFunctionExpressions: TestFunction[] = [
-    { value: "function(this: any, s) { return s; }" },
-    { value: "(function(this: any, s) { return s; })" },
+    { value: "function(this: any, s: string) { return s; }" },
+    { value: "(function(this: any, s: string) { return s; })" },
 ];
 
 export const noSelfTestFunctionExpressions: TestFunction[] = [
-    { value: "function(this: void, s) { return s; }" },
-    { value: "(function(this: void, s) { return s; })" },
+    { value: "function(this: void, s: string) { return s; }" },
+    { value: "(function(this: void, s: string) { return s; })" },
 ];
 
 export const anonTestFunctionType = "(s: string) => string";

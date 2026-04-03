@@ -421,9 +421,16 @@ test.each([
     { array: [0, 1, 2, 3], start: 1, deleteCount: undefined },
     { array: [0, 1, 2, 3], start: 1, deleteCount: null },
 ])("array.splice (%p)", ({ array, start, deleteCount, newElements = [] }) => {
+    const deleteCountCode =
+        deleteCount === undefined
+            ? "undefined as any"
+            : deleteCount === null
+            ? "null as any"
+            : util.formatCode(deleteCount);
+    const newElementsCode = newElements.length > 0 ? ", " + util.formatCode(...newElements) : "";
     util.testFunction`
         const array: number[] = ${util.formatCode(array)};
-        array.splice(${util.formatCode(start, deleteCount, ...newElements)});
+        array.splice(${util.formatCode(start)}, ${deleteCountCode}${newElementsCode});
         return array;
     `.expectToMatchJsResult();
 });

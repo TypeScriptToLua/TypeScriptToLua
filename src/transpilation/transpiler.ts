@@ -144,7 +144,6 @@ export class Transpiler {
             diagnostics.push(...bundleDiagnostics);
             emitPlan = [bundleFile];
         } else {
-            // Check for output path collisions caused by dot expansion
             const outputPathMap = new Map<string, string>();
             emitPlan = resolutionResult.resolvedFiles.map(file => {
                 const outputPath = getEmitPath(file.fileName, program);
@@ -198,13 +197,12 @@ export function getEmitPathRelativeToOutDir(fileName: string, program: ts.Progra
         emitPathSplits[0] = "lua_modules";
     }
 
-    // Expand dots in path segments into nested directories so that Lua's require()
-    // resolves correctly (e.g. "Foo.Bar/index.ts" -> "Foo/Bar/index.lua").
-    // Dots are path separators in Lua's module system, so a file at "Foo.Bar/index.lua"
-    // would be unreachable via require("Foo.Bar.index") since Lua looks for "Foo/Bar/index.lua".
-    // Strip the source extension first, split all dots, then re-add the output extension.
+    // Replace dots with underscores in path segments so that Lua's require()
+    // resolves correctly. Dots are path separators in Lua's module system, so
+    // "Foo.Bar/index.lua" would be unreachable via require("Foo.Bar.index")
+    // since Lua interprets it as "Foo/Bar/index.lua".
     emitPathSplits[emitPathSplits.length - 1] = trimExtension(emitPathSplits[emitPathSplits.length - 1]);
-    emitPathSplits = emitPathSplits.flatMap(segment => segment.split("."));
+    emitPathSplits = emitPathSplits.map(segment => segment.replace(/\./g, "_"));
 
     // Set extension
     const extension = ((program.getCompilerOptions() as CompilerOptions).extension ?? "lua").trim();

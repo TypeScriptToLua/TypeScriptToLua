@@ -1,3 +1,4 @@
+import * as path from "path";
 import * as ts from "typescript";
 import { couldNotResolveRequire, emitPathCollision } from "../../../src/transpilation/diagnostics";
 import * as util from "../../util";
@@ -170,8 +171,7 @@ test.each([
 // Can't test this via execution because the test harness uses package.preload
 // instead of real filesystem resolution, so require() always finds the module
 // regardless of output path. We check the output path directly instead.
-// TODO: test via actual Lua execution once the harness supports filesystem resolution.
-test("dots in directory names emit to nested directories", () => {
+test("dots in directory names are replaced with underscores in output", () => {
     const { transpiledFiles } = util.testModule`
         import { answer } from "./Foo.Bar";
         export const result = answer;
@@ -180,21 +180,20 @@ test("dots in directory names emit to nested directories", () => {
         .setOptions({ rootDir: "." })
         .getLuaResult();
 
-    // Foo.Bar/index.ts should emit to Foo/Bar/index.lua, not Foo.Bar/index.lua
     const dottedFile = transpiledFiles.find(f => f.lua?.includes("answer = 42"));
     expect(dottedFile).toBeDefined();
-    expect(dottedFile!.outPath).toContain("Foo/Bar/index.lua");
+    expect(dottedFile!.outPath).toContain(path.join("Foo_Bar", "index.lua"));
     expect(dottedFile!.outPath).not.toContain("Foo.Bar");
 });
 
 test("dots in paths that collide with existing paths produce a diagnostic", () => {
     util.testModule`
         import { a } from "./Foo.Bar";
-        import { b } from "./Foo/Bar";
+        import { b } from "./Foo_Bar";
         export const result = a + b;
     `
         .addExtraFile("Foo.Bar/index.ts", "export const a = 1;")
-        .addExtraFile("Foo/Bar/index.ts", "export const b = 2;")
+        .addExtraFile("Foo_Bar/index.ts", "export const b = 2;")
         .setOptions({ rootDir: "." })
         .expectToHaveDiagnostics([emitPathCollision.code]);
 });

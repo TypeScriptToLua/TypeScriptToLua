@@ -63,5 +63,5 @@ export const pathsWithoutBaseUrl = createDiagnosticFactory(
 export const emitPathCollision = createDiagnosticFactory(
     (outputPath: string, file1: string, file2: string) =>
         `Output path '${outputPath}' is used by both '${file1}' and '${file2}'. ` +
-        `Dots in file/directory names are expanded to nested directories for Lua module resolution.`
+        `Dots in file/directory names are replaced with underscores for Lua module resolution.`
 );

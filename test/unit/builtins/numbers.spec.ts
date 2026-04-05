@@ -34,6 +34,11 @@ const stringCases = ["-1", "0", "1", "1.5", "Infinity", "-Infinity"];
 const restCases = [true, false, "", " ", "\t", "\n", "foo", {}];
 const cases = [...numberCases, ...stringCases, ...restCases];
 
+// Number() with ES6 numeric literal strings
+test.each(["0o17", "0O17", "0b101", "0B101", "0x1A", "0X1a"])("Number(%p) parses literal prefix", value => {
+    util.testExpressionTemplate`Number(${value})`.expectToMatchJsResult();
+});
+
 describe("Number", () => {
     test.each(cases)("constructor(%p)", value => {
         util.testExpressionTemplate`Number(${value})`.expectToMatchJsResult();
@@ -143,6 +148,13 @@ test.each(["Infinity", "-Infinity", "   -Infinity"])("parseFloat handles Infinit
     util.testExpression`parseFloat("${numberString}")`.expectToMatchJsResult();
 });
 
+test.each(["1.5e2", "1e3", "-2.5E4", "1.5e-2", "1e+3", "1.5e2px"])(
+    "parseFloat handles scientific notation (%s)",
+    numberString => {
+        util.testExpression`parseFloat("${numberString}")`.expectToMatchJsResult();
+    }
+);
+
 test.each([
     { numberString: "36", base: 8 },
     { numberString: "-36", base: 8 },
@@ -155,6 +167,10 @@ test.each([
 
 test.each(["0x4A", "-0x42", "0X42", "    0x391", "  -0x8F"])("parseInt detects hexadecimal", numberString => {
     util.testExpression`parseInt("${numberString}")`.expectToMatchJsResult();
+});
+
+test.each(["0xFF", "-0xFF", "0X1A", "  0xff"])("parseInt with 0x prefix and explicit base 16 (%s)", numberString => {
+    util.testExpression`parseInt("${numberString}", 16)`.expectToMatchJsResult();
 });
 
 test.each([1, 37, -100])("parseInt with invalid base (%p)", base => {

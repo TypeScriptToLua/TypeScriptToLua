@@ -13,6 +13,14 @@ export function __TS__ParseInt(this: void, numberString: string, base?: number):
                 ? "-" + numberString.substring(hexMatch.length)
                 : numberString.substring(hexMatch.length);
         }
+    } else if (base === 16) {
+        // Strip 0x/0X prefix when radix is explicitly 16 (per ECMA-262 21.1.2.13 step 11)
+        const [hexMatch] = __TS__Match(numberString, "^%s*-?0[xX]");
+        if (hexMatch !== undefined) {
+            numberString = __TS__Match(hexMatch, "-")[0]
+                ? "-" + numberString.substring(hexMatch.length)
+                : numberString.substring(hexMatch.length);
+        }
     }
 
     // Check if base is in bounds

@@ -8,6 +8,8 @@ export function __TS__ParseFloat(this: void, numberString: string): number {
         return infinityMatch[0] === "-" ? -Infinity : Infinity;
     }
 
-    const number = tonumber(__TS__Match(numberString, "^%s*(-?%d+%.?%d*)")[0]);
+    // Try with scientific notation first, fall back to basic decimal
+    const [numberMatch] = __TS__Match(numberString, "^%s*(-?%d+%.?%d*[eE][+-]?%d+)");
+    const number = tonumber(numberMatch ?? __TS__Match(numberString, "^%s*(-?%d+%.?%d*)")[0]);
     return number ?? NaN;
 }

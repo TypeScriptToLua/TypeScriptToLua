@@ -3,7 +3,7 @@ import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { validateAssignment } from "../utils/assignment-validation";
 import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
-import { ScopeType, walkScopesUp } from "../utils/scope";
+import { findAsyncTryScopeInStack, ScopeType, walkScopesUp } from "../utils/scope";
 import { transformArguments } from "./call";
 import {
     returnsMultiType,
@@ -68,6 +68,8 @@ export function transformExpressionBodyToReturnStatement(
 }
 
 export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (statement, context) => {
+    const asyncTryScope = isInAsyncFunction(statement) ? findAsyncTryScopeInStack(context) : undefined;
+
     let results: lua.Expression[];
 
     if (statement.expression) {
@@ -77,10 +79,33 @@ export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (st
             validateAssignment(context, statement, expressionType, returnType);
         }
 
-        results = transformExpressionsInReturn(context, statement.expression, isInTryCatch(context));
+        // In async try, we handle return propagation via flag variables (asyncTryHasReturn)
+        // rather than pcall return values (functionReturned set by isInTryCatch), so we skip
+        // isInTryCatch but still need insideTryCatch=true for multi-return wrapping.
+        results = transformExpressionsInReturn(
+            context,
+            statement.expression,
+            asyncTryScope ? true : isInTryCatch(context)
+        );
     } else {
         // Empty return
         results = [];
+    }
+
+    if (asyncTryScope) {
+        asyncTryScope.asyncTryHasReturn = true;
+        const stmts: lua.Statement[] = [
+            lua.createAssignmentStatement(
+                lua.createIdentifier("____hasReturned"),
+                lua.createBooleanLiteral(true),
+                statement
+            ),
+        ];
+        if (results.length > 0) {
+            stmts.push(lua.createAssignmentStatement(lua.createIdentifier("____returnValue"), results[0], statement));
+        }
+        stmts.push(lua.createReturnStatement([], statement));
+        return stmts;
     }
 
     return createReturnStatement(context, results, statement);

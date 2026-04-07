@@ -957,4 +957,33 @@ describe("try/catch in async function", () => {
                 builder.expectToHaveDiagnostics([unsupportedForTargetButOverrideAvailable.code]),
         }
     );
+
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1706
+    test("return inside try with finally (#1706)", () => {
+        util.testFunction`
+            let resolveLater!: (value: string) => void;
+
+            function deferredPromise(): Promise<string> {
+                return new Promise(resolve => {
+                    resolveLater = (v) => resolve(v);
+                });
+            }
+
+            async function fn(): Promise<string> {
+                try {
+                    return await deferredPromise();
+                } finally {
+                    log('finally');
+                }
+            }
+
+            const promise = fn();
+            resolveLater('ok');
+            promise.then(v => log(v));
+
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual(["finally", "ok"]);
+    });
 });

@@ -73,7 +73,7 @@ class ResolutionContext {
             return;
         }
 
-        if (this.noResolvePaths.find(isMatch => isMatch.test(required.requirePath))) {
+        if (this.noResolvePaths.find(isMatch => picomatch.test(required.requirePath, isMatch))) {
             if (this.options.tstlVerbose) {
                 console.log(
                     `Skipping module resolution of ${required.requirePath} as it is in the tsconfig noResolvePaths.`

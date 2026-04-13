@@ -3,40 +3,50 @@ import * as util from "../util";
 
 const allBindings = "x, y, z, rest";
 const testCases = [
-    { binding: "{ x }", value: { x: true } },
-    { binding: "{ x, y }", value: { x: false, y: true } },
-    { binding: "{ x: z, y }", value: { x: true, y: false } },
-    { binding: "{ x: { x, y }, z }", value: { x: { x: true, y: false }, z: false } },
-    { binding: "{ x, y = true }", value: { x: false, y: false } },
-    { binding: "{ x = true }", value: {} },
-    { binding: "{ x, y = true }", value: { x: false } },
-    { binding: "{ ...rest }", value: {} },
-    { binding: "{ x, ...rest }", value: { x: "x" } },
-    { binding: "{ x, ...rest }", value: { x: "x", y: "y", z: "z" } },
-    { binding: "{ x, ...y }", value: { x: "x", y: "y", z: "z" } },
-    { binding: "{ x: y, ...z }", value: { x: "x", y: "y", z: "z" } },
+    { binding: "{ x }", type: "{ x: boolean }", value: { x: true } },
+    { binding: "{ x, y }", type: "{ x: boolean, y: boolean }", value: { x: false, y: true } },
+    { binding: "{ x: z, y }", type: "{ x: boolean, y?: boolean, z?: boolean }", value: { x: true, y: false } },
+    {
+        binding: "{ x: { x, y }, z }",
+        type: "{ x: { x: boolean, y: boolean }, z: boolean }",
+        value: { x: { x: true, y: false }, z: false },
+    },
+    { binding: "{ x, y = true }", type: "{ x: boolean, y?: boolean }", value: { x: false, y: false } },
+    { binding: "{ x = true }", type: "{ x?: boolean }", value: {} },
+    { binding: "{ x, y = true }", type: "{ x: boolean, y?: boolean }", value: { x: false } },
+    { binding: "{ ...rest }", type: "any", value: {} },
+    { binding: "{ x, ...rest }", type: "any", value: { x: "x" } },
+    { binding: "{ x, ...rest }", type: "any", value: { x: "x", y: "y", z: "z" } },
+    { binding: "{ x, ...y }", type: "any", value: { x: "x", y: "y", z: "z" } },
+    { binding: "{ x: y, ...z }", type: "any", value: { x: "x", y: "y", z: "z" } },
 
-    { binding: "[]", value: [] },
-    { binding: "[x, y]", value: ["x", "y"] },
-    { binding: "[x, , y]", value: ["x", "", "y"] },
-    { binding: "[x = true]", value: [false] },
-    { binding: "[[x, y]]", value: [["x", "y"]] },
-    { binding: "[x, ...rest]", value: ["x"] },
-    { binding: "[x, ...rest]", value: ["x", "y", "z"] },
+    { binding: "[]", type: "boolean[]", value: [] },
+    { binding: "[x, y]", type: "[string, string]", value: ["x", "y"] },
+    { binding: "[x, , y]", type: "string[]", value: ["x", "", "y"] },
+    { binding: "[x = true]", type: "boolean[]", value: [false] },
+    { binding: "[x = true]", type: "boolean[]", value: [] },
+    { binding: "[[x, y]]", type: "Array<string[]>", value: [["x", "y"]] },
+    { binding: "[x, ...rest]", type: "string[]", value: ["x"] },
+    { binding: "[x, ...rest]", type: "string[]", value: ["x", "y", "z"] },
 
-    { binding: "{ y: [z = true] }", value: { y: [false] } },
-    { binding: "{ x: [x, y] }", value: { x: ["x", "y"] } },
-    { binding: "{ x: [{ y }] }", value: { x: [{ y: "y" }] } },
-].map(({ binding, value }) => ({ binding, value: util.formatCode(value) }));
+    { binding: "{ y: [z = true] }", type: "{ y: boolean[] }", value: { y: [false] } },
+    { binding: "{ y: [z = true] }", type: "{ y: boolean[] }", value: { y: [] } },
+    { binding: "{ x: [x, y] }", type: "{ x: [string, string] }", value: { x: ["x", "y"] } },
+    { binding: "{ x: [{ y }] }", type: "{ x: [{ y: string }] }", value: { x: [{ y: "y" }] } },
+].map(({ binding, type, value }) => ({ binding, type, value: util.formatCode(value) }));
 
 test.each([
     ...testCases,
-    { binding: "{ x, y }, z", value: "{ x: false, y: false }, true" },
-    { binding: "{ x, y }, { z }", value: "{ x: false, y: false }, { z: true }" },
-])("in function parameter (%p)", ({ binding, value }) => {
+    { binding: "{ x, y }", type: "{ x: boolean, y: boolean }, z: boolean", value: "{ x: false, y: false }, true" },
+    {
+        binding: "{ x, y }",
+        type: "{ x: boolean, y: boolean }, { z }: { z: boolean }",
+        value: "{ x: false, y: false }, { z: true }",
+    },
+])("in function parameter (%p)", ({ binding, type, value }) => {
     util.testFunction`
         let ${allBindings};
-        function test(${binding}) {
+        function test(${binding}: ${type}) {
             return { ${allBindings} };
         }
 

@@ -16,26 +16,6 @@ import {
 import { invalidMultiFunctionReturnType } from "../utils/diagnostics";
 import { isInAsyncFunction } from "../utils/typescript";
 
-function transformReturnExpressionForTryCatch(context: TransformationContext, node: ts.Expression): lua.Expression {
-    const innerNode = ts.skipOuterExpressions(node, ts.OuterExpressionKinds.Assertions);
-
-    if (ts.isCallExpression(innerNode)) {
-        if (isMultiFunctionCall(context, innerNode)) {
-            const type = context.checker.getContextualType(node);
-            if (type && !canBeMultiReturnType(type)) {
-                context.diagnostics.push(invalidMultiFunctionReturnType(innerNode));
-            }
-            return wrapInTable(...transformArguments(context, innerNode.arguments));
-        }
-
-        if (returnsMultiType(context, innerNode) && !shouldMultiReturnCallBeWrapped(context, innerNode)) {
-            return wrapInTable(context.transformExpression(node));
-        }
-    }
-
-    return context.transformExpression(node);
-}
-
 function transformExpressionsInReturn(context: TransformationContext, node: ts.Expression): lua.Expression[] {
     const expressionType = context.checker.getTypeAtLocation(node);
 
@@ -68,6 +48,26 @@ export function transformExpressionBodyToReturnStatement(
 ): lua.Statement {
     const expressions = transformExpressionsInReturn(context, node);
     return createReturnStatement(context, expressions, node);
+}
+
+function transformReturnExpressionForTryCatch(context: TransformationContext, node: ts.Expression): lua.Expression {
+    const innerNode = ts.skipOuterExpressions(node, ts.OuterExpressionKinds.Assertions);
+
+    if (ts.isCallExpression(innerNode)) {
+        if (isMultiFunctionCall(context, innerNode)) {
+            const type = context.checker.getContextualType(node);
+            if (type && !canBeMultiReturnType(type)) {
+                context.diagnostics.push(invalidMultiFunctionReturnType(innerNode));
+            }
+            return wrapInTable(...transformArguments(context, innerNode.arguments));
+        }
+
+        if (returnsMultiType(context, innerNode) && !shouldMultiReturnCallBeWrapped(context, innerNode)) {
+            return wrapInTable(context.transformExpression(node));
+        }
+    }
+
+    return context.transformExpression(node);
 }
 
 export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (statement, context) => {

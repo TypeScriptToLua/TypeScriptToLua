@@ -226,6 +226,15 @@ describe("array destructuring optimization", () => {
             .expectToMatchJsResult();
     });
 
+    test("array literal with side effects in elements", () => {
+        util.testFunction`
+            const arr = [1, 2];
+            let i = 0;
+            let [v1, v2] = [arr[i], arr[++i]];
+            return { v1, v2 };
+        `.expectToMatchJsResult();
+    });
+
     test("array union", () => {
         util.testFunction`
             const array: [string] | [] = ["bar"];

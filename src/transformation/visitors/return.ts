@@ -16,11 +16,27 @@ import {
 import { invalidMultiFunctionReturnType } from "../utils/diagnostics";
 import { isInAsyncFunction } from "../utils/typescript";
 
-function transformExpressionsInReturn(
-    context: TransformationContext,
-    node: ts.Expression,
-    insideTryCatch: boolean
-): lua.Expression[] {
+function transformReturnExpressionForTryCatch(context: TransformationContext, node: ts.Expression): lua.Expression {
+    const innerNode = ts.skipOuterExpressions(node, ts.OuterExpressionKinds.Assertions);
+
+    if (ts.isCallExpression(innerNode)) {
+        if (isMultiFunctionCall(context, innerNode)) {
+            const type = context.checker.getContextualType(node);
+            if (type && !canBeMultiReturnType(type)) {
+                context.diagnostics.push(invalidMultiFunctionReturnType(innerNode));
+            }
+            return wrapInTable(...transformArguments(context, innerNode.arguments));
+        }
+
+        if (returnsMultiType(context, innerNode) && !shouldMultiReturnCallBeWrapped(context, innerNode)) {
+            return wrapInTable(context.transformExpression(node));
+        }
+    }
+
+    return context.transformExpression(node);
+}
+
+function transformExpressionsInReturn(context: TransformationContext, node: ts.Expression): lua.Expression[] {
     const expressionType = context.checker.getTypeAtLocation(node);
 
     // skip type assertions
@@ -36,20 +52,7 @@ function transformExpressionsInReturn(
                 context.diagnostics.push(invalidMultiFunctionReturnType(innerNode));
             }
 
-            let returnValues = transformArguments(context, innerNode.arguments);
-            if (insideTryCatch) {
-                returnValues = [wrapInTable(...returnValues)]; // Wrap results when returning inside try/catch
-            }
-            return returnValues;
-        }
-
-        // Force-wrap LuaMultiReturn when returning inside try/catch
-        if (
-            insideTryCatch &&
-            returnsMultiType(context, innerNode) &&
-            !shouldMultiReturnCallBeWrapped(context, innerNode)
-        ) {
-            return [wrapInTable(context.transformExpression(node))];
+            return transformArguments(context, innerNode.arguments);
         }
     } else if (isInMultiReturnFunction(context, innerNode) && isMultiReturnType(expressionType)) {
         // Unpack objects typed as LuaMultiReturn
@@ -63,14 +66,12 @@ export function transformExpressionBodyToReturnStatement(
     context: TransformationContext,
     node: ts.Expression
 ): lua.Statement {
-    const expressions = transformExpressionsInReturn(context, node, false);
+    const expressions = transformExpressionsInReturn(context, node);
     return createReturnStatement(context, expressions, node);
 }
 
 export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (statement, context) => {
     const asyncTryScope = isInAsyncFunction(statement) ? findAsyncTryScopeInStack(context) : undefined;
-
-    let results: lua.Expression[];
 
     if (statement.expression) {
         const expressionType = context.checker.getTypeAtLocation(statement.expression);
@@ -78,18 +79,6 @@ export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (st
         if (returnType) {
             validateAssignment(context, statement, expressionType, returnType);
         }
-
-        // In async try, we handle return propagation via flag variables (asyncTryHasReturn)
-        // rather than pcall return values (functionReturned set by isInTryCatch), so we skip
-        // isInTryCatch but still need insideTryCatch=true for multi-return wrapping.
-        results = transformExpressionsInReturn(
-            context,
-            statement.expression,
-            asyncTryScope ? true : isInTryCatch(context)
-        );
-    } else {
-        // Empty return
-        results = [];
     }
 
     if (asyncTryScope) {
@@ -101,11 +90,21 @@ export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (st
                 statement
             ),
         ];
-        if (results.length > 0) {
-            stmts.push(lua.createAssignmentStatement(lua.createIdentifier("____returnValue"), results[0], statement));
+        if (statement.expression) {
+            const returnValue = transformReturnExpressionForTryCatch(context, statement.expression);
+            stmts.push(lua.createAssignmentStatement(lua.createIdentifier("____returnValue"), returnValue, statement));
         }
         stmts.push(lua.createReturnStatement([], statement));
         return stmts;
+    }
+
+    let results: lua.Expression[];
+    if (!statement.expression) {
+        results = [];
+    } else if (isInTryCatch(context)) {
+        results = [transformReturnExpressionForTryCatch(context, statement.expression)];
+    } else {
+        results = transformExpressionsInReturn(context, statement.expression);
     }
 
     return createReturnStatement(context, results, statement);

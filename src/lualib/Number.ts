@@ -14,13 +14,11 @@ export function __TS__Number(this: void, value: unknown): number {
         if (stringWithoutSpaces === "") return 0;
 
         // Handle 0b/0B (binary) and 0o/0O (octal) literal prefixes
-        const [sign, prefix, digits] = __TS__Match(stringWithoutSpaces, "^(-?)0([bBoO])(.+)");
+        const [prefix, digits] = __TS__Match(stringWithoutSpaces, "^0([bBoO])(.+)");
         if (prefix !== undefined) {
             const base = prefix === "b" || prefix === "B" ? 2 : 8;
             const result = tonumber(digits, base);
-            if (result !== undefined) {
-                return sign === "-" ? -result : result;
-            }
+            if (result !== undefined) return result;
         }
 
         return NaN;

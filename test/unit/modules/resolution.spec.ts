@@ -186,6 +186,21 @@ test("dots in directory names are replaced with underscores in output", () => {
     expect(dottedFile!.outPath).not.toContain("Foo.Bar");
 });
 
+test("dots in file names are replaced with underscores in output", () => {
+    const { transpiledFiles } = util.testModule`
+        import { answer } from "./foo.test";
+        export const result = answer;
+    `
+        .addExtraFile("foo.test.ts", "export const answer = 42;")
+        .setOptions({ rootDir: "." })
+        .getLuaResult();
+
+    const dottedFile = transpiledFiles.find(f => f.lua?.includes("answer = 42"));
+    expect(dottedFile).toBeDefined();
+    expect(dottedFile!.outPath).toContain("foo_test.lua");
+    expect(dottedFile!.outPath).not.toContain("foo.test");
+});
+
 test("dots in paths that collide with existing paths produce a diagnostic", () => {
     util.testModule`
         import { a } from "./Foo.Bar";

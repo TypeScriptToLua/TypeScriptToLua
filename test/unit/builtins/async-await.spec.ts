@@ -959,6 +959,27 @@ describe("try/catch in async function", () => {
     );
 
     // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1706
+    test("multi return from try in async function (#1706)", () => {
+        util.testFunction`
+            async function fn(): Promise<LuaMultiReturn<[string, string]>> {
+                try {
+                    await Promise.resolve();
+                    return $multi("foo", "bar");
+                } catch {
+                    return $multi("err", "err");
+                }
+            }
+
+            let result: string[] = [];
+            fn().then(v => { const [a, b] = v; result = [a, b]; });
+
+            return result;
+        `
+            .withLanguageExtensions()
+            .expectToEqual(["foo", "bar"]);
+    });
+
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1706
     test("return inside try with finally (#1706)", () => {
         util.testFunction`
             let resolveLater!: (value: string) => void;

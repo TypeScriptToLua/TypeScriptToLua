@@ -39,38 +39,42 @@ const transformAsyncTry: FunctionVisitor<ts.TryStatement> = (statement, context)
     // local ____try = __TS__AsyncAwaiter(<catch block>)
     const result: lua.Statement[] = [awaiterDefinition];
 
-    if (statement.finallyBlock) {
-        const awaiterFinally = lua.createTableIndexExpression(awaiterIdentifier, lua.createStringLiteral("finally"));
-        const finallyFunction = lua.createFunctionExpression(
-            lua.createBlock(context.transformStatements(statement.finallyBlock.statements))
-        );
-        const finallyCall = lua.createCallExpression(
-            awaiterFinally,
-            [awaiterIdentifier, finallyFunction],
-            statement.finallyBlock
-        );
-        // ____try.finally(<finally function>)
-        result.push(lua.createExpressionStatement(finallyCall));
-    }
-
     if (statement.catchClause) {
-        // ____try.catch(<catch function>)
+        // ____try = ____try.catch(<catch function>)
         const [catchFunction] = transformCatchClause(context, statement.catchClause);
         if (catchFunction.params) {
             catchFunction.params.unshift(lua.createAnonymousIdentifier());
         }
 
+        const catchBodyStatements = catchFunction.body ? catchFunction.body.statements : [];
+        const asyncWrappedCatch = wrapInAsyncAwaiter(context, [...catchBodyStatements], false);
+        catchFunction.body = lua.createBlock([lua.createReturnStatement([asyncWrappedCatch])]);
+
         const awaiterCatch = lua.createTableIndexExpression(awaiterIdentifier, lua.createStringLiteral("catch"));
         const catchCall = lua.createCallExpression(awaiterCatch, [awaiterIdentifier, catchFunction]);
-
-        // await ____try.catch(<catch function>)
-        const promiseAwait = transformLuaLibFunction(context, LuaLibFeature.Await, statement, catchCall);
-        result.push(lua.createExpressionStatement(promiseAwait, statement));
-    } else {
-        // await ____try
-        const promiseAwait = transformLuaLibFunction(context, LuaLibFeature.Await, statement, awaiterIdentifier);
-        result.push(lua.createExpressionStatement(promiseAwait, statement));
+        result.push(lua.createAssignmentStatement(lua.cloneIdentifier(awaiterIdentifier), catchCall));
     }
+
+    if (statement.finallyBlock) {
+        // ____try = ____try.finally(<finally function>)
+        const finallyStatements = context.transformStatements(statement.finallyBlock.statements);
+        const asyncWrappedFinally = wrapInAsyncAwaiter(context, finallyStatements, false);
+        const finallyFunction = lua.createFunctionExpression(
+            lua.createBlock([lua.createReturnStatement([asyncWrappedFinally])])
+        );
+
+        const awaiterFinally = lua.createTableIndexExpression(awaiterIdentifier, lua.createStringLiteral("finally"));
+        const finallyCall = lua.createCallExpression(
+            awaiterFinally,
+            [awaiterIdentifier, finallyFunction],
+            statement.finallyBlock
+        );
+        result.push(lua.createAssignmentStatement(lua.cloneIdentifier(awaiterIdentifier), finallyCall));
+    }
+
+    // __TS__Await(____try)
+    const promiseAwait = transformLuaLibFunction(context, LuaLibFeature.Await, statement, awaiterIdentifier);
+    result.push(lua.createExpressionStatement(promiseAwait, statement));
 
     return result;
 };

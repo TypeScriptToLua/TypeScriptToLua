@@ -815,4 +815,196 @@ describe("try/catch in async function", () => {
             },
         });
     });
+
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1706
+    test("return inside try with deferred promise (#1706)", () => {
+        util.testFunction`
+            let resolveLater!: (value: string) => void;
+
+            function deferredPromise(): Promise<string> {
+                return new Promise(resolve => {
+                    resolveLater = (v) => resolve(v);
+                });
+            }
+
+            async function fn(): Promise<string> {
+                try {
+                    return await deferredPromise();
+                } catch {
+                    return 'caught';
+                }
+                log('unreachable!');
+            }
+
+            const promise = fn();
+            resolveLater('ok');
+            promise.then(v => log(v));
+
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual(["ok"]);
+    });
+
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1706
+    test("return inside try in loop with deferred promise (#1706)", () => {
+        util.testFunction`
+            let resolveLater!: (value: string) => void;
+
+            function deferredPromise(): Promise<string> {
+                return new Promise(resolve => {
+                    resolveLater = (v) => resolve(v);
+                });
+            }
+
+            async function fn(): Promise<string> {
+                while (true) {
+                    try {
+                        return await deferredPromise();
+                    } catch {
+                        return 'caught';
+                    }
+                    log('unreachable!');
+                }
+            }
+
+            const promise = fn();
+            resolveLater('ok');
+            promise.then(v => log(v));
+
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual(["ok"]);
+    });
+
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1706
+    test("return from catch with deferred promise (#1706)", () => {
+        util.testFunction`
+            let rejectLater!: (reason: string) => void;
+
+            function deferredPromise(): Promise<string> {
+                return new Promise((_, reject) => {
+                    rejectLater = (r) => reject(r);
+                });
+            }
+
+            async function fn(): Promise<string> {
+                try {
+                    return await deferredPromise();
+                } catch (e) {
+                    return 'caught: ' + e;
+                }
+                log('unreachable!');
+            }
+
+            const promise = fn();
+            rejectLater('oops');
+            promise.then(v => log(v));
+
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual(["caught: oops"]);
+    });
+
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1706
+    util.testEachVersion(
+        "break inside try in async loop (#1706)",
+        () => util.testModule`
+            export let result = "not set";
+            async function fn(): Promise<void> {
+                while (true) {
+                    try {
+                        await Promise.resolve();
+                        break;
+                    } catch {}
+                }
+                result = "done";
+            }
+            fn();
+        `,
+        {
+            ...util.expectEachVersionExceptJit(builder => builder.expectToEqual({ result: "done" })),
+            [LuaTarget.Lua50]: builder =>
+                builder.expectToHaveDiagnostics([unsupportedForTargetButOverrideAvailable.code]),
+            [LuaTarget.Lua51]: builder =>
+                builder.expectToHaveDiagnostics([unsupportedForTargetButOverrideAvailable.code]),
+        }
+    );
+
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1706
+    util.testEachVersion(
+        "continue inside try in async loop (#1706)",
+        () => util.testModule`
+            export const results: number[] = [];
+            async function fn(): Promise<void> {
+                for (let i = 0; i < 3; i++) {
+                    try {
+                        await Promise.resolve();
+                        if (i === 1) continue;
+                    } catch {}
+                    results.push(i);
+                }
+            }
+            fn();
+        `,
+        {
+            ...util.expectEachVersionExceptJit(builder => builder.expectToEqual({ results: [0, 2] })),
+            [LuaTarget.Lua50]: builder =>
+                builder.expectToHaveDiagnostics([unsupportedForTargetButOverrideAvailable.code]),
+            [LuaTarget.Lua51]: builder =>
+                builder.expectToHaveDiagnostics([unsupportedForTargetButOverrideAvailable.code]),
+        }
+    );
+
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1706
+    test("multi return from try in async function (#1706)", () => {
+        util.testFunction`
+            async function fn(): Promise<LuaMultiReturn<[string, string]>> {
+                try {
+                    await Promise.resolve();
+                    return $multi("foo", "bar");
+                } catch {
+                    return $multi("err", "err");
+                }
+            }
+
+            let result: string[] = [];
+            fn().then(v => { const [a, b] = v; result = [a, b]; });
+
+            return result;
+        `
+            .withLanguageExtensions()
+            .expectToEqual(["foo", "bar"]);
+    });
+
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1706
+    test("return inside try with finally (#1706)", () => {
+        util.testFunction`
+            let resolveLater!: (value: string) => void;
+
+            function deferredPromise(): Promise<string> {
+                return new Promise(resolve => {
+                    resolveLater = (v) => resolve(v);
+                });
+            }
+
+            async function fn(): Promise<string> {
+                try {
+                    return await deferredPromise();
+                } finally {
+                    log('finally');
+                }
+            }
+
+            const promise = fn();
+            resolveLater('ok');
+            promise.then(v => log(v));
+
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual(["finally", "ok"]);
+    });
 });

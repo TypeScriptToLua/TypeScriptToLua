@@ -14,12 +14,14 @@ export function hasExportEquals(sourceFile: ts.SourceFile): boolean {
  * Search up until finding a node satisfying the callback
  */
 export function findFirstNodeAbove<T extends ts.Node>(node: ts.Node, callback: (n: ts.Node) => n is T): T | undefined {
-    let current = node;
+    // Synthetic nodes (created by pre-transformers like usingTransformer) may have an unset .parent.
+    // Fall back to ts.getOriginalNode so we can still walk the source-parsed parent chain.
+    let current = ts.getOriginalNode(node);
     while (current.parent) {
         if (callback(current.parent)) {
             return current.parent;
         } else {
-            current = current.parent;
+            current = ts.getOriginalNode(current.parent);
         }
     }
 }

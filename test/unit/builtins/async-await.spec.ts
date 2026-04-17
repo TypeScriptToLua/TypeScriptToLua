@@ -904,6 +904,32 @@ describe("try/catch in async function", () => {
             .expectToEqual(["catch", "a", "caught", "finally", "b", "done"]);
     });
 
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1659
+    test("awaited value in catch is returned from async function (#1659)", () => {
+        util.testFunction`
+            const failing = defer<string>();
+            const recovery = defer<string>();
+
+            async function run() {
+                try {
+                    await failing.promise;
+                    return "succeeded";
+                } catch (e) {
+                    return await recovery.promise;
+                }
+            }
+
+            run().then(value => log("result", value));
+
+            failing.reject("error");
+            recovery.resolve("recovered");
+
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual(["result", "recovered"]);
+    });
+
     // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1706
     test("return inside try with deferred promise (#1706)", () => {
         util.testFunction`

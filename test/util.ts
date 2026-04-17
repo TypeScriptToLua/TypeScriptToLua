@@ -534,8 +534,9 @@ end)());`;
             const moduleExports = {};
             globalContext.exports = moduleExports;
             globalContext.module = { exports: moduleExports };
+            const baseName = fileName.replace("./", "");
             const transpiledExtraFile = transpiledFiles.find(({ sourceFiles }) =>
-                sourceFiles.some(f => f.fileName === fileName.replace("./", "") + ".ts")
+                sourceFiles.some(f => f.fileName === baseName + ".ts" || f.fileName === baseName + "/index.ts")
             );
 
             if (transpiledExtraFile?.js) {

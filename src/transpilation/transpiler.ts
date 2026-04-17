@@ -4,6 +4,7 @@ import { CompilerOptions, isBundleEnabled, LuaLibImportKind, LuaTarget } from ".
 import { buildMinimalLualibBundle, findUsedLualibFeatures, getLuaLibBundle } from "../LuaLib";
 import { normalizeSlashes, trimExtension } from "../utils";
 import { getBundleResult } from "./bundle";
+import { emitPathCollision } from "./diagnostics";
 import { getPlugins, Plugin } from "./plugins";
 import { resolveDependencies } from "./resolve";
 import { getProgramTranspileResult, TranspileOptions } from "./transpile";
@@ -143,10 +144,17 @@ export class Transpiler {
             diagnostics.push(...bundleDiagnostics);
             emitPlan = [bundleFile];
         } else {
-            emitPlan = resolutionResult.resolvedFiles.map(file => ({
-                ...file,
-                outputPath: getEmitPath(file.fileName, program),
-            }));
+            const outputPathMap = new Map<string, string>();
+            emitPlan = resolutionResult.resolvedFiles.map(file => {
+                const outputPath = getEmitPath(file.fileName, program);
+                const existing = outputPathMap.get(outputPath);
+                if (existing) {
+                    diagnostics.push(emitPathCollision(outputPath, existing, file.fileName));
+                } else {
+                    outputPathMap.set(outputPath, file.fileName);
+                }
+                return { ...file, outputPath };
+            });
         }
 
         performance.endSection("getEmitPlan");
@@ -189,11 +197,17 @@ export function getEmitPathRelativeToOutDir(fileName: string, program: ts.Progra
         emitPathSplits[0] = "lua_modules";
     }
 
+    // Replace dots with underscores in path segments so that Lua's require()
+    // resolves correctly. Dots are path separators in Lua's module system, so
+    // "Foo.Bar/index.lua" would be unreachable via require("Foo.Bar.index")
+    // since Lua interprets it as "Foo/Bar/index.lua".
+    emitPathSplits[emitPathSplits.length - 1] = trimExtension(emitPathSplits[emitPathSplits.length - 1]);
+    emitPathSplits = emitPathSplits.map(segment => segment.replace(/\./g, "_"));
+
     // Set extension
     const extension = ((program.getCompilerOptions() as CompilerOptions).extension ?? "lua").trim();
     const trimmedExtension = extension.startsWith(".") ? extension.substring(1) : extension;
-    emitPathSplits[emitPathSplits.length - 1] =
-        trimExtension(emitPathSplits[emitPathSplits.length - 1]) + "." + trimmedExtension;
+    emitPathSplits[emitPathSplits.length - 1] += "." + trimmedExtension;
 
     return path.join(...emitPathSplits);
 }

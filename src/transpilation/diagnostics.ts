@@ -60,3 +60,9 @@ export const pathsWithoutBaseDirectory = createDiagnosticFactory(
     () =>
         "When using 'paths' without 'baseUrl', a tsconfig.json must be present so paths can be resolved relative to it."
 );
+
+export const emitPathCollision = createDiagnosticFactory(
+    (outputPath: string, file1: string, file2: string) =>
+        `Output path '${outputPath}' is used by both '${file1}' and '${file2}'. ` +
+        `Dots in file/directory names are replaced with underscores for Lua module resolution.`
+);

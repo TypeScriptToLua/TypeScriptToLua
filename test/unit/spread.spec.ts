@@ -120,6 +120,15 @@ describe("in object literal", () => {
         util.testExpression(expression).ignoreDiagnostics([2783]).expectToMatchJsResult();
     });
 
+    test.each([
+        "{ ...((false && { a: 1 }) as any) }",
+        "{ ...((true && { a: 1 }) as any) }",
+        "{ a: 1, ...((false && { b: 2 }) as any) }",
+        "{ ...(null as any), ...(undefined as any) }",
+    ])("of short-circuited operand (%p)", expression => {
+        util.testExpression(expression).expectToMatchJsResult();
+    });
+
     test("of object reference", () => {
         util.testFunction`
             const object = { x: 0, y: 1 };

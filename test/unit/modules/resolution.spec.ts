@@ -1,5 +1,6 @@
+import * as path from "path";
 import * as ts from "typescript";
-import { couldNotResolveRequire } from "../../../src/transpilation/diagnostics";
+import { couldNotResolveRequire, emitPathCollision } from "../../../src/transpilation/diagnostics";
 import * as util from "../../util";
 
 const requireRegex = /require\("(.*?)"\)/;
@@ -164,6 +165,52 @@ test.each([
         .setMainFileName("src/main.ts")
         .addExtraFile("module.d.ts", declarationStatement)
         .tap(expectToRequire(expectedPath));
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1445
+// Can't test this via execution because the test harness uses package.preload
+// instead of real filesystem resolution, so require() always finds the module
+// regardless of output path. We check the output path directly instead.
+test("dots in directory names are replaced with underscores in output", () => {
+    const { transpiledFiles } = util.testModule`
+        import { answer } from "./Foo.Bar";
+        export const result = answer;
+    `
+        .addExtraFile("Foo.Bar/index.ts", "export const answer = 42;")
+        .setOptions({ rootDir: "." })
+        .getLuaResult();
+
+    const dottedFile = transpiledFiles.find(f => f.lua?.includes("answer = 42"));
+    expect(dottedFile).toBeDefined();
+    expect(dottedFile!.outPath).toContain(path.join("Foo_Bar", "index.lua"));
+    expect(dottedFile!.outPath).not.toContain("Foo.Bar");
+});
+
+test("dots in file names are replaced with underscores in output", () => {
+    const { transpiledFiles } = util.testModule`
+        import { answer } from "./foo.test";
+        export const result = answer;
+    `
+        .addExtraFile("foo.test.ts", "export const answer = 42;")
+        .setOptions({ rootDir: "." })
+        .getLuaResult();
+
+    const dottedFile = transpiledFiles.find(f => f.lua?.includes("answer = 42"));
+    expect(dottedFile).toBeDefined();
+    expect(dottedFile!.outPath).toContain("foo_test.lua");
+    expect(dottedFile!.outPath).not.toContain("foo.test");
+});
+
+test("dots in paths that collide with existing paths produce a diagnostic", () => {
+    util.testModule`
+        import { a } from "./Foo.Bar";
+        import { b } from "./Foo_Bar";
+        export const result = a + b;
+    `
+        .addExtraFile("Foo.Bar/index.ts", "export const a = 1;")
+        .addExtraFile("Foo_Bar/index.ts", "export const b = 2;")
+        .setOptions({ rootDir: "." })
+        .expectToHaveDiagnostics([emitPathCollision.code]);
 });
 
 test("import = require", () => {

@@ -236,6 +236,33 @@ describe("array destructuring optimization", () => {
             .expectToMatchJsResult();
     });
 
+    test("array literal with side effects in elements", () => {
+        util.testFunction`
+            const arr = [1, 2];
+            let i = 0;
+            let [v1, v2] = [arr[i], arr[++i]];
+            return { v1, v2 };
+        `.expectToMatchJsResult();
+    });
+
+    test("array literal with many side effects in elements", () => {
+        util.testFunction`
+            const arr = [10, 20, 30, 40];
+            let i = 0;
+            let [v1, v2, v3, v4] = [arr[i++], arr[i++], arr[i++], arr[i++]];
+            return { v1, v2, v3, v4 };
+        `.expectToMatchJsResult();
+    });
+
+    test("array literal with mixed pure and impure elements", () => {
+        util.testFunction`
+            const arr = [10, 20, 30];
+            let i = 0;
+            let [v1, v2, v3] = [1, arr[++i], 2];
+            return { v1, v2, v3, i };
+        `.expectToMatchJsResult();
+    });
+
     test("array union", () => {
         util.testFunction`
             const array: [string] | [] = ["bar"];

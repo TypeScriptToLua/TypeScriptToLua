@@ -279,6 +279,84 @@ test("for let mutation via destructuring assignment", () => {
     `.expectToMatchJsResult();
 });
 
+test("for let multiple captured vars per iteration", () => {
+    util.testFunction`
+        const fns: (() => number)[] = [];
+        for (let i = 0, j = 10; i < 3; i++, j--) {
+            fns.push(() => i + j);
+        }
+        return fns.map(f => f());
+    `.expectToMatchJsResult();
+});
+
+util.testEachVersion(
+    "for let compound assignment before continue",
+    () => util.testFunction`
+        const fns: (() => number)[] = [];
+        for (let i = 0; i < 10; i++) {
+            fns.push(() => i);
+            if (i === 2) { i += 5; continue; }
+        }
+        return fns.map(f => f());
+    `,
+    util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+);
+
+test("for let with break captures pre-break value", () => {
+    util.testFunction`
+        const fns: (() => number)[] = [];
+        for (let i = 0; i < 10; i++) {
+            fns.push(() => i);
+            if (i === 3) break;
+        }
+        return fns.map(f => f());
+    `.expectToMatchJsResult();
+});
+
+test("for let nested capturing outer var", () => {
+    util.testFunction`
+        const fns: (() => number)[] = [];
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 2; j++) {
+                fns.push(() => i * 10 + j);
+            }
+        }
+        return fns.map(f => f());
+    `.expectToMatchJsResult();
+});
+
+test("for let array destructuring initializer", () => {
+    util.testFunction`
+        const fns: (() => number)[] = [];
+        for (let [a, b] = [0, 10]; a < 3; a++, b--) {
+            fns.push(() => a + b);
+        }
+        return fns.map(f => f());
+    `.expectToMatchJsResult();
+});
+
+test("for let object destructuring initializer", () => {
+    util.testFunction`
+        const fns: (() => number)[] = [];
+        for (let { a, b } = { a: 0, b: 10 }; a < 3; a++, b--) {
+            fns.push(() => a + b);
+        }
+        return fns.map(f => f());
+    `.expectToMatchJsResult();
+});
+
+test("for let closure capture through try/catch with mutation", () => {
+    util.testFunction`
+        const fns: (() => number)[] = [];
+        for (let i = 0; i < 4; i++) {
+            try {
+                fns.push(() => i);
+            } catch (e) {}
+        }
+        return fns.map(f => f());
+    `.expectToMatchJsResult();
+});
+
 test("for scope", () => {
     util.testFunction`
         let i = 42;

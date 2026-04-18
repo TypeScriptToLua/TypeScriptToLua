@@ -2,11 +2,13 @@ import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { transformInPrecedingStatementScope } from "../../utils/preceding-statements";
+import { ScopeType } from "../../utils/scope";
 import { checkVariableDeclarationList, transformVariableDeclaration } from "../variable-declaration";
 import { invertCondition, transformLoopBody } from "./utils";
-import { LoopContinued, performHoisting, ScopeType } from "../../utils/scope";
-import { transformBlockOrStatement } from "../block";
 
+// Collect identifiers bound by a for-loop `let`/`const` initializer that are captured
+// by any closure in the body/condition/incrementor. These need per-iteration binding
+// so captured closures see a fresh binding each iteration (ES2015 spec).
 function getCapturedLetNamesInFor(context: TransformationContext, statement: ts.ForStatement): ts.Identifier[] {
     const init = statement.initializer;
     if (!init || !ts.isVariableDeclarationList(init)) return [];
@@ -15,7 +17,7 @@ function getCapturedLetNamesInFor(context: TransformationContext, statement: ts.
 
     const letNames: ts.Identifier[] = [];
     for (const decl of init.declarations) {
-        if (ts.isIdentifier(decl.name)) letNames.push(decl.name);
+        collectBoundIdentifiers(decl.name, letNames);
     }
     if (letNames.length === 0) return [];
 
@@ -57,125 +59,15 @@ function getCapturedLetNamesInFor(context: TransformationContext, statement: ts.
     });
 }
 
-// Walks transformed Lua statements and prepends syncStmts before every continue-exit
-// that targets this loop scope. Handles WithGoto, WithContinue, and WithRepeatBreak modes.
-function injectSyncBeforeContinueExits(
-    statements: lua.Statement[],
-    scopeId: number,
-    continueLabel: string,
-    continueMode: LoopContinued | undefined,
-    syncStmts: lua.Statement[]
-): void {
-    for (let i = 0; i < statements.length; i++) {
-        const stmt = statements[i];
-
-        // WithGoto: `goto __continueN`
-        if (continueMode === LoopContinued.WithGoto && lua.isGotoStatement(stmt) && stmt.label === continueLabel) {
-            statements.splice(i, 0, ...syncStmts.map(cloneSimpleStatement));
-            i += syncStmts.length;
-            continue;
-        }
-
-        // WithContinue: `continue`
-        if (continueMode === LoopContinued.WithContinue && lua.isContinueStatement(stmt)) {
-            statements.splice(i, 0, ...syncStmts.map(cloneSimpleStatement));
-            i += syncStmts.length;
-            continue;
-        }
-
-        // WithRepeatBreak: `__continueN = true; break`
-        if (
-            continueMode === LoopContinued.WithRepeatBreak &&
-            lua.isAssignmentStatement(stmt) &&
-            stmt.left.length === 1 &&
-            lua.isIdentifier(stmt.left[0]) &&
-            stmt.left[0].text === continueLabel &&
-            i + 1 < statements.length &&
-            lua.isBreakStatement(statements[i + 1])
-        ) {
-            statements.splice(i, 0, ...syncStmts.map(cloneSimpleStatement));
-            i += syncStmts.length + 1; // skip past both the assignment and the break
-            continue;
-        }
-
-        // Recurse into nested blocks that can contain continue-exits for this loop.
-        // Skip nested loops — their continues target themselves, not us.
-        if (lua.isDoStatement(stmt)) {
-            injectSyncBeforeContinueExits(stmt.statements, scopeId, continueLabel, continueMode, syncStmts);
-        } else if (lua.isIfStatement(stmt)) {
-            injectIntoIf(stmt, scopeId, continueLabel, continueMode, syncStmts);
-        }
+function collectBoundIdentifiers(name: ts.BindingName, out: ts.Identifier[]): void {
+    if (ts.isIdentifier(name)) {
+        out.push(name);
+        return;
     }
-}
-
-function injectIntoIf(
-    stmt: lua.IfStatement,
-    scopeId: number,
-    continueLabel: string,
-    continueMode: LoopContinued | undefined,
-    syncStmts: lua.Statement[]
-): void {
-    injectSyncBeforeContinueExits(stmt.ifBlock.statements, scopeId, continueLabel, continueMode, syncStmts);
-    if (stmt.elseBlock) {
-        if (lua.isBlock(stmt.elseBlock)) {
-            injectSyncBeforeContinueExits(stmt.elseBlock.statements, scopeId, continueLabel, continueMode, syncStmts);
-        } else {
-            injectIntoIf(stmt.elseBlock, scopeId, continueLabel, continueMode, syncStmts);
-        }
-    }
-}
-
-function cloneSimpleStatement(stmt: lua.Statement): lua.Statement {
-    // Sync statements are always `____sync_X = X` assignments; recreate to avoid sharing nodes.
-    if (lua.isAssignmentStatement(stmt)) {
-        return lua.createAssignmentStatement(
-            stmt.left.map(l => (lua.isIdentifier(l) ? lua.createIdentifier(l.text) : l)),
-            stmt.right.map(r => (lua.isIdentifier(r) ? lua.createIdentifier(r.text) : r))
-        );
-    }
-    return stmt;
-}
-
-function wrapBodyWithContinueMode(
-    innerBodyStatements: lua.Statement[],
-    continueMode: LoopContinued | undefined,
-    continueLabel: string
-): lua.Statement[] {
-    switch (continueMode) {
-        case undefined:
-        case LoopContinued.WithContinue:
-            return [lua.createDoStatement(innerBodyStatements)];
-
-        case LoopContinued.WithGoto:
-            return [lua.createDoStatement(innerBodyStatements), lua.createLabelStatement(continueLabel)];
-
-        case LoopContinued.WithRepeatBreak: {
-            const identifier = lua.createIdentifier(continueLabel);
-            const literalTrue = lua.createBooleanLiteral(true);
-
-            const transformedBodyStatements: lua.Statement[] = [];
-            let bodyBroken = false;
-            for (const s of innerBodyStatements) {
-                transformedBodyStatements.push(s);
-                if (lua.isBreakStatement(s)) {
-                    bodyBroken = true;
-                    break;
-                }
-            }
-            if (!bodyBroken) {
-                transformedBodyStatements.push(lua.createAssignmentStatement(identifier, literalTrue));
-            }
-
-            return [
-                lua.createDoStatement([
-                    lua.createVariableDeclarationStatement(identifier),
-                    lua.createRepeatStatement(lua.createBlock(transformedBodyStatements), literalTrue),
-                    lua.createIfStatement(
-                        lua.createUnaryExpression(identifier, lua.SyntaxKind.NotOperator),
-                        lua.createBlock([lua.createBreakStatement()])
-                    ),
-                ]),
-            ];
+    // Destructuring: recurse into array/object binding patterns.
+    for (const element of name.elements) {
+        if (ts.isBindingElement(element)) {
+            collectBoundIdentifiers(element.name, out);
         }
     }
 }
@@ -251,6 +143,21 @@ function transformForStatementSimple(statement: ts.ForStatement, context: Transf
     return lua.createDoStatement(result, statement);
 }
 
+// Per-iteration-binding transform (ES2015 for-let semantics).
+//
+// Shape of the emitted Lua (for captured name `i`, single variable):
+//
+//     local i = 0                    -- outer binding (for the incrementor)
+//     while cond do
+//         local ____sync_i           -- slot carries body mutations out
+//         do
+//             local i = i            -- fresh per-iteration binding (closures capture this)
+//             ... body ...           -- sync `____sync_i = i` injected before any continue-exit
+//             ____sync_i = i         -- sync at natural end of body
+//         end
+//         i = ____sync_i             -- propagate mutations back to outer i
+//         incrementor                -- operates on outer i
+//     end
 function transformForStatementWithPerIterationBinding(
     statement: ts.ForStatement,
     context: TransformationContext,
@@ -259,48 +166,34 @@ function transformForStatementWithPerIterationBinding(
     const result: lua.Statement[] = [];
     const initializer = statement.initializer as ts.VariableDeclarationList;
 
+    context.pushScope(ScopeType.Loop, statement);
+
     // Outer: normal variable declarations (user's names).
     checkVariableDeclarationList(context, initializer);
     result.push(...initializer.declarations.flatMap(d => transformVariableDeclaration(context, d)));
 
-    // Transform body ourselves (equivalent to transformLoopBody internals) so we can inject sync.
-    context.pushScope(ScopeType.Loop, statement);
-    const rawBody = performHoisting(context, transformBlockOrStatement(context, statement.statement));
-    const scope = context.popScope();
-    const scopeId = scope.id;
-    const continueLabel = `__continue${scopeId}`;
-
-    // One sync slot per captured name: `____sync_<name>_<scopeId>`.
-    const syncIdentifiers = capturedNames.map(n => lua.createIdentifier(`____sync_${n.text}_${scopeId}`));
-
-    // Inner body: declare `local <name> = <name>` for each captured name (fresh per-iteration binding).
-    const innerDecls = capturedNames.map(n =>
+    // Prologue (inside per-iter scope): `local <name> = <name>` for each captured name — fresh binding.
+    const prologue = capturedNames.map(n =>
         lua.createVariableDeclarationStatement(lua.createIdentifier(n.text), lua.createIdentifier(n.text))
     );
 
-    // Sync statement(s): `____sync_X = X` for each captured name.
-    const syncAssignments: lua.Statement[] = capturedNames.map((n, i) =>
+    // Epilogue (inside per-iter scope, natural end + before every continue-exit): `____sync_<name> = <name>`.
+    // The outer do-statement returned at the end scopes the sync slots, so the plain-text name is collision-free
+    // across sibling/nested per-iter-bound for loops.
+    const syncIdentifiers = capturedNames.map(n => lua.createIdentifier(`____sync_${n.text}`));
+    const epilogue = capturedNames.map((n, i) =>
         lua.createAssignmentStatement(syncIdentifiers[i], lua.createIdentifier(n.text))
     );
 
-    // Inject sync before every continue-exit targeting this loop.
-    injectSyncBeforeContinueExits(rawBody, scopeId, continueLabel, scope.loopContinued, syncAssignments);
+    const innerBody = transformLoopBody(context, statement, { innerPrologue: prologue, innerEpilogue: epilogue });
 
-    // Append sync at natural end of body (so falling-through-body also propagates mutations).
-    const innerBody: lua.Statement[] = [...innerDecls, ...rawBody, ...syncAssignments.map(cloneSimpleStatement)];
-
-    // Apply continue-wrap around the inner body (do...end plus label or repeat-break structure).
-    const wrappedBody = wrapBodyWithContinueMode(innerBody, scope.loopContinued, continueLabel);
-
-    // Copy sync slots back to outer vars after the per-iter block.
+    // While body: [sync slot decls, innerBody from transformLoopBody, sync-back, incrementor].
     const syncBack: lua.Statement[] = capturedNames.map((n, i) =>
-        lua.createAssignmentStatement(lua.createIdentifier(n.text), syncIdentifiers[i])
+        lua.createAssignmentStatement(lua.createIdentifier(n.text), lua.createIdentifier(syncIdentifiers[i].text))
     );
-
-    // While-body assembly: [sync slot decls, wrappedBody, syncBack, incrementor].
     const whileBody: lua.Statement[] = [
         lua.createVariableDeclarationStatement(syncIdentifiers.map(id => lua.createIdentifier(id.text))),
-        ...wrappedBody,
+        ...innerBody,
         ...syncBack,
     ];
 
@@ -334,5 +227,9 @@ function transformForStatementWithPerIterationBinding(
 
     result.push(lua.createWhileStatement(lua.createBlock(whileBody), condition, statement));
 
+    context.popScope();
+
+    // Wrap the outer in a do so the sync slots (and the outer `local i`) live in their own scope,
+    // giving each per-iter-bound for loop an independent sync-slot namespace.
     return lua.createDoStatement(result, statement);
 }

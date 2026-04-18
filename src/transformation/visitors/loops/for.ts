@@ -7,14 +7,10 @@ import { invertCondition, transformLoopBody } from "./utils";
 import { LoopContinued, performHoisting, ScopeType } from "../../utils/scope";
 import { transformBlockOrStatement } from "../block";
 
-function getCapturedLetNamesInFor(
-    context: TransformationContext,
-    statement: ts.ForStatement
-): ts.Identifier[] {
+function getCapturedLetNamesInFor(context: TransformationContext, statement: ts.ForStatement): ts.Identifier[] {
     const init = statement.initializer;
     if (!init || !ts.isVariableDeclarationList(init)) return [];
-    const isLetOrConst =
-        (init.flags & ts.NodeFlags.Let) !== 0 || (init.flags & ts.NodeFlags.Const) !== 0;
+    const isLetOrConst = (init.flags & ts.NodeFlags.Let) !== 0 || (init.flags & ts.NodeFlags.Const) !== 0;
     if (!isLetOrConst) return [];
 
     const letNames: ts.Identifier[] = [];
@@ -133,8 +129,8 @@ function cloneSimpleStatement(stmt: lua.Statement): lua.Statement {
     // Sync statements are always `____sync_X = X` assignments; recreate to avoid sharing nodes.
     if (lua.isAssignmentStatement(stmt)) {
         return lua.createAssignmentStatement(
-            stmt.left.map(l => lua.isIdentifier(l) ? lua.createIdentifier(l.text) : l),
-            stmt.right.map(r => lua.isIdentifier(r) ? lua.createIdentifier(r.text) : r)
+            stmt.left.map(l => (lua.isIdentifier(l) ? lua.createIdentifier(l.text) : l)),
+            stmt.right.map(r => (lua.isIdentifier(r) ? lua.createIdentifier(r.text) : r))
         );
     }
     return stmt;
@@ -192,10 +188,7 @@ export const transformForStatement: FunctionVisitor<ts.ForStatement> = (statemen
     return transformForStatementWithPerIterationBinding(statement, context, capturedLetNames);
 };
 
-function transformForStatementSimple(
-    statement: ts.ForStatement,
-    context: TransformationContext
-): lua.Statement {
+function transformForStatementSimple(statement: ts.ForStatement, context: TransformationContext): lua.Statement {
     const result: lua.Statement[] = [];
 
     context.pushScope(ScopeType.Loop, statement);
@@ -278,9 +271,7 @@ function transformForStatementWithPerIterationBinding(
     const continueLabel = `__continue${scopeId}`;
 
     // One sync slot per captured name: `____sync_<name>_<scopeId>`.
-    const syncIdentifiers = capturedNames.map(n =>
-        lua.createIdentifier(`____sync_${n.text}_${scopeId}`)
-    );
+    const syncIdentifiers = capturedNames.map(n => lua.createIdentifier(`____sync_${n.text}_${scopeId}`));
 
     // Inner body: declare `local <name> = <name>` for each captured name (fresh per-iteration binding).
     const innerDecls = capturedNames.map(n =>

@@ -194,6 +194,91 @@ test.each([
     `.expectToMatchJsResult();
 });
 
+// Per-iteration binding for for-let (ES2015 semantics): each iteration's body runs
+// against a fresh binding that closures can capture independently, while mutations
+// made in the body still flow through to the incrementor.
+test("for let per-iteration binding in closures", () => {
+    util.testFunction`
+        const fns: (() => number)[] = [];
+        for (let i = 0; i < 4; i++) {
+            fns.push(() => i);
+        }
+        return fns.map(fn => fn());
+    `.expectToMatchJsResult();
+});
+
+test("for let mutation in body flows through incrementor", () => {
+    util.testFunction`
+        const results: number[] = [];
+        for (let i = 0; i < 10; i++) {
+            results.push(i);
+            if (i === 2) i = 8;
+        }
+        return results;
+    `.expectToMatchJsResult();
+});
+
+test("for let closure captures pre-incrementor mutation", () => {
+    util.testFunction`
+        const fns: (() => number)[] = [];
+        for (let i = 0; i < 10; i++) {
+            fns.push(() => i);
+            if (i === 2) i = 8;
+        }
+        return fns.map(f => f());
+    `.expectToMatchJsResult();
+});
+
+test("for let closure captures sibling const per iteration", () => {
+    util.testFunction`
+        const fns: (() => number)[] = [];
+        for (let i = 0; i < 3; i++) {
+            const x = i * 10;
+            fns.push(() => x + i);
+        }
+        return fns.map(f => f());
+    `.expectToMatchJsResult();
+});
+
+util.testEachVersion(
+    "for let mutation before continue flows through incrementor",
+    () => util.testFunction`
+        const fns: (() => number)[] = [];
+        for (let i = 0; i < 10; i++) {
+            fns.push(() => i);
+            if (i === 2) { i = 8; continue; }
+        }
+        return fns.map(f => f());
+    `,
+    util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+);
+
+test("for let mutation via synchronous IIFE", () => {
+    util.testFunction`
+        const results: number[] = [];
+        const fns: (() => number)[] = [];
+        for (let i = 0; i < 10; i++) {
+            fns.push(() => i);
+            results.push(i);
+            if (i === 2) (() => { i = 8; })();
+        }
+        return { results, captured: fns.map(f => f()) };
+    `.expectToMatchJsResult();
+});
+
+test("for let mutation via destructuring assignment", () => {
+    util.testFunction`
+        const results: number[] = [];
+        const fns: (() => number)[] = [];
+        for (let i = 0; i < 10; i++) {
+            fns.push(() => i);
+            results.push(i);
+            if (i === 2) [i] = [8];
+        }
+        return { results, captured: fns.map(f => f()) };
+    `.expectToMatchJsResult();
+});
+
 test("for scope", () => {
     util.testFunction`
         let i = 42;

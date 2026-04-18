@@ -816,6 +816,120 @@ describe("try/catch in async function", () => {
         });
     });
 
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1659
+    test("await inside catch handler resolves correctly (#1659)", () => {
+        util.testFunction`
+            let reject: (reason: string) => void = () => {};
+
+            async function failing() {
+                return new Promise((_, rej) => { reject = rej; });
+            }
+
+            async function run() {
+                try {
+                    await failing();
+                } catch (e) {
+                    log("catch");
+                    const a = await Promise.resolve(true);
+                    log("a", a);
+                }
+            }
+
+            run();
+            reject("error");
+
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual(["catch", "a", true]);
+    });
+
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1659
+    test("await inside finally handler resolves correctly (#1659)", () => {
+        util.testFunction`
+            let reject: (reason: string) => void = () => {};
+
+            async function failing() {
+                return new Promise((_, rej) => { reject = rej; });
+            }
+
+            async function run() {
+                try {
+                    await failing();
+                } finally {
+                    log("finally");
+                    const a = await Promise.resolve(true);
+                    log("a", a);
+                }
+            }
+
+            run().catch(() => {});
+            reject("error");
+
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual(["finally", "a", true]);
+    });
+
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1659
+    test("await inside both catch and finally handlers (#1659)", () => {
+        util.testFunction`
+            let reject: (reason: string) => void = () => {};
+
+            async function failing() {
+                return new Promise((_, rej) => { reject = rej; });
+            }
+
+            async function run() {
+                try {
+                    await failing();
+                } catch (e) {
+                    log("catch");
+                    const a = await Promise.resolve("caught");
+                    log("a", a);
+                } finally {
+                    log("finally");
+                    const b = await Promise.resolve("done");
+                    log("b", b);
+                }
+            }
+
+            run();
+            reject("error");
+
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual(["catch", "a", "caught", "finally", "b", "done"]);
+    });
+
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1659
+    test("awaited value in catch is returned from async function (#1659)", () => {
+        util.testFunction`
+            const failing = defer<string>();
+            const recovery = defer<string>();
+
+            async function run() {
+                try {
+                    await failing.promise;
+                    return "succeeded";
+                } catch (e) {
+                    return await recovery.promise;
+                }
+            }
+
+            run().then(value => log("result", value));
+
+            failing.reject("error");
+            recovery.resolve("recovered");
+
+            return allLogs;
+        `
+            .setTsHeader(promiseTestLib)
+            .expectToEqual(["result", "recovered"]);
+    });
+
     // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1706
     test("return inside try with deferred promise (#1706)", () => {
         util.testFunction`

@@ -22,6 +22,7 @@ function getCapturedLetNamesInFor(context: TransformationContext, statement: ts.
     if (letNames.length === 0) return [];
 
     const checker = context.checker;
+    const nameTexts = new Set(letNames.map(n => n.text));
     const targetSymbols = new Set<ts.Symbol>();
     for (const n of letNames) {
         const s = checker.getSymbolAtLocation(n);
@@ -32,20 +33,36 @@ function getCapturedLetNamesInFor(context: TransformationContext, statement: ts.
     const captured = new Set<ts.Symbol>();
 
     function visit(node: ts.Node, insideFunction: boolean): void {
-        const isFn =
-            ts.isFunctionExpression(node) ||
-            ts.isArrowFunction(node) ||
-            ts.isFunctionDeclaration(node) ||
-            ts.isMethodDeclaration(node) ||
-            ts.isGetAccessorDeclaration(node) ||
-            ts.isSetAccessorDeclaration(node) ||
-            ts.isConstructorDeclaration(node);
+        // A function literal that's the direct callee of a call expression is an IIFE —
+        // its closure doesn't outlive the iteration, so it doesn't need per-iter binding.
+        // Body references still hit the shared outer binding, which matches JS semantics
+        // since the IIFE runs synchronously within the current iteration.
+        const isEscapingFn =
+            (ts.isFunctionExpression(node) ||
+                ts.isArrowFunction(node) ||
+                ts.isFunctionDeclaration(node) ||
+                ts.isMethodDeclaration(node) ||
+                ts.isGetAccessorDeclaration(node) ||
+                ts.isSetAccessorDeclaration(node) ||
+                ts.isConstructorDeclaration(node)) &&
+            !isIIFECallee(node);
 
-        if (insideFunction && ts.isIdentifier(node)) {
+        // Fast path: skip the checker query for identifiers whose text can't match any
+        // bound name — avoids a symbol lookup on every identifier in the loop body.
+        if (insideFunction && ts.isIdentifier(node) && nameTexts.has(node.text)) {
             const sym = checker.getSymbolAtLocation(node);
             if (sym && targetSymbols.has(sym)) captured.add(sym);
         }
-        ts.forEachChild(node, c => visit(c, insideFunction || isFn));
+        ts.forEachChild(node, c => visit(c, insideFunction || isEscapingFn));
+    }
+
+    // `(fn)()` and `((fn))()` wrap the function in ParenthesizedExpression nodes,
+    // so walk up the paren chain before checking for the enclosing CallExpression.
+    function isIIFECallee(fn: ts.Node): boolean {
+        let outer: ts.Node = fn;
+        while (outer.parent && ts.isParenthesizedExpression(outer.parent)) outer = outer.parent;
+        const parent = outer.parent;
+        return parent !== undefined && ts.isCallExpression(parent) && parent.expression === outer;
     }
 
     visit(statement.statement, false);

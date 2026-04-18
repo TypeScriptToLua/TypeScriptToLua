@@ -357,6 +357,18 @@ test("for let closure capture through try/catch with mutation", () => {
     `.expectToMatchJsResult();
 });
 
+test("for let IIFE mutation is visible to rest of iteration", () => {
+    util.testFunction`
+        const results: number[] = [];
+        for (let i = 0; i < 4; i++) {
+            results.push(i);
+            (() => { i = i + 10; })();
+            results.push(i);
+        }
+        return results;
+    `.expectToMatchJsResult();
+});
+
 test("for scope", () => {
     util.testFunction`
         let i = 42;

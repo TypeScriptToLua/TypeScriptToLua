@@ -101,13 +101,16 @@ describe("execution order", () => {
         util.testFunction`
             const o = {a: "A", b: "B", c: "C"};
             let i = 0;
-            const literal = ${literal};
+            const literal: Record<string, unknown> = ${literal};
             const result: Record<string, unknown> = {};
             (Object.keys(result) as Array<number | string>).forEach(
                 key => { result[key.toString()] = literal[key]; }
             );
             return result;
-        `.expectToMatchJsResult();
+        `
+            // TS2783: duplicate property in spread — intentional, testing execution order
+            .ignoreDiagnostics([2783])
+            .expectToMatchJsResult();
     });
 
     test("object literal with computed property names", () => {

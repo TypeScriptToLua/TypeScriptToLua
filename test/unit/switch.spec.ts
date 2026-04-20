@@ -137,7 +137,7 @@ test("switch using variable re-declared in cases", () => {
         let foo: number = 0;
         switch (foo) {
             case 0:
-                let foo = true;
+                let foo: boolean | undefined = true;
             case 1:
                 return foo;
         }

@@ -94,8 +94,7 @@ test("Default Import and Export Expression", () => {
 
 test("Import and Export Assignment", () => {
     util.testModule`
-        // @ts-ignore
-        import * as m from "./module";
+        import m = require("./module");
         export const value = m;
     `
         .setOptions({ module: ts.ModuleKind.CommonJS })

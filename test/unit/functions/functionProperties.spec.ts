@@ -160,7 +160,7 @@ test("async arrow function with property assigned to variable", () => {
 
 test("call function with property using call method", () => {
     util.testFunction`
-        function foo(s: string) { return this + s; }
+        function foo(this: string, s: string) { return this + s; }
         foo.baz = "baz";
         return foo.call("foo", "bar") + foo.baz;
     `.expectToMatchJsResult();
@@ -168,7 +168,7 @@ test("call function with property using call method", () => {
 
 test("call function with property using apply method", () => {
     util.testFunction`
-        function foo(s: string) { return this + s; }
+        function foo(this: string, s: string) { return this + s; }
         foo.baz = "baz";
         return foo.apply("foo", ["bar"]) + foo.baz;
     `.expectToMatchJsResult();
@@ -176,7 +176,7 @@ test("call function with property using apply method", () => {
 
 test("call function with property using bind method", () => {
     util.testFunction`
-        function foo(s: string) { return this + s; }
+        function foo(this: string, s: string) { return this + s; }
         foo.baz = "baz";
         return foo.bind("foo", "bar")() + foo.baz;
     `.expectToMatchJsResult();

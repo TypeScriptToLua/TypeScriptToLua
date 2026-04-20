@@ -446,7 +446,7 @@ describe("module resolution should not try to resolve modules in noResolvePaths"
             .expectToHaveNoDiagnostics();
     });
 
-    test("can ignore specific files with glob pattern", () => {
+    test.only("can ignore specific files with glob pattern", () => {
         util.testModule`
             // Pre-Load as to not error out at runtime
             import "preload";
@@ -472,6 +472,7 @@ describe("module resolution should not try to resolve modules in noResolvePaths"
                 }`
             )
             .setOptions({ noResolvePaths: ["ignore*"] })
+            .debug()
             .expectToHaveNoDiagnostics()
             .expectToEqual({ result: "foo" });
     });

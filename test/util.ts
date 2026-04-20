@@ -460,14 +460,6 @@ export abstract class TestBuilder {
             this.injectLuaFile(L, lua, lauxlib, "lualib_bundle", readLuaLib(luaTarget));
         }
 
-        // Load extra lua files
-        for (const [fileName, fileContent] of Object.entries(this.extraFiles))
-        {
-            if (fileName.endsWith(".lua")) {
-                this.injectLuaFile(L, lua, lauxlib, fileName, fileContent);
-            }
-        }
-
         // Load all transpiled files into Lua's package cache
         const { transpiledFiles } = this.getLuaResult();
         for (const transpiledFile of transpiledFiles) {

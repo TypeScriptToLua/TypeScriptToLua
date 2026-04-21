@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.35.0
+## 1.36.0
 
 - **[Breaking]** Upgraded to TypeScript 6.0
   Thanks @RealColdFry for the following fixes:

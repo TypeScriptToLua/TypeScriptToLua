@@ -210,13 +210,9 @@ class ResolutionContext {
             if (resolvedNodeModulesFile) return resolvedNodeModulesFile;
         }
 
-        // Check if file is a file in the project
-        const resolvedPath = this.formatPathToFile(dependencyPath, requiringFile);
-        const fileFromPath = this.getFileFromPath(resolvedPath);
-        if (fileFromPath) return fileFromPath;
-
-        if (this.options.paths && this.options.baseUrl) {
-            // If no file found yet and paths are present, try to find project file via paths mappings
+        // Bare specifiers: check paths mappings first, matching TypeScript's resolution order.
+        // TS never applies paths to relative imports, so skip for those.
+        if (!ts.isExternalModuleNameRelative(dependencyPath) && this.options.paths && this.options.baseUrl) {
             const fileFromPaths = this.tryGetModuleNameFromPaths(
                 dependencyPath,
                 this.options.paths,
@@ -224,6 +220,11 @@ class ResolutionContext {
             );
             if (fileFromPaths) return fileFromPaths;
         }
+
+        // Check if file is a file in the project
+        const resolvedPath = this.formatPathToFile(dependencyPath, requiringFile);
+        const fileFromPath = this.getFileFromPath(resolvedPath);
+        if (fileFromPath) return fileFromPath;
 
         // Not a TS file in our project sources, use resolver to check if we can find dependency
         try {

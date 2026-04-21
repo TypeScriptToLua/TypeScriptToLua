@@ -5,7 +5,7 @@ import { FunctionVisitor, TransformationContext } from "../context";
 import { unsupportedForTarget, unsupportedForTargetButOverrideAvailable } from "../utils/diagnostics";
 import { createUnpackCall } from "../utils/lua-ast";
 import { transformLuaLibFunction } from "../utils/lualib";
-import { Scope, ScopeType } from "../utils/scope";
+import { findScope, LoopContinued, Scope, ScopeType } from "../utils/scope";
 import { isInAsyncFunction, isInGeneratorFunction } from "../utils/typescript";
 import { wrapInAsyncAwaiter } from "./async-await";
 import { transformScopeBlock } from "./block";
@@ -14,7 +14,7 @@ import { isInMultiReturnFunction } from "./language-extensions/multi";
 import { createReturnStatement } from "./return";
 
 const transformAsyncTry: FunctionVisitor<ts.TryStatement> = (statement, context) => {
-    const [tryBlock] = transformScopeBlock(context, statement.tryBlock, ScopeType.Try);
+    const [tryBlock, tryScope] = transformScopeBlock(context, statement.tryBlock, ScopeType.Try);
 
     if (
         (context.options.luaTarget === LuaTarget.Lua50 || context.options.luaTarget === LuaTarget.Lua51) &&
@@ -31,45 +31,116 @@ const transformAsyncTry: FunctionVisitor<ts.TryStatement> = (statement, context)
         return tryBlock.statements;
     }
 
-    // __TS__AsyncAwaiter(<catch block>)
+    // __TS__AsyncAwaiter(<try block>)
     const awaiter = wrapInAsyncAwaiter(context, tryBlock.statements, false);
     const awaiterIdentifier = lua.createIdentifier("____try");
     const awaiterDefinition = lua.createVariableDeclarationStatement(awaiterIdentifier, awaiter);
 
-    // local ____try = __TS__AsyncAwaiter(<catch block>)
-    const result: lua.Statement[] = [awaiterDefinition];
+    // Transform catch/finally and collect scope info before building the result
+    let catchScope: Scope | undefined;
+    const chainCalls: lua.Statement[] = [];
+
+    if (statement.catchClause) {
+        // ____try = ____try.catch(<catch function>)
+        const [catchFunction, cScope] = transformCatchClause(context, statement.catchClause);
+        catchScope = cScope;
+        if (catchFunction.params) {
+            catchFunction.params.unshift(lua.createAnonymousIdentifier());
+        }
+
+        const catchBodyStatements = catchFunction.body ? catchFunction.body.statements : [];
+        const asyncWrappedCatch = wrapInAsyncAwaiter(context, [...catchBodyStatements], false);
+        catchFunction.body = lua.createBlock([lua.createReturnStatement([asyncWrappedCatch])]);
+
+        const awaiterCatch = lua.createTableIndexExpression(awaiterIdentifier, lua.createStringLiteral("catch"));
+        const catchCall = lua.createCallExpression(awaiterCatch, [awaiterIdentifier, catchFunction]);
+        chainCalls.push(lua.createAssignmentStatement(lua.cloneIdentifier(awaiterIdentifier), catchCall));
+    }
 
     if (statement.finallyBlock) {
-        const awaiterFinally = lua.createTableIndexExpression(awaiterIdentifier, lua.createStringLiteral("finally"));
+        // ____try = ____try.finally(<finally function>)
+        const finallyStatements = context.transformStatements(statement.finallyBlock.statements);
+        const asyncWrappedFinally = wrapInAsyncAwaiter(context, finallyStatements, false);
         const finallyFunction = lua.createFunctionExpression(
-            lua.createBlock(context.transformStatements(statement.finallyBlock.statements))
+            lua.createBlock([lua.createReturnStatement([asyncWrappedFinally])])
         );
+
+        const awaiterFinally = lua.createTableIndexExpression(awaiterIdentifier, lua.createStringLiteral("finally"));
         const finallyCall = lua.createCallExpression(
             awaiterFinally,
             [awaiterIdentifier, finallyFunction],
             statement.finallyBlock
         );
-        // ____try.finally(<finally function>)
-        result.push(lua.createExpressionStatement(finallyCall));
+        chainCalls.push(lua.createAssignmentStatement(lua.cloneIdentifier(awaiterIdentifier), finallyCall));
     }
 
-    if (statement.catchClause) {
-        // ____try.catch(<catch function>)
-        const [catchFunction] = transformCatchClause(context, statement.catchClause);
-        if (catchFunction.params) {
-            catchFunction.params.unshift(lua.createAnonymousIdentifier());
+    // __TS__Await(____try)
+    const promiseAwait = transformLuaLibFunction(context, LuaLibFeature.Await, statement, awaiterIdentifier);
+    chainCalls.push(lua.createExpressionStatement(promiseAwait, statement));
+
+    const hasReturn = tryScope.asyncTryHasReturn ?? catchScope?.asyncTryHasReturn;
+    const hasBreak = tryScope.asyncTryHasBreak ?? catchScope?.asyncTryHasBreak;
+    const hasContinue = tryScope.asyncTryHasContinue ?? catchScope?.asyncTryHasContinue;
+
+    // Build result in output order: flag declarations, awaiter, chain calls, post-checks
+    const result: lua.Statement[] = [];
+
+    if (hasReturn || hasBreak || hasContinue !== undefined) {
+        const flagDecls: lua.Identifier[] = [];
+        if (hasReturn) {
+            flagDecls.push(lua.createIdentifier("____hasReturned"));
+            flagDecls.push(lua.createIdentifier("____returnValue"));
+        }
+        if (hasBreak) {
+            flagDecls.push(lua.createIdentifier("____hasBroken"));
+        }
+        if (hasContinue !== undefined) {
+            flagDecls.push(lua.createIdentifier("____hasContinued"));
+        }
+        result.push(lua.createVariableDeclarationStatement(flagDecls));
+    }
+
+    result.push(awaiterDefinition);
+    result.push(...chainCalls);
+
+    if (hasReturn) {
+        result.push(
+            lua.createIfStatement(
+                lua.createIdentifier("____hasReturned"),
+                lua.createBlock([createReturnStatement(context, [lua.createIdentifier("____returnValue")], statement)])
+            )
+        );
+    }
+
+    if (hasBreak) {
+        result.push(
+            lua.createIfStatement(lua.createIdentifier("____hasBroken"), lua.createBlock([lua.createBreakStatement()]))
+        );
+    }
+
+    if (hasContinue !== undefined) {
+        const loopScope = findScope(context, ScopeType.Loop);
+        const label = `__continue${loopScope?.id ?? ""}`;
+
+        const continueStatements: lua.Statement[] = [];
+        switch (hasContinue) {
+            case LoopContinued.WithGoto:
+                continueStatements.push(lua.createGotoStatement(label));
+                break;
+            case LoopContinued.WithContinue:
+                continueStatements.push(lua.createContinueStatement());
+                break;
+            case LoopContinued.WithRepeatBreak:
+                continueStatements.push(
+                    lua.createAssignmentStatement(lua.createIdentifier(label), lua.createBooleanLiteral(true))
+                );
+                continueStatements.push(lua.createBreakStatement());
+                break;
         }
 
-        const awaiterCatch = lua.createTableIndexExpression(awaiterIdentifier, lua.createStringLiteral("catch"));
-        const catchCall = lua.createCallExpression(awaiterCatch, [awaiterIdentifier, catchFunction]);
-
-        // await ____try.catch(<catch function>)
-        const promiseAwait = transformLuaLibFunction(context, LuaLibFeature.Await, statement, catchCall);
-        result.push(lua.createExpressionStatement(promiseAwait, statement));
-    } else {
-        // await ____try
-        const promiseAwait = transformLuaLibFunction(context, LuaLibFeature.Await, statement, awaiterIdentifier);
-        result.push(lua.createExpressionStatement(promiseAwait, statement));
+        result.push(
+            lua.createIfStatement(lua.createIdentifier("____hasContinued"), lua.createBlock(continueStatements))
+        );
     }
 
     return result;
@@ -159,18 +230,19 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
         result.push(...context.transformStatements(statement.finallyBlock));
     }
 
-    // Re-throw error if try had no catch but had a finally
+    // Re-throw error if try had no catch but had a finally.
+    // On pcall failure the error is the second return value, which lands in
+    // ____hasReturned (when functionReturned) or ____error (otherwise).
     if (!statement.catchClause && statement.finallyBlock) {
         const notTryCondition = lua.createUnaryExpression(
             lua.cloneIdentifier(tryResultIdentifier),
             lua.SyntaxKind.NotOperator
         );
-        const errorIdentifier = lua.createIdentifier("____error");
+        const errorIdentifier = tryScope.functionReturned
+            ? lua.cloneIdentifier(returnedIdentifier)
+            : lua.createIdentifier("____error");
         const rethrow = lua.createExpressionStatement(
-            lua.createCallExpression(lua.createIdentifier("error"), [
-                lua.cloneIdentifier(errorIdentifier),
-                lua.createNumericLiteral(0),
-            ])
+            lua.createCallExpression(lua.createIdentifier("error"), [errorIdentifier, lua.createNumericLiteral(0)])
         );
         result.push(lua.createIfStatement(notTryCondition, lua.createBlock([rethrow])));
     }

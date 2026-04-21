@@ -12,7 +12,7 @@ import { createCallableTable, isFunctionTypeWithProperties } from "./function";
 import { transformIdentifier } from "./identifier";
 import { isMultiReturnCall } from "./language-extensions/multi";
 import { transformPropertyName } from "./literal";
-import { moveToPrecedingTemp } from "./expression-list";
+import { moveToPrecedingTemp, transformExpressionList } from "./expression-list";
 
 export function transformArrayBindingElement(
     context: TransformationContext,
@@ -205,7 +205,7 @@ export function transformBindingVariableDeclaration(
             // Don't unpack array literals
             const values =
                 initializer.elements.length > 0
-                    ? initializer.elements.map(e => context.transformExpression(e))
+                    ? transformExpressionList(context, initializer.elements)
                     : lua.createNilLiteral();
             statements.push(...createLocalOrExportedOrGlobalDeclaration(context, vars, values, initializer));
         } else {

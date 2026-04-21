@@ -212,17 +212,23 @@ test.each(["42", "undefined"])("prototype call on nullable number (%p)", value =
 });
 
 test.each([
-    "Number.NEGATIVE_INFINITY <= Number.MIN_VALUE",
-    "Number.MIN_VALUE <= Number.MIN_SAFE_INTEGER",
-
-    "Number.MAX_SAFE_INTEGER <= Number.MAX_VALUE",
-    "Number.MAX_VALUE <= Number.POSITIVE_INFINITY",
+    // Full ordering: NEG_INF < MIN_SAFE < 0 < MIN_VALUE < EPSILON < MAX_SAFE < MAX_VALUE < POS_INF
+    "Number.NEGATIVE_INFINITY < Number.MIN_SAFE_INTEGER",
     "Number.MIN_SAFE_INTEGER < 0",
-
-    "0 < Number.EPSILON",
+    "0 < Number.MIN_VALUE",
+    "Number.MIN_VALUE < Number.EPSILON",
     "Number.EPSILON < Number.MAX_SAFE_INTEGER",
-])("Numer constants have correct relative sizes (%p)", comparison => {
-    util.testExpression(comparison).expectToEqual(true);
+    "Number.MAX_SAFE_INTEGER < Number.MAX_VALUE",
+    "Number.MAX_VALUE < Number.POSITIVE_INFINITY",
+
+    // Verify specific values
+    "Number.MIN_VALUE > 0",
+    "Number.MIN_SAFE_INTEGER === -(2**53 - 1)",
+    "Number.MAX_SAFE_INTEGER === 2**53 - 1",
+    "Number.MAX_SAFE_INTEGER + 1 !== Number.MAX_SAFE_INTEGER",
+    "Number.MIN_SAFE_INTEGER - 1 !== Number.MIN_SAFE_INTEGER",
+])("Number constants have correct relative sizes (%p)", comparison => {
+    util.testExpression(comparison).expectToMatchJsResult();
 });
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1629

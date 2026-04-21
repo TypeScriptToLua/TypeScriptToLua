@@ -1,0 +1,9 @@
+{
+    "compilerOptions": {
+        "rootDir": "..",
+        "outDir": "dist",
+        "paths": {
+            "alias": ["../other/alias"]
+        }
+    }
+}

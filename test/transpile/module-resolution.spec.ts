@@ -707,6 +707,18 @@ test("supports complicated paths configuration", () => {
         .expectToEqual({ foo: 314, bar: 271 });
 });
 
+test("paths mapping wins over sibling project file (TS resolution order)", () => {
+    const baseProjectPath = path.resolve(__dirname, "module-resolution", "paths-vs-project-file");
+    const projectPath = path.join(baseProjectPath, "program");
+    const projectTsConfig = path.join(projectPath, "tsconfig.json");
+    const mainFile = path.join(projectPath, "main.ts");
+
+    util.testProject(projectTsConfig)
+        .setMainFileName(mainFile)
+        .setOptions({ luaBundle: "bundle.lua", luaBundleEntry: mainFile })
+        .expectToEqual({ value: "paths-mapped" });
+});
+
 test("module resolution using plugin", () => {
     const baseProjectPath = path.resolve(__dirname, "module-resolution", "project-with-module-resolution-plugin");
     const projectTsConfig = path.join(baseProjectPath, "tsconfig.json");

@@ -8,8 +8,7 @@
         // TODO: Remove after TS 6 migration
         // `baseUrl` is deprecated in TS 6 and planned to be completely
         // removed in TS 7
-        "baseUrl": ".",
-        "ignoreDeprecations": "6.0"
+        "baseUrl": "."
         // End of TODO block
     }
 }

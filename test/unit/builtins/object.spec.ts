@@ -10,6 +10,16 @@ test.each([
     util.testExpression`Object.assign(${util.formatCode(initial)}, ${argsString})`.expectToMatchJsResult();
 });
 
+test.each([
+    "Object.assign({}, false)",
+    "Object.assign({}, null)",
+    "Object.assign({}, undefined)",
+    "Object.assign({}, null, undefined)",
+    "Object.assign({ a: 1 }, false, { b: 2 })",
+])("Object.assign skips non-object sources (%p)", expression => {
+    util.testExpression(expression).expectToMatchJsResult();
+});
+
 test.each([{}, { abc: 3 }, { abc: 3, def: "xyz" }])("Object.entries (%p)", obj => {
     const testBuilder = util.testExpressionTemplate`Object.entries(${obj})`;
     // Need custom matcher because order is not guaranteed in neither JS nor Lua

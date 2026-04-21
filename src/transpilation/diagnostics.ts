@@ -55,3 +55,9 @@ export const cannotBundleLibrary = createDiagnosticFactory(
 );
 
 export const unsupportedJsxEmit = createDiagnosticFactory(() => 'JSX is only supported with "react" jsx option.');
+
+export const emitPathCollision = createDiagnosticFactory(
+    (outputPath: string, file1: string, file2: string) =>
+        `Output path '${outputPath}' is used by both '${file1}' and '${file2}'. ` +
+        `Dots in file/directory names are replaced with underscores for Lua module resolution.`
+);

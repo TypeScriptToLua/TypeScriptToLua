@@ -52,17 +52,13 @@ exports[`ambient identifier must be a valid lua identifier ("enum $$ {}"): code 
 
 exports[`ambient identifier must be a valid lua identifier ("enum $$ {}"): diagnostics 1`] = `"main.ts(3,9): error TSTL: Invalid ambient identifier name '$$$'. Ambient identifiers must be valid lua identifiers."`;
 
-exports[`ambient identifier must be a valid lua identifier ("function $$();"): code 1`] = `"local ____ = _____24_24_24"`;
+exports[`ambient identifier must be a valid lua identifier ("function $$(): void;"): code 1`] = `"local ____ = _____24_24_24"`;
 
-exports[`ambient identifier must be a valid lua identifier ("function $$();"): diagnostics 1`] = `"main.ts(3,9): error TSTL: Invalid ambient identifier name '$$$'. Ambient identifiers must be valid lua identifiers."`;
+exports[`ambient identifier must be a valid lua identifier ("function $$(): void;"): diagnostics 1`] = `"main.ts(3,9): error TSTL: Invalid ambient identifier name '$$$'. Ambient identifiers must be valid lua identifiers."`;
 
 exports[`ambient identifier must be a valid lua identifier ("let $$: any;"): code 1`] = `"local ____ = _____24_24_24"`;
 
 exports[`ambient identifier must be a valid lua identifier ("let $$: any;"): diagnostics 1`] = `"main.ts(3,9): error TSTL: Invalid ambient identifier name '$$$'. Ambient identifiers must be valid lua identifiers."`;
-
-exports[`ambient identifier must be a valid lua identifier ("module $$ { export const bar: any; }"): code 1`] = `"local ____ = _____24_24_24"`;
-
-exports[`ambient identifier must be a valid lua identifier ("module $$ { export const bar: any; }"): diagnostics 1`] = `"main.ts(3,9): error TSTL: Invalid ambient identifier name '$$$'. Ambient identifiers must be valid lua identifiers."`;
 
 exports[`ambient identifier must be a valid lua identifier ("namespace $$ { export const bar: any; }"): code 1`] = `"local ____ = _____24_24_24"`;
 

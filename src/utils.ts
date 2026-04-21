@@ -77,7 +77,7 @@ export function cast<TOriginal, TCast extends TOriginal>(
 }
 
 export function assert(value: any, message?: string | Error): asserts value {
-    nativeAssert(value, message);
+    nativeAssert.ok(value, message);
 }
 
 export function assertNever(_value: never): never {

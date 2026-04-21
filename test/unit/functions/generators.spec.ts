@@ -27,7 +27,7 @@ test(".next()", () => {
 
 test(".next() with parameters", () => {
     util.testFunction`
-        function* generator() {
+        function* generator(): Generator<number, number, number> {
             return yield 0;
         }
 

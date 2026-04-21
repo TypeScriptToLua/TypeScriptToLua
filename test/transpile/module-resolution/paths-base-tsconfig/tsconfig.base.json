@@ -2,6 +2,7 @@
     "compilerOptions": {
         "rootDir": ".",
         "baseUrl": ".",
+        "ignoreDeprecations": "6.0",
         "paths": {
             "mypackage": ["packages/mypackage/src/index.ts"],
             "mypackage/*": ["packages/mypackage/src/*"]

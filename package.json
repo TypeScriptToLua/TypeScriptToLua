@@ -31,7 +31,7 @@
         "lint:prettier": "prettier --check . || (echo 'Run `npm run fix:prettier` to fix it.' && exit 1)",
         "lint:eslint": "eslint .",
         "fix:prettier": "prettier --write .",
-        "check:language-extensions": "tsc --strict language-extensions/index.d.ts",
+        "check:language-extensions": "tsc --strict --ignoreConfig language-extensions/index.d.ts",
         "preversion": "npm run build && npm test",
         "postversion": "git push && git push --tags"
     },
@@ -42,7 +42,7 @@
         "node": ">=16.10.0"
     },
     "peerDependencies": {
-        "typescript": "5.9.3"
+        "typescript": "6.0.2"
     },
     "dependencies": {
         "@typescript-to-lua/language-extensions": "1.19.0",
@@ -58,18 +58,18 @@
         "@types/node": "^22.10.0",
         "@types/picomatch": "^2.3.0",
         "@types/resolve": "1.14.0",
-        "eslint": "^9.22.0",
-        "eslint-plugin-jest": "^28.8.3",
+        "eslint": "^9.39.4",
+        "eslint-plugin-jest": "^28.14.0",
         "fs-extra": "^8.1.0",
         "javascript-stringify": "^2.0.1",
-        "jest": "^29.5.0",
+        "jest": "^29.7.0",
         "jest-circus": "^29.7.0",
         "lua-types": "^2.14.1",
         "lua-wasm-bindings": "^0.5.3",
         "prettier": "^2.8.8",
-        "ts-jest": "^29.2.5",
+        "ts-jest": "^29.4.9",
         "ts-node": "^10.9.2",
-        "typescript": "5.9.3",
-        "typescript-eslint": "^8.46.3"
+        "typescript": "6.0.2",
+        "typescript-eslint": "^8.58.0"
     }
 }

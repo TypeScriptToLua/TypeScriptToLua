@@ -3,7 +3,7 @@
 exports[`forin[Array]: code 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local array = {}
+    local array = {1, 2, 3}
     for key in pairs(array) do
     end
 end

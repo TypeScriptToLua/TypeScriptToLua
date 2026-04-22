@@ -100,7 +100,7 @@ test("set has false", () => {
 
 test("set has null", () => {
     util.testFunction`
-        let myset = new Set(["a", "c"]);
+        let myset = new Set<string | null>(["a", "c"]);
         return myset.has(null);
     `.expectToMatchJsResult();
 });

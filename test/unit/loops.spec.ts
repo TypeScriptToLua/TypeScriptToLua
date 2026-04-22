@@ -383,7 +383,7 @@ test.each([
     },
 ])("forin[Object] (%p)", ({ inp }) => {
     util.testFunctionTemplate`
-        let objTest = ${inp};
+        let objTest: Record<string, number> = ${inp};
         for (let key in objTest) {
             objTest[key] = objTest[key] + 1;
         }
@@ -393,7 +393,7 @@ test.each([
 
 test("forin[Array]", () => {
     util.testFunction`
-        const array = [];
+        const array = [1,2,3];
         for (const key in array) {}
     `.expectDiagnosticsToMatchSnapshot([forbiddenForIn.code]);
 });
@@ -413,7 +413,7 @@ test.each(
     )
 )("forin with continue (%s %p)", (luaTarget, { inp }) => {
     util.testFunctionTemplate`
-            let obj = ${inp};
+            let obj: Record<string, number> = ${inp};
             for (let i in obj) {
                 if (obj[i] % 2 == 0) {
                     continue;

@@ -84,7 +84,7 @@ describe.each(["replace", "replaceAll"])("string.%s", method => {
     test.each(testCases)("function replacer %p", ({ inp, searchValue, replaceValue }) => {
         util.testFunction`
             const result = {
-                args: [],
+                args: [] as string[],
                 string: ""
             }
             function replacer(...args: any[]): string {

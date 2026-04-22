@@ -74,7 +74,7 @@ test("weakMap has null", () => {
     util.testFunction`
         ${initRefsTs}
         let mymap = new WeakMap([[{}, true]]);
-        return mymap.has(null);
+        return mymap.has(null as any);
     `.expectToMatchJsResult();
 });
 

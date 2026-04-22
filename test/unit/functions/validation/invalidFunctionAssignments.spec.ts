@@ -96,7 +96,7 @@ test.each(invalidTestFunctionAssignments)(
     (testFunction, functionType, isSelfConversion) => {
         util.testModule`
             ${testFunction.definition ?? ""}
-            declare function takesFunction(fn: ${functionType});
+            declare function takesFunction(fn: ${functionType}): void;
             takesFunction(${testFunction.value});
         `.expectDiagnosticsToMatchSnapshot(
             [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
@@ -110,7 +110,7 @@ test.each(invalidTestMethodAssignments)(
     (testFunction, functionType, isSelfConversion) => {
         util.testModule`
             ${testFunction.definition ?? ""}
-            declare function takesObjectWithMethod(obj: { fn: ${functionType} });
+            declare function takesObjectWithMethod(obj: { fn: ${functionType} }): void;
             takesObjectWithMethod({fn: ${testFunction.value}});
         `.expectDiagnosticsToMatchSnapshot(
             [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
@@ -130,7 +130,7 @@ test("Invalid lua lib function argument", () => {
 test.each(invalidTestFunctionCasts)("Invalid function argument with cast (%p)", (testFunction, castedFunction) => {
     util.testModule`
         ${testFunction.definition ?? ""}
-        declare function takesFunction(fn: typeof ${testFunction.value});
+        declare function takesFunction(fn: typeof ${testFunction.value}): void;
         takesFunction(${castedFunction});
     `.expectDiagnosticsToMatchSnapshot(
         [unsupportedNoSelfFunctionConversion.code, unsupportedSelfFunctionConversion.code],
@@ -143,7 +143,7 @@ test.each(invalidTestFunctionAssignments)(
     (testFunction, functionType, isSelfConversion) => {
         util.testModule`
             ${testFunction.definition ?? ""}
-            declare function takesFunction<T extends ${functionType}>(fn: T);
+            declare function takesFunction<T extends ${functionType}>(fn: T): void;
             takesFunction(${testFunction.value});
         `.expectDiagnosticsToMatchSnapshot(
             [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],

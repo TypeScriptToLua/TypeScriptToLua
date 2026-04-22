@@ -27,7 +27,7 @@ interface ResolutionResult {
 }
 
 class ResolutionContext {
-    private noResolvePaths: picomatch.Matcher[];
+    private noResolvePaths: picomatch.Glob[];
 
     public diagnostics: ts.Diagnostic[] = [];
     public resolvedFiles = new Map<string, ProcessedFile>();
@@ -38,9 +38,7 @@ class ResolutionContext {
         private readonly emitHost: EmitHost,
         private readonly plugins: Plugin[]
     ) {
-        const unique = [...new Set(options.noResolvePaths)];
-        const matchers = unique.map(x => picomatch(x));
-        this.noResolvePaths = matchers;
+        this.noResolvePaths = [...new Set(options.noResolvePaths)];
     }
 
     public addAndResolveDependencies(file: ProcessedFile): void {
@@ -73,7 +71,7 @@ class ResolutionContext {
             return;
         }
 
-        if (this.noResolvePaths.find(isMatch => isMatch(required.requirePath))) {
+        if (this.noResolvePaths.find(glob => picomatch.isMatch(required.requirePath, glob))) {
             if (this.options.tstlVerbose) {
                 console.log(
                     `Skipping module resolution of ${required.requirePath} as it is in the tsconfig noResolvePaths.`
@@ -215,14 +213,16 @@ class ResolutionContext {
         const fileFromPath = this.getFileFromPath(resolvedPath);
         if (fileFromPath) return fileFromPath;
 
-        if (this.options.paths && this.options.baseUrl) {
+        if (this.options.paths) {
             // If no file found yet and paths are present, try to find project file via paths mappings
-            const fileFromPaths = this.tryGetModuleNameFromPaths(
-                dependencyPath,
-                this.options.paths,
-                this.options.baseUrl
-            );
-            if (fileFromPaths) return fileFromPaths;
+            // When baseUrl is not set, resolve paths relative to the tsconfig directory (TS 6.0+ behavior)
+            const pathsBase =
+                this.options.baseUrl ??
+                (this.options.configFilePath ? path.dirname(this.options.configFilePath) : undefined);
+            if (pathsBase) {
+                const fileFromPaths = this.tryGetModuleNameFromPaths(dependencyPath, this.options.paths, pathsBase);
+                if (fileFromPaths) return fileFromPaths;
+            }
         }
 
         // Not a TS file in our project sources, use resolver to check if we can find dependency

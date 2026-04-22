@@ -79,7 +79,7 @@ test.each([
 
 test("Function expression type inference in object literal assigned to narrower type", () => {
     util.testFunction`
-        let foo: {} = {bar: s => s};
+        let foo: {} = {bar: (s: string) => s};
         return (foo as {bar: (a: any) => any}).bar("foobar");
     `.expectToMatchJsResult();
 });

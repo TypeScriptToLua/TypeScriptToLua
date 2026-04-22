@@ -251,7 +251,7 @@ describe.each(iterationMethods)("map.%s() handles mutation", iterationMethod => 
 describe("Map.groupBy", () => {
     test("empty", () => {
         util.testFunction`
-            const array = [];
+            const array: number[] = [];
 
             const map = Map.groupBy(array, (num, index) => {
                 return num % 2 === 0 ? "even": "odd";

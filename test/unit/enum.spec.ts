@@ -4,7 +4,7 @@ import * as util from "../util";
 const serializeEnum = (identifier: string) => `(() => {
     const mappedTestEnum: any = {};
     for (const key in ${identifier}) {
-        mappedTestEnum[(key as any).toString()] = ${identifier}[key];
+        mappedTestEnum[(key as any).toString()] = (${identifier} as any)[key];
     }
     return mappedTestEnum;
 })()`;

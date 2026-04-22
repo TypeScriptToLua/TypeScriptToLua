@@ -4,7 +4,6 @@
         "lib": ["es2019"],
         "types": ["node"],
         "module": "commonjs",
-        "experimentalDecorators": true,
 
         "rootDir": "src",
         "outDir": "dist",

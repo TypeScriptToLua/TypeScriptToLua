@@ -27,7 +27,7 @@ interface ResolutionResult {
 }
 
 class ResolutionContext {
-    private noResolvePaths: picomatch.Matcher[];
+    private noResolvePaths: picomatch.Glob[];
 
     public diagnostics: ts.Diagnostic[] = [];
     public resolvedFiles = new Map<string, ProcessedFile>();
@@ -38,9 +38,7 @@ class ResolutionContext {
         private readonly emitHost: EmitHost,
         private readonly plugins: Plugin[]
     ) {
-        const unique = [...new Set(options.noResolvePaths)];
-        const matchers = unique.map(x => picomatch(x));
-        this.noResolvePaths = matchers;
+        this.noResolvePaths = [...new Set(options.noResolvePaths)];
     }
 
     public addAndResolveDependencies(file: ProcessedFile): void {
@@ -73,7 +71,7 @@ class ResolutionContext {
             return;
         }
 
-        if (this.noResolvePaths.find(isMatch => isMatch(required.requirePath))) {
+        if (this.noResolvePaths.find(glob => picomatch.isMatch(required.requirePath, glob))) {
             if (this.options.tstlVerbose) {
                 console.log(
                     `Skipping module resolution of ${required.requirePath} as it is in the tsconfig noResolvePaths.`
@@ -212,13 +210,15 @@ class ResolutionContext {
 
         // Bare specifiers: check paths mappings first, matching TypeScript's resolution order.
         // TS never applies paths to relative imports, so skip for those.
-        if (!ts.isExternalModuleNameRelative(dependencyPath) && this.options.paths && this.options.baseUrl) {
-            const fileFromPaths = this.tryGetModuleNameFromPaths(
-                dependencyPath,
-                this.options.paths,
-                this.options.baseUrl
-            );
-            if (fileFromPaths) return fileFromPaths;
+        if (!ts.isExternalModuleNameRelative(dependencyPath) && this.options.paths) {
+            // When baseUrl is not set, resolve paths relative to the tsconfig directory (TS 6.0+ behavior)
+            const pathsBase =
+                this.options.baseUrl ??
+                (this.options.configFilePath ? path.dirname(this.options.configFilePath) : undefined);
+            if (pathsBase) {
+                const fileFromPaths = this.tryGetModuleNameFromPaths(dependencyPath, this.options.paths, pathsBase);
+                if (fileFromPaths) return fileFromPaths;
+            }
         }
 
         // Check if file is a file in the project

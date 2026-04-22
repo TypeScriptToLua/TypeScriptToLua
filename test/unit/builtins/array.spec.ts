@@ -325,7 +325,7 @@ test.each([
     { array: [0, 2, 4, 8], predicate: "false" },
 ])("array.find (%p)", ({ array, predicate }) => {
     util.testFunction`
-        const array = ${util.formatCode(array)};
+        const array: number[] = ${util.formatCode(array)};
         return array.find((elem, index, arr) => ${predicate} && arr[index] === elem);
     `.expectToMatchJsResult();
 });
@@ -337,7 +337,7 @@ test.each([
     { array: [0, 2, 4, 8], searchElement: 8 },
 ])("array.findIndex (%p)", ({ array, searchElement }) => {
     util.testFunction`
-        const array = ${util.formatCode(array)};
+        const array: number[] = ${util.formatCode(array)};
         return array.findIndex((elem, index, arr) => elem === ${searchElement} && arr[index] === elem);
     `.expectToMatchJsResult();
 });
@@ -421,9 +421,16 @@ test.each([
     { array: [0, 1, 2, 3], start: 1, deleteCount: undefined },
     { array: [0, 1, 2, 3], start: 1, deleteCount: null },
 ])("array.splice (%p)", ({ array, start, deleteCount, newElements = [] }) => {
+    const deleteCountCode =
+        deleteCount === undefined
+            ? "undefined as any"
+            : deleteCount === null
+            ? "null as any"
+            : util.formatCode(deleteCount);
+    const newElementsCode = newElements.length > 0 ? ", " + util.formatCode(...newElements) : "";
     util.testFunction`
-        const array = ${util.formatCode(array)};
-        array.splice(${util.formatCode(start, deleteCount, ...newElements)});
+        const array: number[] = ${util.formatCode(array)};
+        array.splice(${util.formatCode(start)}, ${deleteCountCode}${newElementsCode});
         return array;
     `.expectToMatchJsResult();
 });
@@ -510,8 +517,11 @@ test("array.join without separator argument", () => {
     util.testExpression`["test1", "test2"].join()`.expectToMatchJsResult();
 });
 
+test("array.indexOf empty array", () => {
+    util.testExpression`([] as string[]).indexOf("test1")`.expectToMatchJsResult();
+});
+
 test.each([
-    { array: [], args: ["test1"] },
     { array: ["test1"], args: ["test1"] },
     { array: ["test1", "test2"], args: ["test2"] },
     { array: ["test1", "test2", "test3"], args: ["test3", 1] },
@@ -571,7 +581,7 @@ test.each([{ array: [1, 2, 3] }, { array: [1, 2, 3, 4] }, { array: [1] }, { arra
     "array.reverse (%p)",
     ({ array }) => {
         util.testFunction`
-            const array = ${util.formatCode(array)};
+            const array: number[] = ${util.formatCode(array)};
             array.reverse();
             return array;
         `.expectToMatchJsResult();
@@ -580,7 +590,7 @@ test.each([{ array: [1, 2, 3] }, { array: [1, 2, 3, 4] }, { array: [1] }, { arra
 
 test.each([{ array: [1, 2, 3] }, { array: [1] }, { array: [] }])("array.shift (%p)", ({ array }) => {
     util.testFunction`
-        const array = ${util.formatCode(array)};
+        const array: number[] = ${util.formatCode(array)};
         const value = array.shift();
         return { array, value };
     `.expectToMatchJsResult();
@@ -593,7 +603,7 @@ test.each([
     { array: [], args: [1] },
 ])("array.unshift (%p)", ({ array, args }) => {
     util.testFunction`
-        const array = ${util.formatCode(array)};
+        const array: number[] = ${util.formatCode(array)};
         const value = array.unshift(${util.formatCode(...args)});
         return { array, value };
     `.expectToMatchJsResult();
@@ -601,7 +611,7 @@ test.each([
 
 test.each([{ array: [4, 5, 3, 2, 1] }, { array: [1] }, { array: [] }])("array.sort (%p)", ({ array }) => {
     util.testFunctionTemplate`
-        const array = ${array};
+        const array: number[] = ${array};
         array.sort();
         return array;
     `.expectToMatchJsResult();
@@ -659,7 +669,7 @@ describe.each(["reduce", "reduceRight"])("array.%s", reduce => {
     });
 
     test("empty no initial", () => {
-        util.testExpression`[].${reduce}(() => {})`.expectToMatchJsResult(true);
+        util.testExpression`([] as any[]).${reduce}(() => {})`.expectToMatchJsResult(true);
     });
 
     test("undefined returning callback", () => {
@@ -675,7 +685,7 @@ test.each([{ array: [] }, { array: ["a", "b", "c"] }, { array: [{ foo: "foo" }, 
     "array.entries (%p)",
     ({ array }) => {
         util.testFunction`
-            const array = ${util.formatCode(array)};
+            const array: any[] = ${util.formatCode(array)};
             const result = [];
             for (const [i, v] of array.entries()) {
                 result.push([i, v]);
@@ -800,9 +810,12 @@ test.each([
 });
 
 describe("array.fill", () => {
-    test.each(["[]", "[1]", "[1,2,3,4]"])("Fills full length of array without other parameters (%p)", arr => {
-        util.testExpression`${arr}.fill(5)`.expectToMatchJsResult();
-    });
+    test.each(["([] as number[])", "[1]", "[1,2,3,4]"])(
+        "Fills full length of array without other parameters (%p)",
+        arr => {
+            util.testExpression`${arr}.fill(5)`.expectToMatchJsResult();
+        }
+    );
 
     test.each(["[1,2,3]", "[1,2,3,4,5,6]"])("Fills starting from start parameter (%p)", arr => {
         util.testExpression`${arr}.fill(5, 3)`.expectToMatchJsResult();

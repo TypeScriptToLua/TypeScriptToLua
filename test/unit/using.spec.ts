@@ -116,7 +116,7 @@ test("using disposes even when error happens", () => {
 
 test("await using disposes object with await at end of function", () => {
     util.testModule`
-        let disposeAsync;
+        let disposeAsync: (() => void) | undefined;
 
         function loggedAsyncDisposable(id: string): AsyncDisposable {
             logs.push(\`Creating \${id}\`);
@@ -145,7 +145,7 @@ test("await using disposes object with await at end of function", () => {
 
         logs.push("function returned");
 
-        disposeAsync();
+        disposeAsync!();
     `
         .setTsHeader(usingTestLib)
         .setOptions({ luaLibImport: LuaLibImportKind.Inline })
@@ -194,10 +194,30 @@ test("await using no extra diagnostics (#1571)", () => {
     `.expectToHaveNoDiagnostics();
 });
 
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1622
+test("await-using with nested async arrow that also has await-using (runtime divergence)", () => {
+    util.testFunction`
+        const logs: any[] = [];
+        async function getA(): Promise<AsyncDisposable> {
+            return { [Symbol.asyncDispose]: async () => {} };
+        }
+        async function outer(): Promise<number> {
+            await using a = await getA();
+            const inner = async (): Promise<number> => {
+                await using b = await getA();
+                return 42;
+            };
+            return inner();
+        }
+        outer().then(v => logs.push(v));
+        return logs;
+    `.expectToEqual([42]);
+});
+
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1584
 test("works with disposable classes (#1584)", () => {
     util.testFunction`
-        const log = [];
+        const log: string[] = [];
         
         class Scoped {
             action(): void {

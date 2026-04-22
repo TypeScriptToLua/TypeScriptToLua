@@ -42,6 +42,7 @@ test("Destructuring assignment of LuaMultiReturn returning nil", () => {
         export {a, b};
     `
         .withLanguageExtensions()
+        .setOptions({ strict: false })
         .expectToEqual({ a: undefined, b: [] });
 });
 
@@ -58,7 +59,7 @@ test.each<[string, any]>([
 });
 
 const multiFunction = `
-function multi(...args) {
+function multi(...args: unknown[]) {
     return $multi(...args);
 }
 `;
@@ -71,9 +72,9 @@ const createCasesThatCall = (name: string): Array<[string, any]> => [
     [`const [a = 1] = ${name}(2)`, 2],
     [`const ar = [1]; const [a] = ${name}(...ar)`, 1],
     [`const _ = null, [a] = ${name}(1)`, 1],
-    [`let a; for (const [a] = ${name}(1, 2); false; 1) {}`, undefined],
-    [`let a; for ([a] = ${name}(1, 2); false; 1) {}`, 1],
-    [`let a; if ([a] = ${name}(1)) { ++a; }`, 2],
+    [`let a: any; for (const [a] = ${name}(1, 2); false; 1) {}`, undefined],
+    [`let a: any; for ([a] = ${name}(1, 2); false; 1) {}`, 1],
+    [`let a: any; if ([a] = ${name}(1)) { ++a; }`, 2],
 ];
 
 test.each<[string, any]>(createCasesThatCall("$multi"))("invalid direct $multi function use (%s)", statement => {
@@ -272,7 +273,7 @@ test("return $multi from try", () => {
             } catch {
             }
         }
-        const [_, a] = multiTest();
+        const [_, a] = multiTest()!;
         return a;
     `
         .withLanguageExtensions()
@@ -304,7 +305,7 @@ test("return LuaMultiReturn from try", () => {
             } catch {
             }
         }
-        const [_, a] = multiTest();
+        const [_, a] = multiTest()!;
         return a;
     `
         .withLanguageExtensions()

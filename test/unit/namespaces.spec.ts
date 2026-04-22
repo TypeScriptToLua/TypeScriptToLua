@@ -1,15 +1,5 @@
 import * as util from "../util";
 
-test("legacy internal module syntax", () => {
-    util.testModule`
-        module Foo {
-            export const foo = "bar";
-        }
-
-        export const foo = Foo.foo;
-    `.expectToMatchJsResult();
-});
-
 test("global scoping", () => {
     util.testFunction("return a.foo();")
         .setTsHeader('namespace a { export function foo() { return "bar"; } }')
@@ -42,7 +32,7 @@ test("context in namespace function", () => {
     util.testModule`
         namespace a {
             export const foo = "foo";
-            export function bar() { return this.foo + "bar"; }
+            export function bar(this: typeof a) { return this.foo + "bar"; }
         }
 
         export const result = a.bar();

@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.36.0
+
+- **[Breaking]** Upgraded to TypeScript 6.0
+  Thanks @RealColdFry for the following fixes:
+- Fixed many bugs with try/catch/finally
+  - Also fixed some bugs with try/catch/finally in promises
+- Fixed a bug where collection iterators would not correctly update when the collection updated
+- No longer generate dead code after `break` statements
+- Fixed a bug where math.atan2 was incorrectly used instead of math.atan for Lua 5.4
+- Fixed some inconsistencies with number constants (Number.MAX_SAFE_INTEGER, Number.MIN_VALUE, etc)
+- Fixed a bug with the `>>>` operator for Lua 5.3
+- Fixed incorrect side effects for array destructors
+- Fixed broken code when generating requires for files with `.` in the file name (e.g. `foo.tests.ts`), now the periods will be translated to `_`
+- Fixed some incorrect handling of synthetic nodes
+- Fixed a bug where object spread could lead to incorrect code being generated
+- Fixed a bug with Object.defineProperty sharing values accross object instances
+
 ## 1.34.0
 
 - Added support for the Lua 5.5 target (it mostly does the same as the 5.4 target for now)

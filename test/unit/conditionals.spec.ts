@@ -75,7 +75,7 @@ test.each([
 ])("Ternary operator (%p)", ({ input, options }) => {
     util.testFunction`
         const literalValue = "literal";
-        let variableValue: string;
+        let variableValue: string = "variable";
         let maybeBooleanValue: string | boolean = false;
         let maybeUndefinedValue: string | undefined;
         return ${input};

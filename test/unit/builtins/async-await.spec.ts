@@ -1,7 +1,11 @@
 import { ModuleKind, ScriptTarget } from "typescript";
 import { LuaTarget } from "../../../src";
-import { unsupportedForTargetButOverrideAvailable } from "../../../src/transformation/utils/diagnostics";
-import { awaitMustBeInAsyncFunction } from "../../../src/transformation/utils/diagnostics";
+import {
+    awaitMustBeInAsyncFunction,
+    unsupportedAsyncGenerator,
+    unsupportedForAwaitOf,
+    unsupportedForTargetButOverrideAvailable,
+} from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
 const promiseTestLib = `
@@ -1122,4 +1126,29 @@ describe("try/catch in async function", () => {
             .setTsHeader(promiseTestLib)
             .expectToEqual(["finally", "ok"]);
     });
+});
+
+describe("async generators are unsupported", () => {
+    test.each([
+        "async function* gen() { yield 1; }",
+        "const gen = async function*() { yield 1; };",
+        "const gen = { async *m() { yield 1; } };",
+        "class C { async *m() { yield 1; } }",
+    ])("diagnoses %p", source => {
+        util.testModule`
+            ${source}
+            export {}
+        `.expectToHaveDiagnostics([unsupportedAsyncGenerator.code]);
+    });
+});
+
+test("for-await-of is unsupported", () => {
+    util.testModule`
+        async function run(items: AsyncIterable<number>) {
+            for await (const x of items) {
+                void x;
+            }
+        }
+        export {}
+    `.expectToHaveDiagnostics([unsupportedForAwaitOf.code]);
 });

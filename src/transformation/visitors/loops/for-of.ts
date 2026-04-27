@@ -11,6 +11,7 @@ import {
 import { isRangeFunction, transformRangeStatement } from "../language-extensions/range";
 import { transformForInitializer, transformLoopBody } from "./utils";
 import { getIterableExtensionKindForNode, IterableExtensionKind } from "../../utils/language-extensions";
+import { unsupportedForAwaitOf } from "../../utils/diagnostics";
 import { assertNever } from "../../../utils";
 
 function transformForOfArrayStatement(
@@ -43,6 +44,10 @@ function transformForOfIteratorStatement(
 }
 
 export const transformForOfStatement: FunctionVisitor<ts.ForOfStatement> = (node, context) => {
+    if (node.awaitModifier) {
+        context.diagnostics.push(unsupportedForAwaitOf(node.awaitModifier));
+    }
+
     const body = lua.createBlock(transformLoopBody(context, node));
 
     if (ts.isCallExpression(node.expression) && isRangeFunction(context, node.expression)) {

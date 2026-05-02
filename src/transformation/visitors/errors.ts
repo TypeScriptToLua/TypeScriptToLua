@@ -4,7 +4,7 @@ import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { unsupportedForTarget, unsupportedForTargetButOverrideAvailable } from "../utils/diagnostics";
 import { createUnpackCall } from "../utils/lua-ast";
-import { transformLuaLibFunction } from "../utils/lualib";
+import { importLuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { findScope, LoopContinued, Scope, ScopeType } from "../utils/scope";
 import { isInAsyncFunction, isInGeneratorFunction } from "../utils/typescript";
 import { wrapInAsyncAwaiter } from "./async-await";
@@ -171,8 +171,22 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
     const returnedIdentifier = lua.createIdentifier("____hasReturned");
     let returnCondition: lua.Expression | undefined;
 
-    const pCall = lua.createIdentifier("pcall");
-    const tryCall = lua.createCallExpression(pCall, [lua.createFunctionExpression(tryBlock)]);
+    // On Lua 5.5 (and Universal, which must work on 5.5), a `nil` error object
+    // is replaced by a string when it propagates out of a protected call. To
+    // preserve `throw undefined` semantics, route through xpcall with a message
+    // handler that wraps nil into a sentinel, and unwrap before the user catch.
+    const wrapErrorObjects =
+        context.options.luaTarget === LuaTarget.Lua55 || context.options.luaTarget === LuaTarget.Universal;
+    if (wrapErrorObjects) {
+        importLuaLibFeature(context, LuaLibFeature.ErrorObject);
+    }
+
+    const tryCall = wrapErrorObjects
+        ? lua.createCallExpression(lua.createIdentifier("xpcall"), [
+              lua.createFunctionExpression(tryBlock),
+              lua.createIdentifier("__TS__WrapErrorObject"),
+          ])
+        : lua.createCallExpression(lua.createIdentifier("pcall"), [lua.createFunctionExpression(tryBlock)]);
 
     if (statement.catchClause && statement.catchClause.block.statements.length > 0) {
         // try with catch
@@ -192,9 +206,14 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
         }
         result.push(lua.createVariableDeclarationStatement(tryReturnIdentifiers, tryCall));
 
+        const catchArg = wrapErrorObjects
+            ? lua.createCallExpression(lua.createIdentifier("__TS__UnwrapErrorObject"), [
+                  lua.cloneIdentifier(returnedIdentifier),
+              ])
+            : lua.cloneIdentifier(returnedIdentifier);
         const catchCall = lua.createCallExpression(
             catchIdentifier,
-            statement.catchClause.variableDeclaration ? [lua.cloneIdentifier(returnedIdentifier)] : []
+            statement.catchClause.variableDeclaration ? [catchArg] : []
         );
         const catchCallStatement = hasReturn
             ? lua.createAssignmentStatement(

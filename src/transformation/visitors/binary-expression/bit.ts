@@ -87,7 +87,8 @@ export function transformBinaryBitOperation(
                 );
             }
             // TS `>>` is arithmetic on int32; Lua 5.3+ has no native equivalent. Sign-extend the
-            // low 32 bits to a 64-bit signed value, then floor-divide by 2^right.
+            // low 32 bits to a 64-bit signed value, then floor-divide by 2^(right & 31). Masking
+            // the shift amount matches JS, which only uses the low 5 bits of the right operand.
             if (operator === ts.SyntaxKind.GreaterThanGreaterThanToken) {
                 const masked = lua.createBinaryExpression(
                     left,
@@ -107,9 +108,15 @@ export function transformBinaryBitOperation(
                     lua.SyntaxKind.SubtractionOperator,
                     node
                 );
+                const shiftAmount = lua.createBinaryExpression(
+                    right,
+                    lua.createNumericLiteral(31, node),
+                    lua.SyntaxKind.BitwiseAndOperator,
+                    node
+                );
                 const divisor = lua.createBinaryExpression(
                     lua.createNumericLiteral(1, node),
-                    right,
+                    lua.createParenthesizedExpression(shiftAmount, node),
                     lua.SyntaxKind.BitwiseLeftShiftOperator,
                     node
                 );

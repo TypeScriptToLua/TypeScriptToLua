@@ -132,7 +132,22 @@ for (const expression of ["-5 >>> 0", "-1 >>> 0", "1 >>> 0", "-1 >>> 16", "255 >
 }
 
 // Execution tests: verify >> produces correct results matching JS semantics
-for (const expression of ["-8 >> 1", "-1 >> 0", "-1 >> 16", "0x7FFFFFFF >> 0", "255 >> 4", "5 >> 1"]) {
+for (const expression of [
+    "-8 >> 1",
+    "-1 >> 0",
+    "-1 >> 16",
+    "0x7FFFFFFF >> 0",
+    "255 >> 4",
+    "5 >> 1",
+    "-1 >> 31",
+    "0x7FFFFFFF >> 31",
+    "0x80000000 >> 31",
+    "1 >> 31",
+    "-8 >> 32",
+    "1 >> 32",
+    "-8 >> 33",
+    "-1 >> 63",
+]) {
     util.testEachVersion(`Signed right shift execution (${expression})`, () => util.testExpression(expression), {
         [tstl.LuaTarget.Universal]: false,
         [tstl.LuaTarget.Lua50]: false, // No bit library in WASM runtime

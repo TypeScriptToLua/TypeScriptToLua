@@ -374,7 +374,7 @@ return ____exports"
 
 exports[`Bitop [5.3] ("a>>=b") 1`] = `
 "local ____exports = {}
-a = (((a & 4294967295) ~ 2147483648) - 2147483648) // (1 << b)
+a = (((a & 4294967295) ~ 2147483648) - 2147483648) // (1 << (b & 31))
 ____exports.__result = a
 return ____exports"
 `;
@@ -394,7 +394,7 @@ return ____exports"
 
 exports[`Bitop [5.3] ("a>>b") 1`] = `
 "local ____exports = {}
-____exports.__result = (((a & 4294967295) ~ 2147483648) - 2147483648) // (1 << b)
+____exports.__result = (((a & 4294967295) ~ 2147483648) - 2147483648) // (1 << (b & 31))
 return ____exports"
 `;
 
@@ -458,7 +458,7 @@ return ____exports"
 
 exports[`Bitop [5.4] ("a>>=b") 1`] = `
 "local ____exports = {}
-a = (((a & 4294967295) ~ 2147483648) - 2147483648) // (1 << b)
+a = (((a & 4294967295) ~ 2147483648) - 2147483648) // (1 << (b & 31))
 ____exports.__result = a
 return ____exports"
 `;
@@ -478,7 +478,7 @@ return ____exports"
 
 exports[`Bitop [5.4] ("a>>b") 1`] = `
 "local ____exports = {}
-____exports.__result = (((a & 4294967295) ~ 2147483648) - 2147483648) // (1 << b)
+____exports.__result = (((a & 4294967295) ~ 2147483648) - 2147483648) // (1 << (b & 31))
 return ____exports"
 `;
 
@@ -542,7 +542,7 @@ return ____exports"
 
 exports[`Bitop [5.5] ("a>>=b") 1`] = `
 "local ____exports = {}
-a = (((a & 4294967295) ~ 2147483648) - 2147483648) // (1 << b)
+a = (((a & 4294967295) ~ 2147483648) - 2147483648) // (1 << (b & 31))
 ____exports.__result = a
 return ____exports"
 `;
@@ -562,7 +562,7 @@ return ____exports"
 
 exports[`Bitop [5.5] ("a>>b") 1`] = `
 "local ____exports = {}
-____exports.__result = (((a & 4294967295) ~ 2147483648) - 2147483648) // (1 << b)
+____exports.__result = (((a & 4294967295) ~ 2147483648) - 2147483648) // (1 << (b & 31))
 return ____exports"
 `;
 

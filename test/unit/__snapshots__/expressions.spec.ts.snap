@@ -372,13 +372,6 @@ ____exports.__result = a << b
 return ____exports"
 `;
 
-exports[`Bitop [5.3] ("a>>=b") 1`] = `
-"local ____exports = {}
-a = (((a & 4294967295) ~ 2147483648) - 2147483648) // (1 << (b & 31))
-____exports.__result = a
-return ____exports"
-`;
-
 exports[`Bitop [5.3] ("a>>>=b") 1`] = `
 "local ____exports = {}
 a = (a & 4294967295) >> b
@@ -389,12 +382,6 @@ return ____exports"
 exports[`Bitop [5.3] ("a>>>b") 1`] = `
 "local ____exports = {}
 ____exports.__result = (a & 4294967295) >> b
-return ____exports"
-`;
-
-exports[`Bitop [5.3] ("a>>b") 1`] = `
-"local ____exports = {}
-____exports.__result = (((a & 4294967295) ~ 2147483648) - 2147483648) // (1 << (b & 31))
 return ____exports"
 `;
 
@@ -456,13 +443,6 @@ ____exports.__result = a << b
 return ____exports"
 `;
 
-exports[`Bitop [5.4] ("a>>=b") 1`] = `
-"local ____exports = {}
-a = (((a & 4294967295) ~ 2147483648) - 2147483648) // (1 << (b & 31))
-____exports.__result = a
-return ____exports"
-`;
-
 exports[`Bitop [5.4] ("a>>>=b") 1`] = `
 "local ____exports = {}
 a = (a & 4294967295) >> b
@@ -473,12 +453,6 @@ return ____exports"
 exports[`Bitop [5.4] ("a>>>b") 1`] = `
 "local ____exports = {}
 ____exports.__result = (a & 4294967295) >> b
-return ____exports"
-`;
-
-exports[`Bitop [5.4] ("a>>b") 1`] = `
-"local ____exports = {}
-____exports.__result = (((a & 4294967295) ~ 2147483648) - 2147483648) // (1 << (b & 31))
 return ____exports"
 `;
 
@@ -540,13 +514,6 @@ ____exports.__result = a << b
 return ____exports"
 `;
 
-exports[`Bitop [5.5] ("a>>=b") 1`] = `
-"local ____exports = {}
-a = (((a & 4294967295) ~ 2147483648) - 2147483648) // (1 << (b & 31))
-____exports.__result = a
-return ____exports"
-`;
-
 exports[`Bitop [5.5] ("a>>>=b") 1`] = `
 "local ____exports = {}
 a = (a & 4294967295) >> b
@@ -557,12 +524,6 @@ return ____exports"
 exports[`Bitop [5.5] ("a>>>b") 1`] = `
 "local ____exports = {}
 ____exports.__result = (a & 4294967295) >> b
-return ____exports"
-`;
-
-exports[`Bitop [5.5] ("a>>b") 1`] = `
-"local ____exports = {}
-____exports.__result = (((a & 4294967295) ~ 2147483648) - 2147483648) // (1 << (b & 31))
 return ____exports"
 `;
 
@@ -787,3 +748,37 @@ exports[`Undefined Expression 1`] = `
 ____exports.__result = nil
 return ____exports"
 `;
+
+exports[`Unsupported bitop 5.3 ("a>>=b"): code 1`] = `
+"local ____exports = {}
+a = a >> b
+____exports.__result = a
+return ____exports"
+`;
+
+exports[`Unsupported bitop 5.3 ("a>>=b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Right shift operator is not supported for target Lua 5.3. Use \`>>>\` instead."`;
+
+exports[`Unsupported bitop 5.3 ("a>>b"): code 1`] = `
+"local ____exports = {}
+____exports.__result = a >> b
+return ____exports"
+`;
+
+exports[`Unsupported bitop 5.3 ("a>>b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Right shift operator is not supported for target Lua 5.3. Use \`>>>\` instead."`;
+
+exports[`Unsupported bitop 5.4 ("a>>=b"): code 1`] = `
+"local ____exports = {}
+a = a >> b
+____exports.__result = a
+return ____exports"
+`;
+
+exports[`Unsupported bitop 5.4 ("a>>=b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Right shift operator is not supported for target Lua 5.3. Use \`>>>\` instead."`;
+
+exports[`Unsupported bitop 5.4 ("a>>b"): code 1`] = `
+"local ____exports = {}
+____exports.__result = a >> b
+return ____exports"
+`;
+
+exports[`Unsupported bitop 5.4 ("a>>b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Right shift operator is not supported for target Lua 5.3. Use \`>>>\` instead."`;

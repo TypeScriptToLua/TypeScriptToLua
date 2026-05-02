@@ -3,7 +3,7 @@ import { LuaTarget } from "../../../CompilerOptions";
 import * as lua from "../../../LuaAST";
 import { assertNever } from "../../../utils";
 import { TransformationContext } from "../../context";
-import { unsupportedForTarget } from "../../utils/diagnostics";
+import { unsupportedForTarget, unsupportedRightShiftOperator } from "../../utils/diagnostics";
 
 export type BitOperator = ts.ShiftOperator | ts.BitwiseOperator;
 export const isBitOperator = (operator: ts.BinaryOperator): operator is BitOperator =>
@@ -33,12 +33,11 @@ function transformBinaryBitLibOperation(
     );
 }
 
-type NonShiftRightBitOperator = Exclude<
-    BitOperator,
-    ts.SyntaxKind.GreaterThanGreaterThanToken | ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken
->;
-
-function transformBitOperatorToLuaOperator(operator: NonShiftRightBitOperator): lua.BinaryOperator {
+function transformBitOperatorToLuaOperator(
+    context: TransformationContext,
+    node: ts.Node,
+    operator: BitOperator
+): lua.BinaryOperator {
     switch (operator) {
         case ts.SyntaxKind.BarToken:
             return lua.SyntaxKind.BitwiseOrOperator;
@@ -48,6 +47,11 @@ function transformBitOperatorToLuaOperator(operator: NonShiftRightBitOperator): 
             return lua.SyntaxKind.BitwiseAndOperator;
         case ts.SyntaxKind.LessThanLessThanToken:
             return lua.SyntaxKind.BitwiseLeftShiftOperator;
+        case ts.SyntaxKind.GreaterThanGreaterThanToken:
+            context.diagnostics.push(unsupportedRightShiftOperator(node));
+            return lua.SyntaxKind.BitwiseRightShiftOperator;
+        case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
+            return lua.SyntaxKind.BitwiseRightShiftOperator;
     }
 }
 
@@ -71,7 +75,8 @@ export function transformBinaryBitOperation(
         case LuaTarget.Lua52:
             return transformBinaryBitLibOperation(node, left, right, operator, "bit32");
         default:
-            // TS `>>>` is logical on int32; Lua 5.3+ `>>` is logical on 64-bit. Mask to 32 bits first.
+            // Lua 5.3+ `>>` is arithmetic (sign-extending), but TS `>>>` is logical (zero-fill).
+            // Emit `(left & 0xFFFFFFFF) >> right` to convert to unsigned 32-bit first.
             if (operator === ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken) {
                 const mask = lua.createBinaryExpression(
                     left,
@@ -86,48 +91,7 @@ export function transformBinaryBitOperation(
                     node
                 );
             }
-            // TS `>>` is arithmetic on int32; Lua 5.3+ has no native equivalent. Sign-extend the
-            // low 32 bits to a 64-bit signed value, then floor-divide by 2^(right & 31). Masking
-            // the shift amount matches JS, which only uses the low 5 bits of the right operand.
-            if (operator === ts.SyntaxKind.GreaterThanGreaterThanToken) {
-                const masked = lua.createBinaryExpression(
-                    left,
-                    lua.createNumericLiteral(0xffffffff, node),
-                    lua.SyntaxKind.BitwiseAndOperator,
-                    node
-                );
-                const xored = lua.createBinaryExpression(
-                    lua.createParenthesizedExpression(masked, node),
-                    lua.createNumericLiteral(0x80000000, node),
-                    lua.SyntaxKind.BitwiseExclusiveOrOperator,
-                    node
-                );
-                const signed = lua.createBinaryExpression(
-                    lua.createParenthesizedExpression(xored, node),
-                    lua.createNumericLiteral(0x80000000, node),
-                    lua.SyntaxKind.SubtractionOperator,
-                    node
-                );
-                const shiftAmount = lua.createBinaryExpression(
-                    right,
-                    lua.createNumericLiteral(31, node),
-                    lua.SyntaxKind.BitwiseAndOperator,
-                    node
-                );
-                const divisor = lua.createBinaryExpression(
-                    lua.createNumericLiteral(1, node),
-                    lua.createParenthesizedExpression(shiftAmount, node),
-                    lua.SyntaxKind.BitwiseLeftShiftOperator,
-                    node
-                );
-                return lua.createBinaryExpression(
-                    lua.createParenthesizedExpression(signed, node),
-                    lua.createParenthesizedExpression(divisor, node),
-                    lua.SyntaxKind.FloorDivisionOperator,
-                    node
-                );
-            }
-            const luaOperator = transformBitOperatorToLuaOperator(operator);
+            const luaOperator = transformBitOperatorToLuaOperator(context, node, operator);
             return lua.createBinaryExpression(left, right, luaOperator, node);
     }
 }

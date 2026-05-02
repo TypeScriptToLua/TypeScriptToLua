@@ -81,6 +81,10 @@ export const unsupportedAccessorInObjectLiteral = createErrorDiagnosticFactory(
     "Accessors in object literal are not supported."
 );
 
+export const unsupportedRightShiftOperator = createErrorDiagnosticFactory(
+    "Right shift operator is not supported for target Lua 5.3. Use `>>>` instead."
+);
+
 const getLuaTargetName = (version: LuaTarget) => (version === LuaTarget.LuaJIT ? "LuaJIT" : `Lua ${version}`);
 export const unsupportedForTarget = createErrorDiagnosticFactory(
     (functionality: string, version: LuaTarget) =>

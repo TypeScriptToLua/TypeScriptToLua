@@ -65,6 +65,46 @@ test("@noSelf on static class methods with string key access", () => {
     `.expectLuaToMatchSnapshot();
 });
 
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1661
+test("@noSelf on interface with call signature removes context argument", () => {
+    util.testModule`
+        /** @noSelf */
+        interface CallSignature {
+            (): void;
+        }
+        const func: CallSignature = () => {};
+        func();
+    `.expectLuaToMatchSnapshot();
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1661
+test("@noSelf on parent interface applies to property with interface call-signature type", () => {
+    util.testModule`
+        /** @noSelf */
+        interface CallSignature {
+            (): void;
+        }
+        /** @noSelf */
+        interface DemoType {
+            func: CallSignature;
+        }
+        const demo: DemoType = { func: () => {} };
+        demo.func();
+    `.expectLuaToMatchSnapshot();
+});
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1661
+test("@noSelf on parent interface applies to property with type-literal call signature", () => {
+    util.testModule`
+        /** @noSelf */
+        interface DemoType {
+            func: { (): void };
+        }
+        const demo: DemoType = { func: () => {} };
+        demo.func();
+    `.expectLuaToMatchSnapshot();
+});
+
 // additional coverage for https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1292
 test("explicit this parameter respected over @noSelf", () => {
     util.testModule`

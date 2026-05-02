@@ -4,6 +4,7 @@
 // protected calls through `xpcall` with a message handler that wraps nil into
 // this sentinel table (Lua 5.5 only mangles nil, not other values), and unwrap
 // on the catch side.
+// See: https://www.lua.org/manual/5.5/manual.html#8.1
 const ____TS__NilErrorObject: any = {};
 
 export function __TS__WrapErrorObject(this: void, value: any): any {

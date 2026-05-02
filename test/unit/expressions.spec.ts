@@ -1,5 +1,5 @@
 import * as tstl from "../../src";
-import { unsupportedForTarget, unsupportedRightShiftOperator } from "../../src/transformation/utils/diagnostics";
+import { unsupportedForTarget } from "../../src/transformation/utils/diagnostics";
 import * as util from "../util";
 
 test.each([
@@ -49,9 +49,22 @@ test.each(["a+=b", "a-=b", "a*=b", "a/=b", "a%=b", "a**=b"])("Binary expressions
     `.expectToMatchJsResult();
 });
 
-const supportedInAll = ["~a", "a&b", "a&=b", "a|b", "a|=b", "a^b", "a^=b", "a<<b", "a<<=b", "a>>>b", "a>>>=b"];
-const unsupportedIn53And54 = ["a>>b", "a>>=b"];
-const allBinaryOperators = [...supportedInAll, ...unsupportedIn53And54];
+const supportedInAll = [
+    "~a",
+    "a&b",
+    "a&=b",
+    "a|b",
+    "a|=b",
+    "a^b",
+    "a^=b",
+    "a<<b",
+    "a<<=b",
+    "a>>b",
+    "a>>=b",
+    "a>>>b",
+    "a>>>=b",
+];
+const allBinaryOperators = supportedInAll;
 test.each(allBinaryOperators)("Bitop [5.0] (%p)", input => {
     // Bit operations not supported in 5.0, expect an exception
     util.testExpression(input)
@@ -103,20 +116,6 @@ test.each(supportedInAll)("Bitop [5.5] (%p)", input => {
         .expectLuaToMatchSnapshot();
 });
 
-test.each(unsupportedIn53And54)("Unsupported bitop 5.3 (%p)", input => {
-    util.testExpression(input)
-        .setOptions({ luaTarget: tstl.LuaTarget.Lua53, luaLibImport: tstl.LuaLibImportKind.None })
-        .disableSemanticCheck()
-        .expectDiagnosticsToMatchSnapshot([unsupportedRightShiftOperator.code]);
-});
-
-test.each(unsupportedIn53And54)("Unsupported bitop 5.4 (%p)", input => {
-    util.testExpression(input)
-        .setOptions({ luaTarget: tstl.LuaTarget.Lua54, luaLibImport: tstl.LuaLibImportKind.None })
-        .disableSemanticCheck()
-        .expectDiagnosticsToMatchSnapshot([unsupportedRightShiftOperator.code]);
-});
-
 // Execution tests: verify >>> produces correct results matching JS semantics
 for (const expression of ["-5 >>> 0", "-1 >>> 0", "1 >>> 0", "-1 >>> 16", "255 >>> 4"]) {
     util.testEachVersion(`Unsigned right shift execution (${expression})`, () => util.testExpression(expression), {
@@ -124,6 +123,21 @@ for (const expression of ["-5 >>> 0", "-1 >>> 0", "1 >>> 0", "-1 >>> 16", "255 >
         [tstl.LuaTarget.Lua50]: false, // No bit library in WASM runtime
         [tstl.LuaTarget.Lua51]: false, // No bit library in WASM runtime
         [tstl.LuaTarget.Lua52]: builder => builder.expectToMatchJsResult(),
+        [tstl.LuaTarget.Lua53]: builder => builder.expectToMatchJsResult(),
+        [tstl.LuaTarget.Lua54]: builder => builder.expectToMatchJsResult(),
+        [tstl.LuaTarget.Lua55]: builder => builder.expectToMatchJsResult(),
+        [tstl.LuaTarget.LuaJIT]: false, // Can't execute LuaJIT in tests
+        [tstl.LuaTarget.Luau]: false,
+    });
+}
+
+// Execution tests: verify >> produces correct results matching JS semantics
+for (const expression of ["-8 >> 1", "-1 >> 0", "-1 >> 16", "0x7FFFFFFF >> 0", "255 >> 4", "5 >> 1"]) {
+    util.testEachVersion(`Signed right shift execution (${expression})`, () => util.testExpression(expression), {
+        [tstl.LuaTarget.Universal]: false,
+        [tstl.LuaTarget.Lua50]: false, // No bit library in WASM runtime
+        [tstl.LuaTarget.Lua51]: false, // No bit library in WASM runtime
+        [tstl.LuaTarget.Lua52]: false, // bit32.arshift returns uint32, not int32
         [tstl.LuaTarget.Lua53]: builder => builder.expectToMatchJsResult(),
         [tstl.LuaTarget.Lua54]: builder => builder.expectToMatchJsResult(),
         [tstl.LuaTarget.Lua55]: builder => builder.expectToMatchJsResult(),

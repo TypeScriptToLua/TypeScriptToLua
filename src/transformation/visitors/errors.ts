@@ -176,8 +176,9 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
     // preserve `throw undefined` semantics, route through xpcall with a message
     // handler that wraps nil into a sentinel, and unwrap before the user catch.
     // See: https://www.lua.org/manual/5.5/manual.html#8.1
-    const wrapErrorObjects =
-        context.options.luaTarget === LuaTarget.Lua55 || context.options.luaTarget === LuaTarget.Universal;
+    // const wrapErrorObjects =
+    //     context.options.luaTarget === LuaTarget.Lua55 || context.options.luaTarget === LuaTarget.Universal;
+    const wrapErrorObjects = false;
     if (wrapErrorObjects) {
         importLuaLibFeature(context, LuaLibFeature.ErrorObject);
     }

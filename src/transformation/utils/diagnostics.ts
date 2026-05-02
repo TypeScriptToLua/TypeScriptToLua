@@ -82,7 +82,7 @@ export const unsupportedAccessorInObjectLiteral = createErrorDiagnosticFactory(
 );
 
 export const unsupportedRightShiftOperator = createErrorDiagnosticFactory(
-    "Right shift operator is not supported for target Lua 5.3. Use `>>>` instead."
+    "Signed right shift `>>` is not supported on Lua 5.3+: Lua's native `>>` is logical (zero-fill) on 64-bit integers, with no built-in arithmetic shift. Use `>>>` if you don't need sign extension, or write your own helper."
 );
 
 const getLuaTargetName = (version: LuaTarget) => (version === LuaTarget.LuaJIT ? "LuaJIT" : `Lua ${version}`);

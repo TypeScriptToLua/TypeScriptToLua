@@ -33,7 +33,12 @@ function transformBinaryBitLibOperation(
     );
 }
 
-function transformBitOperatorToLuaOperator(operator: BitOperator): lua.BinaryOperator {
+type NonShiftRightBitOperator = Exclude<
+    BitOperator,
+    ts.SyntaxKind.GreaterThanGreaterThanToken | ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken
+>;
+
+function transformBitOperatorToLuaOperator(operator: NonShiftRightBitOperator): lua.BinaryOperator {
     switch (operator) {
         case ts.SyntaxKind.BarToken:
             return lua.SyntaxKind.BitwiseOrOperator;
@@ -43,9 +48,6 @@ function transformBitOperatorToLuaOperator(operator: BitOperator): lua.BinaryOpe
             return lua.SyntaxKind.BitwiseAndOperator;
         case ts.SyntaxKind.LessThanLessThanToken:
             return lua.SyntaxKind.BitwiseLeftShiftOperator;
-        case ts.SyntaxKind.GreaterThanGreaterThanToken:
-        case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
-            return lua.SyntaxKind.BitwiseRightShiftOperator;
     }
 }
 

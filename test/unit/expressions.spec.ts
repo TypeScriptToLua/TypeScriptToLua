@@ -160,6 +160,20 @@ for (const code of ["let a = -5; a >>>= 0; return a;", "let a = -1; a >>>= 16; r
     });
 }
 
+for (const code of ["let a = -8; a >>= 1; return a;", "let a = -1; a >>= 16; return a;"]) {
+    util.testEachVersion(`Signed right shift assignment execution (${code})`, () => util.testFunction(code), {
+        [tstl.LuaTarget.Universal]: false,
+        [tstl.LuaTarget.Lua50]: false, // No bit library in WASM runtime
+        [tstl.LuaTarget.Lua51]: false, // No bit library in WASM runtime
+        [tstl.LuaTarget.Lua52]: false, // bit32.arshift returns uint32, not int32
+        [tstl.LuaTarget.Lua53]: builder => builder.expectToMatchJsResult(),
+        [tstl.LuaTarget.Lua54]: builder => builder.expectToMatchJsResult(),
+        [tstl.LuaTarget.Lua55]: builder => builder.expectToMatchJsResult(),
+        [tstl.LuaTarget.LuaJIT]: false, // Can't execute LuaJIT in tests
+        [tstl.LuaTarget.Luau]: false,
+    });
+}
+
 test.each(["1+1", "-1+1", "1*30+4", "1*(3+4)", "1*(3+4*2)", "10-(4+5)"])(
     "Binary expressions ordering parentheses (%p)",
     input => {

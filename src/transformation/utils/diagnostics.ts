@@ -145,6 +145,10 @@ export const awaitMustBeInAsyncFunction = createErrorDiagnosticFactory(
     "Await can only be used inside async functions."
 );
 
+export const unsupportedAsyncGenerator = createErrorDiagnosticFactory("Async generator functions are not supported.");
+
+export const unsupportedForAwaitOf = createErrorDiagnosticFactory("'for await...of' loops are not supported.");
+
 export const unsupportedBuiltinOptionalCall = createErrorDiagnosticFactory(
     "Optional calls are not supported for builtin or language extension functions."
 );

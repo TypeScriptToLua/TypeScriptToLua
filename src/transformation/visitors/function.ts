@@ -16,6 +16,7 @@ import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { transformInPrecedingStatementScope } from "../utils/preceding-statements";
 import { peekScope, performHoisting, Scope, ScopeType } from "../utils/scope";
 import { isFunctionType } from "../utils/typescript";
+import { unsupportedAsyncGenerator } from "../utils/diagnostics";
 import { isAsyncFunction, wrapInAsyncAwaiter } from "./async-await";
 import { transformIdentifier } from "./identifier";
 import { transformExpressionBodyToReturnStatement } from "./return";
@@ -223,6 +224,10 @@ export function transformFunctionToExpression(
     node: ts.FunctionLikeDeclaration
 ): [lua.Expression, Scope] {
     assert(node.body);
+
+    if (node.asteriskToken && isAsyncFunction(node)) {
+        context.diagnostics.push(unsupportedAsyncGenerator(node));
+    }
 
     const type = context.checker.getTypeAtLocation(node);
     let functionContext: lua.Identifier | undefined;

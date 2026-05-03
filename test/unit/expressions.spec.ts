@@ -146,6 +146,26 @@ for (const code of ["let a = -5; a >>>= 0; return a;", "let a = -1; a >>>= 16; r
     });
 }
 
+// Known bugs in << and >>> lowering on Lua 5.2/5.3+ (separate from PR #1721 / issue #1720):
+//   - `<<` does not truncate the result to int32 (e.g. `1 << 31` returns 2147483648, not -2147483648).
+//   - `<<` and `>>>` do not mask the shift amount to 5 bits like JS does.
+// These tests are marked `failing` to document the divergence; remove `.failing` once fixed.
+const knownBuggyTargets = [tstl.LuaTarget.Lua52, tstl.LuaTarget.Lua53, tstl.LuaTarget.Lua54, tstl.LuaTarget.Lua55];
+for (const expression of ["1 << 31", "0xFFFF << 16", "1 << 30 << 1", "1 << 32", "5 << 33"]) {
+    for (const target of knownBuggyTargets) {
+        test.failing(`Left shift execution (${expression}) [${target}]`, () => {
+            util.testExpression(expression).setOptions({ luaTarget: target }).expectToMatchJsResult();
+        });
+    }
+}
+for (const expression of ["1 >>> 32", "5 >>> 33", "-1 >>> 32"]) {
+    for (const target of knownBuggyTargets) {
+        test.failing(`Unsigned right shift count masking (${expression}) [${target}]`, () => {
+            util.testExpression(expression).setOptions({ luaTarget: target }).expectToMatchJsResult();
+        });
+    }
+}
+
 test.each(["1+1", "-1+1", "1*30+4", "1*(3+4)", "1*(3+4*2)", "10-(4+5)"])(
     "Binary expressions ordering parentheses (%p)",
     input => {

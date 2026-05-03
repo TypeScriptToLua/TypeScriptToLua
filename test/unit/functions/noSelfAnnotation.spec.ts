@@ -65,6 +65,50 @@ test("@noSelf on static class methods with string key access", () => {
     `.expectLuaToMatchSnapshot();
 });
 
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1661
+// A Lua-side function observes the actual argc, so a missing @noSelf would
+// surface as a phantom leading nil (argc 2 instead of 1).
+const argcProbeHeader = `
+    function probe(...)
+        return select("#", ...)
+    end
+`;
+
+test("@noSelf on interface call signature: Lua probe sees correct argc", () => {
+    util.testModule`
+        /** @noSelf */
+        interface Probe { (a: string): number; }
+        declare const probe: Probe;
+        export const result = probe("hi");
+    `
+        .setLuaHeader(argcProbeHeader)
+        .expectToEqual({ result: 1 });
+});
+
+test("@noSelf parent interface, property typed by call-signature interface: Lua probe sees correct argc", () => {
+    util.testModule`
+        /** @noSelf */
+        interface CallSignature { (a: string): number; }
+        /** @noSelf */
+        interface Holder { fn: CallSignature; }
+        declare const holder: Holder;
+        export const result = holder.fn("hi");
+    `
+        .setLuaHeader(`${argcProbeHeader}\nholder = { fn = probe }`)
+        .expectToEqual({ result: 1 });
+});
+
+test("@noSelf parent interface, property typed by type-literal call signature: Lua probe sees correct argc", () => {
+    util.testModule`
+        /** @noSelf */
+        interface Holder { fn: { (a: string): number }; }
+        declare const holder: Holder;
+        export const result = holder.fn("hi");
+    `
+        .setLuaHeader(`${argcProbeHeader}\nholder = { fn = probe }`)
+        .expectToEqual({ result: 1 });
+});
+
 // additional coverage for https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1292
 test("explicit this parameter respected over @noSelf", () => {
     util.testModule`

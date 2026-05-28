@@ -79,8 +79,8 @@ const transformAsyncTry: FunctionVisitor<ts.TryStatement> = (statement, context)
     chainCalls.push(lua.createExpressionStatement(promiseAwait, statement));
 
     const hasReturn = tryScope.asyncTryHasReturn ?? catchScope?.asyncTryHasReturn;
-    const hasBreak = tryScope.asyncTryHasBreak ?? catchScope?.asyncTryHasBreak;
-    const hasContinue = tryScope.asyncTryHasContinue ?? catchScope?.asyncTryHasContinue;
+    const hasBreak = tryScope.tryHasBreak ?? catchScope?.tryHasBreak;
+    const hasContinue = tryScope.tryHasContinue ?? catchScope?.tryHasContinue;
 
     // Build result in output order: flag declarations, awaiter, chain calls, post-checks
     const result: lua.Statement[] = [];
@@ -114,7 +114,12 @@ const transformAsyncTry: FunctionVisitor<ts.TryStatement> = (statement, context)
 
     if (hasBreak) {
         result.push(
-            lua.createIfStatement(lua.createIdentifier("____hasBroken"), lua.createBlock([lua.createBreakStatement()]))
+            lua.createIfStatement(
+                lua.createIdentifier("____hasBroken", statement),
+                lua.createBlock([lua.createBreakStatement(statement)], statement),
+                undefined,
+                statement
+            )
         );
     }
 
@@ -125,21 +130,30 @@ const transformAsyncTry: FunctionVisitor<ts.TryStatement> = (statement, context)
         const continueStatements: lua.Statement[] = [];
         switch (hasContinue) {
             case LoopContinued.WithGoto:
-                continueStatements.push(lua.createGotoStatement(label));
+                continueStatements.push(lua.createGotoStatement(label, statement));
                 break;
             case LoopContinued.WithContinue:
-                continueStatements.push(lua.createContinueStatement());
+                continueStatements.push(lua.createContinueStatement(statement));
                 break;
             case LoopContinued.WithRepeatBreak:
                 continueStatements.push(
-                    lua.createAssignmentStatement(lua.createIdentifier(label), lua.createBooleanLiteral(true))
+                    lua.createAssignmentStatement(
+                        lua.createIdentifier(label, statement),
+                        lua.createBooleanLiteral(true),
+                        statement
+                    )
                 );
-                continueStatements.push(lua.createBreakStatement());
+                continueStatements.push(lua.createBreakStatement(statement));
                 break;
         }
 
         result.push(
-            lua.createIfStatement(lua.createIdentifier("____hasContinued"), lua.createBlock(continueStatements))
+            lua.createIfStatement(
+                lua.createIdentifier("____hasContinued", statement),
+                lua.createBlock(continueStatements, statement),
+                undefined,
+                statement
+            )
         );
     }
 
@@ -153,7 +167,7 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
 
     const tsTryBlock = statement.tryBlock;
     const tsCatchClause = statement.catchClause;
-    const [tryBlock] = transformScopeBlock(context, tsTryBlock, ScopeType.Try);
+    const [tryBlock, tryScope] = transformScopeBlock(context, tsTryBlock, ScopeType.Try);
 
     if (
         (context.options.luaTarget === LuaTarget.Lua50 || context.options.luaTarget === LuaTarget.Lua51) &&
@@ -180,11 +194,13 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
     result.push(lua.createVariableDeclarationStatement(tryReturnIdentifiers, tryCall, tsTryBlock));
 
     const hasCatch = tsCatchClause && tsCatchClause.block.statements.length > 0;
+    let catchScope: Scope | undefined;
     if (hasCatch) {
         // local ____catchSuccess
         result.push(lua.createVariableDeclarationStatement(catchSuccessIdentifier, undefined, tsCatchClause));
 
-        const [catchFunction] = transformCatchClause(context, tsCatchClause);
+        const [catchFunction, cScope] = transformCatchClause(context, tsCatchClause);
+        catchScope = cScope;
 
         const catchIdentifier = lua.createIdentifier("____catch", tsCatchClause);
         result.push(lua.createVariableDeclarationStatement(catchIdentifier, catchFunction, tsCatchClause));
@@ -286,6 +302,71 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
         statement
     );
     result.push(ifTrySuccessStatement);
+
+    // local ____hasBroken
+    // local ____hasContinued
+    const hasBreak = tryScope.tryHasBreak ?? catchScope?.tryHasBreak;
+    const hasContinue = tryScope.tryHasContinue ?? catchScope?.tryHasContinue;
+
+    if (hasBreak || hasContinue !== undefined) {
+        const flagDecls: lua.Identifier[] = [];
+        if (hasBreak) flagDecls.push(lua.createIdentifier("____hasBroken", statement));
+        if (hasContinue !== undefined) flagDecls.push(lua.createIdentifier("____hasContinued", statement));
+        result.unshift(lua.createVariableDeclarationStatement(flagDecls, undefined, statement));
+    }
+
+    // if ____hasBroken then
+    //     break
+    // end
+    if (hasBreak) {
+        result.push(
+            lua.createIfStatement(
+                lua.createIdentifier("____hasBroken", statement),
+                lua.createBlock([lua.createBreakStatement(statement)], statement),
+                undefined,
+                statement
+            )
+        );
+    }
+
+    // if ____hasContinued then
+    //     goto __continueN  (Lua 5.2+)
+    //     continue           (Luau)
+    //     __continueN = true; break  (Lua 5.0/5.1)
+    // end
+    if (hasContinue !== undefined) {
+        const loopScope = findScope(context, ScopeType.Loop);
+        const label = `__continue${loopScope?.id ?? ""}`;
+
+        const continueStatements: lua.Statement[] = [];
+        switch (hasContinue) {
+            case LoopContinued.WithGoto:
+                continueStatements.push(lua.createGotoStatement(label, statement));
+                break;
+            case LoopContinued.WithContinue:
+                continueStatements.push(lua.createContinueStatement(statement));
+                break;
+            case LoopContinued.WithRepeatBreak:
+                continueStatements.push(
+                    lua.createAssignmentStatement(
+                        lua.createIdentifier(label, statement),
+                        lua.createBooleanLiteral(true),
+                        statement
+                    )
+                );
+                continueStatements.push(lua.createBreakStatement(statement));
+                break;
+        }
+
+        result.push(
+            lua.createIfStatement(
+                lua.createIdentifier("____hasContinued", statement),
+                lua.createBlock(continueStatements, statement),
+                undefined,
+                statement
+            )
+        );
+    }
 
     return lua.createDoStatement(result, statement);
 };

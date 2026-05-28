@@ -39,8 +39,8 @@ export interface Scope {
     loopContinued?: LoopContinued;
     functionReturned?: boolean;
     asyncTryHasReturn?: boolean;
-    asyncTryHasBreak?: boolean;
-    asyncTryHasContinue?: LoopContinued;
+    tryHasBreak?: boolean;
+    tryHasContinue?: LoopContinued;
 }
 
 export interface HoistingResult {
@@ -96,7 +96,7 @@ export function findAsyncTryScopeInStack(context: TransformationContext): Scope 
 }
 
 /** Like findAsyncTryScopeInStack, but also stops at Loop boundaries. */
-export function findAsyncTryScopeBeforeLoop(context: TransformationContext): Scope | undefined {
+export function findTryScopeBeforeLoop(context: TransformationContext): Scope | undefined {
     for (const scope of walkScopesUp(context)) {
         if (scope.type === ScopeType.Function || scope.type === ScopeType.Loop) return undefined;
         if (scope.type === ScopeType.Try || scope.type === ScopeType.Catch) return scope;

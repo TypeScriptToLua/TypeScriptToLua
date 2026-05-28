@@ -689,6 +689,130 @@ test("try/finally rethrow with non-string error", () => {
     `.expectToMatchJsResult();
 });
 
+test("break inside try in loop", () => {
+    util.testFunction`
+        const result: number[] = [];
+        for (let i = 0; i < 5; i++) {
+            try {
+                if (i === 3) break;
+                result.push(i);
+            } catch {}
+        }
+        return result;
+    `.expectToMatchJsResult();
+});
+
+test("continue inside try in loop", () => {
+    util.testFunction`
+        const result: number[] = [];
+        for (let i = 0; i < 5; i++) {
+            try {
+                if (i === 2) continue;
+                result.push(i);
+            } catch {}
+        }
+        return result;
+    `.expectToMatchJsResult();
+});
+
+test("break inside catch in loop", () => {
+    util.testFunction`
+        const result: number[] = [];
+        for (let i = 0; i < 5; i++) {
+            try {
+                throw i;
+            } catch (e: any) {
+                if (e === 3) break;
+                result.push(e);
+            }
+        }
+        return result;
+    `.expectToMatchJsResult();
+});
+
+test("continue inside catch in loop", () => {
+    util.testFunction`
+        const result: number[] = [];
+        for (let i = 0; i < 5; i++) {
+            try {
+                throw i;
+            } catch (e: any) {
+                if (e === 2) continue;
+                result.push(e);
+            }
+        }
+        return result;
+    `.expectToMatchJsResult();
+});
+
+test("break inside try with finally in loop", () => {
+    util.testFunction`
+        const result: number[] = [];
+        let finallyCalls = 0;
+        for (let i = 0; i < 5; i++) {
+            try {
+                if (i === 3) break;
+                result.push(i);
+            } finally {
+                finallyCalls++;
+            }
+        }
+        return { result, finallyCalls };
+    `.expectToMatchJsResult();
+});
+
+test("continue inside try with finally in loop", () => {
+    util.testFunction`
+        const result: number[] = [];
+        let finallyCalls = 0;
+        for (let i = 0; i < 5; i++) {
+            try {
+                if (i === 2) continue;
+                result.push(i);
+            } finally {
+                finallyCalls++;
+            }
+        }
+        return { result, finallyCalls };
+    `.expectToMatchJsResult();
+});
+
+test("break inside catch with finally in loop", () => {
+    util.testFunction`
+        const result: number[] = [];
+        let finallyCalls = 0;
+        for (let i = 0; i < 5; i++) {
+            try {
+                throw i;
+            } catch (e: any) {
+                if (e === 3) break;
+                result.push(e);
+            } finally {
+                finallyCalls++;
+            }
+        }
+        return { result, finallyCalls };
+    `.expectToMatchJsResult();
+});
+
+test("continue inside catch with finally in loop", () => {
+    util.testFunction`
+        const result: number[] = [];
+        let finallyCalls = 0;
+        for (let i = 0; i < 5; i++) {
+            try {
+                throw i;
+            } catch (e: any) {
+                if (e === 2) continue;
+                result.push(e);
+            } finally {
+                finallyCalls++;
+            }
+        }
+        return { result, finallyCalls };
+    `.expectToMatchJsResult();
+});
+
 util.testEachVersion(
     "error stacktrace omits constructor and __TS_New",
     () => util.testFunction`

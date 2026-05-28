@@ -1126,6 +1126,104 @@ describe("try/catch in async function", () => {
             .setTsHeader(promiseTestLib)
             .expectToEqual(["finally", "ok"]);
     });
+
+    test.each([0, 1, 2])("async re-throw (%p)", i => {
+        util.testModule`
+            const i: number = ${i};
+            async function foo() {
+                try {
+                    try {
+                        if (i === 0) { throw "z"; }
+                    } catch (e) {
+                        throw "a";
+                    } finally {
+                        if (i === 1) { throw "b"; }
+                    }
+                } catch (e) {
+                    throw (e as string).toUpperCase();
+                } finally {
+                    throw "C";
+                }
+            }
+            export let result: string = "x";
+            async function run() {
+                try {
+                    await foo();
+                } catch (e) {
+                    result = (e as string)[(e as string).length - 1];
+                }
+            }
+            run();
+        `.expectToEqual({ result: "C" });
+    });
+
+    test("async: catch re-throws, finally still runs", () => {
+        util.testModule`
+            const foo = async () => {
+                throw "original";
+            };
+
+            let finallyCalled = false;
+            let caughtError: any = false;
+
+            const run = async () => {
+                try {
+                    await foo();
+                } catch (e) {
+                    throw "re-thrown: " + e;
+                } finally {
+                    finallyCalled = true;
+                }
+            };
+
+            run().catch(e => { caughtError = e; });
+
+            export const result = { finallyCalled, caughtError };
+        `.expectToEqual({
+            result: {
+                finallyCalled: true,
+                caughtError: "re-thrown: original",
+            },
+        });
+    });
+
+    test("async: finally throw overrides catch throw", () => {
+        util.testModule`
+            const run = async () => {
+                try {
+                    throw "try-error";
+                } catch (e) {
+                    throw "catch-error";
+                } finally {
+                    throw "finally-error";
+                }
+            };
+
+            let caughtError: any = false;
+            run().catch(e => { caughtError = e; });
+
+            export const result = caughtError;
+        `.expectToEqual({ result: "finally-error" });
+    });
+
+    test("async: finally return overrides catch throw", () => {
+        util.testFunction`
+            async function run() {
+                try {
+                    throw "try-error";
+                } catch (e) {
+                    throw "catch-error";
+                } finally {
+                    return "finally-return";
+                }
+            }
+
+            let result: any;
+            run().then(v => { result = v; }).catch(e => { result = "rejected: " + e; });
+
+            return result;
+        `.expectToEqual("finally-return");
+    });
 });
 
 describe("async generators are unsupported", () => {

@@ -223,24 +223,10 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
         result.push(...context.transformStatements(statement.finallyBlock));
     }
 
-    // if ____hasReturnOrError then
-    //     return ____returnValue
-    // end
-    const tryReturnValues: lua.Expression[] = [];
-    if (isInMultiReturnFunction(context, statement)) {
-        tryReturnValues.push(createUnpackCall(context, lua.cloneIdentifier(returnValueIdentifier, statement)));
-    } else {
-        tryReturnValues.push(lua.cloneIdentifier(returnValueIdentifier, statement));
-    }
-
-    const returnStatement = createReturnStatement(context, tryReturnValues, statement);
-    const ifTryReturnStatement = lua.createIfStatement(
-        lua.cloneIdentifier(hasReturnOrErrorIdentifier, statement),
-        lua.createBlock([returnStatement], statement),
-        undefined,
+    const trySuccessBlock = lua.createBlock(
+        [createReturnIfHasReturnOrError(context, statement, hasReturnOrErrorIdentifier, returnValueIdentifier)],
         statement
     );
-    const trySuccessBlock = lua.createBlock([ifTryReturnStatement], statement);
 
     // error(____hasReturnOrError, 0)
     const rethrow = lua.createExpressionStatement(
@@ -255,24 +241,10 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
 
     let ifCatchSuccessStatement: lua.IfStatement | undefined;
     if (hasCatch) {
-        // if ____hasReturnOrError then
-        //     return ____returnValue
-        // end
-        const catchReturnValues: lua.Expression[] = [];
-        if (isInMultiReturnFunction(context, statement)) {
-            catchReturnValues.push(createUnpackCall(context, lua.cloneIdentifier(returnValueIdentifier, statement)));
-        } else {
-            catchReturnValues.push(lua.cloneIdentifier(returnValueIdentifier, statement));
-        }
-
-        const catchReturnStatement = createReturnStatement(context, catchReturnValues, statement);
-        const ifCatchReturnStatement = lua.createIfStatement(
-            lua.cloneIdentifier(hasReturnOrErrorIdentifier, statement),
-            lua.createBlock([catchReturnStatement], statement),
-            undefined,
+        const catchSuccessBlock = lua.createBlock(
+            [createReturnIfHasReturnOrError(context, statement, hasReturnOrErrorIdentifier, returnValueIdentifier)],
             statement
         );
-        const catchSuccessBlock = lua.createBlock([ifCatchReturnStatement], statement);
 
         ifCatchSuccessStatement = lua.createIfStatement(
             lua.cloneIdentifier(catchSuccessIdentifier, statement),
@@ -280,6 +252,20 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
             throwBlock,
             statement
         );
+    }
+
+    let elseBranch: lua.Block | lua.IfStatement | undefined;
+    if (hasCatch) {
+        // try {} catch(e) { ... }
+        // Non-empty catch: check catch success, otherwise re-throw
+        elseBranch = ifCatchSuccessStatement;
+    } else if (!tsCatchClause) {
+        // try {} finally {}
+        // No catch clause: re-throw uncaught error after finally
+        elseBranch = throwBlock;
+    } else {
+        // try {} catch(e) {}
+        // Empty catch block: error is intentionally swallowed
     }
 
     // if ____trySuccess then
@@ -296,7 +282,7 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
     const ifTrySuccessStatement = lua.createIfStatement(
         lua.cloneIdentifier(trySuccessIdentifier, statement),
         trySuccessBlock,
-        ifCatchSuccessStatement ?? (tsCatchClause ? undefined : throwBlock),
+        elseBranch,
         statement
     );
     result.push(ifTrySuccessStatement);
@@ -333,4 +319,27 @@ function transformCatchClause(
     );
 
     return [catchFunction, catchScope];
+}
+
+// if ____hasReturnOrError then
+//     return ____returnValue
+// end
+function createReturnIfHasReturnOrError(
+    context: TransformationContext,
+    statement: ts.TryStatement,
+    hasReturnOrErrorIdentifier: lua.Identifier,
+    returnValueIdentifier: lua.Identifier
+): lua.IfStatement {
+    const returnValues: lua.Expression[] = [];
+    if (isInMultiReturnFunction(context, statement)) {
+        returnValues.push(createUnpackCall(context, lua.cloneIdentifier(returnValueIdentifier, statement)));
+    } else {
+        returnValues.push(lua.cloneIdentifier(returnValueIdentifier, statement));
+    }
+    return lua.createIfStatement(
+        lua.cloneIdentifier(hasReturnOrErrorIdentifier, statement),
+        lua.createBlock([createReturnStatement(context, returnValues, statement)], statement),
+        undefined,
+        statement
+    );
 }

@@ -125,20 +125,17 @@ export class __TS__Promise<T> implements Promise<T> {
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/finally
     // Delegates to .then() so that a new Promise is returned (per ES spec §27.2.5.3)
     // and the original fulfillment value / rejection reason is preserved.
+    // reference: https://github.com/tc39/proposal-promise-finally/blob/fd934c0b42d59bf8d9446e737ba14d50a9067216/polyfill.js#L34-L41
     public finally(onFinally?: () => void): Promise<T> {
+        if (typeof onFinally !== "function") {
+            return this.then(onFinally, onFinally);
+        }
         return this.then(
-            onFinally
-                ? (value: T): T => {
-                      onFinally();
-                      return value;
-                  }
-                : undefined,
-            onFinally
-                ? (reason: any): never => {
-                      onFinally();
-                      throw reason;
-                  }
-                : undefined
+            x => new __TS__Promise(resolve => resolve(onFinally())).then(() => x),
+            e =>
+                new __TS__Promise(resolve => resolve(onFinally())).then(() => {
+                    throw e;
+                })
         );
     }
 

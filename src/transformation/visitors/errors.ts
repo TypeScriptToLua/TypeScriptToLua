@@ -191,7 +191,7 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
 
         // pcall(____catch, ____hasReturnOrError)
         const catchPCall = lua.createIdentifier("pcall", tsCatchClause);
-        const catchPcall = lua.createCallExpression(
+        const catchCall = lua.createCallExpression(
             catchPCall,
             [catchIdentifier, lua.cloneIdentifier(hasReturnOrErrorIdentifier, tsCatchClause)],
             tsTryBlock
@@ -205,7 +205,7 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
                 lua.cloneIdentifier(hasReturnOrErrorIdentifier, tsCatchClause),
                 lua.cloneIdentifier(returnValueIdentifier, tsCatchClause),
             ],
-            catchPcall,
+            catchCall,
             tsCatchClause
         );
 

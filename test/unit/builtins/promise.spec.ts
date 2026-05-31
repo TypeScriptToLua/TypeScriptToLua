@@ -1370,4 +1370,44 @@ describe("Promise.finally", () => {
             return result.value;
         `.expectToEqual(99);
     });
+
+    test("finally throw overrides fulfillment value", () => {
+        util.testModule`
+            let result: any;
+            Promise.resolve("ok")
+                .finally(() => { throw "finally-error"; })
+                .then(v => { result = v; }, e => { result = e; });
+            export const output = result;
+        `.expectToEqual({ output: "finally-error" });
+    });
+
+    test("finally throw overrides rejection reason", () => {
+        util.testModule`
+            let result: any;
+            Promise.reject("original")
+                .finally(() => { throw "finally-error"; })
+                .then(v => { result = v; }, e => { result = e; });
+            export const output = result;
+        `.expectToEqual({ output: "finally-error" });
+    });
+
+    test("finally returning rejected promise overrides fulfillment", () => {
+        util.testModule`
+            let result: any;
+            Promise.resolve("ok")
+                .finally(() => Promise.reject("finally-rejected") as any)
+                .then(v => { result = v; }, e => { result = e; });
+            export const output = result;
+        `.expectToEqual({ output: "finally-rejected" });
+    });
+
+    test("finally returning rejected promise overrides rejection", () => {
+        util.testModule`
+            let result: any;
+            Promise.reject("original")
+                .finally(() => Promise.reject("finally-rejected") as any)
+                .then(v => { result = v; }, e => { result = e; });
+            export const output = result;
+        `.expectToEqual({ output: "finally-rejected" });
+    });
 });

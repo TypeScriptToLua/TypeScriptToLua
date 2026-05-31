@@ -151,7 +151,9 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
         return transformAsyncTry(statement, context);
     }
 
-    const [tryBlock, tryScope] = transformScopeBlock(context, statement.tryBlock, ScopeType.Try);
+    const tsTryBlock = statement.tryBlock;
+    const tsCatchClause = statement.catchClause;
+    const [tryBlock] = transformScopeBlock(context, tsTryBlock, ScopeType.Try);
 
     if (
         (context.options.luaTarget === LuaTarget.Lua50 || context.options.luaTarget === LuaTarget.Lua51) &&
@@ -163,103 +165,127 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
         return tryBlock.statements;
     }
 
-    const tryResultIdentifier = lua.createIdentifier("____try");
-    const returnValueIdentifier = lua.createIdentifier("____returnValue");
+    const trySuccessIdentifier = lua.createIdentifier("____trySuccess", tsTryBlock);
+    const catchSuccessIdentifier = lua.createIdentifier("____catchSuccess", tsCatchClause);
+    const hasReturnOrErrorIdentifier = lua.createIdentifier("____hasReturnOrError", tsTryBlock);
+    const returnValueIdentifier = lua.createIdentifier("____returnValue", tsTryBlock);
 
     const result: lua.Statement[] = [];
 
-    const returnedIdentifier = lua.createIdentifier("____hasReturned");
-    let returnCondition: lua.Expression | undefined;
+    // pcall(function() ... end)
+    const tryPCall = lua.createIdentifier("pcall", tsTryBlock);
+    const tryCall = lua.createCallExpression(tryPCall, [lua.createFunctionExpression(tryBlock)], tsTryBlock);
+    // ____trySuccess, ____hasReturnOrError, ____returnValue
+    const tryReturnIdentifiers = [trySuccessIdentifier, hasReturnOrErrorIdentifier, returnValueIdentifier];
+    result.push(lua.createVariableDeclarationStatement(tryReturnIdentifiers, tryCall, tsTryBlock));
 
-    const pCall = lua.createIdentifier("pcall");
-    const tryCall = lua.createCallExpression(pCall, [lua.createFunctionExpression(tryBlock)]);
+    const hasCatch = tsCatchClause && tsCatchClause.block.statements.length > 0;
+    if (hasCatch) {
+        // local ____catchSuccess
+        result.push(lua.createVariableDeclarationStatement(catchSuccessIdentifier, undefined, tsCatchClause));
 
-    if (statement.catchClause && statement.catchClause.block.statements.length > 0) {
-        // try with catch
-        const [catchFunction, catchScope] = transformCatchClause(context, statement.catchClause);
-        const catchIdentifier = lua.createIdentifier("____catch");
-        result.push(lua.createVariableDeclarationStatement(catchIdentifier, catchFunction));
+        const [catchFunction] = transformCatchClause(context, tsCatchClause);
 
-        const hasReturn = tryScope.functionReturned ?? catchScope.functionReturned;
+        const catchIdentifier = lua.createIdentifier("____catch", tsCatchClause);
+        result.push(lua.createVariableDeclarationStatement(catchIdentifier, catchFunction, tsCatchClause));
 
-        const tryReturnIdentifiers = [tryResultIdentifier]; // ____try
-        if (hasReturn || statement.catchClause.variableDeclaration) {
-            tryReturnIdentifiers.push(returnedIdentifier); // ____returned
-            if (hasReturn) {
-                tryReturnIdentifiers.push(returnValueIdentifier); // ____returnValue
-                returnCondition = lua.cloneIdentifier(returnedIdentifier);
-            }
-        }
-        result.push(lua.createVariableDeclarationStatement(tryReturnIdentifiers, tryCall));
-
+        // pcall(____catch, ____hasReturnOrError)
+        const catchPCall = lua.createIdentifier("pcall", tsCatchClause);
         const catchCall = lua.createCallExpression(
-            catchIdentifier,
-            statement.catchClause.variableDeclaration ? [lua.cloneIdentifier(returnedIdentifier)] : []
+            catchPCall,
+            [catchIdentifier, lua.cloneIdentifier(hasReturnOrErrorIdentifier, tsCatchClause)],
+            tsTryBlock
         );
-        const catchCallStatement = hasReturn
-            ? lua.createAssignmentStatement(
-                  [lua.cloneIdentifier(returnedIdentifier), lua.cloneIdentifier(returnValueIdentifier)],
-                  catchCall
-              )
-            : lua.createExpressionStatement(catchCall);
 
-        const notTryCondition = lua.createUnaryExpression(tryResultIdentifier, lua.SyntaxKind.NotOperator);
-        result.push(lua.createIfStatement(notTryCondition, lua.createBlock([catchCallStatement])));
-    } else if (tryScope.functionReturned) {
-        // try with return, but no catch
-        // returnedIdentifier = lua.createIdentifier("____returned");
-        const returnedVariables = [tryResultIdentifier, returnedIdentifier, returnValueIdentifier];
-        result.push(lua.createVariableDeclarationStatement(returnedVariables, tryCall));
-
-        // change return condition from '____returned' to '____try and ____returned'
-        returnCondition = lua.createBinaryExpression(
-            lua.cloneIdentifier(tryResultIdentifier),
-            returnedIdentifier,
-            lua.SyntaxKind.AndOperator
+        // ____catchSuccess, ____hasReturnOrError, ____returnValue
+        //     = pcall(____catch, ____hasReturnOrError)
+        const catchAssign = lua.createAssignmentStatement(
+            [
+                lua.cloneIdentifier(catchSuccessIdentifier, tsCatchClause),
+                lua.cloneIdentifier(hasReturnOrErrorIdentifier, tsCatchClause),
+                lua.cloneIdentifier(returnValueIdentifier, tsCatchClause),
+            ],
+            catchCall,
+            tsCatchClause
         );
-    } else if (statement.finallyBlock) {
-        // try without catch, but with finally — need to capture error for re-throw
-        const errorIdentifier = lua.createIdentifier("____error");
-        result.push(lua.createVariableDeclarationStatement([tryResultIdentifier, errorIdentifier], tryCall));
-    } else {
-        // try without return or catch
-        result.push(lua.createExpressionStatement(tryCall));
+
+        // if not ____trySuccess then
+        //     ____catchSuccess, ____hasReturnOrError, ____returnValue
+        //         = pcall(____catch, ____hasReturnOrError)
+        // end
+        const notTryCondition = lua.createUnaryExpression(trySuccessIdentifier, lua.SyntaxKind.NotOperator, tsTryBlock);
+        result.push(
+            lua.createIfStatement(notTryCondition, lua.createBlock([catchAssign], tsCatchClause), undefined, tsTryBlock)
+        );
     }
 
     if (statement.finallyBlock && statement.finallyBlock.statements.length > 0) {
         result.push(...context.transformStatements(statement.finallyBlock));
     }
 
-    // Re-throw error if try had no catch but had a finally.
-    // On pcall failure the error is the second return value, which lands in
-    // ____hasReturned (when functionReturned) or ____error (otherwise).
-    if (!statement.catchClause && statement.finallyBlock) {
-        const notTryCondition = lua.createUnaryExpression(
-            lua.cloneIdentifier(tryResultIdentifier),
-            lua.SyntaxKind.NotOperator
+    const trySuccessBlock = lua.createBlock(
+        [createReturnIfHasReturnOrError(context, statement, hasReturnOrErrorIdentifier, returnValueIdentifier)],
+        statement
+    );
+
+    // error(____hasReturnOrError, 0)
+    const rethrow = lua.createExpressionStatement(
+        lua.createCallExpression(
+            lua.createIdentifier("error"),
+            [lua.cloneIdentifier(hasReturnOrErrorIdentifier, statement), lua.createNumericLiteral(0)],
+            statement.catchClause ?? statement.tryBlock
+        ),
+        statement.tryBlock
+    );
+    const throwBlock = lua.createBlock([rethrow], statement);
+
+    let ifCatchSuccessStatement: lua.IfStatement | undefined;
+    if (hasCatch) {
+        const catchSuccessBlock = lua.createBlock(
+            [createReturnIfHasReturnOrError(context, statement, hasReturnOrErrorIdentifier, returnValueIdentifier)],
+            statement
         );
-        const errorIdentifier = tryScope.functionReturned
-            ? lua.cloneIdentifier(returnedIdentifier)
-            : lua.createIdentifier("____error");
-        const rethrow = lua.createExpressionStatement(
-            lua.createCallExpression(lua.createIdentifier("error"), [errorIdentifier, lua.createNumericLiteral(0)])
+
+        ifCatchSuccessStatement = lua.createIfStatement(
+            lua.cloneIdentifier(catchSuccessIdentifier, statement),
+            catchSuccessBlock,
+            throwBlock,
+            statement
         );
-        result.push(lua.createIfStatement(notTryCondition, lua.createBlock([rethrow])));
     }
 
-    if (returnCondition && returnedIdentifier) {
-        const returnValues: lua.Expression[] = [];
-
-        if (isInMultiReturnFunction(context, statement)) {
-            returnValues.push(createUnpackCall(context, lua.cloneIdentifier(returnValueIdentifier)));
-        } else {
-            returnValues.push(lua.cloneIdentifier(returnValueIdentifier));
-        }
-
-        const returnStatement = createReturnStatement(context, returnValues, statement);
-        const ifReturnedStatement = lua.createIfStatement(returnCondition, lua.createBlock([returnStatement]));
-        result.push(ifReturnedStatement);
+    let elseBranch: lua.Block | lua.IfStatement | undefined;
+    if (hasCatch) {
+        // try {} catch(e) { ... }
+        // Non-empty catch: check catch success, otherwise re-throw
+        elseBranch = ifCatchSuccessStatement;
+    } else if (!tsCatchClause) {
+        // try {} finally {}
+        // No catch clause: re-throw uncaught error after finally
+        elseBranch = throwBlock;
+    } else {
+        // try {} catch(e) {}
+        // Empty catch block: error is intentionally swallowed
     }
+
+    // if ____trySuccess then
+    //     if ____hasReturnOrError then
+    //         return ____returnValue
+    //     end
+    // elseif ____catchSuccess then
+    //     if ____hasReturnOrError then
+    //         return ____returnValue
+    //     end
+    // else
+    //     error(____hasReturnOrError, 0)
+    // end
+    const ifTrySuccessStatement = lua.createIfStatement(
+        lua.cloneIdentifier(trySuccessIdentifier, statement),
+        trySuccessBlock,
+        elseBranch,
+        statement
+    );
+    result.push(ifTrySuccessStatement);
 
     return lua.createDoStatement(result, statement);
 };
@@ -293,4 +319,27 @@ function transformCatchClause(
     );
 
     return [catchFunction, catchScope];
+}
+
+// if ____hasReturnOrError then
+//     return ____returnValue
+// end
+function createReturnIfHasReturnOrError(
+    context: TransformationContext,
+    statement: ts.TryStatement,
+    hasReturnOrErrorIdentifier: lua.Identifier,
+    returnValueIdentifier: lua.Identifier
+): lua.IfStatement {
+    const returnValues: lua.Expression[] = [];
+    if (isInMultiReturnFunction(context, statement)) {
+        returnValues.push(createUnpackCall(context, lua.cloneIdentifier(returnValueIdentifier, statement)));
+    } else {
+        returnValues.push(lua.cloneIdentifier(returnValueIdentifier, statement));
+    }
+    return lua.createIfStatement(
+        lua.cloneIdentifier(hasReturnOrErrorIdentifier, statement),
+        lua.createBlock([createReturnStatement(context, returnValues, statement)], statement),
+        undefined,
+        statement
+    );
 }

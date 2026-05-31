@@ -7,9 +7,7 @@ test("throwString", () => {
     `.expectToEqual(new util.ExecutionError("Some Error"));
 });
 
-// TODO: Finally does not behave like it should, see #1137
-// eslint-disable-next-line jest/no-disabled-tests
-test.skip.each([0, 1, 2])("re-throw (%p)", i => {
+test.each([0, 1, 2])("re-throw (%p)", i => {
     util.testFunction`
         const i: number = ${i};
         function foo() {
@@ -138,6 +136,204 @@ test("multi return from catch", () => {
     `.withLanguageExtensions();
     expect(testBuilder.getMainLuaCodeChunk()).not.toMatch("unpack(foobar");
     testBuilder.expectToMatchJsResult();
+});
+
+test("return from try and catch", () => {
+    util.testFunction`
+        function foobar() {
+            try {
+                if (false) {
+                    throw "error";
+                }
+                return "try";
+            } catch (e) {
+                return "catch";
+            }
+            return "unreachable";
+        }
+        return foobar();
+    `.expectToMatchJsResult();
+});
+
+test("return or throw from try and return from catch", () => {
+    util.testFunction`
+        function foobar() {
+            try {
+                if (true) {
+                    throw "error";
+                }
+                return "try";
+            } catch (e) {
+                return "catch";
+            }
+            return "unreachable";
+        }
+        return foobar();
+    `.expectToMatchJsResult();
+});
+
+test("return from try catch finally", () => {
+    util.testFunction`
+        function foobar() {
+            let x = "";
+            try {
+                x += "A";
+                return x + "try";
+            } catch (e) {
+                x += "B";
+                return x + "catch";
+            } finally {
+                x += "C";
+                return x + "finally";
+            }
+            x += "D";
+            return x + "unreachable";
+        }
+        return foobar();
+    `.expectToMatchJsResult();
+});
+
+test("try throw, catch throw, finally return", () => {
+    util.testFunction`
+        function foobar() {
+            let x = "";
+            try {
+                x += "A";
+                if (true) {
+                    throw "try error";
+                }
+                return x + "try";
+            } catch (e) {
+                x += "B";
+                if (true) {
+                    throw e + "catch error";
+                }
+                return x + "catch";
+            } finally {
+                x += "C";
+                return x + "finally";
+            }
+            x += "D";
+            return x + "unreachable";
+        }
+        return foobar();
+    `.expectToMatchJsResult();
+});
+
+test("try throw, catch throw, finally throw", () => {
+    util.testFunction`
+        function foobar() {
+            let x = "";
+            try {
+                x += "A";
+                if (true) {
+                    throw x + "try error";
+                }
+                return x + "try";
+            } catch (e) {
+                x += "B";
+                if (true) {
+                    throw e + x + "catch error";
+                }
+                return x + "catch";
+            } finally {
+                x += "C";
+                if (true) {
+                    throw x + "finally error";
+                }
+            }
+            x += "D";
+            return x + "unreachable";
+        }
+        return foobar();
+    `.expectToMatchJsResult(true);
+});
+
+test("return from try->finally no catch", () => {
+    util.testFunction`
+        let x = "unevaluated";
+        function evaluate(arg: unknown) {
+            x = "evaluated";
+            return arg;
+        }
+        function foobar() {
+            try {
+                return evaluate("foobar");
+            } finally {
+                return "finally";
+            }
+        }
+        return foobar() + " " + x;
+    `.expectToMatchJsResult();
+});
+
+test("try throw, no catch, finally no control", () => {
+    util.testFunction`
+        let x = "";
+        function foo() {
+            try {
+                x += "A";
+                throw "foo";
+            } finally {
+                x += "B";
+            }
+        }
+        try {
+            x += "C";
+            return foo() + " " + x;
+        } catch {
+            x += "D";
+            return "caught " + x;
+        }
+    `.expectToMatchJsResult(true);
+});
+
+test("try throw, catch no control, finally no control", () => {
+    util.testFunction`
+        let x = "";
+        function foo() {
+            try {
+                x += "A";
+                throw "foo";
+            } catch (e) {
+                x += "B";
+            } finally {
+                x += "C";
+            }
+        }
+        try {
+            x += "D";
+            const result = foo() ?? "void";
+            return result + " " + x;
+        } catch(e) {
+            x += "E";
+            return "caught " + e + " " + x;
+        }
+    `.expectToMatchJsResult(true);
+});
+
+test("try throw, catch throw, finally no control", () => {
+    util.testFunction`
+        let x = "";
+        function foo() {
+            try {
+                x += "A";
+                throw "foo";
+            } catch (e) {
+                x += "B";
+                throw e + " catch";
+            } finally {
+                x += "C";
+            }
+        }
+        try {
+            x += "D";
+            return foo() + " " + x;
+        } catch {
+            x += "E";
+            return "caught " + x;
+        }
+    `.expectToMatchJsResult(true);
 });
 
 test("return from nested try", () => {

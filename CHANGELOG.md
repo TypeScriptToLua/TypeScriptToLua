@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.37.0
+
+- Fixed a bug with where tsconfig paths were not correctly handled
+- Improved error message for why >> is not allowed on Lua 5.3 and higher
+- Added clearer diganostic for async generators and for-await-of not being supported
+- Made @noSelf be respected on interfaces with call signatures
+- Fixed promise.finally not being handled according to the javascript spec
+
 ## 1.36.0
 
 - **[Breaking]** Upgraded to TypeScript 6.0

@@ -2,13 +2,12 @@ import * as ts from "typescript";
 import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor } from "../context";
-import { findAsyncTryScopeBeforeLoop, findScope, LoopContinued, ScopeType } from "../utils/scope";
-import { isInAsyncFunction } from "../utils/typescript";
+import { findScope, findTryScopeBeforeLoop, LoopContinued, ScopeType } from "../utils/scope";
 
 export const transformBreakStatement: FunctionVisitor<ts.BreakStatement> = (breakStatement, context) => {
-    const tryScope = isInAsyncFunction(breakStatement) ? findAsyncTryScopeBeforeLoop(context) : undefined;
+    const tryScope = findTryScopeBeforeLoop(context);
     if (tryScope) {
-        tryScope.asyncTryHasBreak = true;
+        tryScope.tryHasBreak = true;
         return [
             lua.createAssignmentStatement(
                 lua.createIdentifier("____hasBroken"),
@@ -40,9 +39,9 @@ export const transformContinueStatement: FunctionVisitor<ts.ContinueStatement> =
         scope.loopContinued = continuedWith;
     }
 
-    const tryScope = isInAsyncFunction(statement) ? findAsyncTryScopeBeforeLoop(context) : undefined;
+    const tryScope = findTryScopeBeforeLoop(context);
     if (tryScope) {
-        tryScope.asyncTryHasContinue = continuedWith;
+        tryScope.tryHasContinue = continuedWith;
         return [
             lua.createAssignmentStatement(
                 lua.createIdentifier("____hasContinued"),

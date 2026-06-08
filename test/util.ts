@@ -557,8 +557,11 @@ end)());`;
             result = vm.runInContext(this.getJsCodeWithWrapper(), globalContext);
         } catch (error) {
             const hasMessage = (error: any): error is { message: string } => error.message !== undefined;
-            assert(hasMessage(error));
-            return new ExecutionError(error.message);
+            if (hasMessage(error)) {
+                return new ExecutionError(error.message);
+            } else {
+                return new ExecutionError(String(error));
+            }
         }
 
         function removeUndefinedFields(obj: any): any {

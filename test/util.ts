@@ -42,11 +42,15 @@ function getLuaBindingsForVersion(target: tstl.LuaTarget): { lauxlib: LauxLib; l
         const { lauxlib, lua, lualib } = require("lua-wasm-bindings/dist/lua.53");
         return { lauxlib, lua, lualib };
     }
+    if (target === tstl.LuaTarget.Lua54) {
+        const { lauxlib, lua, lualib } = require("lua-wasm-bindings/dist/lua.54");
+        return { lauxlib, lua, lualib };
+    }
     if (target === tstl.LuaTarget.LuaJIT) {
         throw Error("Can't use executeLua() or expectToMatchJsResult() with LuaJIT as target!");
     }
 
-    const { lauxlib, lua, lualib } = require("lua-wasm-bindings/dist/lua.54");
+    const { lauxlib, lua, lualib } = require("lua-wasm-bindings/dist/lua.55");
     return { lauxlib, lua, lualib };
 }
 

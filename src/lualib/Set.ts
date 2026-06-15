@@ -1,13 +1,15 @@
+// See Map.ts for design overview and V8 source references.
 export class Set<T extends AnyNotNil> {
     public static [Symbol.species] = Set;
     public [Symbol.toStringTag] = "Set";
 
     public size = 0;
 
-    private firstKey: T | undefined;
-    private lastKey: T | undefined;
-    private nextKey = new LuaTable<T, T>();
-    private previousKey = new LuaTable<T, T>();
+    // Flat array storage (1-based indices for Lua)
+    private keyIndex = new LuaTable<T, number>();
+    private orderedKeys = new LuaTable<number, T>();
+    private nextSlot = 1;
+    private deletedCount = 0;
 
     constructor(values?: Iterable<T> | T[]) {
         if (values === undefined) return;
@@ -32,59 +34,63 @@ export class Set<T extends AnyNotNil> {
     }
 
     public add(value: T): Set<T> {
-        const isNewValue = !this.has(value);
-        if (isNewValue) {
+        if (!this.has(value)) {
             this.size++;
+            const idx = this.nextSlot;
+            this.nextSlot = idx + 1;
+            this.keyIndex.set(value, idx);
+            this.orderedKeys.set(idx, value);
         }
-
-        // Do order bookkeeping
-        if (this.firstKey === undefined) {
-            this.firstKey = value;
-            this.lastKey = value;
-        } else if (isNewValue) {
-            this.nextKey.set(this.lastKey!, value);
-            this.previousKey.set(value, this.lastKey!);
-            this.lastKey = value;
-        }
-
         return this;
     }
 
     public clear(): void {
-        this.nextKey = new LuaTable();
-        this.previousKey = new LuaTable();
-        this.firstKey = undefined;
-        this.lastKey = undefined;
+        this.keyIndex = new LuaTable();
+        this.orderedKeys = new LuaTable();
+        this.nextSlot = 1;
         this.size = 0;
+        this.deletedCount = 0;
     }
 
     public delete(value: T): boolean {
-        const contains = this.has(value);
-        if (contains) {
-            this.size--;
+        const idx = this.keyIndex.get(value);
+        if (idx === undefined) return false;
+        this.size--;
+        this.deletedCount++;
+        this.keyIndex.delete(value);
+        this.orderedKeys.delete(idx);
 
-            // Do order bookkeeping
-            const next = this.nextKey.get(value);
-            const previous = this.previousKey.get(value);
-            if (next !== undefined && previous !== undefined) {
-                this.nextKey.set(previous, next);
-                this.previousKey.set(next, previous);
-            } else if (next !== undefined) {
-                this.firstKey = next;
-                this.previousKey.set(next, undefined!);
-            } else if (previous !== undefined) {
-                this.lastKey = previous;
-                this.nextKey.set(previous, undefined!);
+        if (this.deletedCount > this.size) {
+            this.compact();
+        }
+        return true;
+    }
+
+    // See Map.compact() for design explanation.
+    private compact(): void {
+        const oldKeys = this.orderedKeys;
+        const oldNextSlot = this.nextSlot;
+        const newKeys = new LuaTable<number, T>();
+        let newSlot = 1;
+        let holeCount = 0;
+
+        for (let i = 1; i < oldNextSlot; i++) {
+            const k = oldKeys.get(i);
+            if (k !== undefined) {
+                newKeys.set(newSlot, k);
+                this.keyIndex.set(k, newSlot);
+                newSlot++;
             } else {
-                this.firstKey = undefined;
-                this.lastKey = undefined;
+                holeCount++;
+                oldKeys.set(-holeCount, i as any);
             }
-
-            this.nextKey.set(value, undefined!);
-            this.previousKey.set(value, undefined!);
         }
 
-        return contains;
+        oldKeys.set(0, newKeys as any);
+
+        this.orderedKeys = newKeys;
+        this.nextSlot = newSlot;
+        this.deletedCount = 0;
     }
 
     public forEach(callback: (value: T, key: T, set: Set<T>) => any): void {
@@ -94,7 +100,7 @@ export class Set<T extends AnyNotNil> {
     }
 
     public has(value: T): boolean {
-        return this.nextKey.get(value) !== undefined || this.lastKey === value;
+        return this.keyIndex.get(value) !== undefined;
     }
 
     public [Symbol.iterator](): IterableIterator<T> {
@@ -102,64 +108,103 @@ export class Set<T extends AnyNotNil> {
     }
 
     public entries(): IterableIterator<[T, T]> {
-        const getFirstKey = () => this.firstKey;
-        const nextKey = this.nextKey;
-        let key: T | undefined;
-        let started = false;
+        let keys = this.orderedKeys;
+        const set = this; // eslint-disable-line @typescript-eslint/no-this-alias
+        let idx = 1;
         return {
             [Symbol.iterator](): IterableIterator<[T, T]> {
                 return this;
             },
             next(): IteratorResult<[T, T]> {
-                if (!started) {
-                    started = true;
-                    key = getFirstKey();
-                } else {
-                    key = nextKey.get(key!);
+                while (keys.get(0) !== undefined) {
+                    let adj = 0;
+                    let h = 1;
+                    while (true) {
+                        const holePos = keys.get(-h) as any as number | undefined;
+                        if (holePos === undefined || holePos >= idx) break;
+                        adj++;
+                        h++;
+                    }
+                    idx -= adj;
+                    keys = keys.get(0) as any;
                 }
-                return { done: !key, value: [key!, key!] as [T, T] };
+                while (idx < set.nextSlot && keys.get(idx) === undefined) {
+                    idx++;
+                }
+                if (idx >= set.nextSlot) {
+                    return { done: true, value: undefined! };
+                }
+                const val = keys.get(idx);
+                idx++;
+                return { done: false, value: [val, val] as [T, T] };
             },
         };
     }
 
     public keys(): IterableIterator<T> {
-        const getFirstKey = () => this.firstKey;
-        const nextKey = this.nextKey;
-        let key: T | undefined;
-        let started = false;
+        let keys = this.orderedKeys;
+        const set = this; // eslint-disable-line @typescript-eslint/no-this-alias
+        let idx = 1;
         return {
             [Symbol.iterator](): IterableIterator<T> {
                 return this;
             },
             next(): IteratorResult<T> {
-                if (!started) {
-                    started = true;
-                    key = getFirstKey();
-                } else {
-                    key = nextKey.get(key!);
+                while (keys.get(0) !== undefined) {
+                    let adj = 0;
+                    let h = 1;
+                    while (true) {
+                        const holePos = keys.get(-h) as any as number | undefined;
+                        if (holePos === undefined || holePos >= idx) break;
+                        adj++;
+                        h++;
+                    }
+                    idx -= adj;
+                    keys = keys.get(0) as any;
                 }
-                return { done: !key, value: key! };
+                while (idx < set.nextSlot && keys.get(idx) === undefined) {
+                    idx++;
+                }
+                if (idx >= set.nextSlot) {
+                    return { done: true, value: undefined! };
+                }
+                const val = keys.get(idx);
+                idx++;
+                return { done: false, value: val };
             },
         };
     }
 
     public values(): IterableIterator<T> {
-        const getFirstKey = () => this.firstKey;
-        const nextKey = this.nextKey;
-        let key: T | undefined;
-        let started = false;
+        let keys = this.orderedKeys;
+        const set = this; // eslint-disable-line @typescript-eslint/no-this-alias
+        let idx = 1;
         return {
             [Symbol.iterator](): IterableIterator<T> {
                 return this;
             },
             next(): IteratorResult<T> {
-                if (!started) {
-                    started = true;
-                    key = getFirstKey();
-                } else {
-                    key = nextKey.get(key!);
+                while (keys.get(0) !== undefined) {
+                    let adj = 0;
+                    let h = 1;
+                    while (true) {
+                        const holePos = keys.get(-h) as any as number | undefined;
+                        if (holePos === undefined || holePos >= idx) break;
+                        adj++;
+                        h++;
+                    }
+                    idx -= adj;
+                    keys = keys.get(0) as any;
                 }
-                return { done: !key, value: key! };
+                while (idx < set.nextSlot && keys.get(idx) === undefined) {
+                    idx++;
+                }
+                if (idx >= set.nextSlot) {
+                    return { done: true, value: undefined! };
+                }
+                const val = keys.get(idx);
+                idx++;
+                return { done: false, value: val };
             },
         };
     }

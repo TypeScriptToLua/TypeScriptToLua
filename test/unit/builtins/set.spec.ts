@@ -235,6 +235,226 @@ describe.each(iterationMethods)("set.%s() handles mutation", iterationMethod => 
             return results;
         `.expectToMatchJsResult();
     });
+
+    test("for-of delete current entry continues to next", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3]);
+            const visited: number[] = [];
+            for (const value of set) {
+                visited.push(value);
+                set.delete(value);
+            }
+            return { visited, size: set.size };
+        `.expectToMatchJsResult();
+    });
+
+    test("for-of delete current entry with only two entries", () => {
+        util.testFunction`
+            const set = new Set([1, 2]);
+            const visited: number[] = [];
+            for (const value of set) {
+                visited.push(value);
+                set.delete(value);
+            }
+            return { visited, size: set.size };
+        `.expectToMatchJsResult();
+    });
+
+    test("for-of delete other entry during iteration", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3]);
+            const visited: number[] = [];
+            for (const value of set) {
+                visited.push(value);
+                if (value === 1) { set.delete(2); }
+            }
+            return { visited, size: set.size };
+        `.expectToMatchJsResult();
+    });
+
+    test("forEach delete current entry continues to next", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3]);
+            const visited: number[] = [];
+            set.forEach(value => {
+                visited.push(value);
+                set.delete(value);
+            });
+            return { visited, size: set.size };
+        `.expectToMatchJsResult();
+    });
+
+    test("forEach delete current and next entry", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3]);
+            const visited: number[] = [];
+            set.forEach(value => {
+                visited.push(value);
+                if (value === 1) { set.delete(1); set.delete(2); }
+            });
+            return { visited, size: set.size };
+        `.expectToMatchJsResult();
+    });
+
+    test("forEach delete current then re-add", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3]);
+            const visited: number[] = [];
+            set.forEach(value => {
+                visited.push(value);
+                if (value === 1) { set.delete(1); set.delete(2); set.add(2); }
+            });
+            return { visited, size: set.size };
+        `.expectToMatchJsResult();
+    });
+
+    test("for-of delete current and next entry", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3]);
+            const visited: number[] = [];
+            for (const value of set) {
+                visited.push(value);
+                if (value === 1) { set.delete(1); set.delete(2); }
+            }
+            return { visited, size: set.size };
+        `.expectToMatchJsResult();
+    });
+
+    test("for-of delete current and all remaining entries", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3, 4]);
+            const visited: number[] = [];
+            for (const value of set) {
+                visited.push(value);
+                if (value === 1) { set.delete(1); set.delete(2); set.delete(3); }
+            }
+            return { visited, size: set.size };
+        `.expectToMatchJsResult();
+    });
+
+    test("for-of delete current and next then re-add next", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3]);
+            const visited: number[] = [];
+            for (const value of set) {
+                visited.push(value);
+                if (value === 1) { set.delete(1); set.delete(2); set.add(2); }
+            }
+            return { visited, size: set.size };
+        `.expectToMatchJsResult();
+    });
+
+    test("for-of delete then re-add same value", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3]);
+            const visited: number[] = [];
+            for (const value of set) {
+                visited.push(value);
+                if (value === 1) { set.delete(2); set.add(2); }
+            }
+            return { visited, size: set.size };
+        `.expectToMatchJsResult();
+    });
+});
+
+// Adapted from V8's collection-iterator.js (TestSetIteratorMutations2/3)
+// https://chromium.googlesource.com/v8/v8/+/main/test/mjsunit/es6/collection-iterator.js
+describe("set iterator stress (v8-style)", () => {
+    test("iterator survives mass add+delete between next() calls", () => {
+        util.testFunction`
+            const s = new Set<number>();
+            s.add(1);
+            s.add(2);
+            const iter = s.values();
+            const r1 = iter.next();
+            s.delete(2);
+            s.delete(1);
+            for (let x = 2; x < 500; ++x) s.add(x);
+            for (let x = 2; x < 500; ++x) s.delete(x);
+            for (let x = 2; x < 1000; ++x) s.add(x);
+            const r2 = iter.next();
+            for (let x = 1001; x < 2000; ++x) s.add(x);
+            s.delete(3);
+            for (let x = 6; x < 2000; ++x) s.delete(x);
+            const r3 = iter.next();
+            s.delete(5);
+            const r4 = iter.next();
+            return [r1.value, r2.value, r3.value, r4.done];
+        `.expectToMatchJsResult();
+    });
+
+    test("delete all then re-add, iterator finds re-added", () => {
+        util.testFunction`
+            const s = new Set<number>();
+            s.add(1);
+            s.add(2);
+            const iter = s.values();
+            const r1 = iter.next();
+            s.delete(2);
+            s.delete(1);
+            s.add(2);
+            const r2 = iter.next();
+            const r3 = iter.next();
+            return [r1.value, r2.value, r3.done];
+        `.expectToMatchJsResult();
+    });
+
+    test("mass delete during for-of", () => {
+        util.testFunction`
+            const s = new Set<number>();
+            for (let i = 0; i < 100; i++) s.add(i);
+            const visited: number[] = [];
+            for (const v of s) {
+                visited.push(v);
+                s.delete(v);
+            }
+            return { count: visited.length, size: s.size, first: visited[0], last: visited[visited.length - 1] };
+        `.expectToMatchJsResult();
+    });
+
+    test("mass delete every other during for-of", () => {
+        util.testFunction`
+            const s = new Set<number>();
+            for (let i = 0; i < 100; i++) s.add(i);
+            const visited: number[] = [];
+            for (const v of s) {
+                visited.push(v);
+                s.delete(v);
+                s.delete(v + 1);
+            }
+            return { count: visited.length, size: s.size };
+        `.expectToMatchJsResult();
+    });
+});
+
+// See map.spec.ts "map memory" describe block for detailed explanation of
+// the Lua table rehash trick with negative keys.
+// https://github.com/lua/lua/blob/master/ltable.c (luaH_newkey, rehash, computesizes)
+describe("set memory", () => {
+    test("deleting values should not leak memory", () => {
+        const result = util.testFunction`
+            /** @noSelf */ declare function collectgarbage(opt?: string): number;
+            collectgarbage("collect");
+            const baseline = collectgarbage("count");
+
+            const set = new Set<number>();
+            for (let i = 1; i <= 10000; i++) set.add(i);
+            for (let i = 1; i <= 10000; i++) set.delete(i);
+            // Trigger Lua table rehash to shrink internal tables
+            set.add(-1);
+            set.delete(-1);
+
+            collectgarbage("collect");
+            const after = collectgarbage("count");
+
+            return {
+                size: set.size,
+                retained: Math.floor(after - baseline),
+            };
+        `.getLuaExecutionResult();
+        expect(result.size).toBe(0);
+        expect(result.retained).toBe(0);
+    });
 });
 
 test("instanceof Set without creating set", () => {

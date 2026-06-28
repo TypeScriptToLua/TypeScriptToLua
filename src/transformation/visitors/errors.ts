@@ -249,8 +249,7 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
 
     // Re-throw error if try had a finally.
     // On pcall failure the error is the second return value, which lands in
-    // ____hasReturned (when functionReturned), ____rethrow
-    // (catch throw/re-throw), or ____error (otherwise).
+    // ____hasReturned (when functionReturned) or ____error (otherwise).
     if (statement.finallyBlock) {
         const notTryCondition = lua.createUnaryExpression(
             lua.cloneIdentifier(tryResultIdentifier),

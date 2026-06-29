@@ -202,9 +202,9 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
         );
         const catchCallStatement = hasReturn
             ? lua.createAssignmentStatement(
-                [lua.cloneIdentifier(returnedIdentifier), lua.cloneIdentifier(returnValueIdentifier)],
-                catchCall
-            )
+                  [lua.cloneIdentifier(returnedIdentifier), lua.cloneIdentifier(returnValueIdentifier)],
+                  catchCall
+              )
             : lua.createExpressionStatement(catchCall);
 
         const catchCallFunction = lua.createFunctionExpression(lua.createBlock([catchCallStatement]));
@@ -217,11 +217,12 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
         );
 
         const notTryCondition = lua.createUnaryExpression(tryResultIdentifier, lua.SyntaxKind.NotOperator);
-        result.push(lua.createIfStatement(notTryCondition, lua.createBlock(
-            statement.finallyBlock
-                ? [tryCatchCallStatement]
-                : [catchCallStatement]
-        )));
+        result.push(
+            lua.createIfStatement(
+                notTryCondition,
+                lua.createBlock(statement.finallyBlock ? [tryCatchCallStatement] : [catchCallStatement])
+            )
+        );
     } else if (tryScope.functionReturned) {
         // try with return, but no catch
         // returnedIdentifier = lua.createIdentifier("____returned");
@@ -267,7 +268,10 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
         } else if (statement.catchClause.block.statements.length > 0) {
             // Re-throw is possible only from non-empty blocks.
             const rethrow = lua.createExpressionStatement(
-                lua.createCallExpression(lua.createIdentifier("error"), [rethrowIdentifier, lua.createNumericLiteral(0)])
+                lua.createCallExpression(lua.createIdentifier("error"), [
+                    rethrowIdentifier,
+                    lua.createNumericLiteral(0),
+                ])
             );
             result.push(lua.createIfStatement(notTryCondition, lua.createBlock([rethrow])));
         }

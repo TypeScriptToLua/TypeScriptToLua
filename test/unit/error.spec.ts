@@ -7,31 +7,40 @@ test("throwString", () => {
     `.expectToEqual(new util.ExecutionError("Some Error"));
 });
 
-// TODO: Finally does not behave like it should, see #1137
-// eslint-disable-next-line jest/no-disabled-tests
-test.skip.each([0, 1, 2])("re-throw (%p)", i => {
+test.each([
+    { innerTry: false, innerFinally: false, outerFinally: false },
+    { innerTry: false, innerFinally: false, outerFinally: true },
+    { innerTry: false, innerFinally: true, outerFinally: false },
+    { innerTry: false, innerFinally: true, outerFinally: true },
+    { innerTry: true, innerFinally: false, outerFinally: false },
+    { innerTry: true, innerFinally: false, outerFinally: true },
+    { innerTry: true, innerFinally: true, outerFinally: false },
+    { innerTry: true, innerFinally: true, outerFinally: true },
+])("re-throw (%j)", o => {
     util.testFunction`
-        const i: number = ${i};
+        const innerTry: boolean = ${o.innerTry};
+        const innerFinally: boolean = ${o.innerFinally};
+        const outerFinally: boolean = ${o.outerFinally};
         function foo() {
             try {
                 try {
-                    if (i === 0) { throw "z"; }
+                    if (innerTry) { throw "inner.try"; }
                 } catch (e) {
-                    throw "a";
+                    throw (e as string) + "->" + "inner.catch";
                 } finally {
-                    if (i === 1) { throw "b"; }
+                    if (innerFinally) { throw "inner.finally"; }
                 }
             } catch (e) {
-                throw (e as string).toUpperCase();
+                throw (e as string) + "->" + "outer.catch";
             } finally {
-                throw "C";
+                if (outerFinally) { throw "outer.finally"; }
             }
         }
         let result: string = "x";
         try {
             foo();
         } catch (e) {
-            result = (e as string)[(e as string).length - 1];
+            result = e as string;
         }
         return result;
     `.expectToMatchJsResult();

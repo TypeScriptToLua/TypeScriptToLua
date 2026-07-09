@@ -1,8 +1,11 @@
 import * as path from "path";
-import { EmitHost } from "./transpilation";
+import { EmitHost, transpileProject } from "./transpilation";
 import * as lua from "./LuaAST";
-import { LuaTarget } from "./CompilerOptions";
+import { LuaTarget, type CompilerOptions } from "./CompilerOptions";
 import { getOrUpdate } from "./utils";
+import { createEmitOutputCollector, type TranspiledFile } from "./transpilation/output-collector";
+import { parseConfigFileWithSystem } from "./cli/tsconfig";
+import { createDiagnosticReporter } from "./cli/report";
 
 export enum LuaLibFeature {
     ArrayAt = "ArrayAt",
@@ -139,12 +142,16 @@ export function resolveLuaLibDir(luaTarget: LuaTarget) {
 export const luaLibModulesInfoFileName = "lualib_module_info.json";
 const luaLibModulesInfo = new Map<LuaTarget, LuaLibModulesInfo>();
 
-export function getLuaLibModulesInfo(luaTarget: LuaTarget, emitHost: EmitHost): LuaLibModulesInfo {
-    if (!luaLibModulesInfo.has(luaTarget)) {
+export function getLuaLibModulesInfo(luaTarget: LuaTarget, emitHost: EmitHost, useCache = true): LuaLibModulesInfo {
+    if (!useCache || !luaLibModulesInfo.has(luaTarget)) {
         const lualibPath = path.join(resolveLuaLibDir(luaTarget), luaLibModulesInfoFileName);
         const result = emitHost.readFile(lualibPath);
         if (result !== undefined) {
-            luaLibModulesInfo.set(luaTarget, JSON.parse(result) as LuaLibModulesInfo);
+            const info = JSON.parse(result) as LuaLibModulesInfo;
+            if (!useCache) {
+                return info;
+            }
+            luaLibModulesInfo.set(luaTarget, info);
         } else {
             throw new Error(`Could not load lualib dependencies from '${lualibPath}'`);
         }
@@ -175,7 +182,21 @@ export function getLuaLibExportToFeatureMap(
 
 const lualibFeatureCache = new Map<LuaTarget, Map<LuaLibFeature, string>>();
 
-export function readLuaLibFeature(feature: LuaLibFeature, luaTarget: LuaTarget, emitHost: EmitHost): string {
+export function readLuaLibFeature(
+    feature: LuaLibFeature,
+    luaTarget: LuaTarget,
+    emitHost: EmitHost,
+    useCache = true
+): string {
+    if (!useCache) {
+        const featurePath = path.join(resolveLuaLibDir(luaTarget), `${feature}.lua`);
+        const luaLibFeature = emitHost.readFile(featurePath);
+        if (luaLibFeature === undefined) {
+            throw new Error(`Could not load lualib feature from '${featurePath}'`);
+        }
+        return luaLibFeature;
+    }
+
     const featureMap = getOrUpdate(lualibFeatureCache, luaTarget, () => new Map());
     if (!featureMap.has(feature)) {
         const featurePath = path.join(resolveLuaLibDir(luaTarget), `${feature}.lua`);
@@ -257,9 +278,69 @@ export function loadImportedLualibFeatures(
     return statements;
 }
 
+const recompileLualibCache = new WeakMap<EmitHost, TranspiledFile[]>();
+
+function recompileLuaLibFiles(sourceOptions: CompilerOptions, emitHost: EmitHost): TranspiledFile[] {
+    let transpiledFiles = recompileLualibCache.get(emitHost);
+    if (!transpiledFiles) {
+        const tsconfigPath =
+            sourceOptions.luaTarget === LuaTarget.Lua50
+                ? path.join(__dirname, "../src/lualib/tsconfig.lua50.json")
+                : path.join(__dirname, "../src/lualib/tsconfig.json");
+        const config = parseConfigFileWithSystem(tsconfigPath);
+        const options = config.options;
+        const sourcePlugins = (sourceOptions.luaPlugins ?? []).filter(p => !p.skipRecompileLuaLib);
+        options.luaPlugins = [...(options.luaPlugins ?? []), ...sourcePlugins];
+
+        const collector = createEmitOutputCollector(options.extension);
+        const reportDiagnostic = createDiagnosticReporter(false);
+
+        const { diagnostics } = transpileProject(tsconfigPath, options, collector.writeFile);
+        diagnostics.forEach(reportDiagnostic);
+
+        transpiledFiles = collector.files;
+        recompileLualibCache.set(emitHost, transpiledFiles);
+    }
+
+    return transpiledFiles;
+}
+
+function recompileLuaLibBundle(sourceOptions: CompilerOptions, emitHost: EmitHost): string | undefined {
+    const transpiledFiles = recompileLuaLibFiles(sourceOptions, emitHost);
+    const lualibBundle = transpiledFiles.find(f => f.outPath.endsWith("lualib_bundle.lua"));
+    return lualibBundle?.lua;
+}
+
+export function recompileInlineLualibFeatures(
+    features: Iterable<LuaLibFeature>,
+    options: CompilerOptions,
+    emitHost: EmitHost
+): string {
+    const luaTarget = options.luaTarget ?? LuaTarget.Universal;
+    const transpiledFiles = recompileLuaLibFiles(options, emitHost);
+    emitHost = {
+        readFile(filePath: string) {
+            const file = transpiledFiles.find(f => f.outPath === filePath);
+            return file ? file.text : undefined;
+        },
+    } as any as EmitHost;
+    const moduleInfo = getLuaLibModulesInfo(luaTarget, emitHost, false);
+    return resolveRecursiveLualibFeatures(features, luaTarget, emitHost, moduleInfo)
+        .map(feature => readLuaLibFeature(feature, luaTarget, emitHost, false))
+        .join("\n");
+}
+
 const luaLibBundleContent = new Map<string, string>();
 
-export function getLuaLibBundle(luaTarget: LuaTarget, emitHost: EmitHost): string {
+export function getLuaLibBundle(luaTarget: LuaTarget, emitHost: EmitHost, options: CompilerOptions): string {
+    if (options.recompileLuaLib) {
+        const result = recompileLuaLibBundle(options, emitHost);
+        if (!result) {
+            throw new Error(`Failed to recompile lualib bundle`);
+        }
+        return result;
+    }
+
     const lualibPath = path.join(resolveLuaLibDir(luaTarget), "lualib_bundle.lua");
     if (!luaLibBundleContent.has(lualibPath)) {
         const result = emitHost.readFile(lualibPath);
@@ -279,13 +360,26 @@ export function getLualibBundleReturn(exportedValues: string[]): string {
 
 export function buildMinimalLualibBundle(
     features: Iterable<LuaLibFeature>,
-    luaTarget: LuaTarget,
+    options: CompilerOptions,
     emitHost: EmitHost
 ): string {
-    const code = loadInlineLualibFeatures(features, luaTarget, emitHost);
-    const moduleInfo = getLuaLibModulesInfo(luaTarget, emitHost);
-    const exports = Array.from(features).flatMap(feature => moduleInfo[feature].exports);
+    const luaTarget = options.luaTarget ?? LuaTarget.Universal;
+    let code;
+    if (options.recompileLuaLib) {
+        code = recompileInlineLualibFeatures(features, options, emitHost);
+        const transpiledFiles = recompileLuaLibFiles(options, emitHost);
+        emitHost = {
+            readFile(filePath: string) {
+                const file = transpiledFiles.find(f => f.outPath === filePath);
+                return file ? file.text : undefined;
+            },
+        } as any as EmitHost;
+    } else {
+        code = loadInlineLualibFeatures(features, luaTarget, emitHost);
+    }
 
+    const moduleInfo = getLuaLibModulesInfo(luaTarget, emitHost, !options.recompileLuaLib);
+    const exports = Array.from(features).flatMap(feature => moduleInfo[feature].exports);
     return code + getLualibBundleReturn(exports);
 }
 

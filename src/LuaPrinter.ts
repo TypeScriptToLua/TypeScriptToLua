@@ -3,7 +3,12 @@ import { Mapping, SourceMapGenerator, SourceNode } from "source-map";
 import * as ts from "typescript";
 import { CompilerOptions, isBundleEnabled, LuaLibImportKind, LuaTarget } from "./CompilerOptions";
 import * as lua from "./LuaAST";
-import { loadImportedLualibFeatures, loadInlineLualibFeatures, LuaLibFeature } from "./LuaLib";
+import {
+    loadImportedLualibFeatures,
+    loadInlineLualibFeatures,
+    LuaLibFeature,
+    recompileInlineLualibFeatures,
+} from "./LuaLib";
 import { isValidLuaIdentifier, shouldAllowUnicode } from "./transformation/utils/safe-names";
 import { EmitHost, getEmitPath } from "./transpilation";
 import { intersperse, normalizeSlashes } from "./utils";
@@ -246,7 +251,11 @@ export class LuaPrinter {
         } else if (luaLibImport === LuaLibImportKind.Inline && file.luaLibFeatures.size > 0) {
             // Inline lualib features
             sourceChunks.push("-- Lua Library inline imports\n");
-            sourceChunks.push(loadInlineLualibFeatures(file.luaLibFeatures, luaTarget, this.emitHost));
+            if (this.options.recompileLuaLib) {
+                sourceChunks.push(recompileInlineLualibFeatures(file.luaLibFeatures, this.options, this.emitHost));
+            } else {
+                sourceChunks.push(loadInlineLualibFeatures(file.luaLibFeatures, luaTarget, this.emitHost));
+            }
             sourceChunks.push("-- End of Lua Library inline imports\n");
         }
 

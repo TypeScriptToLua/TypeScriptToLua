@@ -51,6 +51,7 @@ export enum LuaLibFeature {
     DescriptorGet = "DescriptorGet",
     DescriptorSet = "DescriptorSet",
     Error = "Error",
+    ErrorObject = "ErrorObject",
     FunctionBind = "FunctionBind",
     Generator = "Generator",
     InstanceOf = "InstanceOf",

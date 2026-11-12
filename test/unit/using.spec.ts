@@ -253,3 +253,26 @@ test("works on root level (#1632)", () => {
         disposed: true,
     });
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1730
+test("using inside async scope works (#1730)", () => {
+    util.testModule`
+        export let result: Thing | undefined;
+
+        class Thing implements Disposable {
+            x: number = 5;
+            constructor() {}
+            [Symbol.dispose]() {
+                ///disposed = true;
+            }
+        }
+
+        (async () => {
+            using thing = new Thing();
+            thing.x = 10;
+            result = thing;
+        })();
+    `.expectToEqual({
+        result: { x: 10 },
+    });
+});

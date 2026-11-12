@@ -306,17 +306,10 @@ test("return from nested finally", () => {
     `.expectToMatchJsResult();
 });
 
-test.each([
-    '"error string"',
-    "42",
-    "3.141",
-    "true",
-    "false",
-    "undefined",
-    '{ x: "error object" }',
-    '() => "error function"',
-])("throw and catch %s", error => {
-    util.testFunction`
+test.each(['"error string"', "42", "3.141", "true", "false", '{ x: "error object" }', '() => "error function"'])(
+    "throw and catch %s",
+    error => {
+        util.testFunction`
         try {
             throw ${error};
         } catch (error) {
@@ -327,7 +320,36 @@ test.each([
             }
         }
     `.expectToMatchJsResult();
-});
+    }
+);
+
+util.testEachVersion(
+    "throw and catch undefined",
+    () => util.testFunction`
+        try {
+            throw undefined;
+        } catch (error) {
+            if (typeof error == 'function') {
+                return error();
+            } else {
+                return error;
+            }
+        }
+    `,
+    {
+        [tstl.LuaTarget.Lua50]: b => b.expectToEqual(undefined),
+        [tstl.LuaTarget.Lua51]: b => b.expectToEqual(undefined),
+        [tstl.LuaTarget.Lua52]: b => b.expectToEqual(undefined),
+        [tstl.LuaTarget.Lua53]: b => b.expectToEqual(undefined),
+        [tstl.LuaTarget.Lua54]: b => b.expectToEqual(undefined),
+        // Note: On 5.5 this behaves differently!
+        [tstl.LuaTarget.Lua55]: b => b.expectToEqual("<no error object>"),
+        [tstl.LuaTarget.Universal]: b => b.expectToEqual("<no error object>"),
+        // These versions we cannot run in our test framework
+        [tstl.LuaTarget.LuaJIT]: false,
+        [tstl.LuaTarget.Luau]: false,
+    }
+);
 
 const builtinErrors = ["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", "URIError"];
 

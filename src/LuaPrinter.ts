@@ -731,13 +731,17 @@ export class LuaPrinter {
     public printUnaryExpression(expression: lua.UnaryExpression): SourceNode {
         const chunks: SourceChunk[] = [];
 
-        chunks.push(this.printOperator(expression.operator));
-        chunks.push(
-            this.printExpressionInParenthesesIfNeeded(
-                expression.operand,
-                LuaPrinter.operatorPrecedence[expression.operator]
-            )
+        const operand = this.printExpressionInParenthesesIfNeeded(
+            expression.operand,
+            LuaPrinter.operatorPrecedence[expression.operator]
         );
+
+        chunks.push(this.printOperator(expression.operator));
+        // "--" starts a comment in Lua, so a minus before an operand that starts with "-" needs a space
+        if (expression.operator === lua.SyntaxKind.NegationOperator && operand.toString().startsWith("-")) {
+            chunks.push(" ");
+        }
+        chunks.push(operand);
 
         return this.createSourceNode(expression, chunks);
     }

@@ -18,6 +18,21 @@ test.each([
     util.testFunction(input).disableSemanticCheck().expectLuaToMatchSnapshot();
 });
 
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1733
+test.each(["-(-a)", "- -a", "-(-(-a))", "-(-a) * 2", "-(-5)"])("Nested unary minus (%p)", expression => {
+    util.testFunction`
+        let a = 5;
+        return ${expression};
+    `.expectToMatchJsResult();
+});
+
+test("Unary minus on a negative const enum value", () => {
+    util.testFunction`
+        const enum E { A = -1 }
+        return -E.A;
+    `.expectToEqual(1);
+});
+
 for (const expression of ["3+4", "5-2", "6*3", "6**3", "20/5", "15/10", "15%3"]) {
     util.testEachVersion(
         `Binary expressions basic numeric (${expression})`,

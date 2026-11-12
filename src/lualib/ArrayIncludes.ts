@@ -11,8 +11,12 @@ export function __TS__ArrayIncludes<T>(this: T[], searchElement: T, fromIndex = 
         k = 0;
     }
 
+    // SameValueZero: NaN is the only value that is not equal to itself
+    const searchingForNaN = searchElement !== searchElement;
+
     for (const i of $range(k + 1, len)) {
-        if (this[i - 1] === searchElement) {
+        const element = this[i - 1];
+        if (element === searchElement || (searchingForNaN && element !== element)) {
             return true;
         }
     }

@@ -469,6 +469,8 @@ test.each([
     { array: ["a", "b", "c"], includes: "d" },
     { array: [[1], [2], [3]], includes: [2] },
     { array: [1, [2], 3], includes: 2 },
+    { array: [1, NaN, 3], includes: NaN },
+    { array: [1, 2, 3], includes: NaN },
 ])("array.includes (%p)", ({ array, includes }) => {
     util.testExpressionTemplate`${array}.includes(${includes})`.expectToMatchJsResult();
 });

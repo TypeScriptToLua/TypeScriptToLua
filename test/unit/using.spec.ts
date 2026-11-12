@@ -255,7 +255,7 @@ test("works on root level (#1632)", () => {
 });
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1730
-test.only("using inside async scope works (#1730)", () => {
+test("using inside async scope works (#1730)", () => {
     util.testModule`
         export let result: Thing | undefined;
 

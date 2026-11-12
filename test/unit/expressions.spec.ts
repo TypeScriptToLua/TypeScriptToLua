@@ -33,6 +33,31 @@ test("Unary minus on a negative const enum value", () => {
     `.expectToEqual(1);
 });
 
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1734
+for (const expression of [
+    "4611686018427387904 === 2 ** 62",
+    "4611686018427387904 + 1 === 4611686018427387904",
+    "-4611686018427387904 === -(2 ** 62)",
+    "9007199254740993 === 2 ** 53",
+    "0x4000000000000000 === 2 ** 62",
+    "18446744073709551616 === 2 ** 64",
+]) {
+    util.testEachVersion(
+        `Integer literal above MAX_SAFE_INTEGER keeps its value (${expression})`,
+        () => util.testExpression(expression),
+        util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+    );
+}
+
+test("Const enum value above MAX_SAFE_INTEGER keeps its value", () => {
+    util.testFunction`
+        const enum E { A = 2 ** 62 }
+        return E.A === 2 ** 62;
+    `
+        .setOptions({ luaTarget: tstl.LuaTarget.Lua54 })
+        .expectToEqual(true);
+});
+
 for (const expression of ["3+4", "5-2", "6*3", "6**3", "20/5", "15/10", "15%3"]) {
     util.testEachVersion(
         `Binary expressions basic numeric (${expression})`,

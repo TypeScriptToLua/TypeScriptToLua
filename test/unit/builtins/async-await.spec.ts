@@ -1077,6 +1077,80 @@ describe("try/catch in async function", () => {
         }
     );
 
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1598
+    util.testEachVersion(
+        "break inside switch inside try in async loop only leaves the switch",
+        () => util.testModule`
+            export const results: string[] = [];
+            async function fn(): Promise<void> {
+                for (let i = 0; i < 3; i++) {
+                    try {
+                        await Promise.resolve();
+                        switch (i) {
+                            case 1:
+                                results.push("one");
+                                break;
+                            default:
+                                results.push("other");
+                        }
+                        results.push("end " + i);
+                    } catch {}
+                }
+            }
+            fn();
+        `,
+        {
+            ...util.expectEachVersionExceptJit(builder =>
+                builder.expectToEqual({ results: ["other", "end 0", "one", "end 1", "other", "end 2"] })
+            ),
+            [LuaTarget.Lua50]: builder =>
+                builder.expectToHaveDiagnostics([unsupportedForTargetButOverrideAvailable.code]),
+            [LuaTarget.Lua51]: builder =>
+                builder.expectToHaveDiagnostics([unsupportedForTargetButOverrideAvailable.code]),
+        }
+    );
+
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1598
+    util.testEachVersion(
+        "break and continue inside nested try in async loop",
+        () => util.testModule`
+            export const results: string[] = [];
+            async function fn(): Promise<void> {
+                for (let i = 0; i < 5; i++) {
+                    try {
+                        try {
+                            await Promise.resolve();
+                            if (i === 1) continue;
+                            if (i === 3) break;
+                        } catch {}
+                        results.push("inner done " + i);
+                    } catch {}
+                    results.push("end " + i);
+                }
+                results.push("after loop");
+            }
+            fn();
+        `,
+        {
+            ...util.expectEachVersionExceptJit(builder =>
+                builder.expectToEqual({
+                    results: ["inner done 0", "end 0", "inner done 2", "end 2", "after loop"],
+                })
+            ),
+            // One diagnostic for each try statement
+            [LuaTarget.Lua50]: builder =>
+                builder.expectToHaveDiagnostics([
+                    unsupportedForTargetButOverrideAvailable.code,
+                    unsupportedForTargetButOverrideAvailable.code,
+                ]),
+            [LuaTarget.Lua51]: builder =>
+                builder.expectToHaveDiagnostics([
+                    unsupportedForTargetButOverrideAvailable.code,
+                    unsupportedForTargetButOverrideAvailable.code,
+                ]),
+        }
+    );
+
     // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1706
     test("multi return from try in async function (#1706)", () => {
         util.testFunction`

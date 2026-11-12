@@ -1,27 +1,37 @@
 import * as ts from "typescript";
 import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
-import { FunctionVisitor } from "../context";
-import { findAsyncTryScopeBeforeLoop, findScope, LoopContinued, ScopeType } from "../utils/scope";
-import { isInAsyncFunction } from "../utils/typescript";
+import { FunctionVisitor, TransformationContext } from "../context";
+import { findScope, findTryScopesBefore, LoopContinued, ScopeType } from "../utils/scope";
 
-export const transformBreakStatement: FunctionVisitor<ts.BreakStatement> = (breakStatement, context) => {
-    const tryScope = isInAsyncFunction(breakStatement) ? findAsyncTryScopeBeforeLoop(context) : undefined;
-    if (tryScope) {
-        tryScope.asyncTryHasBreak = true;
-        return [
-            lua.createAssignmentStatement(
-                lua.createIdentifier("____hasBroken"),
-                lua.createBooleanLiteral(true),
-                breakStatement
-            ),
-            lua.createReturnStatement([], breakStatement),
-        ];
+export const transformBreakStatement: FunctionVisitor<ts.BreakStatement> = (breakStatement, context) =>
+    createBreak(context, breakStatement);
+
+export const transformContinueStatement: FunctionVisitor<ts.ContinueStatement> = (statement, context) =>
+    createContinue(context, statement);
+
+/**
+ * Creates a break out of the closest loop or switch. Inside a try or catch block (a Lua function),
+ * this sets the `____hasBroken` flag and returns; the try statement breaks after it ran.
+ * Pass `flagIsSet` when the flag is already true, to skip setting it again.
+ */
+export function createBreak(context: TransformationContext, node?: ts.Node, flagIsSet = false): lua.Statement[] {
+    const tryScopes = findTryScopesBefore(context, ScopeType.Loop | ScopeType.Switch);
+    if (tryScopes.length > 0) {
+        for (const tryScope of tryScopes) {
+            tryScope.tryHasBreak = true;
+        }
+        return leaveTryFunction("____hasBroken", node, flagIsSet);
     }
-    return lua.createBreakStatement(breakStatement);
-};
+    return [lua.createBreakStatement(node)];
+}
 
-export const transformContinueStatement: FunctionVisitor<ts.ContinueStatement> = (statement, context) => {
+/**
+ * Creates a continue of the closest loop. Inside a try or catch block (a Lua function),
+ * this sets the `____hasContinued` flag and returns; the try statement continues after it ran.
+ * Pass `flagIsSet` when the flag is already true, to skip setting it again.
+ */
+export function createContinue(context: TransformationContext, node?: ts.Node, flagIsSet = false): lua.Statement[] {
     const scope = findScope(context, ScopeType.Loop);
 
     const continuedWith = {
@@ -40,32 +50,38 @@ export const transformContinueStatement: FunctionVisitor<ts.ContinueStatement> =
         scope.loopContinued = continuedWith;
     }
 
-    const tryScope = isInAsyncFunction(statement) ? findAsyncTryScopeBeforeLoop(context) : undefined;
-    if (tryScope) {
-        tryScope.asyncTryHasContinue = continuedWith;
-        return [
-            lua.createAssignmentStatement(
-                lua.createIdentifier("____hasContinued"),
-                lua.createBooleanLiteral(true),
-                statement
-            ),
-            lua.createReturnStatement([], statement),
-        ];
+    const tryScopes = findTryScopesBefore(context, ScopeType.Loop);
+    if (tryScopes.length > 0) {
+        for (const tryScope of tryScopes) {
+            tryScope.tryHasContinue = continuedWith;
+        }
+        return leaveTryFunction("____hasContinued", node, flagIsSet);
     }
 
     const label = `__continue${scope?.id ?? ""}`;
 
     switch (continuedWith) {
         case LoopContinued.WithGoto:
-            return lua.createGotoStatement(label, statement);
+            return [lua.createGotoStatement(label, node)];
 
         case LoopContinued.WithContinue:
-            return lua.createContinueStatement(statement);
+            return [lua.createContinueStatement(node)];
 
         case LoopContinued.WithRepeatBreak:
             return [
-                lua.createAssignmentStatement(lua.createIdentifier(label), lua.createBooleanLiteral(true), statement),
-                lua.createBreakStatement(statement),
+                lua.createAssignmentStatement(lua.createIdentifier(label), lua.createBooleanLiteral(true), node),
+                lua.createBreakStatement(node),
             ];
     }
-};
+}
+
+function leaveTryFunction(flag: string, node: ts.Node | undefined, flagIsSet: boolean): lua.Statement[] {
+    const statements: lua.Statement[] = [];
+    if (!flagIsSet) {
+        statements.push(
+            lua.createAssignmentStatement(lua.createIdentifier(flag), lua.createBooleanLiteral(true), node)
+        );
+    }
+    statements.push(lua.createReturnStatement([], node));
+    return statements;
+}

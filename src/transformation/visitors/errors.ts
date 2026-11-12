@@ -5,9 +5,10 @@ import { FunctionVisitor, TransformationContext } from "../context";
 import { unsupportedForTarget, unsupportedForTargetButOverrideAvailable } from "../utils/diagnostics";
 import { createUnpackCall } from "../utils/lua-ast";
 import { transformLuaLibFunction } from "../utils/lualib";
-import { findScope, LoopContinued, Scope, ScopeType } from "../utils/scope";
+import { findTryScopesBefore, Scope, ScopeType } from "../utils/scope";
 import { isInAsyncFunction, isInGeneratorFunction } from "../utils/typescript";
 import { wrapInAsyncAwaiter } from "./async-await";
+import { createBreak, createContinue } from "./break-continue";
 import { transformScopeBlock } from "./block";
 import { transformIdentifier } from "./identifier";
 import { isInMultiReturnFunction } from "./language-extensions/multi";
@@ -79,24 +80,18 @@ const transformAsyncTry: FunctionVisitor<ts.TryStatement> = (statement, context)
     chainCalls.push(lua.createExpressionStatement(promiseAwait, statement));
 
     const hasReturn = tryScope.asyncTryHasReturn ?? catchScope?.asyncTryHasReturn;
-    const hasBreak = tryScope.asyncTryHasBreak ?? catchScope?.asyncTryHasBreak;
-    const hasContinue = tryScope.asyncTryHasContinue ?? catchScope?.asyncTryHasContinue;
+    const loopExit = createLoopExitChecks(context, tryScope, catchScope);
 
     // Build result in output order: flag declarations, awaiter, chain calls, post-checks
     const result: lua.Statement[] = [];
 
-    if (hasReturn || hasBreak || hasContinue !== undefined) {
-        const flagDecls: lua.Identifier[] = [];
-        if (hasReturn) {
-            flagDecls.push(lua.createIdentifier("____hasReturned"));
-            flagDecls.push(lua.createIdentifier("____returnValue"));
-        }
-        if (hasBreak) {
-            flagDecls.push(lua.createIdentifier("____hasBroken"));
-        }
-        if (hasContinue !== undefined) {
-            flagDecls.push(lua.createIdentifier("____hasContinued"));
-        }
+    const flagDecls: lua.Identifier[] = [];
+    if (hasReturn) {
+        flagDecls.push(lua.createIdentifier("____hasReturned"));
+        flagDecls.push(lua.createIdentifier("____returnValue"));
+    }
+    flagDecls.push(...loopExit.flags);
+    if (flagDecls.length > 0) {
         result.push(lua.createVariableDeclarationStatement(flagDecls));
     }
 
@@ -112,36 +107,7 @@ const transformAsyncTry: FunctionVisitor<ts.TryStatement> = (statement, context)
         );
     }
 
-    if (hasBreak) {
-        result.push(
-            lua.createIfStatement(lua.createIdentifier("____hasBroken"), lua.createBlock([lua.createBreakStatement()]))
-        );
-    }
-
-    if (hasContinue !== undefined) {
-        const loopScope = findScope(context, ScopeType.Loop);
-        const label = `__continue${loopScope?.id ?? ""}`;
-
-        const continueStatements: lua.Statement[] = [];
-        switch (hasContinue) {
-            case LoopContinued.WithGoto:
-                continueStatements.push(lua.createGotoStatement(label));
-                break;
-            case LoopContinued.WithContinue:
-                continueStatements.push(lua.createContinueStatement());
-                break;
-            case LoopContinued.WithRepeatBreak:
-                continueStatements.push(
-                    lua.createAssignmentStatement(lua.createIdentifier(label), lua.createBooleanLiteral(true))
-                );
-                continueStatements.push(lua.createBreakStatement());
-                break;
-        }
-
-        result.push(
-            lua.createIfStatement(lua.createIdentifier("____hasContinued"), lua.createBlock(continueStatements))
-        );
-    }
+    result.push(...loopExit.checks);
 
     return result;
 };
@@ -169,22 +135,31 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
 
     const result: lua.Statement[] = [];
 
+    const catchClause =
+        statement.catchClause && statement.catchClause.block.statements.length > 0 ? statement.catchClause : undefined;
+    const [catchFunction, catchScope] = catchClause ? transformCatchClause(context, catchClause) : [];
+
+    // A break or continue inside the try or catch block sets a flag, checked after the try statement
+    const loopExit = createLoopExitChecks(context, tryScope, catchScope);
+    if (loopExit.flags.length > 0) {
+        result.push(lua.createVariableDeclarationStatement(loopExit.flags));
+    }
+
     const returnedIdentifier = lua.createIdentifier("____hasReturned");
     let returnCondition: lua.Expression | undefined;
 
     const pCall = lua.createIdentifier("pcall");
     const tryCall = lua.createCallExpression(pCall, [lua.createFunctionExpression(tryBlock)]);
 
-    if (statement.catchClause && statement.catchClause.block.statements.length > 0) {
+    if (catchClause && catchFunction && catchScope) {
         // try with catch
-        const [catchFunction, catchScope] = transformCatchClause(context, statement.catchClause);
         const catchIdentifier = lua.createIdentifier("____catch");
         result.push(lua.createVariableDeclarationStatement(catchIdentifier, catchFunction));
 
         const hasReturn = tryScope.functionReturned ?? catchScope.functionReturned;
 
         const tryReturnIdentifiers = [tryResultIdentifier]; // ____try
-        if (hasReturn || statement.catchClause.variableDeclaration) {
+        if (hasReturn || catchClause.variableDeclaration) {
             tryReturnIdentifiers.push(returnedIdentifier); // ____returned
             if (hasReturn) {
                 tryReturnIdentifiers.push(returnValueIdentifier); // ____returnValue
@@ -198,7 +173,7 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
 
         const catchCall = lua.createCallExpression(
             catchIdentifier,
-            statement.catchClause.variableDeclaration ? [lua.cloneIdentifier(returnedIdentifier)] : []
+            catchClause.variableDeclaration ? [lua.cloneIdentifier(returnedIdentifier)] : []
         );
         const catchCallStatement = hasReturn
             ? lua.createAssignmentStatement(
@@ -291,6 +266,8 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
         result.push(ifReturnedStatement);
     }
 
+    result.push(...loopExit.checks);
+
     return lua.createDoStatement(result, statement);
 };
 
@@ -307,6 +284,38 @@ export const transformThrowStatement: FunctionVisitor<ts.ThrowStatement> = (stat
         statement
     );
 };
+
+/**
+ * For a break or continue inside a try statement: the flags to declare before it, and the checks
+ * that break or continue after it. Only the outermost try statement inside the loop (or switch)
+ * declares a flag; a nested one shares it and returns from the enclosing try function instead.
+ */
+function createLoopExitChecks(
+    context: TransformationContext,
+    tryScope: Scope,
+    catchScope: Scope | undefined
+): { flags: lua.Identifier[]; checks: lua.Statement[] } {
+    const flags: lua.Identifier[] = [];
+    const checks: lua.Statement[] = [];
+
+    if (tryScope.tryHasBreak ?? catchScope?.tryHasBreak) {
+        if (findTryScopesBefore(context, ScopeType.Loop | ScopeType.Switch).length === 0) {
+            flags.push(lua.createIdentifier("____hasBroken"));
+        }
+        const exit = createBreak(context, undefined, true);
+        checks.push(lua.createIfStatement(lua.createIdentifier("____hasBroken"), lua.createBlock(exit)));
+    }
+
+    if ((tryScope.tryHasContinue ?? catchScope?.tryHasContinue) !== undefined) {
+        if (findTryScopesBefore(context, ScopeType.Loop).length === 0) {
+            flags.push(lua.createIdentifier("____hasContinued"));
+        }
+        const exit = createContinue(context, undefined, true);
+        checks.push(lua.createIfStatement(lua.createIdentifier("____hasContinued"), lua.createBlock(exit)));
+    }
+
+    return { flags, checks };
+}
 
 function transformCatchClause(
     context: TransformationContext,

@@ -39,8 +39,8 @@ export interface Scope {
     loopContinued?: LoopContinued;
     functionReturned?: boolean;
     asyncTryHasReturn?: boolean;
-    asyncTryHasBreak?: boolean;
-    asyncTryHasContinue?: LoopContinued;
+    tryHasBreak?: boolean;
+    tryHasContinue?: LoopContinued;
 }
 
 export interface HoistingResult {
@@ -95,13 +95,18 @@ export function findAsyncTryScopeInStack(context: TransformationContext): Scope 
     return undefined;
 }
 
-/** Like findAsyncTryScopeInStack, but also stops at Loop boundaries. */
-export function findAsyncTryScopeBeforeLoop(context: TransformationContext): Scope | undefined {
+/**
+ * Finds the try and catch scopes between the current position and the closest scope of type `target`
+ * (the scope a break or continue jumps out of). Try and catch blocks are compiled to Lua functions,
+ * so a Lua break or goto cannot leave them; it has to go through a flag instead.
+ */
+export function findTryScopesBefore(context: TransformationContext, target: ScopeType): Scope[] {
+    const tryScopes: Scope[] = [];
     for (const scope of walkScopesUp(context)) {
-        if (scope.type === ScopeType.Function || scope.type === ScopeType.Loop) return undefined;
-        if (scope.type === ScopeType.Try || scope.type === ScopeType.Catch) return scope;
+        if (scope.type & (ScopeType.Function | target)) break;
+        if (scope.type & (ScopeType.Try | ScopeType.Catch)) tryScopes.push(scope);
     }
-    return undefined;
+    return tryScopes;
 }
 
 export function addScopeVariableDeclaration(scope: Scope, declaration: lua.VariableDeclarationStatement) {

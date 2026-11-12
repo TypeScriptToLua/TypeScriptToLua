@@ -1,6 +1,6 @@
 export async function __TS__UsingAsync<TArgs extends Array<Disposable | AsyncDisposable>, TReturn>(
     this: undefined,
-    cb: (...args: TArgs) => TReturn,
+    cb: (this: void, ...args: TArgs) => TReturn,
     ...args: TArgs
 ): Promise<TReturn> {
     let thrownError;

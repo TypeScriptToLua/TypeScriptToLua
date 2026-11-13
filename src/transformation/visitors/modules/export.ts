@@ -165,9 +165,19 @@ function transformExportSpecifiersFrom(
 }
 
 export const getExported = (context: TransformationContext, exportSpecifiers: ts.NamedExports) =>
-    exportSpecifiers.elements.filter(exportSpecifier => context.resolver.isValueAliasDeclaration(exportSpecifier));
+    exportSpecifiers.elements.filter(
+        exportSpecifier =>
+            !ts.isTypeOnlyImportOrExportDeclaration(exportSpecifier) &&
+            context.resolver.isValueAliasDeclaration(exportSpecifier)
+    );
 
 export const transformExportDeclaration: FunctionVisitor<ts.ExportDeclaration> = (node, context) => {
+    // export type * from "...";
+    // export type { ... } from "...";
+    if (node.isTypeOnly) {
+        return undefined;
+    }
+
     if (!node.exportClause) {
         // export * from "...";
         return transformExportAll(context, node);

@@ -37,7 +37,13 @@ export function createModuleRequire(
     return lua.createCallExpression(lua.createIdentifier("require"), params, tsOriginal);
 }
 
-function shouldBeImported(context: TransformationContext, importNode: ts.ImportClause | ts.ImportSpecifier): boolean {
+function shouldBeImported(
+    context: TransformationContext,
+    importNode: ts.ImportClause | ts.ImportSpecifier | ts.NamespaceImport
+): boolean {
+    // With verbatimModuleSyntax the emit resolver reports every alias as referenced,
+    // because TypeScript then drops imports by their `type` modifier only.
+    if (ts.isTypeOnlyImportOrExportDeclaration(importNode)) return false;
     return context.resolver.isReferencedAliasDeclaration(importNode);
 }
 
@@ -80,6 +86,11 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
         return undefined;
     }
 
+    // import type { a } from "./module";
+    if (statement.importClause.isTypeOnly) {
+        return undefined;
+    }
+
     const importPath = ts.isStringLiteral(statement.moduleSpecifier)
         ? statement.moduleSpecifier.text.replace(/"/g, "")
         : "module";
@@ -109,7 +120,7 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
     // import * as module from "./module";
     // local module = require("module")
     if (statement.importClause.namedBindings && ts.isNamespaceImport(statement.importClause.namedBindings)) {
-        if (context.resolver.isReferencedAliasDeclaration(statement.importClause.namedBindings)) {
+        if (shouldBeImported(context, statement.importClause.namedBindings)) {
             const requireStatement = lua.createVariableDeclarationStatement(
                 transformIdentifier(context, statement.importClause.namedBindings.name),
                 requireCall,
@@ -137,6 +148,11 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
     }
 
     if (result.length === 0) {
+        // With verbatimModuleSyntax, `import { type a } from "./module"` still loads the module,
+        // like TypeScript's `import {} from "./module"`.
+        if (context.options.verbatimModuleSyntax) {
+            scope.importStatements.push(lua.createExpressionStatement(requireCall));
+        }
         return undefined;
     }
 

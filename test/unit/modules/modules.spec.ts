@@ -49,6 +49,80 @@ describe("module import/export elision", () => {
             export { foo };
         `.expectToEqual([]);
     });
+
+    test.each([
+        'export type { Type } from "module";',
+        'export type * from "module";',
+        'export type * as ns from "module";',
+        'export { type Type } from "module";',
+    ])("should elide type-only re-exports (%p)", exportStatement => {
+        util.testModule`
+            ${exportStatement}
+        `
+            .tap(expectToElideImport)
+            .expectToEqual([]);
+    });
+
+    describe("with verbatimModuleSyntax", () => {
+        const expectToElideImportVerbatim: util.TapCallback = builder => {
+            builder.setOptions({ verbatimModuleSyntax: true });
+            expectToElideImport(builder);
+        };
+
+        test.each(['import type { Type } from "module";', 'import type * as module from "module";'])(
+            "should elide type-only imports (%p)",
+            importStatement => {
+                util.testModule`
+                ${importStatement}
+                const foo: ${importStatement.includes("*") ? "module.Type" : "Type"} = "bar";
+            `.tap(expectToElideImportVerbatim);
+            }
+        );
+
+        test.each([
+            'export type { Type } from "module";',
+            'export type * from "module";',
+            'export type * as ns from "module";',
+        ])("should elide type-only re-exports (%p)", exportStatement => {
+            util.testModule`
+                ${exportStatement}
+            `
+                .tap(expectToElideImportVerbatim)
+                .expectToEqual([]);
+        });
+
+        test("should drop type-only specifiers but keep value specifiers", () => {
+            util.testModule`
+                import { type Type, value } from "./module";
+                const foo: Type = value;
+                export { foo };
+                export { type Type as Exported, value as exportedValue } from "./module";
+            `
+                .addExtraFile("module.ts", 'export type Type = string; export const value = "bar";')
+                .setOptions({ verbatimModuleSyntax: true })
+                .tap(builder => {
+                    expect(builder.getMainLuaCodeChunk()).not.toContain(".Type");
+                })
+                .expectToEqual({ foo: "bar", exportedValue: "bar" });
+        });
+
+        test("should still load a module when all imported names are types", () => {
+            util.testModule`
+                import { type Type } from "./module";
+                const foo: Type = "bar";
+                export const loaded = (globalThis as any).moduleLoaded;
+            `
+                .addExtraFile(
+                    "module.ts",
+                    "(globalThis as any).moduleLoaded = true; export type Type = string; export const value = 1;"
+                )
+                .setOptions({ verbatimModuleSyntax: true })
+                .tap(builder => {
+                    expect(builder.getMainLuaCodeChunk()).not.toContain(".Type");
+                })
+                .expectToEqual({ loaded: true });
+        });
+    });
 });
 
 test.each(["ke-bab", "dollar$", "singlequote'", "hash#", "s p a c e", "ɥɣɎɌͼƛಠ", "_̀ः٠‿"])(

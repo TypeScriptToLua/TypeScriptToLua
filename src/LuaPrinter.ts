@@ -632,7 +632,13 @@ export class LuaPrinter {
     }
 
     public printNumericLiteral(expression: lua.NumericLiteral): SourceNode {
-        return this.createSourceNode(expression, String(expression.value));
+        let text = String(expression.value);
+        // Above 2^53, String() rounds the digits, and Lua 5.3+ reads a numeral without a point
+        // or exponent as an exact 64-bit integer. Add ".0" so Lua reads the same double as JS.
+        if (Number.isInteger(expression.value) && !Number.isSafeInteger(expression.value) && !text.includes("e")) {
+            text += ".0";
+        }
+        return this.createSourceNode(expression, text);
     }
 
     public printNilLiteral(expression: lua.NilLiteral): SourceNode {

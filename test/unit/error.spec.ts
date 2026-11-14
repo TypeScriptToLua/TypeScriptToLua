@@ -547,3 +547,226 @@ util.testEachVersion(
         },
     }
 );
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1598
+describe("break and continue inside try/catch in a loop (#1598)", () => {
+    const targets = [tstl.LuaTarget.Universal, tstl.LuaTarget.Lua50, tstl.LuaTarget.Lua51, tstl.LuaTarget.Lua54];
+    // The test Lua VM cannot run Luau's continue statement, so Luau only runs the break-only tests
+    const breakTargets = [...targets, tstl.LuaTarget.Luau];
+
+    test.each(breakTargets)("break from catch in for...of [%s]", luaTarget => {
+        util.testFunction`
+            const result: number[] = [];
+            for (const x of [1, 2, 3, 4]) {
+                try {
+                    if (x === 3) throw "stop";
+                    result.push(x);
+                } catch {
+                    break;
+                }
+            }
+            return result;
+        `
+            .setOptions({ luaTarget })
+            .expectToMatchJsResult();
+    });
+
+    test.each(breakTargets)("break from try in while [%s]", luaTarget => {
+        util.testFunction`
+            let i = 0;
+            while (true) {
+                try {
+                    i++;
+                    if (i === 5) break;
+                } catch {
+                }
+            }
+            return i;
+        `
+            .setOptions({ luaTarget })
+            .expectToMatchJsResult();
+    });
+
+    test.each(breakTargets)("break from catch with error variable in do...while [%s]", luaTarget => {
+        util.testFunction`
+            const log: string[] = [];
+            let i = 0;
+            do {
+                try {
+                    i++;
+                    if (i === 2) throw "two";
+                    log.push("try " + i);
+                } catch (e) {
+                    log.push("catch " + e);
+                    break;
+                }
+            } while (i < 10);
+            return log;
+        `
+            .setOptions({ luaTarget })
+            .expectToMatchJsResult();
+    });
+
+    test.each(targets)("continue from try and catch in for [%s]", luaTarget => {
+        util.testFunction`
+            const log: string[] = [];
+            for (let i = 0; i < 6; i++) {
+                try {
+                    if (i % 3 === 0) continue;
+                    if (i % 3 === 1) throw "odd";
+                } catch {
+                    log.push("catch " + i);
+                    continue;
+                }
+                log.push("end " + i);
+            }
+            return log;
+        `
+            .setOptions({ luaTarget })
+            .expectToMatchJsResult();
+    });
+
+    test.each(targets)("break and continue run finally first [%s]", luaTarget => {
+        util.testFunction`
+            const log: string[] = [];
+            for (let i = 0; i < 5; i++) {
+                try {
+                    if (i === 1) continue;
+                    if (i === 3) throw "three";
+                    log.push("try " + i);
+                } catch {
+                    log.push("catch " + i);
+                    break;
+                } finally {
+                    log.push("finally " + i);
+                }
+                log.push("end " + i);
+            }
+            return log;
+        `
+            .setOptions({ luaTarget })
+            .expectToMatchJsResult();
+    });
+
+    test.each(breakTargets)("break from try with finally and no catch [%s]", luaTarget => {
+        util.testFunction`
+            const log: string[] = [];
+            for (let i = 0; i < 5; i++) {
+                try {
+                    if (i === 2) break;
+                    log.push("try " + i);
+                } finally {
+                    log.push("finally " + i);
+                }
+            }
+            return log;
+        `
+            .setOptions({ luaTarget })
+            .expectToMatchJsResult();
+    });
+
+    test.each(targets)("break and continue from nested try [%s]", luaTarget => {
+        util.testFunction`
+            const log: string[] = [];
+            for (let i = 0; i < 6; i++) {
+                try {
+                    try {
+                        if (i === 1) continue;
+                        if (i === 4) throw "four";
+                        log.push("inner " + i);
+                    } catch {
+                        try {
+                            break;
+                        } finally {
+                            log.push("inner finally " + i);
+                        }
+                    }
+                    log.push("outer " + i);
+                } finally {
+                    log.push("outer finally " + i);
+                }
+            }
+            return log;
+        `
+            .setOptions({ luaTarget })
+            .expectToMatchJsResult();
+    });
+
+    test.each(targets)("try with return still returns inside loop [%s]", luaTarget => {
+        util.testFunction`
+            function find(values: number[]): string {
+                for (const v of values) {
+                    try {
+                        if (v < 0) throw "negative";
+                        if (v === 0) continue;
+                        if (v > 10) return "big " + v;
+                    } catch (e) {
+                        if (v === -2) break;
+                        continue;
+                    }
+                }
+                return "none";
+            }
+            return [find([1, 0, 20]), find([-1, -2, 30]), find([0, 1])];
+        `
+            .setOptions({ luaTarget })
+            .expectToMatchJsResult();
+    });
+
+    test("break inside switch inside try only leaves the switch", () => {
+        util.testFunction`
+            const log: string[] = [];
+            for (let i = 0; i < 3; i++) {
+                try {
+                    switch (i) {
+                        case 1:
+                            log.push("one");
+                            break;
+                        default:
+                            log.push("other " + i);
+                    }
+                    log.push("after switch " + i);
+                } catch {
+                }
+            }
+            return log;
+        `.expectToMatchJsResult();
+    });
+
+    test("break inside try inside switch leaves the switch", () => {
+        util.testFunction`
+            const log: string[] = [];
+            for (let i = 0; i < 3; i++) {
+                switch (i) {
+                    case 1:
+                        try {
+                            log.push("one");
+                            break;
+                        } catch {
+                        }
+                        log.push("unreachable");
+                    default:
+                        log.push("other " + i);
+                }
+                log.push("after switch " + i);
+            }
+            return log;
+        `.expectToMatchJsResult();
+    });
+
+    test("break inside loop inside try leaves only the inner loop", () => {
+        util.testFunction`
+            const log: string[] = [];
+            for (let i = 0; i < 2; i++) {
+                try {
+                    for (let j = 0; j < 5; j++) {
+                        if (j === 2) break;
+                        log.push(i + ":" + j);
+                    }
+                } catch {
+                }
+            }
+            return log;
+        `.expectToMatchJsResult();
+    });
+});

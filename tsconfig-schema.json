@@ -102,6 +102,10 @@
                 "measurePerformance": {
                     "description": "Measure and report performance of the tstl compiler.",
                     "type": "boolean"
+                },
+                "recompileLuaLib": {
+                    "description": "Recompile the Lua standard library with custom plugins.",
+                    "type": "boolean"
                 }
             },
             "dependencies": {

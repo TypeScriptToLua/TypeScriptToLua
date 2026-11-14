@@ -104,6 +104,11 @@ export const optionDeclarations: CommandLineOption[] = [
         description: "Measure performance of the tstl compiler.",
         type: "boolean",
     },
+    {
+        name: "recompileLuaLib",
+        description: "Recompile the Lua standard library with custom plugins.",
+        type: "boolean",
+    },
 ];
 
 export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): ParsedCommandLine {

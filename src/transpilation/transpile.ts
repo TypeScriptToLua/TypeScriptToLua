@@ -145,9 +145,16 @@ export function getProgramTranspileResult(
         transpiledFiles = [];
     }
 
+    const proxyEmitHost =
+        writeFileResult !== emitHost.writeFile
+            ? new Proxy(emitHost, {
+                  get: (target, prop) => (prop === "writeFile" ? writeFileResult : target[prop as keyof EmitHost]),
+              })
+            : emitHost;
+
     for (const plugin of plugins) {
         if (plugin.afterPrint) {
-            const pluginDiagnostics = plugin.afterPrint(program, options, emitHost, transpiledFiles) ?? [];
+            const pluginDiagnostics = plugin.afterPrint(program, options, proxyEmitHost, transpiledFiles) ?? [];
             diagnostics.push(...pluginDiagnostics);
         }
     }

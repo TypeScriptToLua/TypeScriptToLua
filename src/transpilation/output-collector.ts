@@ -12,6 +12,8 @@ export interface TranspiledFile {
     js?: string;
     /** @internal */
     jsSourceMap?: string;
+    /** @internal */
+    text?: string;
 }
 
 export function createEmitOutputCollector(luaExtension = ".lua") {
@@ -38,6 +40,7 @@ export function createEmitOutputCollector(luaExtension = ".lua") {
         } else if (fileName.endsWith(".d.ts.map")) {
             file.declarationMap = data;
         }
+        file.text = data;
     };
 
     return { writeFile, files };

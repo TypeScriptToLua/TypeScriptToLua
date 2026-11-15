@@ -199,6 +199,53 @@ test.each([
     util.testExpression`Number.parseInt("${numberString}", ${base})`.expectToMatchJsResult();
 });
 
+describe.each(["parseFloat", "Number.parseFloat"])("%s handles sign, leading dot and exponent", parseFunction => {
+    test.each([
+        "1e3",
+        "1.5e-3",
+        "-2E+2",
+        "5.e2",
+        "1e3px",
+        "1.5e3.2",
+        "1e",
+        "1e+",
+        ".5",
+        "-.5",
+        "+.5",
+        "+3.5",
+        "  +42px",
+        "-.5e-2x",
+        "+Infinity",
+        "  +Infinity",
+        ".",
+        "+",
+        "-.e1",
+    ])("(%p)", numberString => {
+        util.testExpression`${parseFunction}("${numberString}")`.expectToMatchJsResult();
+    });
+});
+
+describe.each(["parseInt", "Number.parseInt"])("%s handles sign, prefix and radix", parseFunction => {
+    test.each(["+7", "  +42px", "+0x1F", "+", "+-1"])("plus sign (%p)", numberString => {
+        util.testExpression`${parseFunction}("${numberString}")`.expectToMatchJsResult();
+    });
+
+    test.each([
+        { numberString: "u", base: 31 },
+        { numberString: "1uv", base: 32 },
+        { numberString: "zu", base: 36 },
+        { numberString: "U9", base: 36 },
+        { numberString: "0x1f", base: 16 },
+        { numberString: "-0X1f", base: 16 },
+        { numberString: "+0x1f", base: 16 },
+        { numberString: "0x1f", base: 10 },
+        { numberString: "12", base: 0 },
+        { numberString: "0x1f", base: 0 },
+    ])("(%p)", ({ numberString, base }) => {
+        util.testExpression`${parseFunction}("${numberString}", ${base})`.expectToMatchJsResult();
+    });
+});
+
 // Issue #1218: https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1218
 test.each(["42", "undefined"])("prototype call on nullable number (%p)", value => {
     util.testFunction`

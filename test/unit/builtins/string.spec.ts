@@ -186,6 +186,17 @@ test.each(stringPartCases)("string.substr (%p)", ({ inp, args }) => {
 });
 
 test.each([
+    { inp: "0123456789", args: [-3, 2] },
+    { inp: "0123456789", args: [-3, 10] },
+    { inp: "0123456789", args: [-1, 1] },
+    { inp: "0123456789", args: [-20, 2] },
+    { inp: "0123456789", args: [-20, 15] },
+    { inp: "0123456789", args: [-Infinity, 2] },
+])("string.substr with negative start and length (%p)", ({ inp, args }) => {
+    util.testExpression`"${inp}".substr(${util.formatCode(...args)})`.expectToMatchJsResult();
+});
+
+test.each([
     { inp: "hello test", start: 1, ignored: 0 },
     { inp: "hello test", start: 3, ignored: 0, end: 2 },
 ])("string.substr with expression (%p)", ({ inp, start, ignored, end }) => {

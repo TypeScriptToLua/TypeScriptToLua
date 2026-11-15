@@ -1,10 +1,11 @@
 export function __TS__StringIncludes(this: string, searchString: string, position?: number): boolean {
-    // http://lua-users.org/wiki/StringLibraryTutorial
-    if (!position) {
-        position = 1;
-    } else {
-        position += 1;
+    // JS clamps position to [0, length]; NaN counts as 0
+    if (position === undefined || position !== position || position < 0) {
+        position = 0;
+    } else if (position > this.length) {
+        position = this.length;
     }
-    const [index] = string.find(this, searchString, position, true);
+    // http://lua-users.org/wiki/StringLibraryTutorial
+    const [index] = string.find(this, searchString, position + 1, true);
     return index !== undefined;
 }

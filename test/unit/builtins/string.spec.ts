@@ -296,6 +296,12 @@ test.each<{ inp: string; args: Parameters<string["endsWith"]> }>([
     { inp: "hello TEST", args: ["test"] },
     { inp: "hello test", args: ["hello"] },
     { inp: "hello test", args: ["hello", 5] },
+    { inp: "hello test", args: ["t", -1] },
+    { inp: "hello test", args: ["", -1] },
+    { inp: "hello test", args: ["", -Infinity] },
+    { inp: "hello test", args: ["t", NaN] },
+    { inp: "hello test", args: ["", NaN] },
+    { inp: "hello test", args: ["test", Infinity] },
 ])("string.endsWith (%p)", ({ inp, args }) => {
     util.testExpression`"${inp}".endsWith(${util.formatCode(...args)})`.expectToMatchJsResult();
 });
@@ -308,6 +314,13 @@ test.each<{ inp: string; args: Parameters<string["includes"]> }>([
     { inp: "HELLO TEST", args: ["hello"] },
     { inp: "hello test", args: ["hello", 5] },
     { inp: "hello test", args: ["test", 6] },
+    { inp: "hello test", args: ["hello", -1] },
+    { inp: "hello test", args: ["hello", -5] },
+    { inp: "hello test", args: ["hello", -Infinity] },
+    { inp: "hello test", args: ["hello", NaN] },
+    { inp: "hello test", args: ["", 20] },
+    { inp: "hello test", args: ["", Infinity] },
+    { inp: "hello test", args: ["t", 20] },
 ])("string.includes (%p)", ({ inp, args }) => {
     util.testExpression`"${inp}".includes(${util.formatCode(...args)})`.expectToMatchJsResult();
 });

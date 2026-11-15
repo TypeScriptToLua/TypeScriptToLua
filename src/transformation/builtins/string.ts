@@ -38,18 +38,16 @@ export function transformStringPrototypeCall(
             );
 
         case "indexOf": {
+            if (params.length > 1) {
+                return transformLuaLibFunction(context, LuaLibFeature.StringIndexOf, node, caller, ...params);
+            }
+
             const stringExpression = createStringCall(
                 "find",
                 node,
                 caller,
                 params[0] ?? lua.createNilLiteral(),
-                params[1]
-                    ? // string.find handles negative indexes by making it relative to string end, but for indexOf it's the same as 0
-                      lua.createCallExpression(
-                          lua.createTableIndexExpression(lua.createIdentifier("math"), lua.createStringLiteral("max")),
-                          [addToNumericExpression(params[1], 1), lua.createNumericLiteral(1)]
-                      )
-                    : lua.createNilLiteral(),
+                lua.createNilLiteral(),
                 lua.createBooleanLiteral(true)
             );
 

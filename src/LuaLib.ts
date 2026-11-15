@@ -104,6 +104,7 @@ export enum LuaLibFeature {
     StringCharCodeAt = "StringCharCodeAt",
     StringEndsWith = "StringEndsWith",
     StringIncludes = "StringIncludes",
+    StringIndexOf = "StringIndexOf",
     StringPadEnd = "StringPadEnd",
     StringPadStart = "StringPadStart",
     StringReplace = "StringReplace",

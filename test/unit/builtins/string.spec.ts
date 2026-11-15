@@ -134,6 +134,13 @@ test.each([
     { inp: "00100", searchValue: "1", offset: -1 },
     { inp: "00100", searchValue: "1", offset: -2 },
     { inp: "01010", searchValue: "1", offset: -3 },
+    { inp: "hello test", searchValue: "", offset: 10 },
+    { inp: "hello test", searchValue: "", offset: 20 },
+    { inp: "hello test", searchValue: "", offset: Infinity },
+    { inp: "hello test", searchValue: "t", offset: Infinity },
+    { inp: "hello test", searchValue: "t", offset: -Infinity },
+    { inp: "hello test", searchValue: "h", offset: NaN },
+    { inp: "hello test", searchValue: "t", offset: 3.5 },
 ])("string.indexOf with offset (%p)", ({ inp, searchValue, offset }) => {
     util.testExpressionTemplate`${inp}.indexOf(${searchValue}, ${offset})`.expectToMatchJsResult();
 });
@@ -455,6 +462,13 @@ test.each(["string | undefined", "string | null", "null | string", "null | undef
 );
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1406
+test("string.indexOf with undefined offset", () => {
+    util.testFunction`
+        const offset: number | undefined = undefined;
+        return "hello test".indexOf("t", offset);
+    `.expectToMatchJsResult();
+});
+
 test("string.indexOf without arguments (#1406)", () => {
     util.testExpression`"".indexOf()`.expectNoTranspileException();
 });

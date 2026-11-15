@@ -68,21 +68,21 @@ export function transformStringPrototypeCall(
 
         case "slice": {
             const literalArg1 = getNumberLiteralValue(params[0]);
-            if (params[0] && literalArg1 !== undefined) {
+            if (params[0] && literalArg1 !== undefined && Number.isInteger(literalArg1)) {
                 let stringSubArgs: lua.Expression[] | undefined = [
                     addToNumericExpression(params[0], literalArg1 < 0 ? 0 : 1),
                 ];
 
                 if (params[1]) {
                     const literalArg2 = getNumberLiteralValue(params[1]);
-                    if (literalArg2 !== undefined) {
+                    if (literalArg2 !== undefined && Number.isInteger(literalArg2)) {
                         stringSubArgs.push(addToNumericExpression(params[1], literalArg2 < 0 ? -1 : 0));
                     } else {
                         stringSubArgs = undefined;
                     }
                 }
 
-                // Inline string.sub call if we know that both parameters are pure and aren't negative
+                // Inline string.sub call if we know that both parameters are pure integers and aren't negative
                 if (stringSubArgs) {
                     return createStringCall("sub", node, caller, ...stringSubArgs);
                 }
@@ -108,8 +108,8 @@ export function transformStringPrototypeCall(
 
         case "charAt": {
             const literalValue = getNumberLiteralValue(params[0]);
-            // Inline string.sub call if we know that parameter is pure and isn't negative
-            if (literalValue !== undefined && literalValue >= 0) {
+            // Inline string.sub call if we know that parameter is a pure integer and isn't negative
+            if (literalValue !== undefined && Number.isInteger(literalValue) && literalValue >= 0) {
                 const firstParamPlusOne = addToNumericExpression(params[0] ?? lua.createNilLiteral(), 1);
                 return createStringCall("sub", node, caller, firstParamPlusOne, firstParamPlusOne);
             }
@@ -119,8 +119,8 @@ export function transformStringPrototypeCall(
 
         case "charCodeAt": {
             const literalValue = getNumberLiteralValue(params[0]);
-            // Inline string.sub call if we know that parameter is pure and isn't negative
-            if (literalValue !== undefined && literalValue >= 0) {
+            // Inline string.sub call if we know that parameter is a pure integer and isn't negative
+            if (literalValue !== undefined && Number.isInteger(literalValue) && literalValue >= 0) {
                 return lua.createBinaryExpression(
                     createStringCall(
                         "byte",

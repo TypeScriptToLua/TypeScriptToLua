@@ -230,6 +230,22 @@ test.each([
     util.testExpressionTemplate`${inp}.split(${separator})`.expectToMatchJsResult();
 });
 
+test.each([
+    { inp: "hello test", separator: "", limit: 0 },
+    { inp: "hello test", separator: "", limit: 3 },
+    { inp: "hello test", separator: "", limit: 20 },
+    { inp: "hello test", separator: "", limit: -1 },
+    { inp: "hello test", separator: "l", limit: 2 },
+    { inp: "hello test", separator: "l", limit: 2.5 },
+    { inp: "hello test", separator: "l", limit: -1 },
+    { inp: "hello test", separator: "l", limit: -4294967295 },
+    { inp: "hello test", separator: "l", limit: 4294967298 },
+    { inp: "hello test", separator: "l", limit: NaN },
+    { inp: "hello test", separator: "l", limit: Infinity },
+])("string.split with limit (%p)", ({ inp, separator, limit }) => {
+    util.testExpressionTemplate`${inp}.split(${separator}, ${limit})`.expectToMatchJsResult();
+});
+
 test("string.split inline", () => {
     util.testExpression`"a, b, c".split(",")`
         .setOptions({ luaLibImport: LuaLibImportKind.Inline })

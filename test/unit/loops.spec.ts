@@ -194,6 +194,181 @@ test.each([
     `.expectToMatchJsResult();
 });
 
+// Per-iteration binding for for-let (ES2015 semantics): each iteration's body runs
+// against a fresh binding that closures can capture independently, while mutations
+// made in the body still flow through to the incrementor.
+test("for let per-iteration binding in closures", () => {
+    util.testFunction`
+        const fns: (() => number)[] = [];
+        for (let i = 0; i < 4; i++) {
+            fns.push(() => i);
+        }
+        return fns.map(fn => fn());
+    `.expectToMatchJsResult();
+});
+
+test("for let mutation in body flows through incrementor", () => {
+    util.testFunction`
+        const results: number[] = [];
+        for (let i = 0; i < 10; i++) {
+            results.push(i);
+            if (i === 2) i = 8;
+        }
+        return results;
+    `.expectToMatchJsResult();
+});
+
+test("for let closure captures pre-incrementor mutation", () => {
+    util.testFunction`
+        const fns: (() => number)[] = [];
+        for (let i = 0; i < 10; i++) {
+            fns.push(() => i);
+            if (i === 2) i = 8;
+        }
+        return fns.map(f => f());
+    `.expectToMatchJsResult();
+});
+
+test("for let closure captures sibling const per iteration", () => {
+    util.testFunction`
+        const fns: (() => number)[] = [];
+        for (let i = 0; i < 3; i++) {
+            const x = i * 10;
+            fns.push(() => x + i);
+        }
+        return fns.map(f => f());
+    `.expectToMatchJsResult();
+});
+
+util.testEachVersion(
+    "for let mutation before continue flows through incrementor",
+    () => util.testFunction`
+        const fns: (() => number)[] = [];
+        for (let i = 0; i < 10; i++) {
+            fns.push(() => i);
+            if (i === 2) { i = 8; continue; }
+        }
+        return fns.map(f => f());
+    `,
+    util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+);
+
+test("for let mutation via synchronous IIFE", () => {
+    util.testFunction`
+        const results: number[] = [];
+        const fns: (() => number)[] = [];
+        for (let i = 0; i < 10; i++) {
+            fns.push(() => i);
+            results.push(i);
+            if (i === 2) (() => { i = 8; })();
+        }
+        return { results, captured: fns.map(f => f()) };
+    `.expectToMatchJsResult();
+});
+
+test("for let mutation via destructuring assignment", () => {
+    util.testFunction`
+        const results: number[] = [];
+        const fns: (() => number)[] = [];
+        for (let i = 0; i < 10; i++) {
+            fns.push(() => i);
+            results.push(i);
+            if (i === 2) [i] = [8];
+        }
+        return { results, captured: fns.map(f => f()) };
+    `.expectToMatchJsResult();
+});
+
+test("for let multiple captured vars per iteration", () => {
+    util.testFunction`
+        const fns: (() => number)[] = [];
+        for (let i = 0, j = 10; i < 3; i++, j--) {
+            fns.push(() => i + j);
+        }
+        return fns.map(f => f());
+    `.expectToMatchJsResult();
+});
+
+util.testEachVersion(
+    "for let compound assignment before continue",
+    () => util.testFunction`
+        const fns: (() => number)[] = [];
+        for (let i = 0; i < 10; i++) {
+            fns.push(() => i);
+            if (i === 2) { i += 5; continue; }
+        }
+        return fns.map(f => f());
+    `,
+    util.expectEachVersionExceptJit(builder => builder.expectToMatchJsResult())
+);
+
+test("for let with break captures pre-break value", () => {
+    util.testFunction`
+        const fns: (() => number)[] = [];
+        for (let i = 0; i < 10; i++) {
+            fns.push(() => i);
+            if (i === 3) break;
+        }
+        return fns.map(f => f());
+    `.expectToMatchJsResult();
+});
+
+test("for let nested capturing outer var", () => {
+    util.testFunction`
+        const fns: (() => number)[] = [];
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 2; j++) {
+                fns.push(() => i * 10 + j);
+            }
+        }
+        return fns.map(f => f());
+    `.expectToMatchJsResult();
+});
+
+test("for let array destructuring initializer", () => {
+    util.testFunction`
+        const fns: (() => number)[] = [];
+        for (let [a, b] = [0, 10]; a < 3; a++, b--) {
+            fns.push(() => a + b);
+        }
+        return fns.map(f => f());
+    `.expectToMatchJsResult();
+});
+
+test("for let object destructuring initializer", () => {
+    util.testFunction`
+        const fns: (() => number)[] = [];
+        for (let { a, b } = { a: 0, b: 10 }; a < 3; a++, b--) {
+            fns.push(() => a + b);
+        }
+        return fns.map(f => f());
+    `.expectToMatchJsResult();
+});
+
+test("for let closure capture through try/catch with mutation", () => {
+    util.testFunction`
+        const fns: (() => number)[] = [];
+        for (let i = 0; i < 4; i++) {
+            try {
+                fns.push(() => i);
+            } catch (e) {}
+        }
+        return fns.map(f => f());
+    `.expectToMatchJsResult();
+});
+
+test("for let IIFE mutation is visible to rest of iteration", () => {
+    util.testFunction`
+        const results: number[] = [];
+        for (let i = 0; i < 4; i++) {
+            results.push(i);
+            (() => { i = i + 10; })();
+            results.push(i);
+        }
+        return results;
+    `.expectToMatchJsResult();
+});
+
 test("for scope", () => {
     util.testFunction`
         let i = 42;

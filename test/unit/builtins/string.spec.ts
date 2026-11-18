@@ -72,6 +72,15 @@ describe.each(["replace", "replaceAll"])("string.%s", method => {
         { inp: "hello %test", searchValue: "%test", replaceValue: "world" },
         { inp: "hello test.", searchValue: ".", replaceValue: "$" },
         { inp: "aaa", searchValue: "a", replaceValue: "b" },
+        { inp: "hello test", searchValue: "test", replaceValue: "[$&]" },
+        { inp: "hello test", searchValue: "test", replaceValue: "$$" },
+        { inp: "hello test", searchValue: "test", replaceValue: "$$&" },
+        { inp: "hello test", searchValue: "test", replaceValue: "<$`>" },
+        { inp: "hello test", searchValue: "hello", replaceValue: "<$'>" },
+        { inp: "hello test", searchValue: "test", replaceValue: "$0 $1 $<name> $" },
+        { inp: "hello test", searchValue: "", replaceValue: "[$&|$`|$']" },
+        { inp: "aaa", searchValue: "a", replaceValue: "<$`|$'>" },
+        { inp: "a%b", searchValue: "%", replaceValue: "$&$&" },
     ];
 
     test.each(testCases)("string replacer %p", ({ inp, searchValue, replaceValue }) => {

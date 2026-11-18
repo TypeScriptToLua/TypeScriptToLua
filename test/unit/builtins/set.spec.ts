@@ -235,6 +235,402 @@ describe.each(iterationMethods)("set.%s() handles mutation", iterationMethod => 
             return results;
         `.expectToMatchJsResult();
     });
+
+    // Per spec a finished iterator drops its set reference, so later add() must not revive it.
+    test("exhausted iterator stays done after add()", () => {
+        util.testFunction`
+            const set = new Set([1]);
+            const iter = set.${iterationMethod}();
+            const r1 = iter.next();
+            const r2 = iter.next();
+            set.add(2);
+            const r3 = iter.next();
+            return [r1, r2, r3];
+        `.expectToMatchJsResult();
+    });
+
+    test("exhausted iterator of empty set stays done after add()", () => {
+        util.testFunction`
+            const set = new Set<number>();
+            const iter = set.${iterationMethod}();
+            const r1 = iter.next();
+            set.add(1);
+            const r2 = iter.next();
+            return [r1, r2];
+        `.expectToMatchJsResult();
+    });
+
+    test("exhausted iterator stays done after compaction and add()", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3, 4]);
+            const iter = set.${iterationMethod}();
+            while (!iter.next().done) {}
+            set.delete(1);
+            set.delete(2);
+            set.delete(3); // deleted > size: triggers compaction
+            set.add(5);
+            return iter.next();
+        `.expectToMatchJsResult();
+    });
+
+    test("exhausted iterator stays done after clear() and add()", () => {
+        util.testFunction`
+            const set = new Set([1, 2]);
+            const iter = set.${iterationMethod}();
+            while (!iter.next().done) {}
+            set.clear();
+            set.add(3);
+            set.add(4);
+            return iter.next();
+        `.expectToMatchJsResult();
+    });
+
+    test("for-of delete current entry continues to next", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3]);
+            const visited: number[] = [];
+            for (const value of set) {
+                visited.push(value);
+                set.delete(value);
+            }
+            return { visited, size: set.size };
+        `.expectToMatchJsResult();
+    });
+
+    test("for-of delete current entry with only two entries", () => {
+        util.testFunction`
+            const set = new Set([1, 2]);
+            const visited: number[] = [];
+            for (const value of set) {
+                visited.push(value);
+                set.delete(value);
+            }
+            return { visited, size: set.size };
+        `.expectToMatchJsResult();
+    });
+
+    test("for-of delete other entry during iteration", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3]);
+            const visited: number[] = [];
+            for (const value of set) {
+                visited.push(value);
+                if (value === 1) { set.delete(2); }
+            }
+            return { visited, size: set.size };
+        `.expectToMatchJsResult();
+    });
+
+    test("forEach delete current entry continues to next", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3]);
+            const visited: number[] = [];
+            set.forEach(value => {
+                visited.push(value);
+                set.delete(value);
+            });
+            return { visited, size: set.size };
+        `.expectToMatchJsResult();
+    });
+
+    test("forEach delete current and next entry", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3]);
+            const visited: number[] = [];
+            set.forEach(value => {
+                visited.push(value);
+                if (value === 1) { set.delete(1); set.delete(2); }
+            });
+            return { visited, size: set.size };
+        `.expectToMatchJsResult();
+    });
+
+    test("forEach delete current then re-add", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3]);
+            const visited: number[] = [];
+            set.forEach(value => {
+                visited.push(value);
+                if (value === 1) { set.delete(1); set.delete(2); set.add(2); }
+            });
+            return { visited, size: set.size };
+        `.expectToMatchJsResult();
+    });
+
+    test("for-of delete current and next entry", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3]);
+            const visited: number[] = [];
+            for (const value of set) {
+                visited.push(value);
+                if (value === 1) { set.delete(1); set.delete(2); }
+            }
+            return { visited, size: set.size };
+        `.expectToMatchJsResult();
+    });
+
+    test("for-of delete current and all remaining entries", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3, 4]);
+            const visited: number[] = [];
+            for (const value of set) {
+                visited.push(value);
+                if (value === 1) { set.delete(1); set.delete(2); set.delete(3); }
+            }
+            return { visited, size: set.size };
+        `.expectToMatchJsResult();
+    });
+
+    test("for-of delete current and next then re-add next", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3]);
+            const visited: number[] = [];
+            for (const value of set) {
+                visited.push(value);
+                if (value === 1) { set.delete(1); set.delete(2); set.add(2); }
+            }
+            return { visited, size: set.size };
+        `.expectToMatchJsResult();
+    });
+
+    test("for-of delete then re-add same value", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3]);
+            const visited: number[] = [];
+            for (const value of set) {
+                visited.push(value);
+                if (value === 1) { set.delete(2); set.add(2); }
+            }
+            return { visited, size: set.size };
+        `.expectToMatchJsResult();
+    });
+});
+
+// Per spec clear() empties entries in place, so live iterators go on to entries added afterwards.
+describe.each(iterationMethods)("set.%s() handles clear during iteration", iterationMethod => {
+    test("for-of clear then add visits only new entries", () => {
+        util.testFunction`
+            const set = new Set([1, 2]);
+            const visited: unknown[] = [];
+            for (const item of set.${iterationMethod}()) {
+                visited.push(item);
+                if (visited.length === 1) { set.clear(); set.add(10); set.add(11); set.add(12); }
+            }
+            return visited;
+        `.expectToMatchJsResult();
+    });
+
+    test("for-of clear then add fewer entries than already visited", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3]);
+            const visited: unknown[] = [];
+            for (const item of set.${iterationMethod}()) {
+                visited.push(item);
+                if (visited.length === 2) { set.clear(); set.add(10); }
+            }
+            return visited;
+        `.expectToMatchJsResult();
+    });
+
+    test("for-of clear without adding stops iteration", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3]);
+            const visited: unknown[] = [];
+            for (const item of set.${iterationMethod}()) {
+                visited.push(item);
+                if (visited.length === 1) set.clear();
+            }
+            return { visited, size: set.size };
+        `.expectToMatchJsResult();
+    });
+
+    test("unstarted iterator visits only entries added after clear()", () => {
+        util.testFunction`
+            const set = new Set([1, 2]);
+            const iter = set.${iterationMethod}();
+            set.clear();
+            set.add(3);
+            return [...iter];
+        `.expectToMatchJsResult();
+    });
+
+    test("two live iterators both move to entries added after clear()", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3]);
+            const iterA = set.${iterationMethod}();
+            const iterB = set.${iterationMethod}();
+            iterA.next();
+            iterB.next();
+            iterB.next();
+            set.clear();
+            set.add(10);
+            set.add(11);
+            return { a: [...iterA], b: [...iterB] };
+        `.expectToMatchJsResult();
+    });
+
+    test("for-of clear twice then add", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3]);
+            const visited: unknown[] = [];
+            for (const item of set.${iterationMethod}()) {
+                visited.push(item);
+                if (visited.length === 1) {
+                    set.clear();
+                    set.add(10);
+                    set.add(11);
+                    set.clear();
+                    set.add(20);
+                }
+            }
+            return visited;
+        `.expectToMatchJsResult();
+    });
+
+    test("iterator parked across compaction then clear()", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3, 4, 5, 6]);
+            const iter = set.${iterationMethod}();
+            iter.next();
+            iter.next();
+            for (let i = 1; i <= 4; i++) set.delete(i); // deleted > size: triggers compaction
+            set.clear();
+            set.add(7);
+            set.add(8);
+            return [...iter];
+        `.expectToMatchJsResult();
+    });
+
+    test("for-of clear, add, then delete-triggered compaction", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3, 4]);
+            const visited: unknown[] = [];
+            for (const item of set.${iterationMethod}()) {
+                visited.push(item);
+                if (visited.length === 1) {
+                    set.clear();
+                    set.add(10);
+                    set.add(11);
+                    set.add(12);
+                    set.delete(10);
+                    set.delete(11); // deleted > size: triggers compaction
+                }
+            }
+            return visited;
+        `.expectToMatchJsResult();
+    });
+});
+
+test("set forEach clear then add visits new entries", () => {
+    util.testFunction`
+        const set = new Set([1, 2]);
+        const visited: number[] = [];
+        set.forEach(value => {
+            visited.push(value);
+            if (value === 1) { set.clear(); set.add(10); set.add(11); set.add(12); }
+        });
+        return visited;
+    `.expectToMatchJsResult();
+});
+
+// Adapted from V8's collection-iterator.js (TestSetIteratorMutations2/3)
+// https://chromium.googlesource.com/v8/v8/+/main/test/mjsunit/es6/collection-iterator.js
+describe("set iterator stress (v8-style)", () => {
+    test("iterator survives mass add+delete between next() calls", () => {
+        util.testFunction`
+            const s = new Set<number>();
+            s.add(1);
+            s.add(2);
+            const iter = s.values();
+            const r1 = iter.next();
+            s.delete(2);
+            s.delete(1);
+            for (let x = 2; x < 500; ++x) s.add(x);
+            for (let x = 2; x < 500; ++x) s.delete(x);
+            for (let x = 2; x < 1000; ++x) s.add(x);
+            const r2 = iter.next();
+            for (let x = 1001; x < 2000; ++x) s.add(x);
+            s.delete(3);
+            for (let x = 6; x < 2000; ++x) s.delete(x);
+            const r3 = iter.next();
+            s.delete(5);
+            const r4 = iter.next();
+            return [r1.value, r2.value, r3.value, r4.done];
+        `.expectToMatchJsResult();
+    });
+
+    test("delete all then re-add, iterator finds re-added", () => {
+        util.testFunction`
+            const s = new Set<number>();
+            s.add(1);
+            s.add(2);
+            const iter = s.values();
+            const r1 = iter.next();
+            s.delete(2);
+            s.delete(1);
+            s.add(2);
+            const r2 = iter.next();
+            const r3 = iter.next();
+            return [r1.value, r2.value, r3.done];
+        `.expectToMatchJsResult();
+    });
+
+    test("mass delete during for-of", () => {
+        util.testFunction`
+            const s = new Set<number>();
+            for (let i = 0; i < 100; i++) s.add(i);
+            const visited: number[] = [];
+            for (const v of s) {
+                visited.push(v);
+                s.delete(v);
+            }
+            return { count: visited.length, size: s.size, first: visited[0], last: visited[visited.length - 1] };
+        `.expectToMatchJsResult();
+    });
+
+    test("mass delete every other during for-of", () => {
+        util.testFunction`
+            const s = new Set<number>();
+            for (let i = 0; i < 100; i++) s.add(i);
+            const visited: number[] = [];
+            for (const v of s) {
+                visited.push(v);
+                s.delete(v);
+                s.delete(v + 1);
+            }
+            return { count: visited.length, size: s.size };
+        `.expectToMatchJsResult();
+    });
+});
+
+// See map.spec.ts "map memory" describe block for detailed explanation of
+// the Lua table rehash trick with negative keys.
+// https://github.com/lua/lua/blob/master/ltable.c (luaH_newkey, rehash, computesizes)
+describe("set memory", () => {
+    test("deleting values should not leak memory", () => {
+        const result = util.testFunction`
+            /** @noSelf */ declare function collectgarbage(opt?: string): number;
+            collectgarbage("collect");
+            const baseline = collectgarbage("count");
+
+            const set = new Set<number>();
+            for (let i = 1; i <= 10000; i++) set.add(i);
+            for (let i = 1; i <= 10000; i++) set.delete(i);
+            // Trigger Lua table rehash to shrink internal tables
+            set.add(-1);
+            set.delete(-1);
+
+            collectgarbage("collect");
+            const after = collectgarbage("count");
+
+            return {
+                size: set.size,
+                retained: Math.floor(after - baseline),
+            };
+        `.getLuaExecutionResult();
+        expect(result.size).toBe(0);
+        expect(result.retained).toBe(0);
+    });
 });
 
 test("instanceof Set without creating set", () => {

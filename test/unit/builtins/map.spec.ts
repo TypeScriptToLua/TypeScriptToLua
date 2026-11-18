@@ -247,6 +247,55 @@ describe.each(iterationMethods)("map.%s() handles mutation", iterationMethod => 
         `.expectToMatchJsResult();
     });
 
+    // Per spec a finished iterator drops its map reference, so later set() must not revive it.
+    test("exhausted iterator stays done after set()", () => {
+        util.testFunction`
+            const map = new Map<number, string>([[1, "a"]]);
+            const iter = map.${iterationMethod}();
+            const r1 = iter.next();
+            const r2 = iter.next();
+            map.set(2, "b");
+            const r3 = iter.next();
+            return [r1, r2, r3];
+        `.expectToMatchJsResult();
+    });
+
+    test("exhausted iterator of empty map stays done after set()", () => {
+        util.testFunction`
+            const map = new Map<number, string>();
+            const iter = map.${iterationMethod}();
+            const r1 = iter.next();
+            map.set(1, "a");
+            const r2 = iter.next();
+            return [r1, r2];
+        `.expectToMatchJsResult();
+    });
+
+    test("exhausted iterator stays done after compaction and set()", () => {
+        util.testFunction`
+            const map = new Map<number, string>([[1, "a"], [2, "b"], [3, "c"], [4, "d"]]);
+            const iter = map.${iterationMethod}();
+            while (!iter.next().done) {}
+            map.delete(1);
+            map.delete(2);
+            map.delete(3); // deleted > size: triggers compaction
+            map.set(5, "e");
+            return iter.next();
+        `.expectToMatchJsResult();
+    });
+
+    test("exhausted iterator stays done after clear() and set()", () => {
+        util.testFunction`
+            const map = new Map<number, string>([[1, "a"], [2, "b"]]);
+            const iter = map.${iterationMethod}();
+            while (!iter.next().done) {}
+            map.clear();
+            map.set(3, "c");
+            map.set(4, "d");
+            return iter.next();
+        `.expectToMatchJsResult();
+    });
+
     test("for-of delete current entry continues to next", () => {
         util.testFunction`
             const map = new Map<string, number>([["a", 1], ["b", 2], ["c", 3]]);
@@ -379,6 +428,133 @@ describe.each(iterationMethods)("map.%s() handles mutation", iterationMethod => 
             return { visited, size: map.size };
         `.expectToMatchJsResult();
     });
+});
+
+// Per spec clear() empties entries in place, so live iterators go on to entries added afterwards.
+describe.each(iterationMethods)("map.%s() handles clear during iteration", iterationMethod => {
+    test("for-of clear then add visits only new entries", () => {
+        util.testFunction`
+            const map = new Map<number, string>([[1, "a"], [2, "b"]]);
+            const visited: unknown[] = [];
+            for (const item of map.${iterationMethod}()) {
+                visited.push(item);
+                if (visited.length === 1) { map.clear(); map.set(10, "x"); map.set(11, "y"); map.set(12, "z"); }
+            }
+            return visited;
+        `.expectToMatchJsResult();
+    });
+
+    test("for-of clear then add fewer entries than already visited", () => {
+        util.testFunction`
+            const map = new Map<number, string>([[1, "a"], [2, "b"], [3, "c"]]);
+            const visited: unknown[] = [];
+            for (const item of map.${iterationMethod}()) {
+                visited.push(item);
+                if (visited.length === 2) { map.clear(); map.set(10, "x"); }
+            }
+            return visited;
+        `.expectToMatchJsResult();
+    });
+
+    test("for-of clear without adding stops iteration", () => {
+        util.testFunction`
+            const map = new Map<number, string>([[1, "a"], [2, "b"], [3, "c"]]);
+            const visited: unknown[] = [];
+            for (const item of map.${iterationMethod}()) {
+                visited.push(item);
+                if (visited.length === 1) map.clear();
+            }
+            return { visited, size: map.size };
+        `.expectToMatchJsResult();
+    });
+
+    test("unstarted iterator visits only entries added after clear()", () => {
+        util.testFunction`
+            const map = new Map<number, string>([[1, "a"], [2, "b"]]);
+            const iter = map.${iterationMethod}();
+            map.clear();
+            map.set(3, "c");
+            return [...iter];
+        `.expectToMatchJsResult();
+    });
+
+    test("two live iterators both move to entries added after clear()", () => {
+        util.testFunction`
+            const map = new Map<number, string>([[1, "a"], [2, "b"], [3, "c"]]);
+            const iterA = map.${iterationMethod}();
+            const iterB = map.${iterationMethod}();
+            iterA.next();
+            iterB.next();
+            iterB.next();
+            map.clear();
+            map.set(10, "x");
+            map.set(11, "y");
+            return { a: [...iterA], b: [...iterB] };
+        `.expectToMatchJsResult();
+    });
+
+    test("for-of clear twice then add", () => {
+        util.testFunction`
+            const map = new Map<number, string>([[1, "a"], [2, "b"], [3, "c"]]);
+            const visited: unknown[] = [];
+            for (const item of map.${iterationMethod}()) {
+                visited.push(item);
+                if (visited.length === 1) {
+                    map.clear();
+                    map.set(10, "x");
+                    map.set(11, "y");
+                    map.clear();
+                    map.set(20, "z");
+                }
+            }
+            return visited;
+        `.expectToMatchJsResult();
+    });
+
+    test("iterator parked across compaction then clear()", () => {
+        util.testFunction`
+            const map = new Map<number, string>([[1, "a"], [2, "b"], [3, "c"], [4, "d"], [5, "e"], [6, "f"]]);
+            const iter = map.${iterationMethod}();
+            iter.next();
+            iter.next();
+            for (let i = 1; i <= 4; i++) map.delete(i); // deleted > size: triggers compaction
+            map.clear();
+            map.set(7, "g");
+            map.set(8, "h");
+            return [...iter];
+        `.expectToMatchJsResult();
+    });
+
+    test("for-of clear, add, then delete-triggered compaction", () => {
+        util.testFunction`
+            const map = new Map<number, string>([[1, "a"], [2, "b"], [3, "c"], [4, "d"]]);
+            const visited: unknown[] = [];
+            for (const item of map.${iterationMethod}()) {
+                visited.push(item);
+                if (visited.length === 1) {
+                    map.clear();
+                    map.set(10, "x");
+                    map.set(11, "y");
+                    map.set(12, "z");
+                    map.delete(10);
+                    map.delete(11); // deleted > size: triggers compaction
+                }
+            }
+            return visited;
+        `.expectToMatchJsResult();
+    });
+});
+
+test("map forEach clear then add visits new entries", () => {
+    util.testFunction`
+        const map = new Map<number, string>([[1, "a"], [2, "b"]]);
+        const visited: Array<[number, string]> = [];
+        map.forEach((value, key) => {
+            visited.push([key, value]);
+            if (key === 1) { map.clear(); map.set(10, "x"); map.set(11, "y"); map.set(12, "z"); }
+        });
+        return visited;
+    `.expectToMatchJsResult();
 });
 
 // Adapted from V8's collection-iterator.js (TestSetIteratorMutations2/3)

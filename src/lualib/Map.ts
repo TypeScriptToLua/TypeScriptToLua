@@ -2,15 +2,38 @@
 // V8-style version chain compaction. Deleted entries become nil (tombstones);
 // iterators skip them via idx++. Compaction creates new arrays and links
 // old → new at index 0; iterators transition lazily by adjusting their
-// index (subtracting holes before current position).
+// index (subtracting holes before current position). A finished iterator
+// parks idx at Infinity so later inserts can't revive it.
 //
 // Using integer-indexed arrays (orderedKeys/orderedValues) for the insertion
 // order leverages Lua's array part: sequential integer keys are stored in
 // contiguous memory, making iteration a simple pointer offset (~2-3 cycles)
 // rather than a hash table lookup (~15-50 cycles per step).
 //
-// Based on V8's OrderedHashTable (ordered-hash-table.cc: Rehash, Transition):
+// Based on V8's OrderedHashTable (ordered-hash-table.cc: Rehash, Clear, Transition):
 //   https://chromium.googlesource.com/v8/v8/+/main/src/objects/ordered-hash-table.cc
+
+// Written by clear() at obsolete[-1], where compact() stores hole positions (>= 1).
+// V8 kClearedTableSentinel: https://chromium.googlesource.com/v8/v8/+/c7c19254deff6b77a73c80e1b47f131b0162a13b/src/objects/ordered-hash-table.h#204
+const CLEARED_TABLE_SENTINEL = -1;
+
+// V8 OrderedHashTableIterator::Transition (0-based there, 1-based here):
+// https://chromium.googlesource.com/v8/v8/+/c7c19254deff6b77a73c80e1b47f131b0162a13b/src/objects/ordered-hash-table.cc#1448
+function transitionIndex(this: void, obsolete: LuaTable<number, unknown>, idx: number): number {
+    if (obsolete.get(-1) === CLEARED_TABLE_SENTINEL) {
+        return idx === Infinity ? idx : 1; // exhausted iterators stay done
+    }
+    let adj = 0;
+    let h = 1;
+    while (true) {
+        const holePos = obsolete.get(-h) as number | undefined;
+        if (holePos === undefined || holePos >= idx) break;
+        adj++;
+        h++;
+    }
+    return idx - adj;
+}
+
 export class Map<K extends AnyNotNil, V> {
     public static [Symbol.species] = Map;
     public [Symbol.toStringTag] = "Map";
@@ -48,10 +71,17 @@ export class Map<K extends AnyNotNil, V> {
         }
     }
 
+    // O(1): mark the old arrays cleared rather than recording each slot as a hole.
+    // V8 Clear: https://chromium.googlesource.com/v8/v8/+/c7c19254deff6b77a73c80e1b47f131b0162a13b/src/objects/ordered-hash-table.cc#122
     public clear(): void {
+        const oldKeys = this.orderedKeys as LuaTable<number, unknown>;
+        const oldValues = this.orderedValues as LuaTable<number, unknown>;
         this.keyIndex = new LuaTable();
         this.orderedKeys = new LuaTable();
         this.orderedValues = new LuaTable();
+        oldKeys.set(-1, CLEARED_TABLE_SENTINEL);
+        oldKeys.set(0, this.orderedKeys);
+        oldValues.set(0, this.orderedValues);
         this.nextSlot = 1;
         this.size = 0;
         this.deletedCount = 0;
@@ -166,15 +196,7 @@ export class Map<K extends AnyNotNil, V> {
             },
             next(): IteratorResult<[K, V]> {
                 while (keys.get(0) !== undefined) {
-                    let adj = 0;
-                    let h = 1;
-                    while (true) {
-                        const holePos = keys.get(-h) as any as number | undefined;
-                        if (holePos === undefined || holePos >= idx) break;
-                        adj++;
-                        h++;
-                    }
-                    idx -= adj;
+                    idx = transitionIndex(keys as LuaTable<number, unknown>, idx);
                     vals = vals.get(0) as any;
                     keys = keys.get(0) as any;
                 }
@@ -182,6 +204,7 @@ export class Map<K extends AnyNotNil, V> {
                     idx++;
                 }
                 if (idx >= map.nextSlot) {
+                    idx = Infinity;
                     return { done: true, value: undefined! };
                 }
                 const i = idx;
@@ -201,21 +224,14 @@ export class Map<K extends AnyNotNil, V> {
             },
             next(): IteratorResult<K> {
                 while (keys.get(0) !== undefined) {
-                    let adj = 0;
-                    let h = 1;
-                    while (true) {
-                        const holePos = keys.get(-h) as any as number | undefined;
-                        if (holePos === undefined || holePos >= idx) break;
-                        adj++;
-                        h++;
-                    }
-                    idx -= adj;
+                    idx = transitionIndex(keys as LuaTable<number, unknown>, idx);
                     keys = keys.get(0) as any;
                 }
                 while (idx < map.nextSlot && keys.get(idx) === undefined) {
                     idx++;
                 }
                 if (idx >= map.nextSlot) {
+                    idx = Infinity;
                     return { done: true, value: undefined! };
                 }
                 const i = idx;
@@ -236,15 +252,7 @@ export class Map<K extends AnyNotNil, V> {
             },
             next(): IteratorResult<V> {
                 while (keys.get(0) !== undefined) {
-                    let adj = 0;
-                    let h = 1;
-                    while (true) {
-                        const holePos = keys.get(-h) as any as number | undefined;
-                        if (holePos === undefined || holePos >= idx) break;
-                        adj++;
-                        h++;
-                    }
-                    idx -= adj;
+                    idx = transitionIndex(keys as LuaTable<number, unknown>, idx);
                     vals = vals.get(0) as any;
                     keys = keys.get(0) as any;
                 }
@@ -252,6 +260,7 @@ export class Map<K extends AnyNotNil, V> {
                     idx++;
                 }
                 if (idx >= map.nextSlot) {
+                    idx = Infinity;
                     return { done: true, value: undefined! };
                 }
                 const i = idx;

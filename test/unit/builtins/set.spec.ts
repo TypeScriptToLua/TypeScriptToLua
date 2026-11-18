@@ -236,6 +236,55 @@ describe.each(iterationMethods)("set.%s() handles mutation", iterationMethod => 
         `.expectToMatchJsResult();
     });
 
+    // Per spec a finished iterator drops its set reference, so later add() must not revive it.
+    test("exhausted iterator stays done after add()", () => {
+        util.testFunction`
+            const set = new Set([1]);
+            const iter = set.${iterationMethod}();
+            const r1 = iter.next();
+            const r2 = iter.next();
+            set.add(2);
+            const r3 = iter.next();
+            return [r1, r2, r3];
+        `.expectToMatchJsResult();
+    });
+
+    test("exhausted iterator of empty set stays done after add()", () => {
+        util.testFunction`
+            const set = new Set<number>();
+            const iter = set.${iterationMethod}();
+            const r1 = iter.next();
+            set.add(1);
+            const r2 = iter.next();
+            return [r1, r2];
+        `.expectToMatchJsResult();
+    });
+
+    test("exhausted iterator stays done after compaction and add()", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3, 4]);
+            const iter = set.${iterationMethod}();
+            while (!iter.next().done) {}
+            set.delete(1);
+            set.delete(2);
+            set.delete(3); // deleted > size: triggers compaction
+            set.add(5);
+            return iter.next();
+        `.expectToMatchJsResult();
+    });
+
+    test("exhausted iterator stays done after clear() and add()", () => {
+        util.testFunction`
+            const set = new Set([1, 2]);
+            const iter = set.${iterationMethod}();
+            while (!iter.next().done) {}
+            set.clear();
+            set.add(3);
+            set.add(4);
+            return iter.next();
+        `.expectToMatchJsResult();
+    });
+
     test("for-of delete current entry continues to next", () => {
         util.testFunction`
             const set = new Set([1, 2, 3]);
@@ -355,6 +404,133 @@ describe.each(iterationMethods)("set.%s() handles mutation", iterationMethod => 
             return { visited, size: set.size };
         `.expectToMatchJsResult();
     });
+});
+
+// Per spec clear() empties entries in place, so live iterators go on to entries added afterwards.
+describe.each(iterationMethods)("set.%s() handles clear during iteration", iterationMethod => {
+    test("for-of clear then add visits only new entries", () => {
+        util.testFunction`
+            const set = new Set([1, 2]);
+            const visited: unknown[] = [];
+            for (const item of set.${iterationMethod}()) {
+                visited.push(item);
+                if (visited.length === 1) { set.clear(); set.add(10); set.add(11); set.add(12); }
+            }
+            return visited;
+        `.expectToMatchJsResult();
+    });
+
+    test("for-of clear then add fewer entries than already visited", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3]);
+            const visited: unknown[] = [];
+            for (const item of set.${iterationMethod}()) {
+                visited.push(item);
+                if (visited.length === 2) { set.clear(); set.add(10); }
+            }
+            return visited;
+        `.expectToMatchJsResult();
+    });
+
+    test("for-of clear without adding stops iteration", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3]);
+            const visited: unknown[] = [];
+            for (const item of set.${iterationMethod}()) {
+                visited.push(item);
+                if (visited.length === 1) set.clear();
+            }
+            return { visited, size: set.size };
+        `.expectToMatchJsResult();
+    });
+
+    test("unstarted iterator visits only entries added after clear()", () => {
+        util.testFunction`
+            const set = new Set([1, 2]);
+            const iter = set.${iterationMethod}();
+            set.clear();
+            set.add(3);
+            return [...iter];
+        `.expectToMatchJsResult();
+    });
+
+    test("two live iterators both move to entries added after clear()", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3]);
+            const iterA = set.${iterationMethod}();
+            const iterB = set.${iterationMethod}();
+            iterA.next();
+            iterB.next();
+            iterB.next();
+            set.clear();
+            set.add(10);
+            set.add(11);
+            return { a: [...iterA], b: [...iterB] };
+        `.expectToMatchJsResult();
+    });
+
+    test("for-of clear twice then add", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3]);
+            const visited: unknown[] = [];
+            for (const item of set.${iterationMethod}()) {
+                visited.push(item);
+                if (visited.length === 1) {
+                    set.clear();
+                    set.add(10);
+                    set.add(11);
+                    set.clear();
+                    set.add(20);
+                }
+            }
+            return visited;
+        `.expectToMatchJsResult();
+    });
+
+    test("iterator parked across compaction then clear()", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3, 4, 5, 6]);
+            const iter = set.${iterationMethod}();
+            iter.next();
+            iter.next();
+            for (let i = 1; i <= 4; i++) set.delete(i); // deleted > size: triggers compaction
+            set.clear();
+            set.add(7);
+            set.add(8);
+            return [...iter];
+        `.expectToMatchJsResult();
+    });
+
+    test("for-of clear, add, then delete-triggered compaction", () => {
+        util.testFunction`
+            const set = new Set([1, 2, 3, 4]);
+            const visited: unknown[] = [];
+            for (const item of set.${iterationMethod}()) {
+                visited.push(item);
+                if (visited.length === 1) {
+                    set.clear();
+                    set.add(10);
+                    set.add(11);
+                    set.add(12);
+                    set.delete(10);
+                    set.delete(11); // deleted > size: triggers compaction
+                }
+            }
+            return visited;
+        `.expectToMatchJsResult();
+    });
+});
+
+test("set forEach clear then add visits new entries", () => {
+    util.testFunction`
+        const set = new Set([1, 2]);
+        const visited: number[] = [];
+        set.forEach(value => {
+            visited.push(value);
+            if (value === 1) { set.clear(); set.add(10); set.add(11); set.add(12); }
+        });
+        return visited;
+    `.expectToMatchJsResult();
 });
 
 // Adapted from V8's collection-iterator.js (TestSetIteratorMutations2/3)

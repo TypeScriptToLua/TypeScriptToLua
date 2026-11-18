@@ -1,4 +1,24 @@
 // See Map.ts for design overview and V8 source references.
+
+// Same as Map.ts.
+const CLEARED_TABLE_SENTINEL = -1;
+
+// Same as Map.ts.
+function transitionIndex(this: void, obsolete: LuaTable<number, unknown>, idx: number): number {
+    if (obsolete.get(-1) === CLEARED_TABLE_SENTINEL) {
+        return idx === Infinity ? idx : 1; // exhausted iterators stay done
+    }
+    let adj = 0;
+    let h = 1;
+    while (true) {
+        const holePos = obsolete.get(-h) as number | undefined;
+        if (holePos === undefined || holePos >= idx) break;
+        adj++;
+        h++;
+    }
+    return idx - adj;
+}
+
 export class Set<T extends AnyNotNil> {
     public static [Symbol.species] = Set;
     public [Symbol.toStringTag] = "Set";
@@ -44,9 +64,13 @@ export class Set<T extends AnyNotNil> {
         return this;
     }
 
+    // See Map.clear().
     public clear(): void {
+        const oldKeys = this.orderedKeys as LuaTable<number, unknown>;
         this.keyIndex = new LuaTable();
         this.orderedKeys = new LuaTable();
+        oldKeys.set(-1, CLEARED_TABLE_SENTINEL);
+        oldKeys.set(0, this.orderedKeys);
         this.nextSlot = 1;
         this.size = 0;
         this.deletedCount = 0;
@@ -117,21 +141,14 @@ export class Set<T extends AnyNotNil> {
             },
             next(): IteratorResult<[T, T]> {
                 while (keys.get(0) !== undefined) {
-                    let adj = 0;
-                    let h = 1;
-                    while (true) {
-                        const holePos = keys.get(-h) as any as number | undefined;
-                        if (holePos === undefined || holePos >= idx) break;
-                        adj++;
-                        h++;
-                    }
-                    idx -= adj;
+                    idx = transitionIndex(keys as LuaTable<number, unknown>, idx);
                     keys = keys.get(0) as any;
                 }
                 while (idx < set.nextSlot && keys.get(idx) === undefined) {
                     idx++;
                 }
                 if (idx >= set.nextSlot) {
+                    idx = Infinity;
                     return { done: true, value: undefined! };
                 }
                 const val = keys.get(idx);
@@ -151,21 +168,14 @@ export class Set<T extends AnyNotNil> {
             },
             next(): IteratorResult<T> {
                 while (keys.get(0) !== undefined) {
-                    let adj = 0;
-                    let h = 1;
-                    while (true) {
-                        const holePos = keys.get(-h) as any as number | undefined;
-                        if (holePos === undefined || holePos >= idx) break;
-                        adj++;
-                        h++;
-                    }
-                    idx -= adj;
+                    idx = transitionIndex(keys as LuaTable<number, unknown>, idx);
                     keys = keys.get(0) as any;
                 }
                 while (idx < set.nextSlot && keys.get(idx) === undefined) {
                     idx++;
                 }
                 if (idx >= set.nextSlot) {
+                    idx = Infinity;
                     return { done: true, value: undefined! };
                 }
                 const val = keys.get(idx);
@@ -185,21 +195,14 @@ export class Set<T extends AnyNotNil> {
             },
             next(): IteratorResult<T> {
                 while (keys.get(0) !== undefined) {
-                    let adj = 0;
-                    let h = 1;
-                    while (true) {
-                        const holePos = keys.get(-h) as any as number | undefined;
-                        if (holePos === undefined || holePos >= idx) break;
-                        adj++;
-                        h++;
-                    }
-                    idx -= adj;
+                    idx = transitionIndex(keys as LuaTable<number, unknown>, idx);
                     keys = keys.get(0) as any;
                 }
                 while (idx < set.nextSlot && keys.get(idx) === undefined) {
                     idx++;
                 }
                 if (idx >= set.nextSlot) {
+                    idx = Infinity;
                     return { done: true, value: undefined! };
                 }
                 const val = keys.get(idx);

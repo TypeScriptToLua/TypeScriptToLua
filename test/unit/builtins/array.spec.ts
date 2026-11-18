@@ -901,6 +901,22 @@ describe("copying array methods", () => {
             updated: [1, 2, 10, 4, 5],
         });
     });
+
+    test.each(["-1", "-5", "1.7", "-1.7", "-0", "NaN"])("with relative index (%p)", index => {
+        util.testExpression`[1, 2, 3, 4, 5].with(${index}, 10)`.expectToMatchJsResult();
+    });
+
+    test.each(["5", "-6", "7.5", "Infinity", "-Infinity"])("with out-of-range index (%p) throws RangeError", index => {
+        util.testFunction`
+            const original = [1, 2, 3, 4, 5];
+            try {
+                original.with(${index}, 10);
+                return "no error";
+            } catch (e) {
+                return { isRangeError: e instanceof RangeError, original };
+            }
+        `.expectToMatchJsResult();
+    });
 });
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/1605

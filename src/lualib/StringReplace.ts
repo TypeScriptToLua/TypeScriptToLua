@@ -1,3 +1,5 @@
+import { __TS__StringGetSubstitution } from "./StringGetSubstitution";
+
 const sub = string.sub;
 export function __TS__StringReplace(
     this: void,
@@ -11,7 +13,9 @@ export function __TS__StringReplace(
     }
     const before = sub(source, 1, startPos - 1);
     const replacement =
-        typeof replaceValue === "string" ? replaceValue : replaceValue(searchValue, startPos - 1, source);
+        typeof replaceValue === "string"
+            ? __TS__StringGetSubstitution(searchValue, source, startPos, replaceValue)
+            : replaceValue(searchValue, startPos - 1, source);
     const after = sub(source, endPos + 1);
     return before + replacement + after;
 }

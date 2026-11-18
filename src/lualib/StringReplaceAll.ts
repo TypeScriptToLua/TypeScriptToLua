@@ -1,3 +1,5 @@
+import { __TS__StringGetSubstitution } from "./StringGetSubstitution";
+
 const sub = string.sub;
 const find = string.find;
 export function __TS__StringReplaceAll(
@@ -6,7 +8,7 @@ export function __TS__StringReplaceAll(
     searchValue: string,
     replaceValue: string | ((match: string, offset: number, string: string) => string)
 ): string {
-    if (typeof replaceValue === "string") {
+    if (typeof replaceValue === "string" && !find(replaceValue, "$", undefined, true)) {
         const concat = table.concat(source.split(searchValue), replaceValue);
         if (searchValue.length === 0) {
             return replaceValue + concat + replaceValue;
@@ -17,11 +19,17 @@ export function __TS__StringReplaceAll(
     let partsIndex = 1;
 
     if (searchValue.length === 0) {
-        parts[0] = replaceValue("", 0, source);
+        parts[0] =
+            typeof replaceValue === "string"
+                ? __TS__StringGetSubstitution("", source, 1, replaceValue)
+                : replaceValue("", 0, source);
         partsIndex = 2;
         for (const i of $range(1, source.length)) {
             parts[partsIndex - 1] = sub(source, i, i);
-            parts[partsIndex] = replaceValue("", i, source);
+            parts[partsIndex] =
+                typeof replaceValue === "string"
+                    ? __TS__StringGetSubstitution("", source, i + 1, replaceValue)
+                    : replaceValue("", i, source);
             partsIndex += 2;
         }
     } else {
@@ -30,7 +38,10 @@ export function __TS__StringReplaceAll(
             const [startPos, endPos] = find(source, searchValue, currentPos, true);
             if (!startPos) break;
             parts[partsIndex - 1] = sub(source, currentPos, startPos - 1);
-            parts[partsIndex] = replaceValue(searchValue, startPos - 1, source);
+            parts[partsIndex] =
+                typeof replaceValue === "string"
+                    ? __TS__StringGetSubstitution(searchValue, source, startPos, replaceValue)
+                    : replaceValue(searchValue, startPos - 1, source);
             partsIndex += 2;
 
             currentPos = endPos + 1;

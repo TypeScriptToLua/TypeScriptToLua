@@ -20,12 +20,15 @@ export interface TransformerImport {
 export interface LuaPluginImport {
     name: string;
     import?: string;
+    skipRecompileLuaLib?: boolean;
 
     [option: string]: any;
 }
 
 export interface InMemoryLuaPlugin {
     plugin: Plugin | ((options: Record<string, any>) => Plugin);
+    skipRecompileLuaLib?: boolean;
+
     [option: string]: any;
 }
 
@@ -46,6 +49,7 @@ export interface TypeScriptToLuaOptions {
     tstlVerbose?: boolean;
     lua51AllowTryCatchInAsyncAwait?: boolean;
     measurePerformance?: boolean;
+    recompileLuaLib?: boolean;
 }
 
 export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> &

@@ -1,5 +1,8 @@
+import { __TS__StringPosition } from "./StringPosition";
+
 export function __TS__StringSubstring(this: string, start: number, end?: number): string {
-    if (end !== end) end = 0;
+    start = __TS__StringPosition(start, this.length);
+    if (end !== undefined) end = __TS__StringPosition(end, this.length);
 
     if (end !== undefined && start > end) {
         [start, end] = [end, start];

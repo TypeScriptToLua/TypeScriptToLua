@@ -477,3 +477,41 @@ test("string.indexOf without arguments (#1406)", () => {
 test("string.repeat without arguments (#1406)", () => {
     util.testExpression`"".repeat()`.expectNoTranspileException();
 });
+
+describe("string methods with fractional or infinite positions", () => {
+    const calls = [
+        'includes("t", p)',
+        'startsWith("l", p)',
+        'endsWith("l", p)',
+        "slice(p)",
+        "slice(1, p)",
+        "slice(-p)",
+        "charAt(p)",
+        "charCodeAt(p)",
+        "substring(p)",
+        "substring(1, p)",
+        "substr(p)",
+        "substr(-p)",
+        "substr(1, p)",
+    ];
+    const positions = [3.5, 2.9, -2.5, -0.5, Infinity, -Infinity, NaN];
+
+    test.each(calls.flatMap(call => positions.map(p => ({ call, p }))))("$call with p = $p", ({ call, p }) => {
+        util.testFunction`
+            const s: string = "hello test";
+            const p: number = ${util.formatCode(p)};
+            return s.${call};
+        `.expectToMatchJsResult();
+    });
+
+    test.each(["slice(1.5)", "slice(0, 4.5)", "charAt(1.5)", "charCodeAt(1.5)"])("literal %s", call => {
+        util.testExpression`"hello test".${call}`.expectToMatchJsResult();
+    });
+
+    test("slice to half of the length", () => {
+        util.testFunction`
+            const s = "hello";
+            return s.slice(0, s.length / 2);
+        `.expectToMatchJsResult();
+    });
+});

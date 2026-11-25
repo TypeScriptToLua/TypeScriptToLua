@@ -72,6 +72,40 @@ describe("yield*", () => {
         `.expectToMatchJsResult();
     });
 
+    test("generator .next() with parameters", () => {
+        util.testFunction`
+            function* subGenerator(): Generator<number, number, number> {
+                return (yield 1) + (yield 2);
+            }
+
+            function* generator(): Generator<number, number, number> {
+                return yield* subGenerator();
+            }
+
+            const it = generator();
+            return [it.next(), it.next(10), it.next(20), it.next(30)];
+        `.expectToMatchJsResult();
+    });
+
+    test("nested generator .next() with parameters", () => {
+        util.testFunction`
+            function* innerGenerator(): Generator<number, number, number> {
+                return (yield 1) + (yield 2);
+            }
+
+            function* subGenerator(): Generator<number, number, number> {
+                return yield* innerGenerator();
+            }
+
+            function* generator(): Generator<number, number, number> {
+                return yield* subGenerator();
+            }
+
+            const it = generator();
+            return [it.next(), it.next(10), it.next(20), it.next(30)];
+        `.expectToMatchJsResult();
+    });
+
     test("array", () => {
         util.testFunction`
             function* generator() {

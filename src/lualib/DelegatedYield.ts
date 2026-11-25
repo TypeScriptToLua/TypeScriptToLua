@@ -7,13 +7,14 @@ export function __TS__DelegatedYield<T>(this: void, iterable: string | Generator
         }
     } else if ("____coroutine" in iterable) {
         const co = iterable.____coroutine;
+        let received: any;
         while (true) {
-            const [status, value] = coroutine.resume(co);
+            const [status, value] = coroutine.resume(co, received);
             if (!status) throw value;
             if (coroutine.status(co) === "dead") {
                 return value;
             } else {
-                coroutine.yield(value);
+                [received] = coroutine.yield(value);
             }
         }
     } else if (iterable[Symbol.iterator]) {

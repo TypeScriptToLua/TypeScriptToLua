@@ -1,15 +1,51 @@
+// Insertion-ordered Map using flat arrays with tombstone deletion and
+// V8-style version chain compaction. Deleted entries become nil (tombstones);
+// iterators skip them via idx++. Compaction creates new arrays and links
+// old → new at index 0; iterators transition lazily by adjusting their
+// index (subtracting holes before current position). A finished iterator
+// parks idx at Infinity so later inserts can't revive it.
+//
+// Using integer-indexed arrays (orderedKeys/orderedValues) for the insertion
+// order leverages Lua's array part: sequential integer keys are stored in
+// contiguous memory, making iteration a simple pointer offset (~2-3 cycles)
+// rather than a hash table lookup (~15-50 cycles per step).
+//
+// Based on V8's OrderedHashTable (ordered-hash-table.cc: Rehash, Clear, Transition):
+//   https://chromium.googlesource.com/v8/v8/+/main/src/objects/ordered-hash-table.cc
+
+// Written by clear() at obsolete[-1], where compact() stores hole positions (>= 1).
+// V8 kClearedTableSentinel: https://chromium.googlesource.com/v8/v8/+/c7c19254deff6b77a73c80e1b47f131b0162a13b/src/objects/ordered-hash-table.h#204
+const CLEARED_TABLE_SENTINEL = -1;
+
+// V8 OrderedHashTableIterator::Transition (0-based there, 1-based here):
+// https://chromium.googlesource.com/v8/v8/+/c7c19254deff6b77a73c80e1b47f131b0162a13b/src/objects/ordered-hash-table.cc#1448
+function transitionIndex(this: void, obsolete: LuaTable<number, unknown>, idx: number): number {
+    if (obsolete.get(-1) === CLEARED_TABLE_SENTINEL) {
+        return idx === Infinity ? idx : 1; // exhausted iterators stay done
+    }
+    let adj = 0;
+    let h = 1;
+    while (true) {
+        const holePos = obsolete.get(-h) as number | undefined;
+        if (holePos === undefined || holePos >= idx) break;
+        adj++;
+        h++;
+    }
+    return idx - adj;
+}
+
 export class Map<K extends AnyNotNil, V> {
     public static [Symbol.species] = Map;
     public [Symbol.toStringTag] = "Map";
 
-    private items = new LuaTable<K, V>();
     public size = 0;
 
-    // Key-order variables
-    private firstKey: K | undefined;
-    private lastKey: K | undefined;
-    private nextKey = new LuaTable<K, K>();
-    private previousKey = new LuaTable<K, K>();
+    // Flat array storage (1-based indices for Lua)
+    private keyIndex = new LuaTable<K, number>();
+    private orderedKeys = new LuaTable<number, K>();
+    private orderedValues = new LuaTable<number, V>();
+    private nextSlot = 1;
+    private deletedCount = 0;
 
     constructor(entries?: Iterable<readonly [K, V]> | Array<readonly [K, V]>) {
         if (entries === undefined) return;
@@ -35,76 +71,111 @@ export class Map<K extends AnyNotNil, V> {
         }
     }
 
+    // O(1): mark the old arrays cleared rather than recording each slot as a hole.
+    // V8 Clear: https://chromium.googlesource.com/v8/v8/+/c7c19254deff6b77a73c80e1b47f131b0162a13b/src/objects/ordered-hash-table.cc#122
     public clear(): void {
-        this.items = new LuaTable();
-        this.nextKey = new LuaTable();
-        this.previousKey = new LuaTable();
-        this.firstKey = undefined;
-        this.lastKey = undefined;
+        const oldKeys = this.orderedKeys as LuaTable<number, unknown>;
+        const oldValues = this.orderedValues as LuaTable<number, unknown>;
+        this.keyIndex = new LuaTable();
+        this.orderedKeys = new LuaTable();
+        this.orderedValues = new LuaTable();
+        oldKeys.set(-1, CLEARED_TABLE_SENTINEL);
+        oldKeys.set(0, this.orderedKeys);
+        oldValues.set(0, this.orderedValues);
+        this.nextSlot = 1;
         this.size = 0;
+        this.deletedCount = 0;
     }
 
     public delete(key: K): boolean {
-        const contains = this.has(key);
-        if (contains) {
-            this.size--;
+        const idx = this.keyIndex.get(key);
+        if (idx === undefined) return false;
+        this.size--;
+        this.deletedCount++;
+        this.keyIndex.delete(key);
+        this.orderedKeys.delete(idx);
+        this.orderedValues.delete(idx);
 
-            // Do order bookkeeping
-            const next = this.nextKey.get(key);
-            const previous = this.previousKey.get(key);
-            if (next !== undefined && previous !== undefined) {
-                this.nextKey.set(previous, next);
-                this.previousKey.set(next, previous);
-            } else if (next !== undefined) {
-                this.firstKey = next;
-                this.previousKey.set(next, undefined!);
-            } else if (previous !== undefined) {
-                this.lastKey = previous;
-                this.nextKey.set(previous, undefined!);
-            } else {
-                this.firstKey = undefined;
-                this.lastKey = undefined;
-            }
-
-            this.nextKey.set(key, undefined!);
-            this.previousKey.set(key, undefined!);
+        if (this.deletedCount > this.size) {
+            this.compact();
         }
-        this.items.set(key, undefined!);
+        return true;
+    }
 
-        return contains;
+    // Compaction is needed because nextSlot grows monotonically — deleted
+    // entries leave nil tombstones but Lua tables don't shrink on nil
+    // assignment. Lua only resizes a table during rehash, and rehash only
+    // triggers when a hash-part insert exhausts free nodes (ltable.c:
+    // luaH_newkey → getfreepos → rehash). Since orderedKeys uses sequential
+    // integer indices (array part), normal inserts rarely touch the hash
+    // part, so rehash won't trigger naturally to reclaim the space.
+    //
+    // V8-style: copy live entries to new arrays, record hole positions in
+    // the old array at negative indices, link old[0] → new. Active iterators
+    // hold old arrays and transition lazily on next() by adjusting their
+    // index (subtracting holes before current position).
+    //
+    // Index 0 and negative indices go to Lua's hash part (not array part),
+    // so they don't conflict with the 1-based data entries.
+    private compact(): void {
+        const oldKeys = this.orderedKeys;
+        const oldValues = this.orderedValues;
+        const oldNextSlot = this.nextSlot;
+        const newKeys = new LuaTable<number, K>();
+        const newValues = new LuaTable<number, V>();
+        let newSlot = 1;
+        let holeCount = 0;
+
+        for (let i = 1; i < oldNextSlot; i++) {
+            const k = oldKeys.get(i);
+            if (k !== undefined) {
+                newKeys.set(newSlot, k);
+                newValues.set(newSlot, oldValues.get(i));
+                this.keyIndex.set(k, newSlot);
+                newSlot++;
+            } else {
+                holeCount++;
+                oldKeys.set(-holeCount, i as any);
+            }
+        }
+
+        oldKeys.set(0, newKeys as any);
+        oldValues.set(0, newValues as any);
+
+        this.orderedKeys = newKeys;
+        this.orderedValues = newValues;
+        this.nextSlot = newSlot;
+        this.deletedCount = 0;
     }
 
     public forEach(callback: (value: V, key: K, map: Map<K, V>) => any): void {
         for (const key of this.keys()) {
-            callback(this.items.get(key), key, this);
+            callback(this.orderedValues.get(this.keyIndex.get(key)), key, this);
         }
     }
 
     public get(key: K): V | undefined {
-        return this.items.get(key);
+        const idx = this.keyIndex.get(key);
+        if (idx === undefined) return undefined;
+        return this.orderedValues.get(idx);
     }
 
     public has(key: K): boolean {
-        return this.nextKey.get(key) !== undefined || this.lastKey === key;
+        return this.keyIndex.get(key) !== undefined;
     }
 
     public set(key: K, value: V): this {
-        const isNewValue = !this.has(key);
-        if (isNewValue) {
+        const existingIdx = this.keyIndex.get(key);
+        if (existingIdx !== undefined) {
+            this.orderedValues.set(existingIdx, value);
+        } else {
             this.size++;
+            const idx = this.nextSlot;
+            this.nextSlot = idx + 1;
+            this.keyIndex.set(key, idx);
+            this.orderedKeys.set(idx, key);
+            this.orderedValues.set(idx, value);
         }
-        this.items.set(key, value);
-
-        // Do order bookkeeping
-        if (this.firstKey === undefined) {
-            this.firstKey = key;
-            this.lastKey = key;
-        } else if (isNewValue) {
-            this.nextKey.set(this.lastKey!, key);
-            this.previousKey.set(key, this.lastKey!);
-            this.lastKey = key;
-        }
-
         return this;
     }
 
@@ -112,65 +183,89 @@ export class Map<K extends AnyNotNil, V> {
         return this.entries();
     }
 
+    // entries/keys/values are intentionally kept inline (not refactored into
+    // a shared helper) to avoid per-step function call overhead on this hot path.
     public entries(): IterableIterator<[K, V]> {
-        const getFirstKey = () => this.firstKey;
-        const { items, nextKey } = this;
-        let key: K | undefined;
-        let started = false;
+        let keys = this.orderedKeys;
+        let vals = this.orderedValues;
+        const map = this; // eslint-disable-line @typescript-eslint/no-this-alias
+        let idx = 1;
         return {
             [Symbol.iterator](): IterableIterator<[K, V]> {
                 return this;
             },
             next(): IteratorResult<[K, V]> {
-                if (!started) {
-                    started = true;
-                    key = getFirstKey();
-                } else {
-                    key = nextKey.get(key!);
+                while (keys.get(0) !== undefined) {
+                    idx = transitionIndex(keys as LuaTable<number, unknown>, idx);
+                    vals = vals.get(0) as any;
+                    keys = keys.get(0) as any;
                 }
-                return { done: !key, value: [key!, items.get(key!)] as [K, V] };
+                while (idx < map.nextSlot && keys.get(idx) === undefined) {
+                    idx++;
+                }
+                if (idx >= map.nextSlot) {
+                    idx = Infinity;
+                    return { done: true, value: undefined! };
+                }
+                const i = idx;
+                idx++;
+                return { done: false, value: [keys.get(i), vals.get(i)] as [K, V] };
             },
         };
     }
 
     public keys(): IterableIterator<K> {
-        const getFirstKey = () => this.firstKey;
-        const nextKey = this.nextKey;
-        let key: K | undefined;
-        let started = false;
+        let keys = this.orderedKeys;
+        const map = this; // eslint-disable-line @typescript-eslint/no-this-alias
+        let idx = 1;
         return {
             [Symbol.iterator](): IterableIterator<K> {
                 return this;
             },
             next(): IteratorResult<K> {
-                if (!started) {
-                    started = true;
-                    key = getFirstKey();
-                } else {
-                    key = nextKey.get(key!);
+                while (keys.get(0) !== undefined) {
+                    idx = transitionIndex(keys as LuaTable<number, unknown>, idx);
+                    keys = keys.get(0) as any;
                 }
-                return { done: !key, value: key! };
+                while (idx < map.nextSlot && keys.get(idx) === undefined) {
+                    idx++;
+                }
+                if (idx >= map.nextSlot) {
+                    idx = Infinity;
+                    return { done: true, value: undefined! };
+                }
+                const i = idx;
+                idx++;
+                return { done: false, value: keys.get(i) };
             },
         };
     }
 
     public values(): IterableIterator<V> {
-        const getFirstKey = () => this.firstKey;
-        const { items, nextKey } = this;
-        let key: K | undefined;
-        let started = false;
+        let keys = this.orderedKeys;
+        let vals = this.orderedValues;
+        const map = this; // eslint-disable-line @typescript-eslint/no-this-alias
+        let idx = 1;
         return {
             [Symbol.iterator](): IterableIterator<V> {
                 return this;
             },
             next(): IteratorResult<V> {
-                if (!started) {
-                    started = true;
-                    key = getFirstKey();
-                } else {
-                    key = nextKey.get(key!);
+                while (keys.get(0) !== undefined) {
+                    idx = transitionIndex(keys as LuaTable<number, unknown>, idx);
+                    vals = vals.get(0) as any;
+                    keys = keys.get(0) as any;
                 }
-                return { done: !key, value: items.get(key!) };
+                while (idx < map.nextSlot && keys.get(idx) === undefined) {
+                    idx++;
+                }
+                if (idx >= map.nextSlot) {
+                    idx = Infinity;
+                    return { done: true, value: undefined! };
+                }
+                const i = idx;
+                idx++;
+                return { done: false, value: vals.get(i) };
             },
         };
     }
